@@ -53,3 +53,25 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
         })
 
     supabase.table("retrieved_papers").insert(rows).execute()
+
+
+def write_web_sources(sources: list) -> None:
+    """Store retrieved web sources (from Tavily/Exa/Parallel) in the database,
+    linked to the sub-question that found them."""
+    if not sources:
+        return
+
+    rows = [
+        {
+            "sub_question_id": s.sub_question_id,
+            "url": s.url,
+            "title": s.title,
+            "snippet": s.snippet,
+            "published_date": s.published_date,
+            "provider": s.provider,
+            "reliability_score": s.reliability_score,
+        }
+        for s in sources
+    ]
+
+    supabase.table("web_sources").insert(rows).execute()

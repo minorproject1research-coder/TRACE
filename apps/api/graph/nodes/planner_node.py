@@ -8,7 +8,7 @@ from apps.api.services import db_service
 logger = logging.getLogger("apps.api.agents.stage1_planner")
 
 
-def planner_node(state: SharedResearchState) -> SharedResearchState:
+def planner_node(state: SharedResearchState) -> dict:
     logger.info("Starting planner for query: %s", state.raw_query[:100])
 
     sub_questions = question_generator.generate(state.raw_query)
@@ -21,5 +21,4 @@ def planner_node(state: SharedResearchState) -> SharedResearchState:
     db_service.write_task_plan(task_plan)
     logger.info("Saved task plan with ID: %s", task_plan.query_id)
 
-    state.task_plan = task_plan
-    return state
+    return {"task_plan": task_plan}

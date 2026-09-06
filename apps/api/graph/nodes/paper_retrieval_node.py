@@ -8,7 +8,7 @@ from apps.api.services import db_service
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
 
-def paper_retrieval_node(state: SharedResearchState) -> SharedResearchState:
+def paper_retrieval_node(state: SharedResearchState) -> dict:
     agent = PaperRetrievalAgent(max_results_per_query=10)
 
     async def _retrieve_all():
@@ -28,7 +28,6 @@ def paper_retrieval_node(state: SharedResearchState) -> SharedResearchState:
             sq.papers = result
             all_papers.extend(result)
 
-    state.paper_results = all_papers
     logger.info("Retrieved %d total papers across %d sub-questions",
                 len(all_papers), len(state.task_plan.sub_questions))
 
@@ -36,7 +35,7 @@ def paper_retrieval_node(state: SharedResearchState) -> SharedResearchState:
     logger.info("Stored %d papers in database for query %s",
                 len(all_papers), state.task_plan.query_id)
 
-    return state
+    return {"paper_results": all_papers}
 
 
 async def _retrieve_for_subquestion(
