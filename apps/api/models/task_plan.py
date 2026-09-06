@@ -7,6 +7,7 @@ class SubQuestion(BaseModel):
     main_topic: str
     detail_questions: list[str]
     queries: list[str] = Field(default_factory=list)
+    papers: list[dict] = Field(default_factory=list)
 
 
 class TaskPlan(BaseModel):

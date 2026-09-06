@@ -6,3 +6,4 @@ from apps.api.models.task_plan import TaskPlan
 class SharedResearchState(BaseModel):
     raw_query: str
     task_plan: Optional[TaskPlan] = None
+    paper_results: list[dict] = []
