@@ -13,6 +13,18 @@ logging.basicConfig(
     ],
 )
 
+stage_files = {
+    "apps.api.agents.stage1_planner": "stage1_planner.log",
+    "apps.api.agents.stage2_retrieval": "stage2_retrieval.log",
+    "apps.api.agents.stage3_summarizer": "stage3_summarizer.log",
+    "apps.api.agents.stage4_factcheck": "stage4_factcheck.log",
+    "apps.api.agents.stage5_report": "stage5_report.log",
+}
+
+for logger_name, filename in stage_files.items():
+    logger = logging.getLogger(logger_name)
+    logger.addHandler(logging.FileHandler(log_dir / filename))
+
 from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState
 

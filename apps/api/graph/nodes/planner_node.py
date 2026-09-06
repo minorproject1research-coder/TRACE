@@ -5,7 +5,7 @@ from apps.api.models.task_plan import TaskPlan
 from apps.api.agents.stage1_planner import question_generator, query_expansion
 from apps.api.services import db_service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("apps.api.agents.stage1_planner")
 
 
 def planner_node(state: SharedResearchState) -> SharedResearchState:

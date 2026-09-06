@@ -5,7 +5,7 @@ from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
 from apps.api.services import db_service
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
 
 def paper_retrieval_node(state: SharedResearchState) -> SharedResearchState:
