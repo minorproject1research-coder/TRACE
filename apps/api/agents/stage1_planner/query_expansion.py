@@ -1,7 +1,10 @@
 import json
+import logging
 import os
 from dotenv import load_dotenv
 from groq import Groq
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -23,6 +26,7 @@ Return ONLY a JSON array of strings, nothing else. Example:
 
 
 def expand(main_topic: str, detail_questions: list[str]) -> list[str]:
+    logger.info("Expanding queries for sub-question: %s", main_topic[:80])
     prompt = QUERY_EXPANSION_PROMPT.format(
         main_topic=main_topic,
         detail_questions="\n".join(f"- {q}" for q in detail_questions),
@@ -35,7 +39,9 @@ def expand(main_topic: str, detail_questions: list[str]) -> list[str]:
     )
 
     raw = response.choices[0].message.content.strip()
-    return _safe_parse(raw)[:4]
+    queries = _safe_parse(raw)[:4]
+    logger.info("Generated %d query variants: %s", len(queries), queries)
+    return queries
 
 
 def _safe_parse(raw: str) -> list[str]:

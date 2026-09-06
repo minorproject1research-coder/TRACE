@@ -1,8 +1,12 @@
+import logging
+
 from apps.api.models.task_plan import SubQuestion
+
+logger = logging.getLogger(__name__)
 
 
 def generate(raw_query: str) -> list[SubQuestion]:
-    """TEMPORARY MOCK — replace with fine-tuned Qwen inference once LoRA training is complete."""
+    logger.info("Generating sub-questions for query: %s", raw_query[:100])
     return [
         SubQuestion(
             main_topic="Effect of RAG on hallucination rates",
