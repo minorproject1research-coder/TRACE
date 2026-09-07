@@ -25,6 +25,8 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
             logger.error("Retrieval failed for sub-question '%s': %s", sq.main_topic, result)
             sq.papers = []
         else:
+            for paper in result:
+                paper["sub_question_id"] = sq.id
             sq.papers = result
             all_papers.extend(result)
 

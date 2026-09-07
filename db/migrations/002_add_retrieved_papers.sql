@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS retrieved_papers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     query_id UUID NOT NULL REFERENCES research_queries(id) ON DELETE CASCADE,
+    sub_question_id TEXT REFERENCES sub_questions(id),
     title TEXT NOT NULL,
     abstract TEXT,
     authors JSONB DEFAULT '[]'::jsonb,
@@ -27,5 +28,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.retrieved_papers TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.retrieved_papers TO authenticated;
 
 CREATE INDEX IF NOT EXISTS idx_retrieved_papers_query_id ON retrieved_papers(query_id);
+CREATE INDEX IF NOT EXISTS idx_retrieved_papers_sub_question_id ON retrieved_papers(sub_question_id);
 CREATE INDEX IF NOT EXISTS idx_retrieved_papers_source ON retrieved_papers(source);
 CREATE INDEX IF NOT EXISTS idx_retrieved_papers_year ON retrieved_papers(year);

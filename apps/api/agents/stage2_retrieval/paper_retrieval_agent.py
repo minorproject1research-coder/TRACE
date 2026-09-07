@@ -40,6 +40,7 @@ class PaperResult(BaseModel):
     tldr: Optional[str] = None
     fields_of_study: list[str] = Field(default_factory=list)
     query_variant_matched: list[str] = Field(default_factory=list)
+    sub_question_id: Optional[str] = None
 
 
 # ──────────────────────────────────────────────────────────────────────────────

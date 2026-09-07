@@ -34,6 +34,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
     for paper in papers:
         rows.append({
             "query_id": query_id,
+            "sub_question_id": paper.get("sub_question_id"),
             "title": paper.get("title", ""),
             "abstract": paper.get("abstract", ""),
             "authors": paper.get("authors", []),
