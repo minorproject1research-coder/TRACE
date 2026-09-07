@@ -308,6 +308,8 @@ class PaperRetrievalAgent:
         in_abstract = False
         in_references = False
         authors_raw = []
+        collect_authors = False
+        stop_authors = False
         
         for line in lines:
             line_stripped = line.strip()
@@ -320,6 +322,8 @@ class PaperRetrievalAgent:
                 in_abstract = True
                 in_references = False
                 current_section = None
+                collect_authors = False
+                stop_authors = True
             elif line_stripped.lower().startswith("## ") and in_abstract:
                 in_abstract = False
                 heading = line_stripped.lstrip("#").strip()
@@ -343,10 +347,12 @@ class PaperRetrievalAgent:
             elif in_references and line_stripped:
                 if line_stripped.startswith("- [") or line_stripped.startswith("["):
                     references.append(line_stripped)
+                elif re.match(r'^\d+\.\s', line_stripped):
+                    references.append(line_stripped)
             elif current_section and line_stripped:
                 current_section.text += line_stripped + "\n"
             
-            if not authors_raw and title != "Unknown" and line_stripped and not line_stripped.startswith("#"):
+            if not stop_authors and not authors_raw and title != "Unknown" and line_stripped and not line_stripped.startswith("#"):
                 if re.match(r'^[\d\s,\s*]+$', line_stripped):
                     continue
                 if any(c in line_stripped.lower() for c in ["university", "lab", "institute", "dept", "center", "school"]):
@@ -354,21 +360,41 @@ class PaperRetrievalAgent:
                 if line_stripped.startswith("http") or line_stripped.startswith("<!--"):
                     continue
                 if len(line_stripped) > 5:
+                    collect_authors = True
+                    authors_raw.append(line_stripped)
+            elif collect_authors and not stop_authors and line_stripped and not line_stripped.startswith("#"):
+                if re.match(r'^[\d\s,\s*]+$', line_stripped):
+                    collect_authors = False
+                elif any(c in line_stripped.lower() for c in ["university", "lab", "institute", "dept", "center", "school"]):
+                    collect_authors = False
+                elif line_stripped.startswith("http") or line_stripped.startswith("<!--"):
+                    collect_authors = False
+                elif len(line_stripped) > 5:
                     authors_raw.append(line_stripped)
         
         if not title or title == "Unknown":
             title = document.get("title", "Unknown") or data.get("title", "Unknown") or "Unknown"
         
         parsed_authors = []
-        if authors_raw:
-            raw = authors_raw[0]
-            for name in raw.split(","):
+        for raw_line in authors_raw:
+            for name in raw_line.split(","):
                 name = name.strip()
+                name = re.sub(r'\s*\d+\s*$', '', name).strip()
+                name = re.sub(r'^[\d\s*]+', '', name).strip()
                 name = name.lstrip("∗*").strip()
                 if name and len(name) > 2 and not name.isdigit():
                     parsed_authors.append(name)
+        parsed_authors = list(dict.fromkeys(parsed_authors))
         
         abstract = abstract.strip()
+        
+        if not abstract:
+            for line in lines:
+                line_stripped = line.strip()
+                if re.match(r'^(?i)abstract[\s.:]', line_stripped):
+                    abstract = re.sub(r'^(?i)abstract[\s.:]*', '', line_stripped).strip()
+                    if abstract:
+                        break
         
         return ParsedPaper(
             retrieved_paper_id="",
