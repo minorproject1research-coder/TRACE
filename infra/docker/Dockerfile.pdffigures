@@ -1,0 +1,5 @@
+FROM dluan/figures:0.0.5
+
+EXPOSE 4567
+
+CMD ["ruby", "app.rb"]

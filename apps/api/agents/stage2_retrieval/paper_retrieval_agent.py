@@ -9,12 +9,15 @@ Source Reliability Scoring.
 import asyncio
 import logging
 import os
+import re
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Optional
 
 import httpx
 from pydantic import BaseModel, Field
+
+from apps.api.services import db_service
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,33 @@ class PaperResult(BaseModel):
     fields_of_study: list[str] = Field(default_factory=list)
     query_variant_matched: list[str] = Field(default_factory=list)
     sub_question_id: Optional[str] = None
+
+
+@dataclass
+class Figure:
+    label: str
+    caption: str
+    image_path: Optional[str] = None
+    page: Optional[int] = None
+
+
+@dataclass
+class Section:
+    heading: str
+    text: str
+    level: int = 1
+
+
+@dataclass
+class ParsedPaper:
+    retrieved_paper_id: str
+    title: str
+    authors: list[str]
+    abstract: str
+    sections: list[Section]
+    references: list[str]
+    figures: list[Figure]
+    full_text: str
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -70,18 +100,26 @@ class AsyncRateLimiter:
 
 class PaperRetrievalAgent:
     """
-    Retrieves academic papers from arXiv and Semantic Scholar concurrently.
+    Retrieves academic papers from arXiv and Semantic Scholar concurrently,
+    and parses PDFs for full content extraction using Docling.
 
     Usage:
         agent = PaperRetrievalAgent(semantic_scholar_api_key="YOUR_KEY")
+        
+        # Retrieve papers
         papers = await agent.retrieve(
             sub_question="Impact of RAG on hallucination",
             query_variants=["RAG hallucination reduction", "retrieval augmented generation errors"]
         )
+        
+        # Parse papers in parallel
+        parsed = await agent.parse_papers(paper_ids=["id1", "id2", "id3"])
     """
 
     ARXIV_API_URL = "https://export.arxiv.org/api/query"
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+    DOCLING_URL = "http://localhost:5001"
+    PDFFIGURES_URL = "http://localhost:4567"
 
     SEMANTIC_SCHOLAR_FIELDS = [
         "title", "abstract", "year", "venue", "citationCount",
@@ -94,13 +132,241 @@ class PaperRetrievalAgent:
         self,
         semantic_scholar_api_key: Optional[str] = None,
         max_results_per_query: int = 10,
+        pdffigures_url: Optional[str] = None,
+        docling_url: Optional[str] = None,
     ):
         self.api_key = semantic_scholar_api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
         self.max_results = max_results_per_query
+        self.pdffigures_url = (pdffigures_url or self.PDFFIGURES_URL).rstrip("/")
+        self.docling_url = (docling_url or self.DOCLING_URL).rstrip("/")
 
         # Rate limits: arXiv ~0.33 req/s (3s gap), Semantic Scholar ~10 req/s with key
         self._arxiv_limiter = AsyncRateLimiter(calls_per_second=0.33)
         self._s2_limiter = AsyncRateLimiter(calls_per_second=10.0)
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Paper Parsing (Docling + PDFFigures)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    async def parse_papers(
+        self,
+        paper_ids: list[str],
+        max_concurrent: int = 3,
+    ) -> list[ParsedPaper]:
+        """
+        Parse multiple papers in parallel using Docling and PDFFigures.
+
+        Args:
+            paper_ids: List of retrieved_paper_id UUIDs to parse.
+            max_concurrent: Maximum concurrent parsing operations.
+
+        Returns:
+            List of ParsedPaper objects (results also stored in DB).
+        """
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def _parse_with_semaphore(paper_id: str) -> Optional[ParsedPaper]:
+            async with semaphore:
+                return await self._parse_single_paper(paper_id)
+
+        tasks = [_parse_with_semaphore(pid) for pid in paper_ids]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        parsed = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error("Failed to parse paper %s: %s", paper_ids[i], result)
+            elif result is not None:
+                parsed.append(result)
+
+        return parsed
+
+    async def _parse_single_paper(self, retrieved_paper_id: str) -> Optional[ParsedPaper]:
+        """Parse a single paper by its retrieved_paper_id."""
+        paper_metadata = db_service.get_retrieved_paper(retrieved_paper_id)
+        if not paper_metadata:
+            logger.warning("Paper not found: %s", retrieved_paper_id)
+            return None
+
+        pdf_url = self._construct_pdf_url(paper_metadata)
+        if not pdf_url:
+            logger.warning("No downloadable URL for paper: %s", retrieved_paper_id)
+            return None
+
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                docling_task = self._safe_docling(pdf_url)
+                figures_task = self._safe_pdffigures(client, pdf_url)
+
+                docling_result, figures = await asyncio.gather(
+                    docling_task, figures_task, return_exceptions=True
+                )
+
+                if isinstance(docling_result, Exception):
+                    logger.warning("Docling unavailable, using basic metadata: %s", docling_result)
+                    docling_result = ParsedPaper(
+                        retrieved_paper_id=retrieved_paper_id,
+                        title=paper_metadata.get("title", ""),
+                        authors=paper_metadata.get("authors", []),
+                        abstract=paper_metadata.get("abstract", ""),
+                        sections=[],
+                        references=[],
+                        figures=[],
+                        full_text="",
+                    )
+
+                docling_result.retrieved_paper_id = retrieved_paper_id
+                docling_result.figures = figures if isinstance(figures, list) else []
+
+                self._store_parsed_paper(docling_result)
+                return docling_result
+
+        except Exception as e:
+            logger.error("Paper parsing failed for %s: %s", retrieved_paper_id, e)
+            return None
+
+    async def _safe_docling(self, pdf_url: str):
+        try:
+            return await self._parse_with_docling(pdf_url)
+        except Exception as e:
+            return e
+
+    async def _safe_pdffigures(self, client: httpx.AsyncClient, pdf_bytes: bytes):
+        try:
+            return await self._parse_with_pdffigures(client, pdf_bytes)
+        except Exception as e:
+            return []
+
+    def _construct_pdf_url(self, paper: dict) -> Optional[str]:
+        """Construct PDF download URL from paper metadata."""
+        arxiv_id = paper.get("arxiv_id")
+        if arxiv_id:
+            return f"https://arxiv.org/pdf/{arxiv_id}"
+
+        pdf_url = paper.get("pdf_url")
+        if pdf_url:
+            return pdf_url
+
+        doi = paper.get("doi")
+        if doi:
+            return f"https://doi.org/{doi}"
+
+        return None
+
+    def _store_parsed_paper(self, paper: ParsedPaper) -> None:
+        """Store parsed paper content in the database."""
+        db_service.write_parsed_paper(
+            retrieved_paper_id=paper.retrieved_paper_id,
+            title=paper.title,
+            authors=paper.authors,
+            abstract=paper.abstract,
+            sections=[{"heading": s.heading, "text": s.text, "level": s.level} for s in paper.sections],
+            references=paper.references,
+            figures=[{"label": f.label, "caption": f.caption, "image_path": f.image_path, "page": f.page} for f in paper.figures],
+            full_text=paper.full_text,
+        )
+
+    async def _download_pdf(self, client: httpx.AsyncClient, url: str) -> bytes:
+        """Download PDF from URL."""
+        logger.info("Downloading PDF from: %s", url[:100])
+        resp = await client.get(url, follow_redirects=True)
+        resp.raise_for_status()
+        logger.info("Downloaded PDF: %d bytes", len(resp.content))
+        return resp.content
+
+    async def _parse_with_docling(self, pdf_url: str) -> ParsedPaper:
+        """Parse PDF using Docling Docker API for metadata, sections, and references."""
+        logger.info("Parsing PDF with Docling Docker API: %s", pdf_url[:100])
+        
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                f"{self.docling_url}/v1/convert/source",
+                json={
+                    "sources": [{"kind": "http", "url": pdf_url}],
+                    "output_formats": ["markdown"],
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        
+        title = "Unknown"
+        authors = []
+        abstract = ""
+        sections = []
+        references = []
+        
+        document = data.get("document", {})
+        md_content = ""
+        
+        if document and "md_content" in document:
+            md_content = document["md_content"] or ""
+        elif "md_content" in data:
+            md_content = data["md_content"] or ""
+        
+        lines = md_content.split("\n")
+        current_section = None
+        
+        for line in lines:
+            line_stripped = line.strip()
+            
+            if line_stripped.startswith("# ") and title == "Unknown":
+                title = line_stripped[2:].strip()
+            elif line_stripped.startswith("## ") and title == "Unknown":
+                title = line_stripped[3:].strip()
+            elif line_stripped.startswith("## ") or line_stripped.startswith("### "):
+                heading = line_stripped.lstrip("#").strip()
+                current_section = Section(heading=heading, text="", level=1)
+                sections.append(current_section)
+            elif current_section and line_stripped:
+                current_section.text += line_stripped + "\n"
+        
+        if not title or title == "Unknown":
+            title = document.get("title", "Unknown") or data.get("title", "Unknown") or "Unknown"
+        
+        return ParsedPaper(
+            retrieved_paper_id="",
+            title=title,
+            authors=authors,
+            abstract=abstract,
+            sections=sections,
+            references=references,
+            figures=[],
+            full_text=md_content,
+        )
+
+    async def _parse_with_pdffigures(self, client: httpx.AsyncClient, pdf_url: str) -> list[Figure]:
+        """Parse PDF using PDFFigures 2.0 for figure/table extraction."""
+        logger.info("Sending PDF to PDFFigures 2.0 for figure extraction")
+        import uuid
+        try:
+            upload_id = str(uuid.uuid4())
+            resp = await client.post(
+                f"{self.pdffigures_url}/process",
+                data={"pdf": pdf_url, "upload_id": upload_id},
+            )
+            resp.raise_for_status()
+            return self._parse_pdffigures_response(resp.json())
+        except Exception as e:
+            logger.warning("PDFFigures parsing failed: %s", e)
+            return []
+
+    async def _safe_pdffigures(self, client: httpx.AsyncClient, pdf_url: str):
+        try:
+            return await self._parse_with_pdffigures(client, pdf_url)
+        except Exception as e:
+            return e
+
+    def _parse_pdffigures_response(self, data: dict) -> list[Figure]:
+        """Parse PDFFigures 2.0 JSON response into Figure objects."""
+        figures = []
+        for item in data.get("figures", []):
+            figures.append(Figure(
+                label=item.get("label", ""),
+                caption=item.get("caption", ""),
+                image_path=item.get("renderURL") or item.get("imagePath"),
+                page=item.get("page"),
+            ))
+        return figures
 
     async def retrieve(
         self,

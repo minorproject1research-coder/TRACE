@@ -1,3 +1,4 @@
+import json
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -76,3 +77,34 @@ def write_web_sources(sources: list) -> None:
     ]
 
     supabase.table("web_sources").insert(rows).execute()
+
+
+def get_retrieved_paper(paper_id: str) -> dict | None:
+    """Fetch a single retrieved paper by ID."""
+    result = supabase.table("retrieved_papers").select("*").eq("id", paper_id).execute()
+    if result.data:
+        return result.data[0]
+    return None
+
+
+def write_parsed_paper(
+    retrieved_paper_id: str,
+    title: str,
+    authors: list[str],
+    abstract: str,
+    sections: list[dict],
+    references: list[str],
+    figures: list[dict],
+    full_text: str,
+) -> None:
+    """Store parsed paper content in the database."""
+    supabase.table("parsed_papers").insert({
+        "retrieved_paper_id": retrieved_paper_id,
+        "title": title,
+        "authors": authors,
+        "abstract": abstract,
+        "sections": sections,
+        "cited_references": references,
+        "figures": figures,
+        "full_text": full_text,
+    }).execute()
