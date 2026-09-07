@@ -98,6 +98,9 @@ def write_parsed_paper(
     full_text: str,
 ) -> None:
     """Store parsed paper content in the database."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
     
     if existing.data:
@@ -109,6 +112,7 @@ def write_parsed_paper(
             "cited_references": references,
             "figures": figures,
             "full_text": full_text,
+            "updated_at": now,
         }).eq("retrieved_paper_id", retrieved_paper_id).execute()
     else:
         supabase.table("parsed_papers").insert({

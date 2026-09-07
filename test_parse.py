@@ -68,6 +68,39 @@ async def test_docling_only():
         return False
 
 
+async def test_pdffigures_only():
+    import httpx
+    
+    test_url = "https://arxiv.org/pdf/2301.13379"
+    logger.info("Testing PDFFigures figure extraction from: %s", test_url)
+    
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            pdf_resp = await client.get(test_url, follow_redirects=True)
+            pdf_resp.raise_for_status()
+            logger.info("  Downloaded PDF: %d bytes", len(pdf_resp.content))
+            
+            resp = await client.post(
+                "http://localhost:5002/extract",
+                files={"file": ("paper.pdf", pdf_resp.content, "application/pdf")},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            
+            inner = data.get("data", data)
+            figures = inner.get("figures", [])
+            logger.info("✓ PDFFigures extracted successfully!")
+            logger.info("  Figures found: %d", len(figures))
+            
+            for fig in figures[:3]:
+                logger.info("    - %s: %s", fig.get("label", "?"), fig.get("caption", "")[:60])
+            
+            return True
+    except Exception as e:
+        logger.error("✗ PDFFigures extraction failed: %s", e)
+        return False
+
+
 async def test_with_database():
     from apps.api.services import db_service
     from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
@@ -137,7 +170,13 @@ async def main():
     except Exception as e:
         logger.error("Docling test failed: %s", e)
     
-    logger.info("\n3. Testing database integration...")
+    logger.info("\n3. Testing PDFFigures extraction (no database)...")
+    try:
+        await test_pdffigures_only()
+    except Exception as e:
+        logger.error("PDFFigures test failed: %s", e)
+    
+    logger.info("\n4. Testing database integration...")
     try:
         await test_with_database()
     except Exception as e:
