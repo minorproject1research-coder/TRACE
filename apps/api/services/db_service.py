@@ -98,13 +98,26 @@ def write_parsed_paper(
     full_text: str,
 ) -> None:
     """Store parsed paper content in the database."""
-    supabase.table("parsed_papers").insert({
-        "retrieved_paper_id": retrieved_paper_id,
-        "title": title,
-        "authors": authors,
-        "abstract": abstract,
-        "sections": sections,
-        "cited_references": references,
-        "figures": figures,
-        "full_text": full_text,
-    }).execute()
+    existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
+    
+    if existing.data:
+        supabase.table("parsed_papers").update({
+            "title": title,
+            "authors": authors,
+            "abstract": abstract,
+            "sections": sections,
+            "cited_references": references,
+            "figures": figures,
+            "full_text": full_text,
+        }).eq("retrieved_paper_id", retrieved_paper_id).execute()
+    else:
+        supabase.table("parsed_papers").insert({
+            "retrieved_paper_id": retrieved_paper_id,
+            "title": title,
+            "authors": authors,
+            "abstract": abstract,
+            "sections": sections,
+            "cited_references": references,
+            "figures": figures,
+            "full_text": full_text,
+        }).execute()

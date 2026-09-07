@@ -17,15 +17,16 @@ services:
       start_period: 60s
 
   pdffigures:
-    image: dluan/figures:0.0.5
+    image: figure-extractor
     ports:
-      - "4567:4567"
+      - "5002:5001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4567/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 120s
 
   api:
     build:

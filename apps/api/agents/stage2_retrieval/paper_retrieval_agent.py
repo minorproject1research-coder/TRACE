@@ -119,7 +119,7 @@ class PaperRetrievalAgent:
     ARXIV_API_URL = "https://export.arxiv.org/api/query"
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
     DOCLING_URL = "http://localhost:5001"
-    PDFFIGURES_URL = "http://localhost:4567"
+    PDFFIGURES_URL = "http://localhost:5002"
 
     SEMANTIC_SCHOLAR_FIELDS = [
         "title", "abstract", "year", "venue", "citationCount",
@@ -337,12 +337,13 @@ class PaperRetrievalAgent:
     async def _parse_with_pdffigures(self, client: httpx.AsyncClient, pdf_url: str) -> list[Figure]:
         """Parse PDF using PDFFigures 2.0 for figure/table extraction."""
         logger.info("Sending PDF to PDFFigures 2.0 for figure extraction")
-        import uuid
         try:
-            upload_id = str(uuid.uuid4())
+            pdf_resp = await client.get(pdf_url, follow_redirects=True)
+            pdf_resp.raise_for_status()
+            
             resp = await client.post(
-                f"{self.pdffigures_url}/process",
-                data={"pdf": pdf_url, "upload_id": upload_id},
+                f"{self.pdffigures_url}/extract",
+                files={"file": ("paper.pdf", pdf_resp.content, "application/pdf")},
             )
             resp.raise_for_status()
             return self._parse_pdffigures_response(resp.json())

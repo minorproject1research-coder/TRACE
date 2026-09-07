@@ -28,7 +28,7 @@ async def check_services():
     
     services = {
         "Docling": "http://localhost:5001/health",
-        "PDFFigures": "http://localhost:4567/",
+        "PDFFigures": "http://localhost:5002/health",
     }
     
     results = {}
@@ -49,17 +49,19 @@ async def test_docling_only():
     
     agent = PaperRetrievalAgent()
     
-    test_url = "https://arxiv.org/pdf/1706.03762"
+    test_url = "https://arxiv.org/pdf/2301.13379"
     logger.info("Testing Docling PDF parsing from: %s", test_url)
     
     try:
         docling_result = await agent._parse_with_docling(test_url)
         logger.info("✓ Docling parsed successfully!")
         logger.info("  Title: %s", docling_result.title[:80])
-        logger.info("  Authors: %s", ", ".join(docling_result.authors[:3]))
         logger.info("  Sections: %d", len(docling_result.sections))
-        logger.info("  References: %d", len(docling_result.references))
         logger.info("  Full text length: %d chars", len(docling_result.full_text))
+        
+        if docling_result.sections:
+            logger.info("  First section: %s", docling_result.sections[0].heading[:50])
+        
         return True
     except Exception as e:
         logger.error("✗ Docling parsing failed: %s", e)
@@ -101,9 +103,7 @@ async def test_with_database():
         paper = parsed[0]
         logger.info("✓ Parsing successful!")
         logger.info("  Title: %s", paper.title)
-        logger.info("  Authors: %s", ", ".join(paper.authors[:3]))
         logger.info("  Sections: %d", len(paper.sections))
-        logger.info("  References: %d", len(paper.references))
         logger.info("  Figures: %d", len(paper.figures))
         logger.info("  Full text length: %d chars", len(paper.full_text))
         
@@ -129,7 +129,7 @@ async def main():
     if not service_status.get("Docling"):
         logger.warning("Docling not running - paper parsing won't work")
     if not service_status.get("PDFFigures"):
-        logger.warning("PDFFigures not running - figures won't be extracted")
+        logger.warning("PDFFigures not running - figures won't be extracted (port 5002)")
     
     logger.info("\n2. Testing Docling parsing (no database)...")
     try:
