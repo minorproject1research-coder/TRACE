@@ -3,6 +3,7 @@ import logging
 
 from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
+from apps.api.agents.stage2_retrieval import reliability_scorer
 from apps.api.services import db_service
 
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
@@ -29,6 +30,9 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
                 paper["sub_question_id"] = sq.id
             sq.papers = result
             all_papers.extend(result)
+
+    # score all papers before saving
+    all_papers = reliability_scorer.score_all(all_papers)
 
     logger.info("Retrieved %d total papers across %d sub-questions",
                 len(all_papers), len(state.task_plan.sub_questions))

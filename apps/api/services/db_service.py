@@ -36,6 +36,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
         rows.append({
             "query_id": query_id,
             "sub_question_id": paper.get("sub_question_id"),
+            "reliability_score": paper.get("reliability_score"),
             "title": paper.get("title", ""),
             "abstract": paper.get("abstract", ""),
             "authors": paper.get("authors", []),
@@ -52,6 +53,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
             "tldr": paper.get("tldr"),
             "fields_of_study": paper.get("fields_of_study", []),
             "query_variants_matched": paper.get("query_variant_matched", []),
+            "reliability_score": paper.get("reliability_score"),
         })
 
     supabase.table("retrieved_papers").insert(rows).execute()
@@ -59,7 +61,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
 
 def write_web_sources(sources: list) -> None:
     """Store retrieved web sources (from Tavily/Exa/Parallel) in the database,
-    linked to the sub-question that found them."""
+    linked to the sub-question and query that found them."""
     if not sources:
         return
 
@@ -100,9 +102,9 @@ def write_parsed_paper(
     """Store parsed paper content in the database."""
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
-    
+
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
-    
+
     if existing.data:
         supabase.table("parsed_papers").update({
             "title": title,
