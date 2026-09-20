@@ -118,6 +118,7 @@ class PaperRetrievalAgent:
 
     ARXIV_API_URL = "https://export.arxiv.org/api/query"
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
+    IEEE_API_URL = "https://ieeexploreapi.ieee.org/api/v1/search/articles"
     DOCLING_URL = "http://localhost:5001"
     PDFFIGURES_URL = "http://localhost:5002"
 
@@ -131,20 +132,22 @@ class PaperRetrievalAgent:
     def __init__(
         self,
         semantic_scholar_api_key: Optional[str] = None,
+        ieee_api_key: Optional[str] = None,
         max_results_per_query: int = 10,
         min_citations: int = 0,
         pdffigures_url: Optional[str] = None,
         docling_url: Optional[str] = None,
     ):
         self.api_key = semantic_scholar_api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+        self.ieee_key = ieee_api_key or os.getenv("IEEE_API_KEY")
         self.max_results = max_results_per_query
         self.min_citations = min_citations
         self.pdffigures_url = (pdffigures_url or self.PDFFIGURES_URL).rstrip("/")
         self.docling_url = (docling_url or self.DOCLING_URL).rstrip("/")
 
-        # Rate limits: arXiv ~0.33 req/s (3s gap), Semantic Scholar ~0.1 req/s without key
         self._arxiv_limiter = AsyncRateLimiter(calls_per_second=0.33)
         self._s2_limiter = AsyncRateLimiter(calls_per_second=0.1 if not self.api_key else 10.0)
+        self._ieee_limiter = AsyncRateLimiter(calls_per_second=0.5)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -466,6 +469,7 @@ class PaperRetrievalAgent:
                 tasks.append(self._safe_arxiv_search(client, query))
                 tasks.append(self._safe_s2_search(client, query))
                 tasks.append(self._safe_s2_search(client, f"{query} IEEE"))
+                tasks.append(self._safe_ieee_search(client, query))
 
             results = await asyncio.gather(*tasks, return_exceptions=False)
 
@@ -675,6 +679,85 @@ class PaperRetrievalAgent:
             ))
 
         return results
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # IEEE Xplore Search
+    # ──────────────────────────────────────────────────────────────────────────
+
+    async def _safe_ieee_search(
+        self, client: httpx.AsyncClient, query: str
+    ) -> list[PaperResult]:
+        try:
+            return await self._search_ieee(client, query)
+        except Exception as e:
+            logger.warning("IEEE search failed for '%s': %s", query, e)
+            return []
+
+    async def _search_ieee(
+        self, client: httpx.AsyncClient, query: str
+    ) -> list[PaperResult]:
+        if not self.ieee_key:
+            return []
+
+        await self._ieee_limiter.acquire()
+
+        params = {
+            "querytext": query,
+            "max_records": self.max_results,
+            "apikey": self.ieee_key,
+            "sort_field": "article_number",
+            "sort_order": "desc",
+        }
+
+        for attempt in range(3):
+            try:
+                resp = await client.get(self.IEEE_API_URL, params=params)
+                if resp.status_code == 429:
+                    wait = 2 ** attempt * 5
+                    logger.warning("IEEE rate limited, backing off %ds", wait)
+                    await asyncio.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                return self._parse_ieee_results(data, query)
+            except httpx.TransportError as e:
+                if attempt == 2:
+                    raise
+                await asyncio.sleep(2 ** attempt)
+
+        return []
+
+    def _parse_ieee_results(self, data: dict, query: str) -> list[PaperResult]:
+        articles = data.get("articles", [])
+        papers = []
+
+        for article in articles:
+            authors_data = article.get("authors", {}).get("authors", [])
+            authors = [a.get("full_name", "") for a in authors_data if a.get("full_name")]
+
+            pdf_url = article.get("pdf_url") or article.get("html_url")
+            doi = article.get("doi")
+
+            papers.append(PaperResult(
+                title=article.get("title", ""),
+                abstract=article.get("abstract", "") or "",
+                authors=authors,
+                year=article.get("publication_year"),
+                venue=article.get("publication_title", ""),
+                citation_count=article.get("citing_paper_count"),
+                influential_citation_count=None,
+                is_preprint=False,
+                source="ieee",
+                arxiv_id=None,
+                doi=doi,
+                pdf_url=pdf_url,
+                published_date=article.get("publication_date"),
+                tldr=None,
+                fields_of_study=[],
+                query_variant_matched=[query],
+            ))
+
+        return papers
 
     # ──────────────────────────────────────────────────────────────────────────
     # Deduplication

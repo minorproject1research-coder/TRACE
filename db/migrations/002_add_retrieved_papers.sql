@@ -1,5 +1,6 @@
 -- Migration: Add retrieved_papers table for Stage 2 paper retrieval results
 -- Run this in Supabase SQL Editor
+-- Source values: 'arxiv', 'semantic_scholar', 'ieee', 'both'
 
 CREATE TABLE IF NOT EXISTS retrieved_papers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
