@@ -10,7 +10,7 @@ logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
 
 def paper_retrieval_node(state: SharedResearchState) -> dict:
-    agent = PaperRetrievalAgent(max_results_per_query=10)
+    agent = PaperRetrievalAgent(max_results_per_query=10, min_citations=0)
 
     async def _retrieve_all():
         tasks = []

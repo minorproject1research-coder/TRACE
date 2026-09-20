@@ -132,17 +132,19 @@ class PaperRetrievalAgent:
         self,
         semantic_scholar_api_key: Optional[str] = None,
         max_results_per_query: int = 10,
+        min_citations: int = 0,
         pdffigures_url: Optional[str] = None,
         docling_url: Optional[str] = None,
     ):
         self.api_key = semantic_scholar_api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
         self.max_results = max_results_per_query
+        self.min_citations = min_citations
         self.pdffigures_url = (pdffigures_url or self.PDFFIGURES_URL).rstrip("/")
         self.docling_url = (docling_url or self.DOCLING_URL).rstrip("/")
 
-        # Rate limits: arXiv ~0.33 req/s (3s gap), Semantic Scholar ~10 req/s with key
+        # Rate limits: arXiv ~0.33 req/s (3s gap), Semantic Scholar ~0.1 req/s without key
         self._arxiv_limiter = AsyncRateLimiter(calls_per_second=0.33)
-        self._s2_limiter = AsyncRateLimiter(calls_per_second=10.0)
+        self._s2_limiter = AsyncRateLimiter(calls_per_second=0.1 if not self.api_key else 10.0)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -459,11 +461,11 @@ class PaperRetrievalAgent:
             Deduplicated list of paper metadata dicts.
         """
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Fire all (source, query_variant) pairs concurrently
             tasks = []
             for query in query_variants:
                 tasks.append(self._safe_arxiv_search(client, query))
                 tasks.append(self._safe_s2_search(client, query))
+                tasks.append(self._safe_s2_search(client, f"{query} IEEE"))
 
             results = await asyncio.gather(*tasks, return_exceptions=False)
 
@@ -476,6 +478,9 @@ class PaperRetrievalAgent:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             await self._enrich_citation_counts(client, merged)
+
+        if self.min_citations > 0:
+            merged = [p for p in merged if (p.citation_count or 0) >= self.min_citations]
 
         return [p.model_dump() for p in merged]
 
@@ -601,6 +606,8 @@ class PaperRetrievalAgent:
             "limit": self.max_results,
             "fields": ",".join(self.SEMANTIC_SCHOLAR_FIELDS),
         }
+        if self.min_citations > 0:
+            params["minCitationCount"] = self.min_citations
 
         for attempt in range(3):
             try:
@@ -784,7 +791,7 @@ class PaperRetrievalAgent:
             logger.info("S2 batch enrichment: sending %d IDs: %s", len(ids), ids[:3])
             for attempt in range(3):
                 try:
-                    await asyncio.sleep(6 if not self.api_key else 1)
+                    await asyncio.sleep(10 if not self.api_key else 1)
                     await self._s2_limiter.acquire()
                     resp = await client.post(
                         f"{self.SEMANTIC_SCHOLAR_URL}/paper/batch",
