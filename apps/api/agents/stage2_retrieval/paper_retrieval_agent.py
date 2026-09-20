@@ -473,6 +473,10 @@ class PaperRetrievalAgent:
             all_papers.extend(paper_list)
 
         merged = self._merge_and_dedupe(all_papers)
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            await self._enrich_citation_counts(client, merged)
+
         return [p.model_dump() for p in merged]
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -743,6 +747,77 @@ class PaperRetrievalAgent:
         text = re.sub(r"[^\w\s]", "", text)
         text = re.sub(r"\s+", " ", text)
         return text
+
+    async def _enrich_citation_counts(
+        self, client: httpx.AsyncClient, papers: list[PaperResult]
+    ) -> None:
+        """Fetch citation counts from Semantic Scholar for papers missing them."""
+        arxiv_only = [
+            p for p in papers
+            if p.arxiv_id and p.citation_count is None
+        ]
+        if not arxiv_only:
+            return
+
+        logger.info("Citation enrichment: %d arXiv-only papers to enrich", len(arxiv_only))
+
+        headers = {}
+        if self.api_key:
+            headers["x-api-key"] = self.api_key
+
+        for i in range(0, len(arxiv_only), 10):
+            batch = arxiv_only[i:i+10]
+            ids = []
+            valid_batch = []
+            for p in batch:
+                arxiv_id = p.arxiv_id.strip()
+                arxiv_id = re.sub(r'v\d+$', '', arxiv_id)
+                if not re.match(r'^\d{4}\.\d{4,5}$', arxiv_id):
+                    logger.debug("Skipping invalid arXiv ID: %s", arxiv_id)
+                    continue
+                ids.append(f"ARXIV:{arxiv_id}")
+                valid_batch.append(p)
+
+            if not ids:
+                continue
+
+            logger.info("S2 batch enrichment: sending %d IDs: %s", len(ids), ids[:3])
+            for attempt in range(3):
+                try:
+                    await asyncio.sleep(6 if not self.api_key else 1)
+                    await self._s2_limiter.acquire()
+                    resp = await client.post(
+                        f"{self.SEMANTIC_SCHOLAR_URL}/paper/batch",
+                        json={"ids": ids},
+                        params={"fields": "citationCount,influentialCitationCount"},
+                        headers=headers,
+                    )
+                    logger.info("S2 batch response: status=%d, body=%s", resp.status_code, resp.text[:200])
+                    if resp.status_code == 429:
+                        wait = 2 ** attempt * 5
+                        logger.warning("S2 rate limited on batch, backing off %ds", wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    if resp.status_code in (500, 502, 503):
+                        wait = 2 ** attempt * 2
+                        await asyncio.sleep(wait)
+                        continue
+                    if resp.status_code == 400:
+                        logger.error("S2 batch 400 error: %s", resp.text[:300])
+                        break
+                    resp.raise_for_status()
+                    results = resp.json()
+
+                    for paper, s2_data in zip(valid_batch, results):
+                        if s2_data:
+                            paper.citation_count = s2_data.get("citationCount")
+                            paper.influential_citation_count = s2_data.get("influentialCitationCount")
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        logger.warning("Failed to enrich citation counts after 3 attempts: %s", e)
+                    else:
+                        await asyncio.sleep(2 ** attempt * 2)
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -10,6 +11,12 @@ _key = os.environ["SUPABASE_SERVICE_KEY"]
 
 supabase: Client = create_client(_url, _key)
 
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def _now_ist() -> str:
+    return datetime.now(IST).isoformat()
+
 
 def write_task_plan(plan) -> None:
     sub_q_rows, query_rows = plan.to_supabase_rows()
@@ -17,12 +24,17 @@ def write_task_plan(plan) -> None:
     supabase.table("research_queries").upsert({
         "id": plan.query_id,
         "raw_query": plan.raw_query,
+        "created_at": _now_ist(),
     }).execute()
 
     if sub_q_rows:
+        for row in sub_q_rows:
+            row["created_at"] = _now_ist()
         supabase.table("sub_questions").upsert(sub_q_rows).execute()
 
     if query_rows:
+        for row in query_rows:
+            row["created_at"] = _now_ist()
         supabase.table("queries").insert(query_rows).execute()
 
 
@@ -31,6 +43,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
     if not papers:
         return
 
+    now = _now_ist()
     rows = []
     for paper in papers:
         rows.append({
@@ -53,7 +66,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
             "tldr": paper.get("tldr"),
             "fields_of_study": paper.get("fields_of_study", []),
             "query_variants_matched": paper.get("query_variant_matched", []),
-            "reliability_score": paper.get("reliability_score"),
+            "created_at": now,
         })
 
     supabase.table("retrieved_papers").insert(rows).execute()
@@ -65,6 +78,7 @@ def write_web_sources(sources: list) -> None:
     if not sources:
         return
 
+    now = _now_ist()
     rows = [
         {
             "sub_question_id": s.sub_question_id,
@@ -74,6 +88,7 @@ def write_web_sources(sources: list) -> None:
             "published_date": s.published_date,
             "provider": s.provider,
             "reliability_score": s.reliability_score,
+            "created_at": now,
         }
         for s in sources
     ]
@@ -100,8 +115,7 @@ def write_parsed_paper(
     full_text: str,
 ) -> None:
     """Store parsed paper content in the database."""
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_ist()
 
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
 
