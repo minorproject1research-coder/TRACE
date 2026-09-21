@@ -11,6 +11,7 @@ Usage:
 
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -22,13 +23,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger("test_parse")
 
+from dotenv import load_dotenv
+load_dotenv()
+
+DOCLING_URL = os.getenv("DOCLING_URL", "http://localhost:5001")
+PDFFIGURES_URL = os.getenv("PDFFIGURES_URL", "http://localhost:5002")
+
 
 async def check_services():
     import httpx
     
     services = {
-        "Docling": "http://localhost:5001/health",
-        "PDFFigures": "http://localhost:5002/health",
+        "Docling": f"{DOCLING_URL}/health",
+        "PDFFigures": f"{PDFFIGURES_URL}/health",
     }
     
     results = {}
@@ -45,6 +52,7 @@ async def check_services():
 
 
 async def test_docling_only():
+    import httpx
     from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
     
     agent = PaperRetrievalAgent()
@@ -53,7 +61,17 @@ async def test_docling_only():
     logger.info("Testing Docling PDF parsing from: %s", test_url)
     
     try:
-        docling_result = await agent._parse_with_docling(test_url)
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "application/pdf,*/*",
+            }
+            resp = await client.get(test_url, follow_redirects=True, headers=headers)
+            resp.raise_for_status()
+            pdf_bytes = resp.content
+            logger.info("  Downloaded %d bytes", len(pdf_bytes))
+        
+        docling_result = await agent._parse_with_docling(pdf_bytes)
         logger.info("✓ Docling parsed successfully!")
         logger.info("  Title: %s", docling_result.title[:80])
         logger.info("  Sections: %d", len(docling_result.sections))
@@ -81,7 +99,7 @@ async def test_pdffigures_only():
             logger.info("  Downloaded PDF: %d bytes", len(pdf_resp.content))
             
             resp = await client.post(
-                "http://localhost:5002/extract",
+                f"{PDFFIGURES_URL}/extract",
                 files={"file": ("paper.pdf", pdf_resp.content, "application/pdf")},
             )
             resp.raise_for_status()

@@ -119,8 +119,8 @@ class PaperRetrievalAgent:
     ARXIV_API_URL = "https://export.arxiv.org/api/query"
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
     IEEE_API_URL = "https://ieeexploreapi.ieee.org/api/v1/search/articles"
-    DOCLING_URL = "http://localhost:5001"
-    PDFFIGURES_URL = "http://localhost:5002"
+    UNPAYWALL_API_URL = "https://api.unpaywall.org/v2"
+    UNPAYWALL_EMAIL = "minorproject1research@gmail.com"
 
     SEMANTIC_SCHOLAR_FIELDS = [
         "title", "abstract", "year", "venue", "citationCount",
@@ -142,8 +142,8 @@ class PaperRetrievalAgent:
         self.ieee_key = ieee_api_key or os.getenv("IEEE_API_KEY")
         self.max_results = max_results_per_query
         self.min_citations = min_citations
-        self.pdffigures_url = (pdffigures_url or self.PDFFIGURES_URL).rstrip("/")
-        self.docling_url = (docling_url or self.DOCLING_URL).rstrip("/")
+        self.pdffigures_url = (pdffigures_url or os.getenv("PDFFIGURES_URL", "http://localhost:5002")).rstrip("/")
+        self.docling_url = (docling_url or os.getenv("DOCLING_URL", "http://localhost:5001")).rstrip("/")
 
         self._arxiv_limiter = AsyncRateLimiter(calls_per_second=0.33)
         self._s2_limiter = AsyncRateLimiter(calls_per_second=0.1 if not self.api_key else 10.0)
@@ -193,46 +193,135 @@ class PaperRetrievalAgent:
             logger.warning("Paper not found: %s", retrieved_paper_id)
             return None
 
-        pdf_url = self._construct_pdf_url(paper_metadata)
-        if not pdf_url:
+        pdf_urls = self._construct_pdf_url(paper_metadata)
+        if not pdf_urls:
             logger.warning("No downloadable URL for paper: %s", retrieved_paper_id)
             return None
 
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                docling_task = self._safe_docling(pdf_url)
-                figures_task = self._safe_pdffigures(client, pdf_url)
+        from urllib.parse import urlparse
+        failed_hosts: set[str] = set()
+        last_error = None
 
-                docling_result, figures = await asyncio.gather(
-                    docling_task, figures_task, return_exceptions=True
-                )
+        for pdf_url in pdf_urls:
+            try:
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    pdf_bytes = await self._download_pdf(client, pdf_url)
 
-                if isinstance(docling_result, Exception):
-                    logger.warning("Docling unavailable, using basic metadata: %s", docling_result)
-                    docling_result = ParsedPaper(
-                        retrieved_paper_id=retrieved_paper_id,
-                        title=paper_metadata.get("title", ""),
-                        authors=paper_metadata.get("authors", []),
-                        abstract=paper_metadata.get("abstract", ""),
-                        sections=[],
-                        references=[],
-                        figures=[],
-                        full_text="",
+                    docling_task = self._safe_docling(pdf_bytes)
+                    figures_task = self._safe_pdffigures(client, pdf_bytes)
+
+                    docling_result, figures = await asyncio.gather(
+                        docling_task, figures_task, return_exceptions=True
                     )
 
-                docling_result.retrieved_paper_id = retrieved_paper_id
-                docling_result.figures = figures if isinstance(figures, list) else []
+                    if isinstance(docling_result, Exception):
+                        logger.warning("Docling unavailable, using basic metadata: %s", docling_result)
+                        docling_result = ParsedPaper(
+                            retrieved_paper_id=retrieved_paper_id,
+                            title=paper_metadata.get("title", ""),
+                            authors=paper_metadata.get("authors", []),
+                            abstract=paper_metadata.get("abstract", ""),
+                            sections=[],
+                            references=[],
+                            figures=[],
+                            full_text="",
+                        )
 
-                self._store_parsed_paper(docling_result)
-                return docling_result
+                    docling_result.retrieved_paper_id = retrieved_paper_id
+                    docling_result.figures = figures if isinstance(figures, list) else []
 
-        except Exception as e:
-            logger.error("Paper parsing failed for %s: %s", retrieved_paper_id, e)
-            return None
+                    self._store_parsed_paper(docling_result)
+                    return docling_result
 
-    async def _safe_docling(self, pdf_url: str):
+            except Exception as e:
+                last_error = e
+                failed_hosts.add(urlparse(pdf_url).netloc)
+                logger.warning("Failed to download from %s: %s: %r", pdf_url[:80], type(e).__name__, e)
+                continue
+
+        doi = paper_metadata.get("doi")
+        if doi:
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    unpaywall_url = await self._get_unpaywall_url(client, doi, failed_hosts)
+                    if unpaywall_url:
+                        pdf_bytes = await self._download_pdf(client, unpaywall_url)
+
+                        docling_task = self._safe_docling(pdf_bytes)
+                        figures_task = self._safe_pdffigures(client, pdf_bytes)
+
+                        docling_result, figures = await asyncio.gather(
+                            docling_task, figures_task, return_exceptions=True
+                        )
+
+                        if isinstance(docling_result, Exception):
+                            docling_result = ParsedPaper(
+                                retrieved_paper_id=retrieved_paper_id,
+                                title=paper_metadata.get("title", ""),
+                                authors=paper_metadata.get("authors", []),
+                                abstract=paper_metadata.get("abstract", ""),
+                                sections=[],
+                                references=[],
+                                figures=[],
+                                full_text="",
+                            )
+
+                        docling_result.retrieved_paper_id = retrieved_paper_id
+                        docling_result.figures = figures if isinstance(figures, list) else []
+
+                        self._store_parsed_paper(docling_result)
+                        return docling_result
+            except Exception as e:
+                logger.warning("Unpaywall fallback failed for %s: %s: %r", doi, type(e).__name__, e)
+
+        pdf_url = pdf_urls[0] if pdf_urls else None
+        if pdf_url:
+            try:
+                pdf_bytes = await self._download_pdf_playwright(pdf_url)
+                if pdf_bytes:
+                    async with httpx.AsyncClient(timeout=60.0) as client:
+                        docling_task = self._safe_docling(pdf_bytes)
+                        figures_task = self._safe_pdffigures(client, pdf_bytes)
+
+                        docling_result, figures = await asyncio.gather(
+                            docling_task, figures_task, return_exceptions=True
+                        )
+
+                        if isinstance(docling_result, Exception):
+                            docling_result = ParsedPaper(
+                                retrieved_paper_id=retrieved_paper_id,
+                                title=paper_metadata.get("title", ""),
+                                authors=paper_metadata.get("authors", []),
+                                abstract=paper_metadata.get("abstract", ""),
+                                sections=[],
+                                references=[],
+                                figures=[],
+                                full_text="",
+                            )
+
+                        docling_result.retrieved_paper_id = retrieved_paper_id
+                        docling_result.figures = figures if isinstance(figures, list) else []
+
+                        self._store_parsed_paper(docling_result)
+                        return docling_result
+            except Exception as e:
+                logger.warning("Playwright fallback failed: %s: %r", type(e).__name__, e)
+
+        logger.error("All PDF URLs failed for %s: %s: %r", retrieved_paper_id, type(last_error).__name__ if last_error else "None", last_error)
+        return ParsedPaper(
+            retrieved_paper_id=retrieved_paper_id,
+            title="PDF access denied - unable to download",
+            authors=[],
+            abstract="",
+            sections=[],
+            references=[],
+            figures=[],
+            full_text="",
+        )
+
+    async def _safe_docling(self, pdf_bytes: bytes):
         try:
-            return await self._parse_with_docling(pdf_url)
+            return await self._parse_with_docling(pdf_bytes)
         except Exception as e:
             return e
 
@@ -242,20 +331,195 @@ class PaperRetrievalAgent:
         except Exception as e:
             return []
 
-    def _construct_pdf_url(self, paper: dict) -> Optional[str]:
-        """Construct PDF download URL from paper metadata."""
+    async def _download_pdf_playwright(self, url: str) -> bytes:
+        """Download PDF using undetected Playwright with click-through flow."""
+        from undetected_playwright.async_api import async_playwright
+        from urllib.parse import urlparse
+
+        logger.info("Trying undetected Playwright download for: %s", url[:80])
+
+        parsed = urlparse(url)
+        is_mdpi = "mdpi.com" in parsed.netloc
+
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            try:
+                context = await browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    accept_downloads=True,
+                )
+                page = await context.new_page()
+
+                if is_mdpi:
+                    body = await self._playwright_mdpi_flow(page, url)
+                else:
+                    body = await self._playwright_direct_flow(page, url)
+
+                if body:
+                    return body
+                raise ValueError("Playwright: failed to download PDF")
+            finally:
+                await browser.close()
+
+    async def _playwright_mdpi_flow(self, page, pdf_url: str) -> Optional[bytes]:
+        """MDPI-specific: navigate to landing page, extract fresh PDF URL, download via click or navigation."""
+        from urllib.parse import urljoin
+
+        landing_url = pdf_url.split("/pdf")[0]
+        logger.info("MDPI flow: navigating to landing page: %s", landing_url[:80])
+
+        response = await page.goto(landing_url, wait_until="networkidle", timeout=30000)
+        if not response or response.status != 200:
+            logger.warning("MDPI landing page returned status %s", response.status if response else "None")
+            return None
+
+        fresh_pdf_url = await page.get_attribute('meta[name="citation_pdf_url"]', "content")
+        if not fresh_pdf_url:
+            logger.warning("MDPI: could not extract citation_pdf_url from landing page")
+            return None
+
+        if not fresh_pdf_url.startswith("http"):
+            fresh_pdf_url = urljoin(landing_url, fresh_pdf_url)
+
+        logger.info("MDPI: fresh PDF URL: %s", fresh_pdf_url[:80])
+
+        body = None
+
+        try:
+            async with page.expect_download(timeout=10000) as download_info:
+                await page.click('a:has-text("Download PDF")')
+            download = await download_info.value
+            path = await download.path()
+            with open(path, "rb") as f:
+                body = f.read()
+            logger.info("MDPI: PDF captured via click-triggered download (%d bytes)", len(body))
+        except Exception as e:
+            logger.info("MDPI: click download did not fire (%s), trying direct navigation", type(e).__name__)
+
+        if body is None:
+            try:
+                async with page.expect_download(timeout=10000) as download_info:
+                    try:
+                        await page.goto(fresh_pdf_url, wait_until="commit", timeout=10000)
+                    except Exception:
+                        pass
+                download = await download_info.value
+                path = await download.path()
+                with open(path, "rb") as f:
+                    body = f.read()
+                logger.info("MDPI: PDF captured via direct-navigation download (%d bytes)", len(body))
+            except Exception as e:
+                logger.warning("MDPI: direct-navigation download also failed: %s: %r", type(e).__name__, e)
+
+        if body is None or not body.startswith(b"%PDF"):
+            logger.warning("MDPI: no valid PDF captured from either attempt")
+            return None
+
+        return body
+
+    async def _playwright_direct_flow(self, page, url: str) -> Optional[bytes]:
+        """Direct download for non-MDPI URLs."""
+        response = await page.goto(url, wait_until="networkidle", timeout=30000)
+
+        if not response or response.status != 200:
+            return None
+
+        content_type = response.headers.get("content-type", "").lower()
+        if "pdf" in content_type:
+            body = await response.body()
+            if body and body.startswith(b"%PDF"):
+                logger.info("Playwright downloaded %d bytes (real PDF)", len(body))
+                return body
+
+        content = await page.content()
+        if "Access Denied" in content or len(content) < 2000:
+            return None
+
+        return None
+
+    def _construct_pdf_url(self, paper: dict) -> list[str]:
+        """Construct PDF download URLs from paper metadata (ordered by reliability)."""
+        urls = []
+
         arxiv_id = paper.get("arxiv_id")
         if arxiv_id:
-            return f"https://arxiv.org/pdf/{arxiv_id}"
+            urls.append(f"https://arxiv.org/pdf/{arxiv_id}")
 
         pdf_url = paper.get("pdf_url")
         if pdf_url:
-            return pdf_url
+            urls.append(pdf_url)
 
         doi = paper.get("doi")
         if doi:
-            return f"https://doi.org/{doi}"
+            urls.append(f"https://doi.org/{doi}")
 
+        return urls
+
+    async def _get_unpaywall_url(self, client: httpx.AsyncClient, doi: str, failed_hosts: set[str] = None) -> Optional[str]:
+        """Query Unpaywall API for open access PDF URL. Skips already-failed hosts."""
+        if not doi:
+            return None
+        if failed_hosts is None:
+            failed_hosts = set()
+        try:
+            resp = await client.get(
+                f"{self.UNPAYWALL_API_URL}/{doi}",
+                params={"email": self.UNPAYWALL_EMAIL},
+                timeout=10.0,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                candidates = []
+                best = data.get("best_oa_location")
+                if best:
+                    candidates.append(best)
+                candidates.extend(data.get("oa_locations") or [])
+
+                for loc in candidates:
+                    if not loc:
+                        continue
+                    pdf_url = loc.get("url_for_pdf") or loc.get("url")
+                    if not pdf_url:
+                        continue
+                    from urllib.parse import urlparse
+                    host = urlparse(pdf_url).netloc
+                    if any(failed in host for failed in failed_hosts):
+                        logger.debug("Skipping Unpaywall URL (failed host): %s", pdf_url[:80])
+                        continue
+
+                    if "doaj.org" in host:
+                        pdf_url = await self._parse_doaj_for_pdf(client, pdf_url)
+                        if not pdf_url:
+                            continue
+
+                    logger.info("Unpaywall found OA URL for %s: %s", doi, pdf_url[:80])
+                    return pdf_url
+        except Exception as e:
+            logger.debug("Unpaywall lookup failed for %s: %s", doi, e)
+        return None
+
+    async def _parse_doaj_for_pdf(self, client: httpx.AsyncClient, doaj_url: str) -> Optional[str]:
+        """Parse DOAJ landing page to find actual PDF link."""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        try:
+            resp = await client.get(doaj_url, follow_redirects=True, headers=headers, timeout=15.0)
+            if resp.status_code != 200:
+                return None
+            content = resp.text
+            import re
+            pdf_links = re.findall(r'href=["\']([^"\']*\.pdf[^"\']*)["\']', content, re.IGNORECASE)
+            if pdf_links:
+                pdf_url = pdf_links[0]
+                if not pdf_url.startswith("http"):
+                    from urllib.parse import urljoin
+                    pdf_url = urljoin(doaj_url, pdf_url)
+                logger.info("DOAJ landing page has PDF link: %s", pdf_url[:80])
+                return pdf_url
+        except Exception as e:
+            logger.debug("DOAJ parsing failed: %s", e)
         return None
 
     def _store_parsed_paper(self, paper: ParsedPaper) -> None:
@@ -272,22 +536,44 @@ class PaperRetrievalAgent:
         )
 
     async def _download_pdf(self, client: httpx.AsyncClient, url: str) -> bytes:
-        """Download PDF from URL."""
+        """Download PDF from URL with browser-like headers. Tries fallback strategies."""
         logger.info("Downloading PDF from: %s", url[:100])
-        resp = await client.get(url, follow_redirects=True)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.mdpi.com/",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+        }
+
+        resp = await client.get(url, follow_redirects=True, headers=headers)
+        if resp.status_code == 403 and "?" in url:
+            clean_url = url.split("?")[0]
+            logger.info("Retrying without query params: %s", clean_url)
+            resp = await client.get(clean_url, follow_redirects=True, headers=headers)
         resp.raise_for_status()
+
+        content_type = resp.headers.get("content-type", "").lower()
+        if "pdf" not in content_type:
+            raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
+
         logger.info("Downloaded PDF: %d bytes", len(resp.content))
         return resp.content
 
-    async def _parse_with_docling(self, pdf_url: str) -> ParsedPaper:
+    async def _parse_with_docling(self, pdf_bytes: bytes) -> ParsedPaper:
         """Parse PDF using Docling Docker API for metadata, sections, and references."""
-        logger.info("Parsing PDF with Docling Docker API: %s", pdf_url[:100])
+        import base64
+        
+        b64_data = base64.b64encode(pdf_bytes).decode("utf-8")
+        logger.info("Parsing PDF with Docling Docker API (%d bytes)", len(pdf_bytes))
         
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(
                 f"{self.docling_url}/v1/convert/source",
                 json={
-                    "sources": [{"kind": "http", "url": pdf_url}],
+                    "sources": [{"kind": "file", "base64_string": b64_data, "filename": "paper.pdf"}],
                     "output_formats": ["markdown"],
                 },
             )
@@ -307,6 +593,9 @@ class PaperRetrievalAgent:
             md_content = document["md_content"] or ""
         elif "md_content" in data:
             md_content = data["md_content"] or ""
+        
+        if not md_content or len(md_content.strip()) < 50:
+            raise ValueError("Docling returned empty or minimal content")
         
         lines = md_content.split("\n")
         current_section = None
@@ -396,8 +685,8 @@ class PaperRetrievalAgent:
         if not abstract:
             for line in lines:
                 line_stripped = line.strip()
-                if re.match(r'^(?i)abstract[\s.:]', line_stripped):
-                    abstract = re.sub(r'^(?i)abstract[\s.:]*', '', line_stripped).strip()
+                if re.match(r'^abstract[\s.:]', line_stripped, re.IGNORECASE):
+                    abstract = re.sub(r'^abstract[\s.:]*', '', line_stripped, flags=re.IGNORECASE).strip()
                     if abstract:
                         break
         
@@ -412,28 +701,19 @@ class PaperRetrievalAgent:
             full_text=md_content,
         )
 
-    async def _parse_with_pdffigures(self, client: httpx.AsyncClient, pdf_url: str) -> list[Figure]:
+    async def _parse_with_pdffigures(self, client: httpx.AsyncClient, pdf_bytes: bytes) -> list[Figure]:
         """Parse PDF using PDFFigures 2.0 for figure/table extraction."""
-        logger.info("Sending PDF to PDFFigures 2.0 for figure extraction")
+        logger.info("Sending PDF to PDFFigures 2.0 for figure extraction (%d bytes)", len(pdf_bytes))
         try:
-            pdf_resp = await client.get(pdf_url, follow_redirects=True)
-            pdf_resp.raise_for_status()
-            
             resp = await client.post(
                 f"{self.pdffigures_url}/extract",
-                files={"file": ("paper.pdf", pdf_resp.content, "application/pdf")},
+                files={"file": ("paper.pdf", pdf_bytes, "application/pdf")},
             )
             resp.raise_for_status()
             return self._parse_pdffigures_response(resp.json())
         except Exception as e:
             logger.warning("PDFFigures parsing failed: %s", e)
             return []
-
-    async def _safe_pdffigures(self, client: httpx.AsyncClient, pdf_url: str):
-        try:
-            return await self._parse_with_pdffigures(client, pdf_url)
-        except Exception as e:
-            return e
 
     def _parse_pdffigures_response(self, data: dict) -> list[Figure]:
         """Parse PDFFigures 2.0 JSON response into Figure objects."""
