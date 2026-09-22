@@ -105,7 +105,7 @@ def score_source(source: Union[object, dict]) -> float:
         logger.error("Scoring failed, defaulting to 0.3: %s", e)
         return 0.3  # never let a scoring bug break the pipeline
 
-
+ 
 def score_all(sources: list) -> list:
     """Scores a mixed list of web Sources and/or paper dicts in place."""
     for s in sources:
