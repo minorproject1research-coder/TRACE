@@ -43,13 +43,14 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
     if not papers:
         return
 
-    now = _now_ist()
     rows = []
     for paper in papers:
         rows.append({
             "query_id": query_id,
             "sub_question_id": paper.get("sub_question_id"),
             "reliability_score": paper.get("reliability_score"),
+            "relevance_score": paper.get("relevance_score"),
+            "combined_score": paper.get("combined_score"),
             "title": paper.get("title", ""),
             "abstract": paper.get("abstract", ""),
             "authors": paper.get("authors", []),
@@ -66,7 +67,6 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
             "tldr": paper.get("tldr"),
             "fields_of_study": paper.get("fields_of_study", []),
             "query_variants_matched": paper.get("query_variant_matched", []),
-            "created_at": now,
         })
 
     supabase.table("retrieved_papers").insert(rows).execute()
