@@ -1,0 +1,17 @@
+{
+  "_comment": "ollama 'model' = tag shown by `ollama list`. nvidia 'model' = id from build.nvidia.com. All tags/ids below are PLACEHOLDERS - verify each against your install. 'think': false disables reasoning for Ollama models that support it; use 'low' for gpt-oss (cannot be turned off).",
+  "models": [
+    {"name": "qwen3.5-4b-q8",    "backend": "ollama", "model": "hf.co/unsloth/Qwen3.5-4B-GGUF:Q8_0",   "think": false},
+    {"name": "qwen3.5-9b-q8",    "backend": "ollama", "model": "hf.co/unsloth/Qwen3.5-9B-GGUF:Q8_0",   "think": false},
+    {"name": "qwen3-8b-q8",      "backend": "ollama", "model": "hf.co/unsloth/Qwen3-8B-GGUF:Q8_0",     "think": false},
+    {"name": "phi4-14b-q4km",    "backend": "ollama", "model": "hf.co/bartowski/phi-4-GGUF:Q4_K_M"},
+    {"name": "phi4-mini-q8",     "backend": "ollama", "model": "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q8_0"},
+    {"name": "gemma4-e4b-q8",    "backend": "ollama", "model": "hf.co/unsloth/gemma-4-E4B-it-GGUF:Q8_0"},
+    {"name": "gpt-oss-20b",      "backend": "ollama", "model": "gpt-oss:20b", "think": "low"},
+    {"name": "glm-5.3",          "backend": "nvidia", "model": "TODO/glm-5.3"},
+    {"name": "glm-5.3-flash",    "backend": "nvidia", "model": "TODO/glm-5.3-flash"},
+    {"name": "kimi-k3",          "backend": "nvidia", "model": "TODO/kimi-k3"},
+    {"name": "nemotron-3.5-lightning-30b", "backend": "nvidia", "model": "nvidia/nemotron-3.5-lightning-30b-a3b"},
+    {"name": "nemotron-3-ultra-550b",      "backend": "nvidia", "model": "nvidia/nemotron-3-ultra-550b-a55b"}
+  ]
+}
