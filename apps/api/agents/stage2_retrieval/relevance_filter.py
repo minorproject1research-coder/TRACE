@@ -14,8 +14,8 @@ client = Groq(api_key=os.environ["GROQ_API_KEY"])
 
 _embedder = None
 
-# Toggle: keep False for now — only the fast embedding filter runs.
-USE_LLM_JUDGMENT = False
+# Toggle: get value from environment variable (default: false) — only the fast embedding filter runs.
+USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "false").lower() == "true"
 
 
 def get_embedder():

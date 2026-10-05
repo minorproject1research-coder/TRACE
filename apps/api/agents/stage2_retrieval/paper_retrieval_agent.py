@@ -9,6 +9,7 @@ Source Reliability Scoring.
 import asyncio
 import logging
 import os
+import random
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from typing import Optional
 import httpx
 from pydantic import BaseModel, Field
 
+from apps.api.agents.stage2_retrieval.key_pool import KeyPool
 from apps.api.services import db_service
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class PaperResult(BaseModel):
     citation_count: Optional[int] = None
     influential_citation_count: Optional[int] = None
     is_preprint: bool = False
-    source: str = "arxiv"  # "arxiv" | "semantic_scholar" | "both"
+    source: str = "arxiv"  # "arxiv" | "semantic_scholar" | "ieee" | "openalex" | "both"
     arxiv_id: Optional[str] = None
     doi: Optional[str] = None
     pdf_url: Optional[str] = None
@@ -93,6 +95,12 @@ class AsyncRateLimiter:
                 await asyncio.sleep(self._min_interval - elapsed)
             self._last_call = asyncio.get_event_loop().time()
 
+    def penalize(self, seconds: float):
+        """Push the next allowed call at least `seconds` into the future, so every
+        concurrent caller backs off after one of them is rate limited."""
+        earliest = asyncio.get_event_loop().time() + seconds - self._min_interval
+        self._last_call = max(self._last_call, earliest)
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main Agent Class
@@ -119,6 +127,12 @@ class PaperRetrievalAgent:
     ARXIV_API_URL = "https://export.arxiv.org/api/query"
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
     IEEE_API_URL = "https://ieeexploreapi.ieee.org/api/v1/search/articles"
+    OPENALEX_API_URL = "https://api.openalex.org/works"
+    OPENALEX_SELECT = ",".join([
+        "id", "doi", "title", "publication_year", "publication_date", "cited_by_count",
+        "abstract_inverted_index", "authorships", "primary_location", "best_oa_location",
+        "open_access", "type", "topics",
+    ])
     UNPAYWALL_API_URL = "https://api.unpaywall.org/v2"
     UNPAYWALL_EMAIL = "minorproject1research@gmail.com"
 
@@ -133,6 +147,7 @@ class PaperRetrievalAgent:
         self,
         semantic_scholar_api_key: Optional[str] = None,
         ieee_api_key: Optional[str] = None,
+        openalex_api_key: Optional[str] = None,
         max_results_per_query: int = 10,
         min_citations: int = 0,
         pdffigures_url: Optional[str] = None,
@@ -140,14 +155,32 @@ class PaperRetrievalAgent:
     ):
         self.api_key = semantic_scholar_api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
         self.ieee_key = ieee_api_key or os.getenv("IEEE_API_KEY")
+        # OpenAlex is optional: without any key it is skipped entirely. Several keys
+        # (OPENALEX_API_KEYS, comma-separated; OPENALEX_API_KEY also accepted) form a rotation pool.
+        raw_keys = openalex_api_key if openalex_api_key is not None else (
+            f"{os.getenv('OPENALEX_API_KEYS', '')},{os.getenv('OPENALEX_API_KEY', '')}"
+        )
+        openalex_keys = list(dict.fromkeys(k.strip() for k in raw_keys.split(",") if k.strip()))
+        self._openalex_pool: Optional[KeyPool] = KeyPool(openalex_keys) if openalex_keys else None
+        self.openalex_max_attempts = max(1, int(os.getenv("OPENALEX_MAX_ATTEMPTS", "4")))
+        self.openalex_backoff_base = float(os.getenv("OPENALEX_BACKOFF_BASE_SECONDS", "2"))
+        self.openalex_backoff_cap = float(os.getenv("OPENALEX_BACKOFF_CAP_SECONDS", "30"))
+        self._openalex_warned = False  # log "no usable OpenAlex keys" only once
         self.max_results = max_results_per_query
         self.min_citations = min_citations
         self.pdffigures_url = (pdffigures_url or os.getenv("PDFFIGURES_URL", "http://localhost:5002")).rstrip("/")
         self.docling_url = (docling_url or os.getenv("DOCLING_URL", "http://localhost:5001")).rstrip("/")
 
+        # Semantic Scholar search retry policy (env-configurable). With the defaults the
+        # waits are 5, 10, 20, 40, 60s (+ up to 25% jitter) across 6 attempts.
+        self.s2_max_attempts = max(1, int(os.getenv("S2_MAX_ATTEMPTS", "6")))
+        self.s2_backoff_base = float(os.getenv("S2_BACKOFF_BASE_SECONDS", "5"))
+        self.s2_backoff_cap = float(os.getenv("S2_BACKOFF_CAP_SECONDS", "60"))
+
         self._arxiv_limiter = AsyncRateLimiter(calls_per_second=0.33)
         self._s2_limiter = AsyncRateLimiter(calls_per_second=0.1 if not self.api_key else 10.0)
         self._ieee_limiter = AsyncRateLimiter(calls_per_second=0.5)
+        self._openalex_limiter = AsyncRateLimiter(calls_per_second=5.0)  # API allows 100/s
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -750,6 +783,8 @@ class PaperRetrievalAgent:
                 tasks.append(self._safe_s2_search(client, query))
                 tasks.append(self._safe_s2_search(client, f"{query} IEEE"))
                 tasks.append(self._safe_ieee_search(client, query))
+                if self._openalex_pool:  # no key -> OpenAlex is skipped
+                    tasks.append(self._safe_openalex_search(client, query))
 
             results = await asyncio.gather(*tasks, return_exceptions=False)
 
@@ -879,8 +914,6 @@ class PaperRetrievalAgent:
         self, client: httpx.AsyncClient, query: str
     ) -> list[PaperResult]:
         """Search Semantic Scholar /paper/search endpoint."""
-        await self._s2_limiter.acquire()
-
         headers = {}
         if self.api_key:
             headers["x-api-key"] = self.api_key
@@ -893,7 +926,10 @@ class PaperRetrievalAgent:
         if self.min_citations > 0:
             params["minCitationCount"] = self.min_citations
 
-        for attempt in range(3):
+        max_attempts = self.s2_max_attempts
+        for attempt in range(max_attempts):
+            # Every attempt (not just the first) goes through the shared limiter.
+            await self._s2_limiter.acquire()
             try:
                 resp = await client.get(
                     f"{self.SEMANTIC_SCHOLAR_URL}/paper/search",
@@ -901,18 +937,32 @@ class PaperRetrievalAgent:
                     headers=headers,
                 )
                 if resp.status_code in (429, 500, 502, 503):
-                    wait = 2 ** attempt * 2
-                    logger.debug("S2 rate limit/error %d, backing off %ds", resp.status_code, wait)
+                    # Exponential backoff with jitter; honour Retry-After when S2 sends it.
+                    wait = min(self.s2_backoff_cap, self.s2_backoff_base * 2 ** attempt)
+                    wait += random.uniform(0, wait * 0.25)
+                    retry_after = resp.headers.get("Retry-After", "")
+                    if retry_after.isdigit():
+                        wait = max(wait, float(retry_after))
+                    if attempt == max_attempts - 1:
+                        break
+                    logger.warning("S2 %d for '%s' (attempt %d/%d), backing off %.1fs",
+                                   resp.status_code, query[:60], attempt + 1, max_attempts, wait)
+                    self._s2_limiter.penalize(wait)  # pause all concurrent S2 callers too
                     await asyncio.sleep(wait)
                     continue
                 resp.raise_for_status()
                 break
             except httpx.TransportError as e:
-                if attempt == 2:
+                if attempt == max_attempts - 1:
                     raise
                 await asyncio.sleep(2 ** attempt)
                 logger.debug("S2 transport error, retrying: %s", e)
         else:
+            return []
+
+        if resp.status_code in (429, 500, 502, 503):
+            logger.warning("S2 gave up on '%s' after %d attempts (last status %d)",
+                           query[:60], max_attempts, resp.status_code)
             return []
 
         data = resp.json()
@@ -969,8 +1019,12 @@ class PaperRetrievalAgent:
     ) -> list[PaperResult]:
         try:
             return await self._search_ieee(client, query)
+        except httpx.HTTPStatusError as e:
+            # Don't log str(e): it contains the request URL, which carries the apikey.
+            logger.warning("IEEE search failed for '%s': HTTP %d", query, e.response.status_code)
+            return []
         except Exception as e:
-            logger.warning("IEEE search failed for '%s': %s", query, e)
+            logger.warning("IEEE search failed for '%s': %s", query, type(e).__name__)
             return []
 
     async def _search_ieee(
@@ -1040,59 +1094,203 @@ class PaperRetrievalAgent:
         return papers
 
     # ──────────────────────────────────────────────────────────────────────────
+    # OpenAlex Search (optional - only runs when OPENALEX_API_KEY is set)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    async def _safe_openalex_search(
+        self, client: httpx.AsyncClient, query: str
+    ) -> list[PaperResult]:
+        try:
+            return await self._search_openalex(client, query)
+        except Exception as e:
+            logger.warning("OpenAlex search failed for '%s': %s", query, e)
+            return []
+
+    async def _search_openalex(
+        self, client: httpx.AsyncClient, query: str
+    ) -> list[PaperResult]:
+        """Search OpenAlex /works (title + abstract). Returns [] when no key is configured.
+
+        Keys rotate through a KeyPool: a key whose daily budget is spent (or that is rejected)
+        is parked and the next key is used; short 429 bursts back off exponentially."""
+        pool = self._openalex_pool
+        if pool is None:
+            return []
+
+        filters = ["has_abstract:true"]
+        if self.min_citations > 0:
+            filters.append(f"cited_by_count:>{self.min_citations - 1}")
+        params = {
+            "search.title_and_abstract": query,
+            "filter": ",".join(filters),
+            "per_page": min(self.max_results, 100),
+            "select": self.OPENALEX_SELECT,
+        }
+
+        max_backoffs = self.openalex_max_attempts
+        backoffs = 0
+        for _ in range(max_backoffs + 2 * len(pool) + 2):  # hard cap on total loop turns
+            key = pool.get_key()
+            if key is None:
+                # every key is cooling down: wait it out if short, otherwise OpenAlex is out for now
+                wait = pool.next_available_in()
+                if wait > self.openalex_backoff_cap or backoffs >= max_backoffs:
+                    if not self._openalex_warned:
+                        logger.warning("No usable OpenAlex keys (next available in %.0fs) - skipping OpenAlex", wait)
+                        self._openalex_warned = True
+                    return []
+                backoffs += 1
+                await asyncio.sleep(wait + 0.1)
+                continue
+
+            await self._openalex_limiter.acquire()
+            try:
+                # Key goes in a header, not the query string, so it never shows up in httpx's URL logging.
+                resp = await client.get(self.OPENALEX_API_URL, params=params,
+                                        headers={"Authorization": f"Bearer {key}"})
+            except httpx.TransportError as e:
+                backoffs += 1
+                if backoffs >= max_backoffs:
+                    raise
+                await asyncio.sleep(2 ** backoffs)
+                logger.debug("OpenAlex transport error, retrying: %s", e)
+                continue
+
+            tag = f"key ...{key[-4:]}"
+            if resp.status_code in (401, 403):
+                logger.warning("OpenAlex rejected %s (HTTP %d) - removing it from rotation", tag, resp.status_code)
+                pool.mark_rate_limited(key, seconds=10 * 365 * 86400)
+                continue
+
+            if resp.status_code == 429 and self._openalex_budget_spent(resp):
+                reset = float(resp.headers.get("x-ratelimit-reset", "0") or 0)
+                logger.warning("OpenAlex %s: daily budget exhausted (resets in %.0fs), rotating", tag, reset)
+                pool.mark_rate_limited(key, seconds=min(reset, 86400))
+                continue
+
+            if resp.status_code == 429 or resp.status_code >= 500:
+                wait = min(self.openalex_backoff_cap, self.openalex_backoff_base * 2 ** backoffs)
+                wait += random.uniform(0, wait * 0.25)
+                retry_after = resp.headers.get("Retry-After", "")
+                if retry_after.isdigit():
+                    wait = max(wait, float(retry_after))
+                backoffs += 1
+                if backoffs >= max_backoffs:
+                    logger.warning("OpenAlex gave up on '%s' after %d backoffs (last status %d)",
+                                   query[:60], backoffs, resp.status_code)
+                    return []
+                logger.warning("OpenAlex %d on %s for '%s' (backoff %d/%d), pausing that key %.1fs",
+                               resp.status_code, tag, query[:60], backoffs, max_backoffs, wait)
+                pool.mark_rate_limited(key, seconds=wait)
+                # another key may be free right now; otherwise the next turn waits for the earliest one
+                idle = pool.next_available_in()
+                if idle > 0:
+                    await asyncio.sleep(idle)
+                continue
+
+            resp.raise_for_status()
+            return self._parse_openalex_results(resp.json().get("results", []), query)
+
+        return []
+
+    def _openalex_budget_spent(self, resp: httpx.Response) -> bool:
+        """True when a 429 means the daily credit budget is gone (not a short per-second burst)."""
+        remaining = resp.headers.get("x-ratelimit-remaining", "")
+        reset = resp.headers.get("x-ratelimit-reset", "")
+        return remaining == "0" and reset.isdigit() and float(reset) > self.openalex_backoff_cap
+
+    @staticmethod
+    def _openalex_abstract(inverted_index: Optional[dict]) -> str:
+        """OpenAlex ships abstracts as {word: [positions]}; rebuild the text."""
+        if not inverted_index:
+            return ""
+        words = [(pos, word) for word, positions in inverted_index.items() for pos in positions]
+        return " ".join(word for _, word in sorted(words))
+
+    def _parse_openalex_results(self, works: list[dict], query: str) -> list[PaperResult]:
+        results = []
+        for w in works:
+            title = (w.get("title") or "").strip()
+            abstract = self._openalex_abstract(w.get("abstract_inverted_index"))
+            if not title or not abstract:
+                continue
+
+            doi = re.sub(r"^https?://(dx\.)?doi\.org/", "", (w.get("doi") or "").strip(), flags=re.I).lower() or None
+
+            primary = w.get("primary_location") or {}
+            best_oa = w.get("best_oa_location") or {}
+            oa = w.get("open_access") or {}
+
+            # arXiv ID: arXiv DOIs look like 10.48550/arxiv.2410.12119; repositories link arxiv.org/abs/<id>
+            arxiv_id = None
+            for text in (doi or "", primary.get("landing_page_url") or "", best_oa.get("landing_page_url") or ""):
+                m = re.search(r"arxiv(?:\.org/abs/|\.)(\d{4}\.\d{4,5})", text, flags=re.I)
+                if m:
+                    arxiv_id = m.group(1)
+                    break
+
+            pdf_url = best_oa.get("pdf_url") or primary.get("pdf_url") or (oa.get("oa_url") if oa.get("is_oa") else None)
+
+            source_info = primary.get("source") or {}
+            is_repository = source_info.get("type") == "repository"
+            venue = None if is_repository else source_info.get("display_name")
+
+            fields = []
+            for t in w.get("topics") or []:
+                name = (t.get("field") or {}).get("display_name")
+                if name and name not in fields:
+                    fields.append(name)
+
+            results.append(PaperResult(
+                title=title,
+                abstract=abstract,
+                authors=[
+                    (a.get("author") or {}).get("display_name", "Unknown")
+                    for a in (w.get("authorships") or [])
+                ],
+                year=w.get("publication_year"),
+                venue=venue,
+                citation_count=w.get("cited_by_count"),
+                influential_citation_count=None,
+                is_preprint=w.get("type") == "preprint" or not venue,
+                source="openalex",
+                arxiv_id=arxiv_id,
+                doi=doi,
+                pdf_url=pdf_url,
+                published_date=w.get("publication_date"),
+                tldr=None,
+                fields_of_study=fields[:3],
+                query_variant_matched=[query],
+            ))
+        return results
+
+    # ──────────────────────────────────────────────────────────────────────────
     # Deduplication
     # ──────────────────────────────────────────────────────────────────────────
 
     def _merge_and_dedupe(self, papers: list[PaperResult]) -> list[PaperResult]:
         """
-        Deduplicate papers by arXiv ID > DOI > normalized title.
+        Deduplicate papers by arXiv ID, DOI, or normalized title (any match merges).
 
-        When duplicates found, merge query_variant_matched lists and
-        upgrade source to "both" if paper came from both APIs.
+        A paper is registered under every identifier it has, so a match on any one of
+        them finds it. On a duplicate we combine query_variant_matched, mark the source
+        as "both" when different APIs returned it, and fill in metadata the first copy lacked.
         """
-        by_arxiv: dict[str, PaperResult] = {}
-        by_doi: dict[str, PaperResult] = {}
-        by_title: dict[str, PaperResult] = {}
+        index: dict[str, PaperResult] = {}
+        unique: list[PaperResult] = []
 
         for paper in papers:
-            key = self._dedupe_key(paper)
-            existing = by_arxiv.get(key) or by_doi.get(key) or by_title.get(key)
+            keys = self._dedupe_keys(paper)
+            existing = next((index[k] for k in keys if k in index), None)
 
             if existing is None:
-                # First time seeing this paper
-                if paper.arxiv_id:
-                    by_arxiv[paper.arxiv_id] = paper
-                if paper.doi:
-                    by_doi[paper.doi] = paper
-                by_title[self._norm_title(paper.title)] = paper
-            else:
-                # Merge: combine query variants and upgrade source
-                existing.query_variant_matched.extend(paper.query_variant_matched)
-                existing.query_variant_matched = list(set(existing.query_variant_matched))
-
-                if existing.source != paper.source:
-                    existing.source = "both"
-
-                # Prefer Semantic Scholar metadata (usually richer)
-                if paper.source == "semantic_scholar" and existing.source != "both":
-                    if paper.citation_count is not None:
-                        existing.citation_count = paper.citation_count
-                    if paper.influential_citation_count is not None:
-                        existing.influential_citation_count = paper.influential_citation_count
-                    if paper.tldr:
-                        existing.tldr = paper.tldr
-                    if paper.venue:
-                        existing.venue = paper.venue
-                        existing.is_preprint = False
-
-        # Collect unique papers
-        seen_titles: set[str] = set()
-        unique: list[PaperResult] = []
-        for paper in list(by_arxiv.values()) + list(by_doi.values()):
-            norm = self._norm_title(paper.title)
-            if norm not in seen_titles:
-                seen_titles.add(norm)
                 unique.append(paper)
+                existing = paper
+            else:
+                self._merge_into(existing, paper)
+
+            for k in self._dedupe_keys(existing) + keys:
+                index.setdefault(k, existing)
 
         # Sort by citation count (descending), then year
         unique.sort(
@@ -1101,13 +1299,45 @@ class PaperRetrievalAgent:
         )
         return unique
 
-    def _dedupe_key(self, paper: PaperResult) -> str:
-        """Return the best available unique key for deduplication."""
+    @staticmethod
+    def _merge_into(existing: PaperResult, paper: PaperResult) -> None:
+        existing.query_variant_matched = list(
+            dict.fromkeys(existing.query_variant_matched + paper.query_variant_matched)
+        )
+        if existing.source != paper.source:
+            existing.source = "both"
+
+        # Fill gaps left by the first copy
+        for field in ("arxiv_id", "doi", "pdf_url", "venue", "published_date", "tldr", "year"):
+            if not getattr(existing, field) and getattr(paper, field):
+                setattr(existing, field, getattr(paper, field))
+        if not existing.abstract and paper.abstract:
+            existing.abstract = paper.abstract
+        if not existing.fields_of_study and paper.fields_of_study:
+            existing.fields_of_study = paper.fields_of_study
+        if existing.venue and paper.venue:
+            existing.is_preprint = existing.is_preprint and paper.is_preprint
+
+        # Citation counts differ between providers; keep the highest known value
+        if paper.citation_count is not None:
+            existing.citation_count = max(existing.citation_count or 0, paper.citation_count)
+        if paper.influential_citation_count is not None:
+            existing.influential_citation_count = max(
+                existing.influential_citation_count or 0, paper.influential_citation_count
+            )
+
+    def _dedupe_keys(self, paper: PaperResult) -> list[str]:
+        """All identifiers a paper can be matched on (arXiv ID, DOI, normalized title)."""
+        keys = []
         if paper.arxiv_id:
-            return f"arxiv:{paper.arxiv_id}"
+            keys.append("arxiv:" + re.sub(r"v\d+$", "", paper.arxiv_id.strip().lower()))
         if paper.doi:
-            return f"doi:{paper.doi}"
-        return f"title:{self._norm_title(paper.title)}"
+            doi = re.sub(r"^https?://(dx\.)?doi\.org/", "", paper.doi.strip().lower())
+            keys.append("doi:" + doi)
+        title = self._norm_title(paper.title)
+        if title:
+            keys.append("title:" + title)
+        return keys
 
     @staticmethod
     def _norm_title(title: str) -> str:

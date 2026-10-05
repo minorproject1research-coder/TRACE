@@ -21,5 +21,14 @@ class KeyPool:
                 return key
         return None 
 
-    def mark_rate_limited(self, key: str):
-        self._cooldown_until[key] = time.time() + self._cooldown_seconds
+    def mark_rate_limited(self, key: str, seconds: float | None = None):
+        """Put `key` on cooldown for `seconds` (default: the pool's cooldown_seconds)."""
+        self._cooldown_until[key] = time.time() + (self._cooldown_seconds if seconds is None else seconds)
+
+    def next_available_in(self) -> float:
+        """Seconds until some key is usable (0 if one is usable now). Does not consume a key."""
+        now = time.time()
+        return max(0.0, min(self._cooldown_until.get(k, 0) - now for k in self._keys))
+
+    def __len__(self) -> int:
+        return len(self._keys)
