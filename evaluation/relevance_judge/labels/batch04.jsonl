@@ -1,0 +1,36 @@
+{"id":"sq10_00","relevant":true,"confidence":0.99,"reason":"Improves dual-encoder dense passage retrieval with graph neural networks."}
+{"id":"sq10_01","relevant":true,"confidence":0.98,"reason":"Mechanistic analysis of DPR-trained dense retrievers."}
+{"id":"sq10_02","relevant":true,"confidence":0.99,"reason":"Topic-based prompt dense passage retrieval model."}
+{"id":"sq10_03","relevant":true,"confidence":0.99,"reason":"Replication study of the dense passage retriever (DPR)."}
+{"id":"sq10_04","relevant":true,"confidence":0.99,"reason":"Optimized training of dense passage retrievers (RocketQA)."}
+{"id":"sq10_05","relevant":true,"confidence":0.85,"reason":"Uses cross-encoder embeddings to distill a lighter dual-encoder for retrieval."}
+{"id":"sq10_06","relevant":true,"confidence":0.99,"reason":"Training technique for dense retrieval models."}
+{"id":"sq10_07","relevant":true,"confidence":0.9,"reason":"Trains LLM text embedders, improving retrieval-oriented embedding benchmarks."}
+{"id":"sq10_08","relevant":false,"confidence":0.75,"reason":"Improves cross-encoder re-rankers with BM25 scores, not dense retrieval or embeddings."}
+{"id":"sq10_09","relevant":false,"confidence":0.75,"reason":"Fine-tuning strategies for cross-encoder re-rankers, not dense retrieval or embeddings."}
+{"id":"sq10_10","relevant":false,"confidence":0.8,"reason":"Compares cross-encoders and LLM rerankers over sparse SPLADE retrieval."}
+{"id":"sq10_11","relevant":false,"confidence":0.62,"reason":"Applies dense passage representations to EEG-based retrieval; a niche application, not passage retrieval methods."}
+{"id":"sq11_00","relevant":true,"confidence":0.8,"reason":"Task-agnostic LM distillation scaled to 3B and discussed for LLMs like LLaMA."}
+{"id":"sq11_01","relevant":true,"confidence":0.99,"reason":"Survey of knowledge distillation of LLMs into smaller models."}
+{"id":"sq11_02","relevant":true,"confidence":0.99,"reason":"On-policy distillation of LLMs into smaller student models."}
+{"id":"sq11_03","relevant":true,"confidence":0.95,"reason":"Distils LLM rationales so a 770M T5 beats a 540B PaLM."}
+{"id":"sq11_04","relevant":true,"confidence":0.98,"reason":"Survey of knowledge and dataset distillation for compressing LLMs."}
+{"id":"sq11_05","relevant":true,"confidence":0.95,"reason":"Distils algorithmic reasoning from LLMs into a smaller model."}
+{"id":"sq11_06","relevant":true,"confidence":0.6,"reason":"Task-agnostic distillation of pretrained models, but BERT-scale rather than LLMs."}
+{"id":"sq11_07","relevant":true,"confidence":0.97,"reason":"Improves distillation from imperfect teacher LLMs like GPT-4 into smaller students."}
+{"id":"sq11_08","relevant":false,"confidence":0.8,"reason":"Structured pruning of language models; compares to distillation but does not distil."}
+{"id":"sq11_09","relevant":true,"confidence":0.65,"reason":"Distils mBERT-scale pretrained models into tiny students, not true LLMs."}
+{"id":"sq11_10","relevant":true,"confidence":0.9,"reason":"Compresses Llama 3.1 8B and Mistral NeMo 12B using pruning plus distillation."}
+{"id":"sq11_11","relevant":false,"confidence":0.99,"reason":"Chemical process distillation, unrelated."}
+{"id":"sq12_00","relevant":false,"confidence":0.75,"reason":"General agent simulation sandbox for LLM evaluation; tool use only one testable module."}
+{"id":"sq12_01","relevant":true,"confidence":0.99,"reason":"Benchmark of LLM agents' tool selection, parameterization and ordering."}
+{"id":"sq12_02","relevant":true,"confidence":0.99,"reason":"Survey of LLM-based tool-learning agents."}
+{"id":"sq12_03","relevant":false,"confidence":0.7,"reason":"General multi-turn agent benchmark; tool use is not its focus."}
+{"id":"sq12_04","relevant":true,"confidence":0.99,"reason":"Benchmark for general tool agents with real tools and queries."}
+{"id":"sq12_05","relevant":false,"confidence":0.72,"reason":"Git workflow agent benchmark where tools are incidental, not tool-use evaluation."}
+{"id":"sq12_06","relevant":false,"confidence":0.9,"reason":"Evaluation framework for clinical LLM agents, not tool use."}
+{"id":"sq12_07","relevant":true,"confidence":0.99,"reason":"API-Bank benchmark for tool-augmented LLMs and API calling."}
+{"id":"sq12_08","relevant":false,"confidence":0.99,"reason":"2004 agent deliberation theory, unrelated to LLMs."}
+{"id":"sq12_09","relevant":true,"confidence":0.85,"reason":"LLM agent augmented with 18 expert chemistry tools."}
+{"id":"sq12_10","relevant":false,"confidence":0.99,"reason":"Philosophy of autonomy and allostasis, unrelated."}
+{"id":"sq12_11","relevant":false,"confidence":0.97,"reason":"Chatbot answer-quality benchmark, not tool use."}

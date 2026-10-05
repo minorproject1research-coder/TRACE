@@ -1,0 +1,36 @@
+{"id":"sq28_00","relevant":true,"confidence":0.99,"reason":"Unified benchmark for comparing hallucination detection methods."}
+{"id":"sq28_01","relevant":false,"confidence":0.62,"reason":"Survey of hallucination mitigation techniques rather than detection."}
+{"id":"sq28_02","relevant":true,"confidence":0.9,"reason":"Framework and method for detecting and mitigating hallucinations via fact verification."}
+{"id":"sq28_03","relevant":true,"confidence":0.9,"reason":"Survey covering causes, detection and mitigation of LLM hallucinations."}
+{"id":"sq28_04","relevant":true,"confidence":0.99,"reason":"Black-box zero-resource hallucination detection by consistency checking."}
+{"id":"sq28_05","relevant":true,"confidence":0.99,"reason":"Noise-injection sampling that improves uncertainty-based hallucination detection."}
+{"id":"sq28_06","relevant":true,"confidence":0.97,"reason":"Detects hallucinations from low-confidence generation and validates them."}
+{"id":"sq28_07","relevant":true,"confidence":0.55,"reason":"Survey of internal-consistency signals used to evaluate hallucinations and reasoning, only partly about detection."}
+{"id":"sq28_08","relevant":false,"confidence":0.7,"reason":"Improves summarization faithfulness (mitigation) rather than detecting hallucinations."}
+{"id":"sq28_09","relevant":false,"confidence":0.99,"reason":"ATLAS detector performance study, unrelated."}
+{"id":"sq28_10","relevant":true,"confidence":0.55,"reason":"Verbalized confidence for LLM uncertainty quantification, a hallucination-detection signal though hallucination is not named."}
+{"id":"sq28_11","relevant":false,"confidence":0.99,"reason":"Gravitational-wave catalog methods, unrelated."}
+{"id":"sq29_00","relevant":true,"confidence":0.99,"reason":"Derives scaling laws for routed language models."}
+{"id":"sq29_01","relevant":true,"confidence":0.99,"reason":"Compute-optimal scaling law for data-constrained language models."}
+{"id":"sq29_02","relevant":true,"confidence":0.98,"reason":"Methodology for estimating neural scaling laws including language modeling."}
+{"id":"sq29_03","relevant":true,"confidence":0.99,"reason":"Modifies Chinchilla scaling laws to include inference cost."}
+{"id":"sq29_04","relevant":true,"confidence":0.98,"reason":"Scaling law with learning rate annealing for LM training loss."}
+{"id":"sq29_05","relevant":false,"confidence":0.97,"reason":"Interpretability and steering of MoE experts, not scaling laws."}
+{"id":"sq29_06","relevant":true,"confidence":0.85,"reason":"Evidence that LM task performance can worsen with scale, qualifying scaling laws."}
+{"id":"sq29_07","relevant":true,"confidence":0.97,"reason":"Review of scaling laws from Kaplan to Chinchilla and compute-optimal training."}
+{"id":"sq29_08","relevant":true,"confidence":0.9,"reason":"Compute-optimal scaling laws for protein language models."}
+{"id":"sq29_09","relevant":true,"confidence":0.6,"reason":"Title is the Kaplan scaling-laws paper, but the abstract (mismatched) is about transporting small-scale gains to frontier scale."}
+{"id":"sq29_10","relevant":false,"confidence":0.99,"reason":"Graph prompting framework, unrelated."}
+{"id":"sq29_11","relevant":false,"confidence":0.99,"reason":"Schelling's segregation model scaling in social science, unrelated."}
+{"id":"sq30_00","relevant":false,"confidence":0.62,"reason":"Tensor-parallel communication compression, but for inference rather than training."}
+{"id":"sq30_01","relevant":true,"confidence":0.97,"reason":"Communication-efficient collectives for data-parallel BSP-SGD training."}
+{"id":"sq30_02","relevant":true,"confidence":0.9,"reason":"Multi-GPU LLM distillation combining tensor, pipeline and data parallelism with gradient compression."}
+{"id":"sq30_03","relevant":true,"confidence":0.95,"reason":"Reduces ZeRO communication overhead for distributed LLM training."}
+{"id":"sq30_04","relevant":false,"confidence":0.62,"reason":"Tensor-parallel communication compression for LLM inference, not training."}
+{"id":"sq30_05","relevant":true,"confidence":0.98,"reason":"ZeRO memory optimization for data- and model-parallel training."}
+{"id":"sq30_06","relevant":true,"confidence":0.93,"reason":"ZeRO-Offload for large-model training that combines with model parallelism."}
+{"id":"sq30_07","relevant":true,"confidence":0.93,"reason":"ZeRO-Infinity heterogeneous-memory distributed training."}
+{"id":"sq30_08","relevant":false,"confidence":0.62,"reason":"Tensor parallelism for SSM inference, not training."}
+{"id":"sq30_09","relevant":false,"confidence":0.99,"reason":"Introduction to tensor decompositions, unrelated."}
+{"id":"sq30_10","relevant":false,"confidence":0.97,"reason":"Instruction data mixing for fine-tuning, not distributed training."}
+{"id":"sq30_11","relevant":false,"confidence":0.9,"reason":"Year-2000 processor architecture parallelism, unrelated."}

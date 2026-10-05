@@ -1,0 +1,36 @@
+{"id":"sq13_00","relevant":true,"confidence":0.9,"reason":"Analogical prompting benchmarked against zero-shot and few-shot CoT on reasoning tasks."}
+{"id":"sq13_01","relevant":true,"confidence":0.95,"reason":"Survey of reasoning by prompting LLMs."}
+{"id":"sq13_02","relevant":true,"confidence":0.99,"reason":"Compares CoT reasoning strategies across models and datasets."}
+{"id":"sq13_03","relevant":true,"confidence":0.99,"reason":"Automatic construction of chain-of-thought demonstrations (Auto-CoT)."}
+{"id":"sq13_04","relevant":true,"confidence":0.99,"reason":"Analysis of when chain-of-thought actually helps LLM planning."}
+{"id":"sq13_05","relevant":true,"confidence":0.7,"reason":"Benchmarks LLM reasoning without explicit chains of thought, contrasting with CoT."}
+{"id":"sq13_06","relevant":true,"confidence":0.95,"reason":"Measures whether stated CoT reasoning is faithful to the model."}
+{"id":"sq13_07","relevant":true,"confidence":0.9,"reason":"Formal comparison of chain-of-thought and looped transformers for reasoning."}
+{"id":"sq13_08","relevant":true,"confidence":0.9,"reason":"Prompting method built on CoT and self-consistency to improve LLM reasoning."}
+{"id":"sq13_09","relevant":true,"confidence":0.9,"reason":"Step-wise CoT critique framework that improves LLM reasoning."}
+{"id":"sq13_10","relevant":true,"confidence":0.95,"reason":"Theoretical account of why chain of thought extends transformer reasoning."}
+{"id":"sq13_11","relevant":true,"confidence":0.99,"reason":"Tests when CoT prompting is still needed for ChatGPT."}
+{"id":"sq14_00","relevant":true,"confidence":0.6,"reason":"Systematic ViT training study framed around ViT's weaker inductive bias versus CNNs, without a direct comparison."}
+{"id":"sq14_01","relevant":true,"confidence":0.95,"reason":"Compares DeiT-Tiny and ResNet18 on pathology image classification."}
+{"id":"sq14_02","relevant":true,"confidence":0.99,"reason":"Shows ConvNets match Vision Transformers at scale on ImageNet."}
+{"id":"sq14_03","relevant":true,"confidence":0.98,"reason":"Survey that compares ViTs with CNNs for image classification."}
+{"id":"sq14_04","relevant":true,"confidence":0.98,"reason":"Compares ViT and CNN architectures on medical image classification."}
+{"id":"sq14_05","relevant":false,"confidence":0.6,"reason":"Applied CNN-plus-Swin hybrid for expression recognition without a ViT versus CNN comparison."}
+{"id":"sq14_06","relevant":false,"confidence":0.9,"reason":"Pose-based action recognition transformer, not image classification versus CNNs."}
+{"id":"sq14_07","relevant":true,"confidence":0.7,"reason":"Hybrid CNN-transformer backbone evaluated on ImageNet classification against Swin."}
+{"id":"sq14_08","relevant":true,"confidence":0.99,"reason":"ViTs trained from scratch outperform ResNets on ImageNet via smoother minima."}
+{"id":"sq14_09","relevant":false,"confidence":0.99,"reason":"Byzantine-resilient distributed optimization, unrelated."}
+{"id":"sq14_10","relevant":false,"confidence":0.8,"reason":"CNN-only scene recognition method with no transformer comparison."}
+{"id":"sq14_11","relevant":true,"confidence":0.95,"reason":"Compares 21 models from CNNs to visual transformers on an image classification dataset."}
+{"id":"sq15_00","relevant":true,"confidence":0.99,"reason":"Accelerates guided diffusion sampling with splitting numerical methods."}
+{"id":"sq15_01","relevant":true,"confidence":0.99,"reason":"DDIM, a faster sampler for diffusion image generation."}
+{"id":"sq15_02","relevant":true,"confidence":0.99,"reason":"Optimized time steps for faster diffusion sampling."}
+{"id":"sq15_03","relevant":true,"confidence":0.99,"reason":"Learns fast diffusion samplers by optimizing sample quality."}
+{"id":"sq15_04","relevant":true,"confidence":0.7,"reason":"Faster latent diffusion for local text-driven image editing, with acceleration as a contribution."}
+{"id":"sq15_05","relevant":false,"confidence":0.85,"reason":"CoT reasoning for autoregressive image generation, not diffusion."}
+{"id":"sq15_06","relevant":false,"confidence":0.99,"reason":"Cross-entropy method for stochastic diffusion processes, unrelated to image generation."}
+{"id":"sq15_07","relevant":true,"confidence":0.99,"reason":"Latent consistency models enabling few-step image generation."}
+{"id":"sq15_08","relevant":true,"confidence":0.99,"reason":"Latent adversarial diffusion distillation for fast few-step image synthesis."}
+{"id":"sq15_09","relevant":false,"confidence":0.9,"reason":"Uses a diffusion process to sample spin-glass Gibbs measures, not image generation."}
+{"id":"sq15_10","relevant":false,"confidence":0.99,"reason":"Pipeline fluid-structure analysis, unrelated."}
+{"id":"sq15_11","relevant":false,"confidence":0.92,"reason":"Generative antibody design model, not image diffusion sampling."}

@@ -1,0 +1,36 @@
+{"id":"sq16_00","relevant":true,"confidence":0.99,"reason":"Analysis of the modality gap and object bias in contrastive VLMs like CLIP."}
+{"id":"sq16_01","relevant":true,"confidence":0.99,"reason":"Improved CLIP training techniques at scale (EVA-CLIP)."}
+{"id":"sq16_02","relevant":true,"confidence":0.85,"reason":"Survey of vision-language pre-training that covers contrastive objectives."}
+{"id":"sq16_03","relevant":true,"confidence":0.7,"reason":"Improves CLIP zero-shot classification by guided cropping."}
+{"id":"sq16_04","relevant":true,"confidence":0.7,"reason":"Analyzes CLIP's local features to enable multi-label classification without training."}
+{"id":"sq16_05","relevant":true,"confidence":0.7,"reason":"Adapts CLIP's zero-shot ability to pixel-level segmentation."}
+{"id":"sq16_06","relevant":true,"confidence":0.7,"reason":"Auto-tunes CLIP zero-shot classifiers across vision-language models."}
+{"id":"sq16_07","relevant":true,"confidence":0.75,"reason":"Evaluates thirteen CLIP/OpenCLIP models for zero-shot remote sensing classification."}
+{"id":"sq16_08","relevant":false,"confidence":0.7,"reason":"Robustness of V&L Transformers on VQA, not contrastive CLIP-style pretraining."}
+{"id":"sq16_09","relevant":false,"confidence":0.95,"reason":"Contrastive learning for spurious correlations in image classification, not vision-language."}
+{"id":"sq16_10","relevant":false,"confidence":0.97,"reason":"Continual zero-shot learning with VAEs, unrelated to CLIP."}
+{"id":"sq16_11","relevant":false,"confidence":0.55,"reason":"Applies CLIP as-is to game-video search, with no new insight into contrastive pretraining."}
+{"id":"sq17_00","relevant":true,"confidence":0.99,"reason":"DropEdge to relieve over-smoothing in deep GCNs."}
+{"id":"sq17_01","relevant":true,"confidence":0.99,"reason":"Links over-smoothing and over-squashing to vanishing gradients in GNNs."}
+{"id":"sq17_02","relevant":true,"confidence":0.99,"reason":"Neural architecture search framework to tackle GNN over-smoothing."}
+{"id":"sq17_03","relevant":true,"confidence":0.95,"reason":"Gradient-free training that overcomes over-smoothing in linearized GNNs."}
+{"id":"sq17_04","relevant":true,"confidence":0.99,"reason":"Deep supervision to address GNN over-smoothing."}
+{"id":"sq17_05","relevant":false,"confidence":0.7,"reason":"Efficient deep GNN construction; over-smoothing is not addressed in the abstract."}
+{"id":"sq17_06","relevant":true,"confidence":0.99,"reason":"Residual-connection analysis to prevent over-smoothing in deep GNNs."}
+{"id":"sq17_07","relevant":true,"confidence":0.98,"reason":"Ordered message passing that prevents over-smoothing in deep GNNs."}
+{"id":"sq17_08","relevant":true,"confidence":0.9,"reason":"Deep GNN with shallow samplers addressing oversmoothing and neighborhood explosion."}
+{"id":"sq17_09","relevant":false,"confidence":0.99,"reason":"GNN heuristics for branch and bound on TSP, unrelated to over-smoothing."}
+{"id":"sq17_10","relevant":false,"confidence":0.99,"reason":"Evidential deep learning, unrelated to GNNs."}
+{"id":"sq17_11","relevant":true,"confidence":0.75,"reason":"KGQA framework that explicitly mitigates GCN over-smoothing."}
+{"id":"sq18_00","relevant":true,"confidence":0.99,"reason":"Survey of federated learning on non-IID data."}
+{"id":"sq18_01","relevant":true,"confidence":0.99,"reason":"Quantifies accuracy loss from non-IID data in federated learning and proposes a fix."}
+{"id":"sq18_02","relevant":true,"confidence":0.97,"reason":"Client selection to mitigate non-IID accuracy degradation in mobile edge FL."}
+{"id":"sq18_03","relevant":true,"confidence":0.97,"reason":"Semi-decentralized federated edge learning with convergence on non-IID data and lower latency."}
+{"id":"sq18_04","relevant":true,"confidence":0.99,"reason":"Groups clients to handle non-IID data and communication cost."}
+{"id":"sq18_05","relevant":false,"confidence":0.8,"reason":"Federated semi-supervised learning with scarce labels, not non-IID or communication constraints."}
+{"id":"sq18_06","relevant":true,"confidence":0.7,"reason":"Cuts uplink payload by orders of magnitude for federated transfer learning; non-IID not studied."}
+{"id":"sq18_07","relevant":true,"confidence":0.95,"reason":"Differentially private federated learning with convergence analysis on non-IID data."}
+{"id":"sq18_08","relevant":true,"confidence":0.75,"reason":"Reduces federated learning communication cost by 94.89% via distillation; non-IID not emphasized."}
+{"id":"sq18_09","relevant":true,"confidence":0.95,"reason":"Handles local and global drift from non-IID medical image data in federated learning."}
+{"id":"sq18_10","relevant":true,"confidence":0.99,"reason":"Hierarchical federated learning reducing communication with convergence on non-IID data."}
+{"id":"sq18_11","relevant":true,"confidence":0.97,"reason":"Hierarchical model aggregation for federated learning with data skew and aggregation bottlenecks."}

@@ -1,0 +1,36 @@
+{"id":"sq01_00","relevant":true,"confidence":0.8,"reason":"RAG model evaluated on QA with gains in factual accuracy and consistency over non-RAG baselines."}
+{"id":"sq01_01","relevant":true,"confidence":0.97,"reason":"Overview of RAG's effectiveness at reducing LLM hallucination and its challenges."}
+{"id":"sq01_02","relevant":true,"confidence":0.97,"reason":"Review of hallucination causes and mitigation specifically in retrieval-augmented LLMs."}
+{"id":"sq01_03","relevant":false,"confidence":0.65,"reason":"Detects hallucinations in RAG answers with small LMs; does not measure RAG's effect on hallucination rates."}
+{"id":"sq01_04","relevant":false,"confidence":0.65,"reason":"General LLM hallucination survey with no RAG focus in the abstract."}
+{"id":"sq01_05","relevant":true,"confidence":0.8,"reason":"Reports 43.7% fewer hallucinations than standard RAG baselines on domain benchmarks."}
+{"id":"sq01_06","relevant":false,"confidence":0.93,"reason":"Attack on RAG opinion manipulation; hallucination only mentioned as RAG's motivation."}
+{"id":"sq01_07","relevant":true,"confidence":0.8,"reason":"Chunk-level filtering in RAG that reduces hallucinations and improves factual accuracy."}
+{"id":"sq01_08","relevant":false,"confidence":0.6,"reason":"Compares 13 LLMs in a Quranic RAG setting on faithfulness, with no no-RAG baseline for hallucination rates."}
+{"id":"sq01_09","relevant":false,"confidence":0.68,"reason":"Policy-QA reward-guided generation measured by ROUGE; hallucination is not the studied outcome."}
+{"id":"sq01_10","relevant":false,"confidence":0.72,"reason":"KG-RAG multi-hop reasoning method; hallucination only as background motivation."}
+{"id":"sq01_11","relevant":false,"confidence":0.99,"reason":"About technical accuracy of journal articles for database retrieval, unrelated to LLMs."}
+{"id":"sq02_00","relevant":true,"confidence":0.96,"reason":"Compares SFT, LoRA and QLoRA for fine-tuning open-source LLMs including memory savings."}
+{"id":"sq02_01","relevant":true,"confidence":0.92,"reason":"Generalized LoRA PEFT method, evaluated on LLaMA-1/2 against LoRA."}
+{"id":"sq02_02","relevant":true,"confidence":0.99,"reason":"Controlled empirical comparison of LoRA and QLoRA on Mistral-7B."}
+{"id":"sq02_03","relevant":true,"confidence":0.72,"reason":"LoRA vs full fine-tuning, but on BERT-sized Vietnamese language models rather than LLMs."}
+{"id":"sq02_04","relevant":true,"confidence":0.97,"reason":"Abstract is the original LoRA paper: freezes weights, injects low-rank matrices, cuts trainable parameters."}
+{"id":"sq02_05","relevant":true,"confidence":0.55,"reason":"Differentially private fine-tuning built on parameter-efficient methods; PEFT is a tool, privacy is the focus."}
+{"id":"sq02_06","relevant":true,"confidence":0.95,"reason":"Ladder Side Tuning PEFT benchmarked directly against QLoRA for memory and accuracy."}
+{"id":"sq02_07","relevant":true,"confidence":0.9,"reason":"Fine-tunes LLaMA-3.1 with LoRA/QLoRA/PEFT and studies overfitting."}
+{"id":"sq02_08","relevant":true,"confidence":0.85,"reason":"Controlled comparison of LoRA, adapters and full fine-tuning on forgetting, for small LMs."}
+{"id":"sq02_09","relevant":false,"confidence":0.99,"reason":"Battery energy storage control with no connection to language models."}
+{"id":"sq02_10","relevant":false,"confidence":0.68,"reason":"Memory-efficient zeroth-order full fine-tuning with CPU offload, not a PEFT method like LoRA."}
+{"id":"sq02_11","relevant":true,"confidence":0.99,"reason":"Survey of LoRA variants and applications for LLMs."}
+{"id":"sq03_00","relevant":false,"confidence":0.82,"reason":"Post-training quantization for CNNs and generic nets (ResNet50), not LLMs."}
+{"id":"sq03_01","relevant":true,"confidence":0.99,"reason":"Systematic study of PTQ in LLMs including INT4 weights and accuracy impact."}
+{"id":"sq03_02","relevant":true,"confidence":0.9,"reason":"Scaling-law study of zero-shot k-bit quantization of LLMs concluding 4-bit is near-optimal."}
+{"id":"sq03_03","relevant":true,"confidence":0.6,"reason":"Quantization-aware training rather than PTQ, but evaluates 4-bit LLMs and shows PTQ breaking down."}
+{"id":"sq03_04","relevant":true,"confidence":0.96,"reason":"Combines SmoothQuant/AWQ/GPTQ PTQ to get 4-bit weights with negligible accuracy loss."}
+{"id":"sq03_05","relevant":true,"confidence":0.98,"reason":"Proposes a 4-bit PTQ weight quantization method compared with AWQ and GPTQ."}
+{"id":"sq03_06","relevant":false,"confidence":0.93,"reason":"4-bit post-training quantization of convolutional networks, not LLMs."}
+{"id":"sq03_07","relevant":true,"confidence":0.78,"reason":"Empirical study of LLM quantization failure cases with 4-bit weight results."}
+{"id":"sq03_08","relevant":true,"confidence":0.78,"reason":"PTQ framework for LLM weights and KV cache, evaluating accuracy against weight-only quantization."}
+{"id":"sq03_09","relevant":false,"confidence":0.93,"reason":"4-bit PTQ of recommender embedding tables, not LLMs."}
+{"id":"sq03_10","relevant":true,"confidence":0.95,"reason":"AWQ low-bit weight quantization for LLMs with 4x size reduction while preserving accuracy."}
+{"id":"sq03_11","relevant":true,"confidence":0.92,"reason":"Measures accuracy degradation of AWQ/GPTQ low-bit quantized LLMs on math reasoning."}

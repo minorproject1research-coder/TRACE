@@ -1,0 +1,36 @@
+{"id":"sq25_00","relevant":false,"confidence":0.62,"reason":"Proposes a convolutional alternative that uses Transformers only as a baseline."}
+{"id":"sq25_01","relevant":false,"confidence":0.7,"reason":"Uses pre-trained forecasting models for classification features; the task is not forecasting with Transformers."}
+{"id":"sq25_02","relevant":true,"confidence":0.9,"reason":"Survey of deep time series forecasting including Transformers."}
+{"id":"sq25_03","relevant":true,"confidence":0.99,"reason":"Transformer architecture with exponential smoothing attention for forecasting."}
+{"id":"sq25_04","relevant":false,"confidence":0.65,"reason":"Convolutional forecasting architecture that merely beats Transformer baselines."}
+{"id":"sq25_05","relevant":false,"confidence":0.99,"reason":"Target-transformation bias in sales forecasting, not Transformers."}
+{"id":"sq25_06","relevant":false,"confidence":0.97,"reason":"Gaussian-process forecasting of intermittent series, not Transformers."}
+{"id":"sq25_07","relevant":false,"confidence":0.97,"reason":"Quantile regression load forecasting, not Transformers."}
+{"id":"sq25_08","relevant":false,"confidence":0.97,"reason":"Inflation forecasting with dimension reduction, not Transformers."}
+{"id":"sq25_09","relevant":false,"confidence":0.98,"reason":"Econometric factor-augmented regression forecasting, not Transformers."}
+{"id":"sq25_10","relevant":false,"confidence":0.97,"reason":"Tabular foundation models, not time series Transformers."}
+{"id":"sq25_11","relevant":false,"confidence":0.9,"reason":"ARIMA and LSTM comparison for financial forecasting, no Transformers."}
+{"id":"sq26_00","relevant":true,"confidence":0.9,"reason":"Provably efficient model-based RL algorithm with regret bounds for mean-field control."}
+{"id":"sq26_01","relevant":false,"confidence":0.6,"reason":"Model-free exploration bonus method; sample efficiency is not discussed."}
+{"id":"sq26_02","relevant":false,"confidence":0.65,"reason":"Practitioner study of offline RL dataset properties, not sample efficiency or model-based methods."}
+{"id":"sq26_03","relevant":true,"confidence":0.7,"reason":"Provably efficient offline RL with sub-optimality bounds in the number of trajectories."}
+{"id":"sq26_04","relevant":true,"confidence":0.99,"reason":"Compares model-based and model-free deep RL on data efficiency."}
+{"id":"sq26_05","relevant":true,"confidence":0.7,"reason":"Model-based RL with learned dynamics that safely collects data, with stability guarantees."}
+{"id":"sq26_06","relevant":false,"confidence":0.8,"reason":"Broad non-technical discussion of RL in practice."}
+{"id":"sq26_07","relevant":true,"confidence":0.8,"reason":"Domain-invariant dynamics and reward model learning for model-based offline RL."}
+{"id":"sq26_08","relevant":false,"confidence":0.75,"reason":"Model-free offline RL action restriction, not sample efficiency or model-based."}
+{"id":"sq26_09","relevant":false,"confidence":0.99,"reason":"Animal instrumental learning psychology review, unrelated."}
+{"id":"sq26_10","relevant":false,"confidence":0.9,"reason":"Consensus control for multi-agent systems using neural-network RL, not sample efficiency."}
+{"id":"sq26_11","relevant":false,"confidence":0.9,"reason":"KL gradient estimation pitfalls for LLM RL, not sample efficiency or model-based."}
+{"id":"sq27_00","relevant":false,"confidence":0.97,"reason":"Speech separation metric study, not ASR."}
+{"id":"sq27_01","relevant":true,"confidence":0.99,"reason":"Wav2vec 2.0 self-supervised model adapted for Korean ASR."}
+{"id":"sq27_02","relevant":true,"confidence":0.99,"reason":"Improves wav2vec 2.0 self-supervised pre-training with WER gains."}
+{"id":"sq27_03","relevant":true,"confidence":0.98,"reason":"Self-supervised discrete speech representations improving speech recognition."}
+{"id":"sq27_04","relevant":true,"confidence":0.97,"reason":"Evaluates wav2vec 2.0 ASR accuracy and latency on edge devices."}
+{"id":"sq27_05","relevant":false,"confidence":0.75,"reason":"Fine-tunes Whisper, which is weakly supervised rather than self-supervised."}
+{"id":"sq27_06","relevant":false,"confidence":0.75,"reason":"Whisper plus language models; Whisper is not a self-supervised representation model."}
+{"id":"sq27_07","relevant":false,"confidence":0.95,"reason":"Supervised speaker feature learning for verification, not ASR."}
+{"id":"sq27_08","relevant":false,"confidence":0.75,"reason":"Child speech ASR with Whisper, a supervised model."}
+{"id":"sq27_09","relevant":false,"confidence":0.97,"reason":"Whispered-speech emotion recognition, not ASR."}
+{"id":"sq27_10","relevant":true,"confidence":0.98,"reason":"Distills wav2vec 2.0 into a small streaming ASR model."}
+{"id":"sq27_11","relevant":false,"confidence":0.9,"reason":"Gender and accent bias evaluation of Alexa and Whisper, not self-supervised ASR."}

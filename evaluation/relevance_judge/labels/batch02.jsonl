@@ -1,0 +1,36 @@
+{"id":"sq04_00","relevant":true,"confidence":0.98,"reason":"Probabilistic positional-encoding framework enabling extrapolation to 500x training context length."}
+{"id":"sq04_01","relevant":true,"confidence":0.98,"reason":"Shows RoPE base bounds achievable context length, directly about long-context positional encoding."}
+{"id":"sq04_02","relevant":true,"confidence":0.99,"reason":"Position Interpolation extends RoPE LLM context windows to 32k."}
+{"id":"sq04_03","relevant":true,"confidence":0.99,"reason":"Analyzes RoPE extension methods for extrapolating to longer contexts."}
+{"id":"sq04_04","relevant":true,"confidence":0.98,"reason":"Soft-clipped RoPE giving length generalization up to 256k context."}
+{"id":"sq04_05","relevant":true,"confidence":0.68,"reason":"Sparse and gated attention for efficient long-context models at 128K, but not positional extrapolation."}
+{"id":"sq04_06","relevant":false,"confidence":0.7,"reason":"2019 RNN-enhanced Transformer for sequence modeling; no context-length extrapolation."}
+{"id":"sq04_07","relevant":true,"confidence":0.99,"reason":"RoPE scaling strategy for extending LLaMA2's context window."}
+{"id":"sq04_08","relevant":true,"confidence":0.99,"reason":"Resonance RoPE targets train-short-test-long context generalization."}
+{"id":"sq04_09","relevant":false,"confidence":0.99,"reason":"Graph theory paths in hypercube subgraphs, unrelated."}
+{"id":"sq04_10","relevant":false,"confidence":0.99,"reason":"Service-marketing 'context' paper, unrelated to transformers."}
+{"id":"sq04_11","relevant":false,"confidence":0.99,"reason":"Kernel and embedding methods for structured data, unrelated to transformer context."}
+{"id":"sq05_00","relevant":true,"confidence":0.93,"reason":"Analyzes and fixes representation collapse in sparse MoE routing for language models."}
+{"id":"sq05_01","relevant":true,"confidence":0.99,"reason":"Switch Transformer, trillion-parameter sparse MoE scaling of language models."}
+{"id":"sq05_02","relevant":false,"confidence":0.65,"reason":"Inference scheduling system for MoE; does not change or analyze the architecture or scaling."}
+{"id":"sq05_03","relevant":true,"confidence":0.65,"reason":"Expert pruning and skipping for MoE LLMs; modifies expert use but targets deployment."}
+{"id":"sq05_04","relevant":true,"confidence":0.68,"reason":"Chooses layer-adaptive number of active experts in pretrained MoE models."}
+{"id":"sq05_05","relevant":true,"confidence":0.98,"reason":"New MoE paradigm where experts self-select, pretrained at up to 4B parameters."}
+{"id":"sq05_06","relevant":true,"confidence":0.99,"reason":"Survey of MoE LLM routing, topology and load balancing."}
+{"id":"sq05_07","relevant":false,"confidence":0.65,"reason":"MoE serving system using memory offload; infrastructure rather than architecture."}
+{"id":"sq05_08","relevant":true,"confidence":0.85,"reason":"New MoE routing strategy for LLM training addressing load balance and communication."}
+{"id":"sq05_09","relevant":false,"confidence":0.99,"reason":"Media framing study that only shares the word 'experts'."}
+{"id":"sq05_10","relevant":false,"confidence":0.7,"reason":"Machine unlearning in MoE LLMs; MoE is the setting, not the subject."}
+{"id":"sq05_11","relevant":false,"confidence":0.75,"reason":"Speculative decoding verification for MoE targets; an inference technique."}
+{"id":"sq06_00","relevant":false,"confidence":0.65,"reason":"Layer-wise activation reuse by semantic similarity on BERT/GPT-2, not attention or KV-cache optimization."}
+{"id":"sq06_01","relevant":true,"confidence":0.6,"reason":"Sparse attention and head pruning for LLM inference, but only a conceptual thought experiment."}
+{"id":"sq06_02","relevant":true,"confidence":0.99,"reason":"Layer-wise KV-cache budget allocation and compression for LLM inference."}
+{"id":"sq06_03","relevant":true,"confidence":0.99,"reason":"2-bit layer-discriminative KV cache compatible with FlashAttention."}
+{"id":"sq06_04","relevant":true,"confidence":0.99,"reason":"Training-free KV-cache compression via expected attention."}
+{"id":"sq06_05","relevant":true,"confidence":0.8,"reason":"Simplified FlashAttention kernel formulation; hardware-oriented but about efficient attention."}
+{"id":"sq06_06","relevant":true,"confidence":0.9,"reason":"INT8-quantized FlashAttention for faster LLM inference."}
+{"id":"sq06_07","relevant":true,"confidence":0.99,"reason":"Online low-rank KV-cache compression for long reasoning decoding."}
+{"id":"sq06_08","relevant":true,"confidence":0.85,"reason":"LLM inference engine with asynchronized softmax and decoding attention optimizations."}
+{"id":"sq06_09","relevant":false,"confidence":0.7,"reason":"Combination calculator of existing FlashAttention savings with a sampling metric, no new attention or KV method."}
+{"id":"sq06_10","relevant":false,"confidence":0.92,"reason":"Edge model caching and resource allocation for metaverse services, not attention or KV cache."}
+{"id":"sq06_11","relevant":false,"confidence":0.65,"reason":"FPGA accelerator and pruning for generic Transformer attention, not LLM inference."}

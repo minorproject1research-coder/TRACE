@@ -1,0 +1,36 @@
+{"id":"sq07_00","relevant":true,"confidence":0.99,"reason":"Information-theoretic analysis of speculative decoding speed-up plus a new method."}
+{"id":"sq07_01","relevant":true,"confidence":0.95,"reason":"Applies speculative decoding to multimodal LLMs for up to 2.37x speedup."}
+{"id":"sq07_02","relevant":true,"confidence":0.99,"reason":"Theoretical limits of speculative decoding acceleration versus output quality."}
+{"id":"sq07_03","relevant":true,"confidence":0.99,"reason":"Tutorial overview of speculative decoding for LLM inference acceleration."}
+{"id":"sq07_04","relevant":true,"confidence":0.95,"reason":"Speculative decoding redesigned for MLLMs, giving up to 2.46x faster inference."}
+{"id":"sq07_05","relevant":true,"confidence":0.99,"reason":"Improves EAGLE-2 speculative decoding with dynamic depth for 3.16x speedup."}
+{"id":"sq07_06","relevant":true,"confidence":0.6,"reason":"Uses speculative sampling mainly for jailbreak defense but also reports inference acceleration."}
+{"id":"sq07_07","relevant":true,"confidence":0.98,"reason":"Adaptive draft-verification speculative decoding framework for faster LLM inference."}
+{"id":"sq07_08","relevant":true,"confidence":0.99,"reason":"CTC-based draft model raising acceptance rate in speculative decoding."}
+{"id":"sq07_09","relevant":false,"confidence":0.85,"reason":"General Transformer and inference overview that mentions KV caching but not speculative decoding."}
+{"id":"sq07_10","relevant":false,"confidence":0.99,"reason":"ATLAS particle-detector performance study, unrelated."}
+{"id":"sq07_11","relevant":false,"confidence":0.99,"reason":"Gravitational-wave catalog introduction, unrelated."}
+{"id":"sq08_00","relevant":true,"confidence":0.98,"reason":"Pairwise PPO variant for RLHF-based LLM alignment."}
+{"id":"sq08_01","relevant":true,"confidence":0.93,"reason":"Multi-objective RLHF alignment framework compared against DPO."}
+{"id":"sq08_02","relevant":true,"confidence":0.98,"reason":"Analyzes DPO's regularization flaws and proposes explicit preference optimization."}
+{"id":"sq08_03","relevant":true,"confidence":0.98,"reason":"Dynamic DPO preference optimization framework."}
+{"id":"sq08_04","relevant":true,"confidence":0.98,"reason":"Generalizes DPO with f-divergence constraints and compares to PPO-based RLHF."}
+{"id":"sq08_05","relevant":true,"confidence":0.98,"reason":"Token-wise RLHF combining DPO and PPO."}
+{"id":"sq08_06","relevant":true,"confidence":0.99,"reason":"Empirical comparison of DPO and PPO for learning from preference feedback."}
+{"id":"sq08_07","relevant":true,"confidence":0.98,"reason":"Dynamic beta calibration for DPO alignment."}
+{"id":"sq08_08","relevant":true,"confidence":0.99,"reason":"Theoretical analysis of the RLHF versus DPO performance gap."}
+{"id":"sq08_09","relevant":false,"confidence":0.8,"reason":"Multi-turn reasoning-model safety failure modes, not about RLHF or DPO methods."}
+{"id":"sq08_10","relevant":false,"confidence":0.99,"reason":"Business process modeling pitfalls, unrelated."}
+{"id":"sq08_11","relevant":false,"confidence":0.72,"reason":"Broad LLM survey that touches post-training alignment only as one section."}
+{"id":"sq09_00","relevant":true,"confidence":0.97,"reason":"Studies single-judge intra-model bias and proposes a judge panel."}
+{"id":"sq09_01","relevant":true,"confidence":0.99,"reason":"Survey centered on reliability and bias mitigation of LLM-as-a-judge."}
+{"id":"sq09_02","relevant":true,"confidence":0.98,"reason":"Mechanistic account of bias in LLM judges."}
+{"id":"sq09_03","relevant":true,"confidence":0.93,"reason":"Measures reliability and calibration of LLM judges against humans for voice agents."}
+{"id":"sq09_04","relevant":true,"confidence":0.99,"reason":"Systematic evaluation of bias and debiasing strategies in LLM judges."}
+{"id":"sq09_05","relevant":false,"confidence":0.97,"reason":"Wine-competition human judge bias, not LLMs."}
+{"id":"sq09_06","relevant":true,"confidence":0.7,"reason":"Compares LLM and human raters' scoring accuracy and inconsistency in automated scoring."}
+{"id":"sq09_07","relevant":true,"confidence":0.85,"reason":"Studies LLM-judge disagreement, self-preference and leniency, and builds a corrected judge."}
+{"id":"sq09_08","relevant":false,"confidence":0.9,"reason":"Courts using LLMs to draft opinions; human judges are the subject, not LLM judges."}
+{"id":"sq09_09","relevant":false,"confidence":0.7,"reason":"Length bias in RLHF reward models, adjacent to but not LLM-as-a-judge evaluation."}
+{"id":"sq09_10","relevant":false,"confidence":0.7,"reason":"Causal mitigation of reward-model length bias in RLHF, not LLM-as-a-judge evaluation."}
+{"id":"sq09_11","relevant":false,"confidence":0.99,"reason":"Gender bias in forensic psychiatric judgments, unrelated to LLMs."}

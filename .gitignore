@@ -7,5 +7,3 @@ __pycache__/
 logs/
 evaluation/relevance_judge/raw
 evaluation/relevance_judge/candidates.jsonl
-evaluation/relevance_judge/dataset.jsonl
-evaluation/relevance_judge/labels/

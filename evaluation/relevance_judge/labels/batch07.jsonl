@@ -1,0 +1,36 @@
+{"id":"sq19_00","relevant":true,"confidence":0.97,"reason":"Survey of differential privacy for deep and federated learning."}
+{"id":"sq19_01","relevant":true,"confidence":0.95,"reason":"Compares differential privacy methods in deep learning and mentions model inference attacks."}
+{"id":"sq19_02","relevant":true,"confidence":0.99,"reason":"Systematic review of membership inference on fine-tuned LLMs and DP defenses."}
+{"id":"sq19_03","relevant":true,"confidence":0.85,"reason":"Evaluates DP against model inversion attacks on neural networks, a close privacy-attack variant."}
+{"id":"sq19_04","relevant":true,"confidence":0.99,"reason":"Randomized-noise DP-SGD defending deep models against membership inference."}
+{"id":"sq19_05","relevant":true,"confidence":0.98,"reason":"Studies DP's effect on membership-inference vulnerability disparity."}
+{"id":"sq19_06","relevant":true,"confidence":0.8,"reason":"Differential privacy for federated deep learning with convergence and privacy trade-offs."}
+{"id":"sq19_07","relevant":false,"confidence":0.8,"reason":"Link stealing attack on GNNs; a different privacy attack, with no DP or membership inference."}
+{"id":"sq19_08","relevant":true,"confidence":0.95,"reason":"New membership inference attack on pre-trained LLMs."}
+{"id":"sq19_09","relevant":false,"confidence":0.99,"reason":"Document classification architecture, unrelated to privacy."}
+{"id":"sq19_10","relevant":false,"confidence":0.99,"reason":"Carbon footprint assessment of an Arabic LLM, unrelated."}
+{"id":"sq19_11","relevant":false,"confidence":0.99,"reason":"Compute-efficiency metric for medical imaging models, unrelated."}
+{"id":"sq20_00","relevant":true,"confidence":0.97,"reason":"Verifies adversarial examples and shows adversarial retraining raises required distortion."}
+{"id":"sq20_01","relevant":true,"confidence":0.99,"reason":"Empirical study of adversarial training against black-box attacks."}
+{"id":"sq20_02","relevant":true,"confidence":0.95,"reason":"Adversarial training for robust graph neural networks."}
+{"id":"sq20_03","relevant":true,"confidence":0.99,"reason":"Adversarially trained Bayesian neural network defense."}
+{"id":"sq20_04","relevant":true,"confidence":0.99,"reason":"Adversarial training that keeps robustness with less accuracy loss."}
+{"id":"sq20_05","relevant":true,"confidence":0.9,"reason":"Benchmark and theory for robust architecture search under adversarial training."}
+{"id":"sq20_06","relevant":true,"confidence":0.98,"reason":"Certified defense against adversarial patch attacks."}
+{"id":"sq20_07","relevant":true,"confidence":0.99,"reason":"Analyzes normalization and capacity in adversarial training."}
+{"id":"sq20_08","relevant":true,"confidence":0.99,"reason":"Curriculum-style adversarial training for a better robustness and accuracy trade-off."}
+{"id":"sq20_09","relevant":true,"confidence":0.75,"reason":"Universal adversarial attack and benchmark for remote sensing networks; attack side of robustness."}
+{"id":"sq20_10","relevant":false,"confidence":0.99,"reason":"Survey of distributed deep learning infrastructure, unrelated."}
+{"id":"sq20_11","relevant":false,"confidence":0.99,"reason":"Deep learning scaling laws, unrelated to adversarial robustness."}
+{"id":"sq21_00","relevant":true,"confidence":0.99,"reason":"Black-box automated jailbreak framework for LLMs."}
+{"id":"sq21_01","relevant":true,"confidence":0.99,"reason":"AutoDAN stealthy jailbreak prompt generation for aligned LLMs."}
+{"id":"sq21_02","relevant":true,"confidence":0.85,"reason":"Builds safety benchmarks by distilling jailbreak attacks."}
+{"id":"sq21_03","relevant":true,"confidence":0.9,"reason":"Title and visible text address prompt injection and jailbreaking defense; abstract is truncated by scraped site text."}
+{"id":"sq21_04","relevant":true,"confidence":0.99,"reason":"Benchmark and defenses for indirect prompt injection against LLMs."}
+{"id":"sq21_05","relevant":true,"confidence":0.85,"reason":"Black-box jailbreak attack on vision-language LLMs."}
+{"id":"sq21_06","relevant":true,"confidence":0.99,"reason":"Systematic framework for jailbreak attacks and defenses on LLMs."}
+{"id":"sq21_07","relevant":true,"confidence":0.99,"reason":"Graph-based stealthy jailbreak prompt generation against LLMs."}
+{"id":"sq21_08","relevant":true,"confidence":0.99,"reason":"Defense against Best-of-N jailbreaking via prompt evaluation."}
+{"id":"sq21_09","relevant":false,"confidence":0.95,"reason":"Survey of prompt engineering for vision-language models, not attacks."}
+{"id":"sq21_10","relevant":false,"confidence":0.85,"reason":"Prompting to cope with irrelevant information in math problems, not injection or jailbreak."}
+{"id":"sq21_11","relevant":false,"confidence":0.95,"reason":"General prompting-methods survey, not security."}

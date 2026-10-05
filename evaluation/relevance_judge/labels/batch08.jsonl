@@ -1,0 +1,36 @@
+{"id":"sq22_00","relevant":true,"confidence":0.99,"reason":"Instruction-tuned code LLM evaluated on HumanEval, MBPP and DS-1000."}
+{"id":"sq22_01","relevant":true,"confidence":0.99,"reason":"Benchmark evaluating code LMs on non-functional requirements."}
+{"id":"sq22_02","relevant":true,"confidence":0.98,"reason":"Benchmark for repository-level feature code generation by LLM agents."}
+{"id":"sq22_03","relevant":true,"confidence":0.99,"reason":"Evolving repository-level code generation benchmark with Pass@k evaluation of LLMs."}
+{"id":"sq22_04","relevant":true,"confidence":0.99,"reason":"Multi-language repository-level code generation benchmark."}
+{"id":"sq22_05","relevant":true,"confidence":0.95,"reason":"Benchmarks LLMs on ICPC competitive programming problems."}
+{"id":"sq22_06","relevant":true,"confidence":0.95,"reason":"Reduces hallucinated bugs in LLM-generated code, evaluated on LiveCodeBench."}
+{"id":"sq22_07","relevant":true,"confidence":0.95,"reason":"Tool-integrated repository-level code generation with a new benchmark."}
+{"id":"sq22_08","relevant":true,"confidence":0.85,"reason":"Automated generation of SWE-Bench-style repository-level coding benchmarks."}
+{"id":"sq22_09","relevant":true,"confidence":0.8,"reason":"Title is the Codex evaluation paper; abstract (mismatched) describes LLM-generated code via LLVM IR."}
+{"id":"sq22_10","relevant":false,"confidence":0.99,"reason":"Medical ICD coding accuracy, unrelated to program code."}
+{"id":"sq22_11","relevant":false,"confidence":0.99,"reason":"Error-correcting code simulator, unrelated."}
+{"id":"sq23_00","relevant":true,"confidence":0.9,"reason":"Pretrains a transformer on synthetic pseudo-language text generated from a grammar."}
+{"id":"sq23_01","relevant":true,"confidence":0.99,"reason":"Survey of LLM-generated synthetic data for training."}
+{"id":"sq23_02","relevant":true,"confidence":0.99,"reason":"Survey of LLM-driven synthetic data generation, curation and evaluation."}
+{"id":"sq23_03","relevant":true,"confidence":0.99,"reason":"Survey of LLM synthetic training data for text and code."}
+{"id":"sq23_04","relevant":true,"confidence":0.99,"reason":"Measures synthetic data diversity and its effect on LLM pretraining and fine-tuning."}
+{"id":"sq23_05","relevant":false,"confidence":0.97,"reason":"Cross-lingual pretraining on real monolingual and parallel data, no synthetic data."}
+{"id":"sq23_06","relevant":false,"confidence":0.75,"reason":"Temporal entailment pretraining objective on real EHR data, not synthetic data generation."}
+{"id":"sq23_07","relevant":true,"confidence":0.9,"reason":"Generates synthetic LLM translations ranked into preference data to train an LLM."}
+{"id":"sq23_08","relevant":true,"confidence":0.9,"reason":"Pretrains LMs on procedurally generated formal-language data."}
+{"id":"sq23_09","relevant":false,"confidence":0.9,"reason":"Diffusion-generated synthetic images for object detection, not language models."}
+{"id":"sq23_10","relevant":false,"confidence":0.99,"reason":"Astronomy spectrum data model standard, unrelated."}
+{"id":"sq23_11","relevant":false,"confidence":0.85,"reason":"Online data mixing for LLM pretraining on real corpora, no synthetic data."}
+{"id":"sq24_00","relevant":true,"confidence":0.99,"reason":"Multi-agent LLM collaboration framework with roles."}
+{"id":"sq24_01","relevant":true,"confidence":0.65,"reason":"Evaluates LM agency through multi-turn, cross-model negotiation games."}
+{"id":"sq24_02","relevant":false,"confidence":0.62,"reason":"Review of single-agent infrastructure (memory, skills, harness), not multi-agent collaboration."}
+{"id":"sq24_03","relevant":true,"confidence":0.97,"reason":"LLM-based coordination of heterogeneous multi-agent systems."}
+{"id":"sq24_04","relevant":true,"confidence":0.99,"reason":"Survey of LLM multi-agent orchestration frameworks and protocols."}
+{"id":"sq24_05","relevant":true,"confidence":0.95,"reason":"Medical multi-agent collaboration framework using LLM agents."}
+{"id":"sq24_06","relevant":true,"confidence":0.95,"reason":"LLM-based multi-agent framework for CFD simulation tasks."}
+{"id":"sq24_07","relevant":false,"confidence":0.9,"reason":"Multi-agent reinforcement learning in Hanabi, not LLMs."}
+{"id":"sq24_08","relevant":true,"confidence":0.97,"reason":"Adversarial persuasion in multi-agent LLM debate."}
+{"id":"sq24_09","relevant":false,"confidence":0.7,"reason":"Communication topology optimization for generic multi-agent systems, with no LLMs mentioned."}
+{"id":"sq24_10","relevant":true,"confidence":0.9,"reason":"Post-trains LLMs on multi-agent debate signals."}
+{"id":"sq24_11","relevant":false,"confidence":0.99,"reason":"Debate as classroom language teaching, unrelated."}

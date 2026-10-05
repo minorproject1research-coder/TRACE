@@ -45,8 +45,12 @@ Candidates (see `models.json`; tags/ids there are **placeholders to verify**):
 | `run_judge_benchmark.py` | Step 3: run candidate models over the dataset and score them |
 | `models.json` | Model list (Ollama tags / NVIDIA ids / `think` settings) |
 | `prelabel.py` | **Alternative, automated** labeling route (strong LLM + `review_queue.csv`). Not used for the final labels |
-| `groq_partial_labels.jsonl` | 30 labels from an abandoned automated run. **Not used.** Kept only for reference |
+| `upload_to_huggingface.py` | Publishes the dataset to the Hugging Face Hub (see section 10) |
+| `hf_dataset_card.md` | Template of the Hugging Face dataset card; statistics are filled in from the data at upload time |
 | `results/` | Created by the runner: `<model>.jsonl` raw outputs and `summary.md` |
+
+**Not in git:** `dataset.jsonl`, `candidates.jsonl`, `labels/` and `raw/` are listed in `.gitignore`, so they are absent from a fresh clone of the GitHub repo. The
+finished dataset is published on Hugging Face (section 10); `raw/` is only a regenerable API cache.
 
 All commands run from the **repo root** with the project venv (`venv\Scripts\python.exe -m evaluation.relevance_judge.<module>`).
 
@@ -120,8 +124,8 @@ Years: mostly 2023-2026 (about two thirds), with older papers present. Abstracts
 
 The labels were written **by Claude (an LLM) reading every title and abstract by hand** in 10 batches of 3 sub-questions (36 rows each), not by a
 scripted model call and not by a human. This was chosen to get the best possible labels instead of a cheap automated pass. An automated route
-(`prelabel.py`, Groq `gpt-oss-120b`, with a `review_queue.csv` for human overrides) was started first and **abandoned** after 30 rows; those are
-in `groq_partial_labels.jsonl` and are not part of the dataset.
+(`prelabel.py`, Groq `gpt-oss-120b`, with a `review_queue.csv` for human overrides) was started first and **abandoned** after 30 rows; those partial
+labels were discarded and are not part of the dataset.
 
 ### 5.2 What the labeler saw
 
@@ -224,7 +228,7 @@ LLM-as-a-judge question, tensor-parallel inference on a distributed-training que
 - **Semantic Scholar is rate-limited hard without an API key**; exponential backoff with jitter and a configurable policy was added, but a key is needed
   for real throughput. IEEE returned HTTP 403 (key not yet active) and its failure log used to leak the key in the URL (now logs the status only).
 
-See `.omo/PROJECT_ARCHITECTURE.md` for the full description of these retrieval changes.
+The full description of these retrieval changes is in `.omo/PROJECT_ARCHITECTURE.md` (a local-only document: `.omo/` is git-ignored).
 
 ---
 
@@ -334,10 +338,28 @@ venv\Scripts\python.exe -m evaluation.relevance_judge.merge_labels
 Retrieval is not bit-for-bit reproducible (search APIs change over time), which is why `raw/` and `candidates.jsonl` are kept: they freeze the exact
 papers that were labeled. Do not regenerate `candidates.jsonl` without also redoing the labels.
 
-Environment variables used: `GROQ_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `OPENALEX_API_KEYS` (or `OPENALEX_API_KEY`),
+Environment variables used: `HF_TOKEN` (upload only), `GROQ_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `OPENALEX_API_KEYS` (or `OPENALEX_API_KEY`),
 `NVIDIA_API_KEY`, `OLLAMA_URL`, plus the optional retry settings (`S2_*`, `OPENALEX_*`) documented in `.env.example`.
 
 ---
+
+### Publishing the dataset on Hugging Face
+
+`upload_to_huggingface.py` stages and uploads the dataset (data + a generated dataset card + the sub-question list). It needs a Hugging Face **write**
+token in `.env` as `HF_TOKEN` (optionally `HF_DATASET_REPO=<username>/trace-relevance-judge`; `pip install huggingface_hub`).
+
+```powershell
+# build + validate the upload folder locally, contact nothing
+venv\Scripts\python.exe -m evaluation.relevance_judge.upload_to_huggingface --dry-run
+
+# upload as a PRIVATE dataset (asks for confirmation); add --public to publish
+venv\Scripts\python.exe -m evaluation.relevance_judge.upload_to_huggingface
+```
+
+The data is flattened to plain columns (`relevant`, `label_confidence`, `label_reason`, `quality_flag`, ...) in `data/test.jsonl`; the four problem rows from 8.1 get
+a `quality_flag` (use `--drop-flagged` to remove them). The card (`hf_dataset_card.md`) links back to this folder and computes its statistics from the data.
+Useful flags: `--exclude-sources semantic_scholar` (if you do not want to redistribute Semantic Scholar-sourced abstracts), `--license`, `--repo-id`, `--out`.
+Check the licensing section of the card before making the dataset public.
 
 ## 11. Changes made outside this folder because of this work
 
