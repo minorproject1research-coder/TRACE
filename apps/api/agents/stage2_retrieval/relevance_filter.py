@@ -17,6 +17,12 @@ _embedder = None
 # Toggle: get value from environment variable (default: false) — only the fast embedding filter runs.
 USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "false").lower() == "true"
 
+# Max abstract characters shown to the LLM judge. The benchmark (evaluation/relevance_judge) and its
+# pre-labeler import this same value, so labels and models always see identical text. 2500 covers ~99.7%
+# of real abstracts (median ~1300) while capping the rare multi-thousand-character OpenAlex ones;
+# the old 1000-char cut dropped the methods/results half of ~80% of abstracts.
+JUDGE_ABSTRACT_CHAR_LIMIT = 2500
+
 
 def get_embedder():
     """Lazy-loads the embedding model once, reused across all calls."""
@@ -72,7 +78,7 @@ Return ONLY a JSON object, nothing else, in this exact format:
 
 
 def llm_judge_relevance(sub_question: str, paper: dict) -> dict:
-    abstract = (paper.get("abstract") or "")[:1000]
+    abstract = (paper.get("abstract") or "")[:JUDGE_ABSTRACT_CHAR_LIMIT]
     title = paper.get("title", "")
 
     prompt = RELEVANCE_JUDGE_PROMPT.format(sub_question=sub_question, title=title, abstract=abstract)

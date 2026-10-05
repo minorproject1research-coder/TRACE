@@ -128,6 +128,13 @@ class PaperRetrievalAgent:
     SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1"
     IEEE_API_URL = "https://ieeexploreapi.ieee.org/api/v1/search/articles"
     OPENALEX_API_URL = "https://api.openalex.org/works"
+    # Only real research outputs, in English, with an abstract (drops peer-review records, paratext, datasets...)
+    OPENALEX_BASE_FILTER = "type:article|preprint,language:en,has_abstract:true"
+    OPENALEX_STOPWORDS = frozenset(
+        "a an the of in on for to and or how do does what which why is are be by with from as at into "
+        "using use via that this these those can it its their than then between across over under about "
+        "whether when where who whom while within without".split()
+    )
     OPENALEX_SELECT = ",".join([
         "id", "doi", "title", "publication_year", "publication_date", "cited_by_count",
         "abstract_inverted_index", "authorships", "primary_location", "best_oa_location",
@@ -165,6 +172,11 @@ class PaperRetrievalAgent:
         self.openalex_max_attempts = max(1, int(os.getenv("OPENALEX_MAX_ATTEMPTS", "4")))
         self.openalex_backoff_base = float(os.getenv("OPENALEX_BACKOFF_BASE_SECONDS", "2"))
         self.openalex_backoff_cap = float(os.getenv("OPENALEX_BACKOFF_CAP_SECONDS", "30"))
+        self.openalex_timeout = float(os.getenv("OPENALEX_TIMEOUT_SECONDS", "90"))  # reranked searches are slow
+        # Search modes (each is one API call per query variant): AI-reranked keyword search (~20 credits)
+        # and semantic search (~10 credits). They surface different papers, so both are on by default.
+        self.openalex_rerank = os.getenv("OPENALEX_RERANK", "true").lower() not in ("0", "false", "no")
+        self.openalex_semantic = os.getenv("OPENALEX_SEMANTIC", "true").lower() not in ("0", "false", "no")
         self._openalex_warned = False  # log "no usable OpenAlex keys" only once
         self.max_results = max_results_per_query
         self.min_citations = min_citations
@@ -1106,26 +1118,79 @@ class PaperRetrievalAgent:
             logger.warning("OpenAlex search failed for '%s': %s", query, e)
             return []
 
+    @staticmethod
+    def _openalex_clean_query(query: str) -> str:
+        """OpenAlex rejects wildcard characters (? *) in stemmed search with HTTP 400, and treats
+        quotes and uppercase AND/OR/NOT as operators. Natural-language queries often contain them."""
+        text = re.sub(r'[?*"~]', " ", query)
+        text = re.sub(r"\b(AND|OR|NOT)\b", lambda m: m.group(0).lower(), text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    def _openalex_or_query(self, query: str) -> str:
+        """Content words joined with OR. Plain keyword search requires *every* word to match, which
+        returns nothing for long natural-language queries; OR gives broad recall and the reranker
+        then orders the candidates."""
+        words = [
+            w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-‑]*", query)
+            if w.lower() not in self.OPENALEX_STOPWORDS and len(w) > 1
+        ]
+        words = list(dict.fromkeys(words))
+        return " OR ".join(words) if len(words) >= 2 else query
+
     async def _search_openalex(
         self, client: httpx.AsyncClient, query: str
     ) -> list[PaperResult]:
-        """Search OpenAlex /works (title + abstract). Returns [] when no key is configured.
+        """Search OpenAlex /works for relevant papers. Returns [] when no key is configured.
 
-        Keys rotate through a KeyPool: a key whose daily budget is spent (or that is rejected)
-        is parked and the next key is used; short 429 bursts back off exponentially."""
-        pool = self._openalex_pool
-        if pool is None:
+        Runs up to two complementary searches concurrently and returns the union (the caller dedupes):
+          - AI-reranked keyword search: OR-joined content words, top 100 reordered by an answer-relevance model
+          - semantic search: embedding match on the whole query (favours established, well-cited papers)
+        """
+        if self._openalex_pool is None:
             return []
 
-        filters = ["has_abstract:true"]
+        clean = self._openalex_clean_query(query)
+        if not clean:
+            return []
+
+        filters = [self.OPENALEX_BASE_FILTER]
         if self.min_citations > 0:
             filters.append(f"cited_by_count:>{self.min_citations - 1}")
-        params = {
-            "search.title_and_abstract": query,
+        common = {
             "filter": ",".join(filters),
             "per_page": min(self.max_results, 100),
             "select": self.OPENALEX_SELECT,
         }
+
+        searches = []
+        if self.openalex_rerank:
+            searches.append({**common, "search.title_abstract_keywords": self._openalex_or_query(clean),
+                             "rerank": "true"})
+        else:
+            searches.append({**common, "search.title_abstract_keywords": self._openalex_or_query(clean)})
+        if self.openalex_semantic:
+            searches.append({**common, "search.semantic": clean})
+
+        batches = await asyncio.gather(
+            *(self._openalex_request(client, params, query) for params in searches),
+            return_exceptions=True,
+        )
+        papers: list[PaperResult] = []
+        for batch in batches:
+            if isinstance(batch, Exception):
+                logger.warning("OpenAlex search failed for '%s': %s", query[:60], type(batch).__name__)
+            else:
+                papers.extend(batch)
+        return papers
+
+    async def _openalex_request(
+        self, client: httpx.AsyncClient, params: dict, query: str
+    ) -> list[PaperResult]:
+        """One OpenAlex call with key rotation and backoff.
+
+        Keys rotate through a KeyPool: a key whose daily budget is spent (or that is rejected)
+        is parked and the next key is used; short 429 bursts back off exponentially."""
+        pool = self._openalex_pool
 
         max_backoffs = self.openalex_max_attempts
         backoffs = 0
@@ -1147,7 +1212,8 @@ class PaperRetrievalAgent:
             try:
                 # Key goes in a header, not the query string, so it never shows up in httpx's URL logging.
                 resp = await client.get(self.OPENALEX_API_URL, params=params,
-                                        headers={"Authorization": f"Bearer {key}"})
+                                        headers={"Authorization": f"Bearer {key}"},
+                                        timeout=self.openalex_timeout)
             except httpx.TransportError as e:
                 backoffs += 1
                 if backoffs >= max_backoffs:
