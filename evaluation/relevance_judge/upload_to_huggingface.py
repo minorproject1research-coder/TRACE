@@ -36,6 +36,9 @@ SUB_QUESTIONS = HERE / "sub_questions.json"
 
 DEFAULT_REPO_NAME = "trace-relevance-judge"
 TOKEN_VARS = ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HUGGINGFACE_API_KEY", "HF_API_KEY")
+DEFAULT_LICENSE = "mit"
+LICENSE_NAMES = {"mit": "MIT License", "apache-2.0": "Apache License 2.0", "cc-by-4.0": "Creative Commons Attribution 4.0 license (CC BY 4.0)",
+                 "cc0-1.0": "CC0 1.0 public-domain dedication"}
 JUDGE_CHAR_LIMIT = 2500
 PROD_THRESHOLD = 0.56  # min_similarity in relevance_filter.filter_relevant
 
@@ -143,7 +146,8 @@ def compute_stats(rows: list[dict]) -> dict:
 def render_card(template: str, stats: dict, license_id: str, example: dict) -> str:
     ex = dict(example)
     ex["abstract"] = ex["abstract"][:220].rstrip() + " ..."
-    values = {**stats, "license": license_id, "example_json": json.dumps(ex, ensure_ascii=False, indent=2)}
+    values = {**stats, "license": license_id, "license_name": LICENSE_NAMES.get(license_id, license_id),
+              "example_json": json.dumps(ex, ensure_ascii=False, indent=2)}
     card = template
     for key, val in values.items():
         card = card.replace("{{" + key + "}}", str(val))
@@ -197,7 +201,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo-id", help="target dataset repo, e.g. username/trace-relevance-judge (default: $HF_DATASET_REPO or <you>/trace-relevance-judge)")
     ap.add_argument("--public", action="store_true", help="create the dataset as public (default: private)")
-    ap.add_argument("--license", default="cc-by-4.0", help="license id for the annotations, shown on the card (default: cc-by-4.0)")
+    ap.add_argument("--license", default=DEFAULT_LICENSE, help="Hub license id for the annotations, shown on the card (default: mit)")
     ap.add_argument("--exclude-sources", nargs="*", default=[], help="drop rows from these sources, e.g. semantic_scholar")
     ap.add_argument("--drop-flagged", action="store_true", help="drop the rows with a quality_flag instead of just flagging them")
     ap.add_argument("--dry-run", action="store_true", help="build and validate the upload folder, do not contact Hugging Face")
@@ -205,7 +209,9 @@ def main():
     ap.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
     args = ap.parse_args()
 
-    load_dotenv(REPO_ROOT / ".env")
+    # override=True: the project's .env must win over a system-level HF_TOKEN (e.g. from an older `huggingface-cli login`
+    # or a Windows environment variable), otherwise the dataset silently goes to the wrong account.
+    load_dotenv(REPO_ROOT / ".env", override=True)
 
     out = Path(args.out) if args.out else Path(tempfile.mkdtemp(prefix="trace_relevance_judge_hf_"))
     stats = build_staging(out, args)
@@ -234,7 +240,21 @@ def main():
     except Exception as e:
         raise SystemExit(f"Could not authenticate with Hugging Face ({type(e).__name__}). Check the token and that it has write access.")
 
-    repo_id = args.repo_id or os.getenv("HF_DATASET_REPO", "").strip() or f"{user}/{DEFAULT_REPO_NAME}"
+    # An empty value followed by an inline "# comment" in .env is read as the comment text, so strip it.
+    env_repo = os.getenv("HF_DATASET_REPO", "").split("#")[0].strip()
+    repo_id = args.repo_id or env_repo or f"{user}/{DEFAULT_REPO_NAME}"
+    if not re.fullmatch(r"[\w.-]+/[\w.-]+", repo_id):
+        raise SystemExit(f"'{repo_id}' is not a valid repo id; expected <username>/<dataset-name>")
+
+    # The token can only write to its own account and to organizations its user belongs to.
+    owner = repo_id.split("/")[0]
+    writable = {user} | {o.get("name") for o in api.whoami().get("orgs", [])}
+    if owner not in writable:
+        raise SystemExit(
+            f"The token in .env belongs to '{user}' and cannot write to '{owner}'.\n"
+            f"  - If '{owner}' is a separate Hugging Face account: create a WRITE token while logged in to that account and put it in .env as HF_TOKEN.\n"
+            f"  - If '{owner}' is an organization: make '{user}' a member with write access, and give a fine-grained token access to that organization.\n"
+            f"Nothing was uploaded.")
     visibility = "PUBLIC" if args.public else "private"
     print(f"\nAuthenticated as '{user}'. Target: https://huggingface.co/datasets/{repo_id}  ({visibility})")
 

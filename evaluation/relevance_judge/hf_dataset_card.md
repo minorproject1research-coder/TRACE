@@ -158,7 +158,7 @@ visible text, with reduced confidence.
 
 ## Licensing and attribution
 
-- The **annotations** (`relevant`, `label_confidence`, `label_reason`, the sampling and the structure) are released under **{{license}}**.
+- The **annotations** (`relevant`, `label_confidence`, `label_reason`, the sampling and the structure) are released under the **{{license_name}}**.
 - The **titles and abstracts** are bibliographic metadata retrieved from OpenAlex (CC0), arXiv (metadata released under CC0) and, for
   {{n_s2}} rows, Semantic Scholar (subject to Semantic Scholar's own terms). Copyright in each abstract remains with its authors or publisher; they are
   included here only as short evaluation text. If you are a rights holder and want a record removed, please open an issue in the GitHub repository.

@@ -3,6 +3,13 @@
 Everything about how TRACE's **abstract relevance judge** (Stage 2 of the Abstract Relevance Filter) is evaluated:
 the dataset, how it was built, how it was labeled, what we learned along the way, and how to run the benchmark.
 
+**Dataset on Hugging Face:** https://huggingface.co/datasets/minorproject-research/trace-relevance-judge (public, MIT-licensed annotations, 360 labeled rows)
+
+```python
+from datasets import load_dataset
+ds = load_dataset("minorproject-research/trace-relevance-judge", split="test")
+```
+
 > **Status (2026-10-05):** the dataset (`dataset.jsonl`, 360 labeled rows) is finished. The benchmark runner is written and
 > smoke-tested on mocks, but **no candidate model has been run on the dataset yet** (see [Next steps](#12-next-steps)).
 
@@ -50,7 +57,8 @@ Candidates (see `models.json`; tags/ids there are **placeholders to verify**):
 | `results/` | Created by the runner: `<model>.jsonl` raw outputs and `summary.md` |
 
 **Not in git:** `dataset.jsonl`, `candidates.jsonl`, `labels/` and `raw/` are listed in `.gitignore`, so they are absent from a fresh clone of the GitHub repo. The
-finished dataset is published on Hugging Face (section 10); `raw/` is only a regenerable API cache.
+finished dataset is published on Hugging Face at https://huggingface.co/datasets/minorproject-research/trace-relevance-judge (section 10);
+`raw/` is only a regenerable API cache.
 
 All commands run from the **repo root** with the project venv (`venv\Scripts\python.exe -m evaluation.relevance_judge.<module>`).
 
@@ -345,8 +353,11 @@ Environment variables used: `HF_TOKEN` (upload only), `GROQ_API_KEY`, `SEMANTIC_
 
 ### Publishing the dataset on Hugging Face
 
+The published dataset: https://huggingface.co/datasets/minorproject-research/trace-relevance-judge
+
 `upload_to_huggingface.py` stages and uploads the dataset (data + a generated dataset card + the sub-question list). It needs a Hugging Face **write**
-token in `.env` as `HF_TOKEN` (optionally `HF_DATASET_REPO=<username>/trace-relevance-judge`; `pip install huggingface_hub`).
+token in `.env` as `HF_TOKEN` (optionally `HF_DATASET_REPO=<username>/trace-relevance-judge`; `pip install huggingface_hub`). The token in `.env` takes
+precedence over any system-level `HF_TOKEN`, and the script refuses to upload to an account the token cannot write to.
 
 ```powershell
 # build + validate the upload folder locally, contact nothing
