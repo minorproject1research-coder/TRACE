@@ -49,7 +49,8 @@ Candidates (see `models.json`; tags/ids there are **placeholders to verify**):
 | `merge_labels.py` | Step 2: validates + merges the label batches into `dataset.jsonl`, prints class balance |
 | **`dataset.jsonl`** | **The finished benchmark**: candidates + `label` + `label_source: claude-manual` |
 | `common.py` | Shared helpers: judge prompt (imported from production), tolerant verdict parser, jsonl IO |
-| `run_judge_benchmark.py` | Step 3: run candidate models over the dataset and score them |
+| `run_judge_benchmark.py` | Step 3: run candidate models over the dataset and score them (command line) |
+| `relevance_judge_benchmark.ipynb` | Same benchmark as a self-contained notebook: loads the dataset from Hugging Face, tests the models one by one, saves each model's results as it goes and skips models already tested (see 9.6) |
 | `models.json` | Model list (Ollama tags / NVIDIA ids / `think` settings) |
 | `prelabel.py` | **Alternative, automated** labeling route (strong LLM + `review_queue.csv`). Not used for the final labels |
 | `upload_to_huggingface.py` | Publishes the dataset to the Hugging Face Hub (see section 10) |
@@ -308,6 +309,20 @@ venv\Scripts\python.exe -m evaluation.relevance_judge.run_judge_benchmark --repo
 ```
 
 Raw outputs go to `results/<model>.jsonl` (resumable: finished ids are skipped); the comparison table is written to `results/summary.md`.
+
+### 9.3b Notebook version
+
+`relevance_judge_benchmark.ipynb` does the same job without needing the local `dataset.jsonl`: it loads
+`minorproject-research/trace-relevance-judge` from Hugging Face, then tests each model in `models.json` (or the built-in list) in turn.
+
+- Each answer is appended to `results/<model>.jsonl` the moment it arrives, so a stopped run loses nothing.
+- **Re-running skips models that are already fully tested**; an interrupted model resumes with only its missing rows; rows that failed (timeouts, network) are retried.
+  To test a model again from scratch, put its name in `FORCE_RERUN`; to test only some models use `RUN_ONLY`; `LIMIT = 30` gives a quick smoke test.
+- Models that cannot run (Ollama not reachable, tag not pulled, `TODO` id, no `NVIDIA_API_KEY`) are skipped with the reason.
+- It uses the same result format as `run_judge_benchmark.py`, so `results/` can be shared. It also reports the hard-band (similarity 0.6-0.8) accuracy and F1,
+  saves `summary.csv` / `summary.md`, draws a chart against the baselines and lists where the best model disagrees with the labels.
+
+Needs `pip install datasets httpx python-dotenv pandas tqdm matplotlib` (the first cell runs it) and a Jupyter kernel (`pip install ipykernel` in the project venv).
 
 ### 9.4 Metrics reported (positive class = relevant)
 
