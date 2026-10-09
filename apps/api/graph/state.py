@@ -9,3 +9,5 @@ class SharedResearchState(BaseModel):
     task_plan: Optional[TaskPlan] = None
     web_sources: list[Source] = []
     paper_results: list[dict] = []
+    digests: list[dict] = []
+    coverage: dict = {}

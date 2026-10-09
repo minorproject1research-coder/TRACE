@@ -46,3 +46,8 @@ print(f"Total papers: {len(papers)}")
 for p in papers[:10] if papers else []:
     title = p.get("title") if isinstance(p, dict) else getattr(p, "title", "")
     print(f"  {title}")
+    
+print("\n=== STAGE 3 ===")
+print("digests:", len(result.get("digests", [])))
+for sq_id, cov in result.get("coverage", {}).items():
+    print(sq_id, cov)

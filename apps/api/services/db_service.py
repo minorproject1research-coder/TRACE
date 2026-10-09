@@ -141,3 +141,72 @@ def write_parsed_paper(
             "figures": figures,
             "full_text": full_text,
         }).execute()
+
+
+# ---------- Stage 3 (Summarizer) ----------
+
+def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
+    """Relevance-filtered papers for one sub-question, with their parsed
+    sections/full_text attached (empty if parsing failed), best combined_score first."""
+    papers = (
+        supabase.table("retrieved_papers")
+        .select("id,title,abstract,combined_score,reliability_score")
+        .eq("query_id", query_id)
+        .eq("sub_question_id", sub_question_id)
+        .execute()
+        .data
+    )
+    if not papers:
+        return []
+
+    # sorted in Python: Postgres puts NULL scores first on DESC, which would
+    # push unscored papers to the top
+    papers.sort(key=lambda p: p.get("combined_score") or 0, reverse=True)
+
+    parsed = (
+        supabase.table("parsed_papers")
+        .select("retrieved_paper_id,sections,full_text")
+        .in_("retrieved_paper_id", [p["id"] for p in papers])
+        .execute()
+        .data
+    )
+    by_id = {r["retrieved_paper_id"]: r for r in parsed}
+
+    for p in papers:
+        r = by_id.get(p["id"], {})
+        p["sections"] = r.get("sections") or []
+        p["full_text"] = r.get("full_text") or ""
+    return papers
+
+
+def get_web_sources_for_stage3(sub_question_id: str) -> list[dict]:
+    """Web sources for one sub-question, best reliability_score first."""
+    rows = (
+        supabase.table("web_sources")
+        .select("id,title,url,snippet,reliability_score")
+        .eq("sub_question_id", sub_question_id)
+        .execute()
+        .data
+    )
+    rows.sort(key=lambda r: r.get("reliability_score") or 0, reverse=True)
+    return rows
+
+
+def write_digests(rows: list[dict]) -> None:
+    """Store per-source digests (findings with quote verification flags)."""
+    if not rows:
+        return
+    now = _now_ist()
+    for row in rows:
+        row.setdefault("created_at", now)
+    supabase.table("digests").insert(rows).execute()
+
+
+def write_coverage(rows: list[dict]) -> None:
+    """Store the per-sub-question coverage decision."""
+    if not rows:
+        return
+    now = _now_ist()
+    for row in rows:
+        row.setdefault("created_at", now)
+    supabase.table("coverage_results").insert(rows).execute()
