@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
@@ -7,6 +8,13 @@ from apps.api.agents.stage2_retrieval import relevance_filter, reliability_score
 from apps.api.services import db_service
 
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
+
+# How many papers per sub-question are parsed (best combined_score first). 0 = parse all kept papers.
+PARSE_TOP_N = max(0, int(os.getenv("PARSE_TOP_N_PER_SUBQUESTION", "5")))
+# A sub-question may try up to this many times N papers to reach N with usable text.
+PARSE_MAX_ATTEMPTS_FACTOR = max(1, int(os.getenv("PARSE_MAX_ATTEMPTS_FACTOR", "2")))
+# A parse counts as usable full text above this many characters.
+MIN_USABLE_TEXT_CHARS = 3000
 
 
 def paper_retrieval_node(state: SharedResearchState) -> dict:
@@ -56,25 +64,61 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
 
 
 async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, papers: list[dict]):
-    """Fetches the retrieved_paper IDs just saved for this query, then parses
-    only those (full text/sections/figures via Docling + PDFFigures)."""
+    """Parses (full text/sections/figures via Docling + PDFFigures) the best papers of each sub-question only:
+    the top PARSE_TOP_N_PER_SUBQUESTION by combined_score. Stage 3 reads at most a few papers per sub-question, so
+    parsing everything wasted most of the run. A paper that yields no usable text is replaced by the next one in
+    rank, up to PARSE_MAX_ATTEMPTS_FACTOR x N attempts per sub-question. 0 for N = parse everything."""
     if not papers:
         return
 
-    result = db_service.supabase.table("retrieved_papers") \
-        .select("id") \
+    rows = db_service.supabase.table("retrieved_papers") \
+        .select("id,sub_question_id,title,combined_score") \
         .eq("query_id", query_id) \
-        .execute()
+        .execute().data
 
-    paper_ids = [row["id"] for row in result.data]
-
-    if not paper_ids:
+    if not rows:
         logger.warning("No saved paper IDs found to parse for query %s", query_id)
         return
 
-    logger.info("Parsing %d relevant papers (Docling + PDFFigures)...", len(paper_ids))
-    parsed = await agent.parse_papers(paper_ids=paper_ids)
-    logger.info("Successfully parsed %d/%d papers", len(parsed), len(paper_ids))
+    by_sq: dict[str, list[dict]] = {}
+    for row in sorted(rows, key=lambda r: r.get("combined_score") or 0, reverse=True):
+        by_sq.setdefault(row["sub_question_id"], []).append(row)
+
+    queues = {sq: list(rs) for sq, rs in by_sq.items()}
+    target = {sq: len(rs) if PARSE_TOP_N <= 0 else min(PARSE_TOP_N, len(rs)) for sq, rs in by_sq.items()}
+    max_attempts = {sq: len(rs) if PARSE_TOP_N <= 0 else min(len(rs), PARSE_TOP_N * PARSE_MAX_ATTEMPTS_FACTOR)
+                    for sq, rs in by_sq.items()}
+    attempted = {sq: 0 for sq in by_sq}
+    usable = {sq: 0 for sq in by_sq}
+    total_attempted = total_usable = 0
+
+    logger.info("Parsing the top %s papers per sub-question by combined_score (%d saved across %d sub-questions)...",
+                PARSE_TOP_N or "all", len(rows), len(by_sq))
+    while True:
+        batch: list[tuple[str, dict]] = []
+        for sq, queue in queues.items():
+            need = target[sq] - usable[sq]
+            room = max_attempts[sq] - attempted[sq]
+            take = min(need, room, len(queue))
+            for _ in range(take):
+                batch.append((sq, queue.pop(0)))
+            attempted[sq] += max(take, 0)
+        if not batch:
+            break
+
+        parsed = await agent.parse_papers(paper_ids=[r["id"] for _, r in batch])
+        text_by_id = {p.retrieved_paper_id: len(p.full_text or "") for p in parsed}
+        for sq, row in batch:
+            total_attempted += 1
+            if text_by_id.get(row["id"], 0) >= MIN_USABLE_TEXT_CHARS:
+                usable[sq] += 1
+                total_usable += 1
+            else:
+                logger.info("No usable full text for '%s' — trying the next paper of that sub-question if any",
+                            row["title"][:60])
+
+    logger.info("Parsing done: %d usable full texts out of %d papers attempted (%d saved in total)",
+                total_usable, total_attempted, len(rows))
 
 
 async def _retrieve_for_subquestion(agent: PaperRetrievalAgent, sq) -> list[dict]:

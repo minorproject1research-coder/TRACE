@@ -155,17 +155,19 @@ def filter_relevant(sub_question: str, papers: list[dict],
             passed.append(paper)
             continue
 
+        # the judge is a pass/fail gate only: relevance_score stays the embedding similarity so ranking keeps a
+        # fine-grained signal (the judge's confidence is nearly constant and lives in relevance_verdict)
         paper["relevance_verdict"] = verdict
-        paper["relevance_score"] = verdict["confidence"] if verdict["relevant"] else 0.0
 
         if verdict["relevant"] and verdict["confidence"] >= confidence_threshold:
             passed.append(paper)
         else:
-            logger.info("Filtered out '%s' — relevant=%s confidence=%.2f",
-                        paper.get("title", "")[:50], verdict["relevant"], verdict["confidence"])
+            logger.info("Filtered out [%s] '%s' — similarity=%.2f relevant=%s confidence=%.2f reason: %s",
+                        sub_question[:40], paper.get("title", "")[:60], paper.get("embedding_similarity", 0.0),
+                        verdict["relevant"], verdict["confidence"], verdict.get("reason", "")[:160])
 
-    logger.info("Relevance filter [%s judge]: %d shortlisted -> %d passed (%d kept without a judgment)",
-                JUDGE_BACKEND, len(shortlist), len(passed), no_opinion)
+    logger.info("Relevance filter [%s judge] for [%s]: %d shortlisted -> %d passed (%d kept without a judgment)",
+                JUDGE_BACKEND, sub_question[:40], len(shortlist), len(passed), no_opinion)
     return passed
 
 

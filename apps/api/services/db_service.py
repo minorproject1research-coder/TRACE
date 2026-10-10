@@ -45,9 +45,13 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
 
     rows = []
     for paper in papers:
+        verdict = paper.get("relevance_verdict") or {}
         rows.append({
             "query_id": query_id,
             "sub_question_id": paper.get("sub_question_id"),
+            "judge_relevant": verdict.get("relevant"),
+            "judge_confidence": verdict.get("confidence"),
+            "judge_reason": verdict.get("reason"),
             "reliability_score": paper.get("reliability_score"),
             "relevance_score": paper.get("relevance_score"),
             "combined_score": paper.get("combined_score"),

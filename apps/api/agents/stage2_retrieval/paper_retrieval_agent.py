@@ -21,6 +21,13 @@ from pydantic import BaseModel, Field
 from apps.api.agents.stage2_retrieval.key_pool import KeyPool
 from apps.api.services import db_service
 
+# PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
+MAX_PDF_SIZE_MB = float(os.getenv("MAX_PDF_SIZE_MB", "20"))
+
+
+class PdfTooLargeError(Exception):
+    """The PDF is over MAX_PDF_SIZE_MB; no other source is tried because it would be the same file."""
+
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -278,6 +285,9 @@ class PaperRetrievalAgent:
                     self._store_parsed_paper(docling_result)
                     return docling_result
 
+            except PdfTooLargeError as e:
+                logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, e)
+                return self._empty_parsed(retrieved_paper_id, paper_metadata)
             except Exception as e:
                 last_error = e
                 failed_hosts.add(urlparse(pdf_url).netloc)
@@ -316,6 +326,9 @@ class PaperRetrievalAgent:
 
                         self._store_parsed_paper(docling_result)
                         return docling_result
+            except PdfTooLargeError as e:
+                logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, e)
+                return self._empty_parsed(retrieved_paper_id, paper_metadata)
             except Exception as e:
                 logger.warning("Unpaywall fallback failed for %s: %s: %r", doi, type(e).__name__, e)
 
@@ -323,6 +336,10 @@ class PaperRetrievalAgent:
         if pdf_url:
             try:
                 pdf_bytes = await self._download_pdf_playwright(pdf_url)
+                if pdf_bytes and MAX_PDF_SIZE_MB > 0 and len(pdf_bytes) > MAX_PDF_SIZE_MB * 1048576:
+                    logger.warning("Skipping oversized PDF for %s: %.1f MB exceeds the %s MB cap",
+                                   retrieved_paper_id, len(pdf_bytes) / 1048576, MAX_PDF_SIZE_MB)
+                    return self._empty_parsed(retrieved_paper_id, paper_metadata)
                 if pdf_bytes:
                     async with httpx.AsyncClient(timeout=60.0) as client:
                         docling_task = self._safe_docling(pdf_bytes)
@@ -362,6 +379,17 @@ class PaperRetrievalAgent:
             references=[],
             figures=[],
             full_text="",
+        )
+
+    @staticmethod
+    def _empty_parsed(retrieved_paper_id: str, paper_metadata: dict) -> ParsedPaper:
+        """Metadata-only result (nothing stored) for a paper whose PDF was skipped."""
+        return ParsedPaper(
+            retrieved_paper_id=retrieved_paper_id,
+            title=paper_metadata.get("title", ""),
+            authors=paper_metadata.get("authors", []),
+            abstract=paper_metadata.get("abstract", ""),
+            sections=[], references=[], figures=[], full_text="",
         )
 
     async def _safe_docling(self, pdf_bytes: bytes):
@@ -593,19 +621,39 @@ class PaperRetrievalAgent:
             "Upgrade-Insecure-Requests": "1",
         }
 
-        resp = await client.get(url, follow_redirects=True, headers=headers)
-        if resp.status_code == 403 and "?" in url:
+        max_bytes = MAX_PDF_SIZE_MB * 1024 * 1024 if MAX_PDF_SIZE_MB > 0 else 0
+
+        async def _fetch(target: str) -> tuple[int, str, bytes]:
+            """Streams the body so an oversized PDF is abandoned as soon as it is known to be too big."""
+            async with client.stream("GET", target, follow_redirects=True, headers=headers) as resp:
+                if resp.status_code >= 400:
+                    if resp.status_code == 403:
+                        return 403, "", b""
+                    resp.raise_for_status()
+                content_type = resp.headers.get("content-type", "").lower()
+                declared = int(resp.headers.get("content-length") or 0)
+                if max_bytes and declared > max_bytes:
+                    raise PdfTooLargeError(f"{declared / 1048576:.1f} MB exceeds the {MAX_PDF_SIZE_MB} MB cap")
+                if "pdf" not in content_type:
+                    raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
+                chunks, size = [], 0
+                async for chunk in resp.aiter_bytes():
+                    size += len(chunk)
+                    if max_bytes and size > max_bytes:
+                        raise PdfTooLargeError(f"over the {MAX_PDF_SIZE_MB} MB cap (download stopped at {size / 1048576:.1f} MB)")
+                    chunks.append(chunk)
+                return resp.status_code, content_type, b"".join(chunks)
+
+        status, _, body = await _fetch(url)
+        if status == 403 and "?" in url:
             clean_url = url.split("?")[0]
             logger.info("Retrying without query params: %s", clean_url)
-            resp = await client.get(clean_url, follow_redirects=True, headers=headers)
-        resp.raise_for_status()
+            status, _, body = await _fetch(clean_url)
+        if status == 403:
+            raise httpx.HTTPStatusError("403 Forbidden", request=httpx.Request("GET", url), response=httpx.Response(403))
 
-        content_type = resp.headers.get("content-type", "").lower()
-        if "pdf" not in content_type:
-            raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
-
-        logger.info("Downloaded PDF: %d bytes", len(resp.content))
-        return resp.content
+        logger.info("Downloaded PDF: %d bytes", len(body))
+        return body
 
     async def _parse_with_docling(self, pdf_bytes: bytes) -> ParsedPaper:
         """Parse PDF using Docling Docker API for metadata, sections, and references."""
