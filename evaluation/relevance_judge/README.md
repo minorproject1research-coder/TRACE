@@ -10,8 +10,11 @@ from datasets import load_dataset
 ds = load_dataset("minorproject-research/trace-relevance-judge", split="test")
 ```
 
-> **Status (2026-10-05):** the dataset (`dataset.jsonl`, 360 labeled rows) is finished. The benchmark runner is written and
-> smoke-tested on mocks, but **no candidate model has been run on the dataset yet** (see [Next steps](#12-next-steps)).
+> **Status (2026-10-10):** the dataset (360 labeled rows) is finished and published, and **12 candidate models have been benchmarked**
+> (10 completely, 2 partially). Best overall: GLM-5.3 / GLM-5.3-flash (95.3% accuracy, online); best local: Qwen3.5-9B (90.8%).
+> Three results are limited by the test setup rather than by the models. See [Benchmark results](#10-benchmark-results) and [Next steps](#13-next-steps).
+>
+> **Decision (2026-10-10): the production relevance judge will be Qwen3.5-9B (Q8_0, served locally through Ollama), chosen for its latency** (see [10.4](#104-recommendations)).
 
 ---
 
@@ -25,9 +28,9 @@ step on irrelevant ones. `apps/api/agents/stage2_retrieval/relevance_filter.py` 
 | 1. Embedding pre-filter | `BAAI/bge-base-en-v1.5` cosine similarity between the sub-question and each abstract; keep `>= min_similarity` (0.56 in `filter_relevant`), top 20 | very cheap, runs on every candidate |
 | 2. LLM judge (optional, `USE_LLM_JUDGMENT`) | Prompt with sub-question + title + abstract, get `{"relevant": bool, "confidence": 0-1, "reason": "one line"}`; pass if `relevant and confidence >= 0.6` | one small-model call per shortlisted paper |
 
-The final judge model is meant to be the fine-tuned Squeezer (Qwen3.5-3B); until it exists a small Groq model
-(`llama-3.1-8b-instant`) is a placeholder. This benchmark exists to **choose the judge model empirically** instead of guessing:
-every candidate model gets the same prompt on the same labeled papers and is scored against the labels.
+The judge was originally planned to be the fine-tuned Squeezer (Qwen3.5-3B), with a small Groq model (`llama-3.1-8b-instant`) as a placeholder. This benchmark exists to
+**choose the judge model empirically** instead of guessing: every candidate model gets the same prompt on the same labeled papers and is scored against the labels.
+**Outcome:** the production judge will be **Qwen3.5-9B**, picked for latency (section 10.4). The code in `relevance_filter.py` still calls the Groq placeholder until it is switched (section 13).
 
 Candidates (see `models.json`; tags/ids there are **placeholders to verify**):
 
@@ -50,15 +53,16 @@ Candidates (see `models.json`; tags/ids there are **placeholders to verify**):
 | **`dataset.jsonl`** | **The finished benchmark**: candidates + `label` + `label_source: claude-manual` |
 | `common.py` | Shared helpers: judge prompt (imported from production), tolerant verdict parser, jsonl IO |
 | `run_judge_benchmark.py` | Step 3: run candidate models over the dataset and score them (command line) |
-| `relevance_judge_benchmark.ipynb` | Same benchmark as a self-contained notebook: loads the dataset from Hugging Face, tests the models one by one, saves each model's results as it goes and skips models already tested (see 9.6) |
+| `relevance_judge_benchmark.ipynb` | Same benchmark as a self-contained notebook: loads the dataset from Hugging Face, tests the models one by one, saves each model's results as it goes and skips models already tested (see 9.3b) |
 | `models.json` | Model list (Ollama tags / NVIDIA ids / `think` settings) |
 | `prelabel.py` | **Alternative, automated** labeling route (strong LLM + `review_queue.csv`). Not used for the final labels |
-| `upload_to_huggingface.py` | Publishes the dataset to the Hugging Face Hub (see section 10) |
+| `upload_to_huggingface.py` | Publishes the dataset to the Hugging Face Hub (see section 11) |
 | `hf_dataset_card.md` | Template of the Hugging Face dataset card; statistics are filled in from the data at upload time |
-| `results/` | Created by the runner: `<model>.jsonl` raw outputs and `summary.md` |
+| `results/` | Per model: `<model>.jsonl` (raw per-row answers), `<model>.summary.json`; plus `summary.csv` / `summary.md` (see section 10) |
+| `analyze_results.py` | Reproduces every number in section 10 from `results/` and the dataset (significance tests, confidence, ensembles, cascade, label audit) |
 
 **Not in git:** `dataset.jsonl`, `candidates.jsonl`, `labels/` and `raw/` are listed in `.gitignore`, so they are absent from a fresh clone of the GitHub repo. The
-finished dataset is published on Hugging Face at https://huggingface.co/datasets/minorproject-research/trace-relevance-judge (section 10);
+finished dataset is published on Hugging Face at https://huggingface.co/datasets/minorproject-research/trace-relevance-judge (section 11);
 `raw/` is only a regenerable API cache.
 
 All commands run from the **repo root** with the project venv (`venv\Scripts\python.exe -m evaluation.relevance_judge.<module>`).
@@ -346,7 +350,114 @@ Needs `pip install datasets httpx python-dotenv pandas tqdm matplotlib` (the fir
 
 ---
 
-## 10. Reproducing the dataset
+## 10. Benchmark results
+
+Run on 2026-10-08 and 2026-10-09 with `relevance_judge_benchmark.ipynb`: 12 models, one pass over all 360 rows, the production judge prompt (abstract cut at
+2,500 characters), temperature 0.1. Raw answers: `results/<model>.jsonl`; table: `results/summary.md`. Every number below is reproduced by
+`python -m evaluation.relevance_judge.analyze_results`.
+
+### 10.1 How the run was done
+
+- Local models through Ollama on a 16 GB GPU (RTX 2000 Ada); online models through the NVIDIA free endpoints with `max_tokens = 1024`.
+- An unparseable or empty answer counts as "not relevant", as it would in production.
+- 10 models were tested on all 360 rows. `nemotron-3-ultra-550b` has 348 rows (12 missing) and `kimi-k3` only 15, so their numbers are partial.
+- One run per model, so run-to-run variation is not measured.
+
+### 10.2 Leaderboard (sorted by F1; positive class = relevant)
+
+| Model | Rows | Valid JSON | Accuracy (95% CI) | Precision | Recall | F1 | Rejects irrelevant | s / paper (median / p95) |
+|---|---|---|---|---|---|---|---|---|
+| glm-5.3-flash (online) | 360 | 99% | 0.953 (0.93-0.97) | 0.951 | 0.979 | 0.965 | 90% | 57.2 / 129.9 |
+| glm-5.3 (online) | 360 | 93% | 0.953 (0.93-0.97) | 0.974 | 0.954 | 0.964 | 95% | 5.6 / 27.6 |
+| qwen3.5-9b-q8 | 360 | 100% | 0.908 (0.87-0.93) | 0.889 | 0.983 | 0.934 | 76% | 2.3 / 2.6 |
+| nemotron-3-ultra-550b (online, partial: 348 rows) | 348 | 99% | 0.902 (0.87-0.93) | 0.916 | 0.939 | 0.927 | 83% | 10.6 / 40.2 |
+| gemma4-e4b-q8 | 360 | 100% | 0.889 (0.85-0.92) | 0.863 | 0.987 | 0.921 | 70% | 14.9 / 19.1 |
+| qwen3.5-4b-q8 | 360 | 100% | 0.875 (0.84-0.91) | 0.853 | 0.979 | 0.912 | 67% | 1.4 / 1.6 |
+| phi4-14b-q4km | 360 | 100% | 0.853 (0.81-0.89) | 0.822 | 0.992 | 0.899 | 59% | 2.4 / 2.9 |
+| gpt-oss-20b | 360 | 100% | 0.864 (0.82-0.90) | 0.905 | 0.886 | 0.896 | 82% | 1.9 / 2.7 |
+| qwen3-8b-q8 | 360 | 100% | 0.844 (0.80-0.88) | 0.811 | 0.996 | 0.894 | 55% | 2.1 / 2.5 |
+| phi4-mini-q8 | 360 | 100% | 0.800 (0.76-0.84) | 0.770 | 0.992 | 0.867 | 43% | 1.0 / 1.2 |
+| nemotron-3.5-lightning-30b (online) | 360 | **61%** | 0.786 (0.74-0.83) | 0.965 | 0.700 | 0.812 | 95% | 23.3 / 54.3 |
+| kimi-k3 (online, partial: 15 rows) | 15 | 73% | 0.667 (0.42-0.85) | 0.714 | 0.625 | 0.667 | - | 140.5 / 294.9 |
+
+"Rejects irrelevant" is the share of the 123 irrelevant papers the model says "not relevant" to. Baselines on the same data: always answering "relevant" scores
+**65.8%**; the production embedding pre-filter (similarity >= 0.56) scores **71.1%** and lets 103 of the 123 irrelevant papers through (it rejects 16%); the best
+single similarity threshold (0.72, chosen on this same data, so optimistic) scores **83.3%**.
+
+### 10.3 What the results show
+
+1. **Tiers, and what is statistically solid.** Top: GLM-5.3 and GLM-5.3-flash (identical, p = 1.0). Then Qwen3.5-9B and Gemma (p = 0.28, not separable). Then Qwen3.5-4B,
+   gpt-oss-20b, phi4-14b and Qwen3-8B, which cannot be told apart at this size. Last: phi4-mini (below the 83.3% single-threshold baseline) and nemotron-lightning (see point 3).
+   With paired exact McNemar tests, only three differences survive a Holm correction across the 14 comparisons made: Qwen3.5-9B > phi4-mini, Qwen3-8B > phi4-mini and
+   gpt-oss-20b > nemotron-lightning (the last because of its invalid replies). GLM > Qwen3.5-9B (p = 0.005 to 0.009) narrowly misses the corrected threshold, and
+   Qwen3.5-9B > Qwen3.5-4B or > gpt-oss (p about 0.03) do not survive it, so read those as suggestive.
+2. **Local models are lenient: they say "relevant" too readily.** Recall is 98-99.6% for every local model except gpt-oss-20b (0.886), but they reject only 43-76% of the
+   irrelevant papers (gpt-oss-20b: 82%; GLM: 90-95%). Their errors are almost all false positives. For a pipeline where a missed paper never reaches parsing this is a
+   defensible trade, but it means the judge removes less than the accuracy figure suggests.
+3. **Three results are limited by the test setup, not only by the models.**
+   - **GLM-5.3:** all 24 invalid answers are *empty* (probably all tokens spent on hidden reasoning within `max_tokens = 1024`); 9 of them were relevant papers. On the 336
+     it answered it scores 97.6% accuracy (F1 0.983).
+   - **nemotron-lightning:** 139 invalid answers, mostly long reasoning text with no usable JSON or a truncated one. On the 221 it finished it scores 96.8% (F1 0.979). The
+     answered subset may be the easier rows, so this is not its true accuracy.
+   - **kimi-k3:** the replies are garbled (for example `<|open|>{"=":}`), so the model id or output format is probably wrong; only 15 rows exist.
+   - **nemotron-3-ultra:** 12 rows are missing; on the 348 it scores 90.2%, equal to Qwen3.5-9B (p = 1.0) but about 6 times slower.
+4. **Most of the gap between models is on the borderline rows.** On the 252 rows whose label confidence is >= 0.9, accuracy is 99.6% (GLM-flash), 98.8% (GLM-5.3),
+   98.4% (Gemma), 97.6% (Qwen3.5-9B), 96.4% (Qwen3.5-4B), 96.0% (phi4-14b), 95.2% (gpt-oss), 94.8% (Qwen3-8B), 90.5% (phi4-mini). On the 325 rows with label confidence
+   >= 0.7: GLM-flash 98.5%, GLM-5.3 96.6%, Qwen3.5-9B 93.8%, Gemma 93.5%, Qwen3.5-4B and phi4-14b 90.5%, gpt-oss 89.8%, Qwen3-8B 88.6%, phi4-mini 84.0%. Twelve of GLM-flash's 17 errors
+   fall inside the 35 low-confidence rows, so it is close to the ceiling this labeling allows.
+5. **The confidence field is mostly unusable for the local models.**
+   - The production rule `confidence >= 0.6` never changes a decision: F1 with and without it is identical for every model.
+   - Qwen3.5-4B answers 0.95 on 321 of 360 rows, so there is nothing to threshold (AUROC 0.847). GLM's confidence is informative (AUROC 0.995 and 0.990), Gemma's 0.951, Qwen3.5-9B's 0.931.
+   - Qwen3-8B and phi4-mini state a confidence of 0.3 or lower on **100%** of their "not relevant" answers: they read "confidence" as P(relevant) instead of "how sure I am of my verdict".
+     The prompt is ambiguous here; re-reading their numbers that way lifts AUROC from 0.830 to 0.889 and from 0.774 to 0.858. It distorts their Brier scores, not their decisions.
+6. **Cheap improvements.**
+   - **Cascade with the embedding filter:** reject below similarity 0.6 (32 rows, 2 relevant) and accept at 0.8 or above (74 rows, 72 relevant), and call the LLM only on the other 254 rows:
+     this saves **29% of LLM calls** with an accuracy change of -0.3 to +1.4 points. (Thresholds picked on this data.)
+   - **Two local models that must agree** (Qwen3.5-9B AND Gemma) reach 92.8% accuracy, F1 0.947, rejecting 84% of irrelevant papers. It beats Gemma alone (p = 0.003) and is borderline against
+     Qwen3.5-9B alone (p = 0.065), at double the latency. Majority votes of 3 or 5 local models do not help (89-91%).
+   - **A similarity gate on a single model** (threshold chosen by cross-validation) adds only +0.3 to +3.3 points.
+7. **Models fail where the topic boundary is a judgment call.** Lowest mean accuracy over the complete models: MoE architectures (0.74), KV-cache/efficient attention (0.77), self-supervised
+   ASR (0.78), RAG and hallucination rates (0.78), RL sample efficiency (0.78), dense retrieval (0.81), multi-agent LLMs (0.81), 4-bit PTQ (0.82). These are the topics where the labels apply a strict
+   "adjacent method is not relevant" rule (MoE serving systems, Whisper ASR, re-rankers). Sixteen rows are misjudged by at least 7 of 9 judges, and almost all are my low-confidence "not relevant" calls,
+   so these are mainly **policy disagreements, not clear mistakes**. The exceptions: `sq29_09` is probably a label error (all 9 models say "not relevant" because the abstract is off-topic and the label
+   was given from the title; see 8.1), and `sq15_09` is a genuine model error (diffusion used for spin-glass sampling; 7 of 9 say relevant).
+8. **Source matters.** The arXiv rows (92, only 45% relevant) are harder for small models: Qwen3.5-9B 0.891 vs 0.921 on OpenAlex, Qwen3.5-4B 0.826 vs 0.893, phi4-mini 0.717 vs 0.822; GLM-5.3 is steady (0.957 vs 0.946).
+9. **Speed.** Local models take 1.0-2.4 s per paper (median) except Gemma, at 14.9 s. Online: GLM-5.3 5.6 s median (p95 27.6, worst 146), GLM-flash 57 s, nemotron-ultra 10.6 s, nemotron-lightning 23.3 s,
+   kimi 140 s; these include queueing on free endpoints and are not representative of a paid or local deployment. Gemma's time is tightly clustered (p95 19.1 s) and its replies are normal length, so it is
+   probably compute- or memory-bound rather than reasoning; a GPU-memory problem was found on that machine (7.6 GB held by a Hyper-V process), which could have forced CPU offload. This is unconfirmed.
+
+### 10.4 Recommendations
+
+- **Decision: Qwen3.5-9B (Q8_0, Ollama) is the production judge, chosen for latency.** The GLM models are more accurate (95.3% vs 90.8%) but are online free endpoints whose latency is long and uneven (GLM-5.3 median 5.6 s, p95 27.6 s, worst 146 s; GLM-5.3-flash 57 s median), and they send paper text off the machine. Among the models that answer in about 2 s or less, Qwen3.5-9B is the most accurate (0.908 vs 0.875 for Qwen3.5-4B, 0.864 for gpt-oss-20b, 0.853 for phi4-14b) and the only one whose confidence carries some signal (AUROC 0.931). It answers in 2.3 s median (p95 2.6 s) with 100% valid JSON. What is given up: it is lenient (recall 0.983, but it rejects only 76% of irrelevant papers) and about 4.5 points less accurate than GLM; the cascade below recovers part of the cost savings.
+- **Local judge alternatives:** Qwen3.5-4B (87.5%, 1.4 s) is the fallback if memory or speed is tight; the Qwen3.5 family beats the older Qwen3-8B by 3 points despite being smaller.
+- **Put the cascade in front of it** (reject < 0.6, accept >= 0.8, judge the middle): 29% fewer LLM calls at no real accuracy cost.
+- **Use GLM as a teacher, not as the production judge:** it is the most accurate and its confidence is trustworthy, but it is an online free endpoint with long and uneven latency. Have it label extra papers and fine-tune the
+  Squeezer on them. Keep the 360 benchmark rows out of that training data.
+- **Skip** phi4-mini (below the embedding baseline), phi4-14b (heavier and worse than Qwen3.5-4B) and Qwen3-8B; nemotron-ultra is no better than Qwen3.5-9B and much slower.
+- **Strict or lenient is a product decision.** If wasted PDF parsing is the main cost, prefer the stricter gpt-oss-20b or the AND-pair; if losing a relevant paper is worse, prefer the lenient Qwen models.
+- **Do not rely on `confidence >= 0.6`** with these models; if confidence is wanted, clarify its meaning in the prompt and re-test.
+
+### 10.5 Caveats
+
+- The labels come from a single LLM annotator (section 8.2), 35 rows are contested, and the results depend somewhat on how strictly "adjacent" topics are judged.
+- n = 360: a single accuracy has about +/-5 points of uncertainty, and rows within a sub-question are correlated.
+- One run per model at temperature 0.1; settings were not identical across models (`think` flags, `max_tokens = 1024` for the online models).
+- The 83.3% embedding baseline and the cascade thresholds were chosen on this same data, so both are slightly optimistic.
+- Latencies come from different hardware conditions and free shared endpoints and are only indicative.
+
+### 10.6 Reproducing the analysis
+
+```powershell
+venv\Scripts\python.exe -m evaluation.relevance_judge.analyze_results            # every section
+venv\Scripts\python.exe -m evaluation.relevance_judge.analyze_results signif     # one section
+```
+
+Sections: `verify`, `invalid`, `missing`, `signif`, `conf`, `confsem`, `ensemble`, `cascade`, `breakdown`, `audit`, `answered`, `clear`, `latency`. It reads `results/` and the local
+`dataset.jsonl` (or the Hugging Face dataset if the file is absent) and writes nothing.
+
+---
+
+## 11. Reproducing the dataset
 
 ```powershell
 # 1. retrieval + sampling (slow: arXiv / Semantic Scholar rate limits; about 3 minutes per sub-question)
@@ -363,8 +474,6 @@ papers that were labeled. Do not regenerate `candidates.jsonl` without also redo
 
 Environment variables used: `HF_TOKEN` (upload only), `GROQ_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `OPENALEX_API_KEYS` (or `OPENALEX_API_KEY`),
 `NVIDIA_API_KEY`, `OLLAMA_URL`, plus the optional retry settings (`S2_*`, `OPENALEX_*`) documented in `.env.example`.
-
----
 
 ### Publishing the dataset on Hugging Face
 
@@ -387,7 +496,9 @@ a `quality_flag` (use `--drop-flagged` to remove them). The card (`hf_dataset_ca
 Useful flags: `--exclude-sources semantic_scholar` (if you do not want to redistribute Semantic Scholar-sourced abstracts), `--license`, `--repo-id`, `--out`.
 Check the licensing section of the card before making the dataset public.
 
-## 11. Changes made outside this folder because of this work
+---
+
+## 12. Changes made outside this folder because of this work
 
 - `apps/api/agents/stage2_retrieval/relevance_filter.py`: added `JUDGE_ABSTRACT_CHAR_LIMIT = 2500` and used it in `llm_judge_relevance`.
 - `apps/api/agents/stage2_retrieval/paper_retrieval_agent.py`: Semantic Scholar backoff (env-configurable), OpenAlex search (key pool, rerank + semantic,
@@ -397,13 +508,16 @@ Check the licensing section of the card before making the dataset public.
 
 ---
 
-## 12. Next steps
+## 13. Next steps
 
-1. **Verify `models.json`** (Ollama tags, NVIDIA ids, `think` settings) and add `NVIDIA_API_KEY` to `.env`.
-2. Smoke-test one local and one online model with `--limit 20`, then run all candidates.
-3. Spot-check the 35 low-confidence rows (and ~30 random others); if disagreements are frequent, revise the labels and re-run `merge_labels.py`.
-4. Decide whether to drop the four problem rows in 8.1 (and then compare on 356 rows).
-5. Read `results/summary.md` against the two baselines (66% always-relevant, ~83% embedding threshold), choose the judge model, and set the production
-   confidence threshold (the runner already reports the 0.6 rule; try other thresholds on the saved verdicts).
-6. If the top models are within ~5 points, label a second batch of the same size.
-7. Once the Squeezer is fine-tuned, benchmark it here against the winner before switching the production reference.
+0. **Switch the production judge to Qwen3.5-9B:** change `llm_judge_relevance` in `relevance_filter.py` from the Groq placeholder to Qwen3.5-9B (Q8_0) through Ollama, with the same prompt and the 2,500-character limit; keep `USE_LLM_JUDGMENT` as the on/off switch; do not use `confidence >= 0.6` as a filter (it never changes a decision for this model). Not done yet: the code still calls Groq.
+1. **Fix the test setup and rerun the affected models:** raise `max_tokens` (or switch off thinking) for the online models, then redo `glm-5.3` (24 empty answers), `nemotron-3.5-lightning-30b` (139 invalid),
+   `nemotron-3-ultra-550b` (12 missing rows) and verify the `kimi-k3` model id. The notebook currently retries only rows that raised an error, not rows with an invalid answer, so a small option
+   to drop invalid rows before a rerun is needed.
+2. **Label review:** flip or drop `sq29_09` (all models say "not relevant" and the judge sees the off-topic abstract), spot-check the other contested rows, and re-publish the dataset if labels change
+   (re-run `merge_labels.py` and `upload_to_huggingface.py --public`).
+3. **Decide strict vs lenient** for the production judge and, if wanted, clarify the meaning of `confidence` in the prompt and re-test the affected models.
+4. **Check Gemma's speed** (`ollama ps`, look at the `PROCESSOR` column during a run) and rerun it with the GPU memory free.
+5. **Build the cascade** into `relevance_filter.py` (reject < 0.6, accept >= 0.8, LLM in between) and measure the saved calls on real pipeline runs.
+6. **Optional, if a smaller or faster judge is wanted later:** create training data with GLM on papers that are not in this benchmark, fine-tune a small Qwen3.5 model, and benchmark it here against Qwen3.5-9B (87.5% for the untuned 4B is the starting point). The Squeezer is no longer the planned judge.
+7. If two top candidates end up within about 5 points, label a second batch of the same size.
