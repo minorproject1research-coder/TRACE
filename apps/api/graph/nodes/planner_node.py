@@ -15,7 +15,10 @@ def planner_node(state: SharedResearchState) -> dict:
     logger.info("Generated %d sub-questions", len(sub_questions))
 
     for sq in sub_questions:
-        sq.queries = query_expansion.expand(sq.main_topic, sq.detail_questions)
+        # the planner already supplies search queries; only a sub-question left without any is expanded with the LLM
+        if not sq.queries:
+            logger.info("No planner queries for '%s'; expanding with query_expansion", sq.main_topic[:60])
+            sq.queries = query_expansion.expand(sq.main_topic, sq.detail_questions)
 
     task_plan = TaskPlan(raw_query=state.raw_query, sub_questions=sub_questions)
     db_service.write_task_plan(task_plan)

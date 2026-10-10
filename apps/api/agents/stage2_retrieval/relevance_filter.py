@@ -2,9 +2,12 @@
 import os
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer
 from groq import Groq
 from dotenv import load_dotenv
+
+from apps.api.services import trace_llm_service
 
 load_dotenv()
 
@@ -16,6 +19,16 @@ _embedder = None
 
 # Toggle: get value from environment variable (default: false) — only the fast embedding filter runs.
 USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "false").lower() == "true"
+
+# Where the judge runs: "server" = the fine-tuned-stack model server (POST /judge, Qwen3.5-9B on vLLM over Tailscale);
+# "groq" = the old Groq placeholder only.
+JUDGE_BACKEND = os.environ.get("JUDGE_BACKEND", "server").lower()
+# If the model server fails for a paper: "groq" = ask the Groq placeholder instead; "none" = give up on that paper.
+LLM_FALLBACK = os.environ.get("TRACE_LLM_FALLBACK", "groq").lower()
+# Papers judged in parallel (the server handles up to 32 concurrent requests; 12 parallel calls took ~5 s in total).
+JUDGE_WORKERS = max(1, int(os.environ.get("JUDGE_WORKERS", "8")))
+# Groq model used when the server is unavailable. The old placeholder llama-3.1-8b-instant was removed from Groq (HTTP 404).
+GROQ_JUDGE_MODEL = os.environ.get("GROQ_JUDGE_MODEL", "openai/gpt-oss-120b")
 
 # Max abstract characters shown to the LLM judge. The benchmark (evaluation/relevance_judge) and its
 # pre-labeler import this same value, so labels and models always see identical text. 2500 covers ~99.7%
@@ -77,30 +90,46 @@ Return ONLY a JSON object, nothing else, in this exact format:
 """
 
 
-def llm_judge_relevance(sub_question: str, paper: dict) -> dict:
+def _groq_judge(sub_question: str, title: str, abstract: str) -> dict:
+    """Fallback judge on Groq (model: GROQ_JUDGE_MODEL). Raises on any failure."""
+    prompt = RELEVANCE_JUDGE_PROMPT.format(sub_question=sub_question, title=title, abstract=abstract)
+    response = client.chat.completions.create(
+        model=GROQ_JUDGE_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1,
+    )
+    raw = response.choices[0].message.content.strip()
+    if raw.startswith("```"):
+        raw = raw.strip("`").replace("json\n", "", 1)
+    verdict = json.loads(raw)
+    return {
+        "relevant": bool(verdict.get("relevant", False)),
+        "confidence": float(verdict.get("confidence", 0.0)),
+        "reason": str(verdict.get("reason", "")),
+    }
+
+
+def llm_judge_relevance(sub_question: str, paper: dict) -> dict | None:
+    """Verdict {"relevant", "confidence", "reason"}, or None if every backend failed.
+
+    None means "no opinion": filter_relevant keeps such a paper (decided by the embedding filter alone) instead of
+    treating a broken judge as a rejection."""
     abstract = (paper.get("abstract") or "")[:JUDGE_ABSTRACT_CHAR_LIMIT]
     title = paper.get("title", "")
 
-    prompt = RELEVANCE_JUDGE_PROMPT.format(sub_question=sub_question, title=title, abstract=abstract)
+    if JUDGE_BACKEND == "server":
+        try:
+            return trace_llm_service.judge(sub_question, title, abstract)
+        except trace_llm_service.TraceLLMError as e:
+            logger.warning("Judge server failed for '%s': %s", title[:50], e)
+            if LLM_FALLBACK != "groq":
+                return None
 
     try:
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-        )
-        raw = response.choices[0].message.content.strip()
-        if raw.startswith("```"):
-            raw = raw.strip("`").replace("json\n", "", 1)
-        verdict = json.loads(raw)
-        return {
-            "relevant": bool(verdict.get("relevant", False)),
-            "confidence": float(verdict.get("confidence", 0.0)),
-            "reason": str(verdict.get("reason", "")),
-        }
+        return _groq_judge(sub_question, title, abstract)
     except Exception as e:
         logger.error("Relevance judgment failed for '%s': %s", title[:50], e)
-        return {"relevant": False, "confidence": 0.0, "reason": "judgment_failed"}
+        return None
 
 
 # Combined pipeline
@@ -114,9 +143,18 @@ def filter_relevant(sub_question: str, papers: list[dict],
         logger.info("LLM judgment disabled — using embedding-only shortlist of %d papers", len(shortlist))
         return shortlist
 
-    passed = []
-    for paper in shortlist:
-        verdict = llm_judge_relevance(sub_question, paper)
+    # judge the shortlist in parallel; results keep the shortlist order
+    with ThreadPoolExecutor(max_workers=JUDGE_WORKERS) as pool:
+        verdicts = list(pool.map(lambda p: llm_judge_relevance(sub_question, p), shortlist))
+
+    passed, no_opinion = [], 0
+    for paper, verdict in zip(shortlist, verdicts):
+        if verdict is None:                      # judge unavailable: fail open, keep the embedding-based decision
+            no_opinion += 1
+            paper["relevance_verdict"] = {"reason": "judgment_failed"}
+            passed.append(paper)
+            continue
+
         paper["relevance_verdict"] = verdict
         paper["relevance_score"] = verdict["confidence"] if verdict["relevant"] else 0.0
 
@@ -126,7 +164,8 @@ def filter_relevant(sub_question: str, papers: list[dict],
             logger.info("Filtered out '%s' — relevant=%s confidence=%.2f",
                         paper.get("title", "")[:50], verdict["relevant"], verdict["confidence"])
 
-    logger.info("Relevance filter: %d shortlisted -> %d passed LLM threshold", len(shortlist), len(passed))
+    logger.info("Relevance filter [%s judge]: %d shortlisted -> %d passed (%d kept without a judgment)",
+                JUDGE_BACKEND, len(shortlist), len(passed), no_opinion)
     return passed
 
 

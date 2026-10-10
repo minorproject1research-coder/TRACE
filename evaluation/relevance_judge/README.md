@@ -429,6 +429,7 @@ single similarity threshold (0.72, chosen on this same data, so optimistic) scor
 ### 10.4 Recommendations
 
 - **Decision: Qwen3.5-9B (Q8_0, Ollama) is the production judge, chosen for latency.** The GLM models are more accurate (95.3% vs 90.8%) but are online free endpoints whose latency is long and uneven (GLM-5.3 median 5.6 s, p95 27.6 s, worst 146 s; GLM-5.3-flash 57 s median), and they send paper text off the machine. Among the models that answer in about 2 s or less, Qwen3.5-9B is the most accurate (0.908 vs 0.875 for Qwen3.5-4B, 0.864 for gpt-oss-20b, 0.853 for phi4-14b) and the only one whose confidence carries some signal (AUROC 0.931). It answers in 2.3 s median (p95 2.6 s) with 100% valid JSON. What is given up: it is lenient (recall 0.983, but it rejects only 76% of irrelevant papers) and about 4.5 points less accurate than GLM; the cascade below recovers part of the cost savings.
+- **Deployment (2026-10-10): the judge is served from the model server** (vLLM, FP8 weights, one GPU shared with the planner LoRA) and the pipeline calls `POST /judge`. Run through that endpoint, the 360 benchmark papers score accuracy 0.900 / F1 0.927 as returned and **0.914 / 0.938** once replies are repaired, in line with the Ollama result above (0.908 / 0.934), at 0.47 s per paper with 8 parallel workers. 7.8% of replies (28 of 360) were complete verdicts missing only the final `}`; the client repairs them. The wrapper's own parser should do the same.
 - **Local judge alternatives:** Qwen3.5-4B (87.5%, 1.4 s) is the fallback if memory or speed is tight; the Qwen3.5 family beats the older Qwen3-8B by 3 points despite being smaller.
 - **Put the cascade in front of it** (reject < 0.6, accept >= 0.8, judge the middle): 29% fewer LLM calls at no real accuracy cost.
 - **Use GLM as a teacher, not as the production judge:** it is the most accurate and its confidence is trustworthy, but it is an online free endpoint with long and uneven latency. Have it label extra papers and fine-tune the
@@ -510,7 +511,7 @@ Check the licensing section of the card before making the dataset public.
 
 ## 13. Next steps
 
-0. **Switch the production judge to Qwen3.5-9B:** change `llm_judge_relevance` in `relevance_filter.py` from the Groq placeholder to Qwen3.5-9B (Q8_0) through Ollama, with the same prompt and the 2,500-character limit; keep `USE_LLM_JUDGMENT` as the on/off switch; do not use `confidence >= 0.6` as a filter (it never changes a decision for this model). Not done yet: the code still calls Groq.
+0. **Done (2026-10-10): the pipeline now uses the model server** for the judge (`/judge`) and the planner (`/decompose`). To turn the judge on set `USE_LLM_JUDGMENT=true` in `.env`; a full pipeline run with it has still to be verified.
 1. **Fix the test setup and rerun the affected models:** raise `max_tokens` (or switch off thinking) for the online models, then redo `glm-5.3` (24 empty answers), `nemotron-3.5-lightning-30b` (139 invalid),
    `nemotron-3-ultra-550b` (12 missing rows) and verify the `kimi-k3` model id. The notebook currently retries only rows that raised an error, not rows with an invalid answer, so a small option
    to drop invalid rows before a rerun is needed.
