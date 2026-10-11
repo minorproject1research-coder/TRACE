@@ -7,6 +7,9 @@ services:
     environment:
       DOCLING_SERVE_ENABLE_UI: "false"
       DOCLING_SERVE_LOG_LEVEL: "WARNING"
+      # synchronous /convert requests wait this long (default 120 s) before answering 504; parsing 3 papers at once
+      # queues behind each other, so give them room
+      DOCLING_SERVE_MAX_SYNC_WAIT: "600"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s

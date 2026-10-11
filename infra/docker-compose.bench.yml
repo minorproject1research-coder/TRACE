@@ -1,0 +1,29 @@
+# Benchmark stack: several Docling instances of the same image on different ports, to measure whether running more
+# containers raises parsing throughput (see scripts/bench_parsers.py).
+#
+#   docker compose -p trace-bench -f infra/docker-compose.bench.yml up -d docling-a            # 1 instance
+#   docker compose -p trace-bench -f infra/docker-compose.bench.yml up -d docling-a docling-b docling-c
+#   docker compose -p trace-bench -f infra/docker-compose.bench.yml down
+#
+# Ports: Docling 5101 / 5102 / 5103, PDFFigures 5002. Nothing here touches the real stack in docker-compose.yml.
+x-docling: &docling
+  image: ghcr.io/docling-project/docling-serve-cpu:latest
+  restart: "no"
+  environment:
+    DOCLING_SERVE_ENABLE_UI: "false"
+    DOCLING_SERVE_LOG_LEVEL: "WARNING"
+
+services:
+  docling-a:
+    <<: *docling
+    ports: ["5101:5001"]
+  docling-b:
+    <<: *docling
+    ports: ["5102:5001"]
+  docling-c:
+    <<: *docling
+    ports: ["5103:5001"]
+  pdffigures:
+    image: lakshyavarshney11/figure-extractor:latest
+    restart: "no"
+    ports: ["5002:5001"]

@@ -26,6 +26,17 @@ from apps.api.services import db_service
 # PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
 MAX_PDF_SIZE_MB = float(os.getenv("MAX_PDF_SIZE_MB", "20"))
 
+# Docling request settings. OCR off by default (see _parse_with_docling); set DOCLING_DO_OCR=true to always OCR.
+DOCLING_DO_OCR = os.getenv("DOCLING_DO_OCR", "false").lower() in ("1", "true", "yes")
+DOCLING_OCR_RETRY_BELOW_CHARS = 500     # fewer characters than this without OCR = probably a scanned PDF
+DOCLING_TIMEOUT_SECONDS = float(os.getenv("DOCLING_TIMEOUT_SECONDS", "300"))
+
+
+def _docling_markdown(data: dict) -> str:
+    document = data.get("document") or {}
+    return document.get("md_content") or data.get("md_content") or ""
+
+
 # Parse cache: reuse a stored parse of the same paper (see PaperRetrievalAgent._parse_single_paper).
 PARSE_CACHE_ENABLED = os.getenv("PARSE_CACHE", "true").lower() not in ("0", "false", "no")
 PARSE_CACHE_MIN_CHARS = 3000        # a stored row counts as a real parse above this many characters of full text
@@ -746,18 +757,26 @@ class PaperRetrievalAgent:
         
         b64_data = base64.b64encode(pdf_bytes).decode("utf-8")
         logger.info("Parsing PDF with Docling Docker API (%d bytes)", len(pdf_bytes))
-        
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(
-                f"{self.docling_url}/v1/convert/source",
-                json={
-                    "sources": [{"kind": "file", "base64_string": b64_data, "filename": "paper.pdf"}],
-                    "output_formats": ["markdown"],
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        
+
+        async def convert(do_ocr: bool) -> dict:
+            async with httpx.AsyncClient(timeout=DOCLING_TIMEOUT_SECONDS) as client:
+                resp = await client.post(
+                    f"{self.docling_url}/v1/convert/source",
+                    json={
+                        "sources": [{"kind": "file", "base64_string": b64_data, "filename": "paper.pdf"}],
+                        "options": {"to_formats": ["md"], "do_ocr": do_ocr, "include_images": False},
+                    },
+                )
+                resp.raise_for_status()
+                return resp.json()
+
+        # Born-digital papers have a text layer, so OCR (the slowest step: 2.2x on the benchmark papers, identical
+        # Markdown) is skipped. A scanned PDF comes back nearly empty and is retried once with OCR on.
+        data = await convert(do_ocr=DOCLING_DO_OCR)
+        if not DOCLING_DO_OCR and len(_docling_markdown(data).strip()) < DOCLING_OCR_RETRY_BELOW_CHARS:
+            logger.info("Docling returned little text without OCR (scanned PDF?) - retrying with OCR")
+            data = await convert(do_ocr=True)
+
         document = data.get("document", {})
         md_content = ""
 

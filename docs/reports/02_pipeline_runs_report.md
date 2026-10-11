@@ -9,25 +9,25 @@ search APIs vary from run to run, so small timing differences are not meaningful
 
 ## Summary table
 
-| | Run 0 | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|---|
-| Query | RAG vs hallucination | same | same | speculative decoding vs latency |
-| Query id | (earlier run) | `e882d2b4` | `e1b91c81` | `b0f116cf` |
-| Date | before 2026-10-10 | 2026-10-10 ~13:57 | 2026-10-10 15:02 | 2026-10-11 16:07 |
-| Planner | hardcoded mock, 2 sub-questions, 8 queries | model server, 3 sub-questions, 9 queries (22 s) | 3 sub-questions, 9 queries (32 s) | 3 sub-questions, 9 queries, **[3,3,0]** (22 s) |
-| Relevance judge | off | on, server | on, server | on, server |
-| **Total time** | 16m 50s | **25m 14s** | **13m 10s** | **12m 43s** |
-| Parsing time | n/a | 16m 35s (43 papers) | 5m 06s (24 attempted) | 5m 36s (20 attempted) |
-| Papers kept | 40 | 43 | 42 | 53 |
-| Papers with real full text (of parsed) | 24 of 40 | 30 of 43 | 15 usable of 24 attempted | 15 usable of 20 attempted |
-| "All PDF URLs failed" | 12 | 7 | 6 | 4 |
-| Duplicate papers parsed twice | 3 | 1 | at least 1 | 6 |
-| Verified findings (Stage 3) | 14 | 47 | 40 | 47 |
-| Coverage "sufficient" | n/a | True x3 | True x3 | **False, False, True** |
-| OpenAlex HTTP 429s | n/a | bursts | 13 (2 queries abandoned) | **0** |
-| Semantic Scholar queries abandoned | many | many | 16 | 18 |
-| Stage 3 digest slots on abstract-only papers (of 9) | n/a | 4 | 5 | 5 |
-| Judge rejections | n/a | 17 of 60 | 18 of 60 | 7 of 60 |
+|                                                     | Run 0                                      | Run 1                                           | Run 2                             | Run 3                                               |
+| --------------------------------------------------- | ------------------------------------------ | ----------------------------------------------- | --------------------------------- | --------------------------------------------------- |
+| Query                                               | RAG vs hallucination                       | same                                            | same                              | speculative decoding vs latency                     |
+| Query id                                            | (earlier run)                              | `e882d2b4`                                    | `e1b91c81`                      | `b0f116cf`                                        |
+| Date                                                | before 2026-10-10                          | 2026-10-10 ~13:57                               | 2026-10-10 15:02                  | 2026-10-11 16:07                                    |
+| Planner                                             | hardcoded mock, 2 sub-questions, 8 queries | model server, 3 sub-questions, 9 queries (22 s) | 3 sub-questions, 9 queries (32 s) | 3 sub-questions, 9 queries,**[3,3,0]** (22 s) |
+| Relevance judge                                     | off                                        | on, server                                      | on, server                        | on, server                                          |
+| **Total time**                                | 16m 50s                                    | **25m 14s**                               | **13m 10s**                 | **12m 43s**                                   |
+| Parsing time                                        | n/a                                        | 16m 35s (43 papers)                             | 5m 06s (24 attempted)             | 5m 36s (20 attempted)                               |
+| Papers kept                                         | 40                                         | 43                                              | 42                                | 53                                                  |
+| Papers with real full text (of parsed)              | 24 of 40                                   | 30 of 43                                        | 15 usable of 24 attempted         | 15 usable of 20 attempted                           |
+| "All PDF URLs failed"                               | 12                                         | 7<br /><br />                                   | 6                                 | 4                                                   |
+| Duplicate papers parsed twice                       | 3                                          | 1                                               | at least 1                        | 6                                                   |
+| Verified findings (Stage 3)                         | 14                                         | 47                                              | 40                                | 47                                                  |
+| Coverage "sufficient"                               | n/a                                        | True x3                                         | True x3                           | **False, False, True**                        |
+| OpenAlex HTTP 429s                                  | n/a                                        | bursts                                          | 13 (2 queries abandoned)          | **0**                                         |
+| Semantic Scholar queries abandoned                  | many                                       | many                                            | 16                                | 18                                                  |
+| Stage 3 digest slots on abstract-only papers (of 9) | n/a                                        | 4                                               | 5                                 | 5                                                   |
+| Judge rejections                                    | n/a                                        | 17 of 60                                        | 18 of 60                          | 7 of 60                                             |
 
 ---
 
@@ -43,6 +43,7 @@ Background work that led to the next step: the relevance judge was benchmarked o
 Qwen3.5-9B was chosen for production for latency.
 
 Fixes before run 1:
+
 - Planner and judge moved to the model server (`trace_llm_service.py`; `/decompose`, `/judge`): retries, circuit
   breaker, JSON repair for the 28 of 360 judge replies missing the final `}` (all 28 recovered).
 - Groq fallback model changed to `openai/gpt-oss-120b`; a judge that fails now keeps the paper (fail open).
@@ -57,6 +58,7 @@ Result: end to end works, planner sensible (3 sub-questions, queries assigned by
 failures (17 rejected), 47 verified findings (up from 14), 30 of 43 papers with real text.
 
 Problems found (ranked by cost):
+
 1. **Parsing took 16m 35s (66% of the run)**; Stage 3 reads only 9 papers, so about 34 parses were wasted.
 2. **Large PDFs block workers**: a 59 MB file held a worker about 2 minutes and then failed (so did a 15.7 MB one).
 3. **Semantic Scholar enrichment ran before the filter** (about 3-4 minutes, 25 requests rate-limited, no S2 key).
@@ -68,6 +70,7 @@ Problems found (ranked by cost):
    was dropped, Groq rate-limited Stage 3 7 times, PDFFigures returned 400 for some PDFs.
 
 Fixes made after run 1:
+
 - `relevance_score` stays the embedding similarity; the judge is a pass/fail gate. Its verdict is stored
   (`judge_relevant`, `judge_confidence`, `judge_reason`, migration 008) and each rejection is logged with sub-question,
   similarity, confidence and reason.
@@ -85,6 +88,7 @@ Result: time almost halved (25m 14s -> 13m 10s); parsing 16m 35s -> 5m 06s; `rel
 Timeline: planner 32 s, retrieval 4m 44s (Semantic Scholar waits dominate), filter 46 s, parsing 5m 06s, Stage 3 about 2 min.
 
 Problems found:
+
 1. **Stage 3 still read abstract-only papers**: 5 of 9 digest slots (Stage 3 ranks by `combined_score` and ignores
    whether text exists), while parsed papers such as a 236k-character survey were left unused.
 2. **Semantic Scholar** again: 16 abandoned queries, 3 batch backoffs, about 4m 43s of the run.
@@ -97,6 +101,7 @@ Problems found:
 6. Coverage still "sufficient" for all three, 9 of 24 parse attempts gave no text (DOI landing pages, 403s).
 
 Fixes made after run 2:
+
 - OpenAlex: at most `OPENALEX_MAX_CONCURRENT` requests in flight (default 2), backoff sleeps outside the semaphore.
 - Citation enrichment moved after the relevance filter (`enrich_papers`, once per unique arXiv id; `min_citations`
   moved with it).
@@ -116,6 +121,7 @@ kept, 47 verified findings, and coverage honest for the first time (False, False
 Timeline: planner 22 s, retrieval 3m 01s, filter 42 s, enrichment 37 s, parsing 5m 36s, Stage 3 2m 24s.
 
 Problems found:
+
 1. **Stage 3 reads abstract-only papers again**: 5 of 9 digest slots ("Towards Optimal Speculative Decoding" in two
    sub-questions, "Hybrid Speculative Decoding in RAG", "Formal schedulability analysis...", "Optimizing LLM Inference:
    Metrics that Matter"), while a parsed 140k-character survey was left out.
@@ -132,6 +138,10 @@ Problems found:
    cap may hide relevant papers.
 
 Fixes made after run 3 (built, not yet run):
+- **Docling OCR off** (report 3): the pipeline sent a request field Docling ignores, so every paper was converted with OCR
+  on. With `do_ocr=false` the same 5 papers took 70 s instead of 158 s with identical text; scanned PDFs are retried
+  with OCR. Running more Docling containers did not help on the dev machine.
+
 - **Parse cache** (`PARSE_CACHE`): a paper already parsed (same arXiv id, else DOI, else exact title) under any
   earlier query is copied instead of being downloaded and parsed again; a paper being parsed by another task of the
   same run is waited for rather than downloaded twice. Only rows with `parser_version >= PARSER_VERSION` and 3000+
