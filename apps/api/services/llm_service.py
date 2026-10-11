@@ -1,8 +1,9 @@
 import os
 import json
 import httpx
-from groq import Groq
 from dotenv import load_dotenv
+
+from apps.api.services import groq_pool
 
 load_dotenv()
 
@@ -11,8 +12,6 @@ GROQ_MODEL = os.getenv("SQUEEZER_GROQ_MODEL", "openai/gpt-oss-120b")
 OLLAMA_MODEL = os.getenv("SQUEEZER_OLLAMA_MODEL", "qwen3.5:3b")  # verify with `ollama list`
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 MODEL_NAME = OLLAMA_MODEL if BACKEND == "ollama" else GROQ_MODEL
-
-_groq = Groq(api_key=os.environ["GROQ_API_KEY"])
 
 
 def squeezer_json(prompt: str) -> dict:
@@ -26,12 +25,19 @@ def squeezer_json(prompt: str) -> dict:
         r.raise_for_status()
         raw = r.json()["message"]["content"]
     else:
-        resp = _groq.chat.completions.create(
-            model=GROQ_MODEL, temperature=0.1,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = resp.choices[0].message.content
+        for attempt in range(2):                    # a reply that is not valid JSON (cut off, stray text) gets one more try
+            resp = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model=GROQ_MODEL, temperature=0.1)
+            try:
+                return _parse_json(resp.choices[0].message.content)
+            except json.JSONDecodeError:
+                if attempt == 1:
+                    raise
+        raise RuntimeError("unreachable")
 
+    return _parse_json(raw)
+
+
+def _parse_json(raw: str) -> dict:
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.strip("`").replace("json\n", "", 1)

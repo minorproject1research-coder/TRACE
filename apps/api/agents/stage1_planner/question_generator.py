@@ -129,11 +129,10 @@ Return ONLY a JSON object in exactly this format:
 
 def _groq_decompose(question: str) -> dict:
     """Fallback with the same output schema as the planner. Used only when the model server is unreachable."""
-    from groq import Groq
-    client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b", temperature=0.3,
+    from apps.api.services import groq_pool
+    response = groq_pool.chat(
         messages=[{"role": "user", "content": GROQ_DECOMPOSE_PROMPT.format(question=question)}],
+        model="openai/gpt-oss-120b", temperature=0.3,
     )
     raw = response.choices[0].message.content.strip()
     obj = trace_llm_service.extract_json_from_output(raw.replace("```json", "").replace("```", ""))

@@ -110,3 +110,46 @@ abstracts were enough for "sufficient"), and nothing in the stored data said whi
 2. Consider reusing a digest when the same paper is selected for near-identical sub-questions, and a request-rate limit or
    backoff tuned for the Groq free tier.
 3. Revisit `detail_sim` (0.6) and the evidence weights once there is labelled data on what counts as "sufficient".
+
+## 8. Update - Groq key pool and parallel digests
+
+Problem: after the selection fix, Stage 3 time was set by Groq's free-tier limits (13 to 20 HTTP 429s per run, 3m 52s in run 5), and
+the SDK's blind retries (4, 14, 11, 18 s) wasted time.
+
+Changes:
+- `apps/api/services/groq_pool.py`: every Groq call (Stage 3 digests, query expansion, the planner's and the judge's Groq fallbacks)
+  goes through a thread-safe key pool. Keys come from `GROQ_API_KEYS` and `GROQ_API_KEY` (either may hold comma-separated keys).
+  Calls rotate round-robin; a key that answers 429 is parked for Groq's `Retry-After` and the call moves to the next key at once; with
+  one key it waits the `Retry-After`. A limit longer than 120 s (a daily limit) fails fast instead of sleeping.
+- `summarizer_node` prepares all digest jobs locally, runs them in a thread pool (`STAGE3_WORKERS`, default one per key) and assembles
+  rows and coverage in the original order. `squeezer_json` retries once on invalid JSON.
+- Groq enforces limits **per organization**, not per key: a second key from the same account adds nothing. Verified for the two
+  configured keys: each reports 8,000 tokens/min and 1,000 requests/day, and after one key hit its token limit the other still had its
+  full allowance, so they are separate organizations.
+
+Measurements (Stage 3 on run 5's data, writes stubbed):
+
+| Setup | Time | Notes |
+|---|---|---|
+| Run 5 as it ran (SDK retries) | 232 s | |
+| Pool, 1 worker, 2 keys (calls alternate keys) | 150 s | 47 verified findings of 56 |
+| Pool, 3 workers, 2 keys | 130 s | **3 digests lost**: two exhausted the old 8-attempt budget while waiting for a parked key, one invalid JSON |
+| Pool (fixed budget), 2 workers, 2 keys | 221 s | 0 digests lost, 50 verified of 56; run after heavy quota use |
+| **Pool, 3 workers, 3 keys (three separate accounts)** | **99 s** | 0 digests lost, 55 verified of 60 findings; 8 rate-limit pauses spread evenly over the keys (3, 3, 2) |
+
+Reading: the time is bounded by tokens per minute, not by parallelism. A digest call uses about 2.4k to 3.3k tokens (a
+`gpt-oss-120b` reply is mostly reasoning), so 15 digests need about 42k tokens: a floor of about 5 minutes on one key and about 2.6
+minutes on two, however many workers run. The pool therefore gives a moderate gain (roughly 2.5 to 3.5 minutes instead of 3m 52s to
+5m 31s) and removes the wasted fixed backoffs; it does not give 2x. The timings are noisy (130 to 221 s) because the per-minute
+windows and the daily quota differ from run to run.
+
+Rejected: `reasoning_effort=low` cut tokens by 27% but verified findings fell from 6 to 2 on the two papers tried.
+
+Fixed after the test: waiting for a parked key used to consume retry attempts, so parallel workers could give up with "still rate
+limited after 8 attempts"; real API calls and a time budget (300 s) are now counted separately.
+
+Caveats: Groq also has daily limits per key (1,000 requests/day; a daily token limit too), so repeated benchmarking or many runs per
+day can exhaust them; check Groq's terms before adding accounts to get around a free-tier limit.
+
+The third key (checked as a separate account: 999 of 1,000 daily requests left, and it kept its allowance after the other keys were
+limited) brought Stage 3 on the run-5 data from 232 s to 99 s (-57%), close to the floor of about 42k tokens / 24k tokens per minute = 1.75 minutes.

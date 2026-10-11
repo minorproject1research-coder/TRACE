@@ -190,10 +190,51 @@ Fixes made after run 4:
   plan it turns 4 sub-questions into 3 and folds the second copy's detail questions into the first; plans without a
   duplicate (runs 2 and 3) are unchanged. Not yet seen in a full pipeline run.
 
+## Run 5 - same query, parse cache warm, Stage 3 and planner merge in place (10m 09s, the fastest so far)
+
+Query id `823e1040` (2026-10-11 20:06). 53 papers kept across 3 sub-questions, 15 usable full texts of 17 attempted.
+
+| | Run 3 | Run 4 | Run 5 |
+|---|---|---|---|
+| Total time | 12m 43s | 16m 49s | **10m 09s** |
+| Sub-questions | 3 | 4 (two near-duplicates) | 3 |
+| Retrieval | 3m 01s | 4m 00s | 3m 01s |
+| Citation enrichment | 37 s | 21 s | 65 s (two Semantic Scholar 429 backoffs) |
+| **Parsing** | 5m 36s | 5m 23s | **1m 03s** (11 parse-cache hits, 6 real parses) |
+| Stage 3 | 2m 24s | 5m 31s | 3m 52s (13 Groq 429s) |
+| Papers whose digest was abstract-only | 5 of 9 | 0 of 12 | 0 of 9 |
+| Verified findings | 47 | 79 | 51 |
+| Coverage sufficient | no, no, yes | no, no, yes, yes | no, no, yes |
+| OpenAlex 429s | 0 | 0 | 0 |
+
+What worked (checked in the log and the database):
+- **The parse cache works across runs**: 43 of the 53 papers were also in run 4, and 11 parses were copied (the first three within a
+  second of parsing starting, before any download). Parsing fell from 5m 23s to 1m 03s. Run 3's unversioned rows were not
+  reused, as designed; run 4's rows (`parser_version = 1`) were.
+- Stage 3 again used full text for all 9 paper digests; judge columns stored for 53 of 53, citation counts for 53 of 53, parser
+  output clean (no polluted authors, no dash abstracts, sections and references on all 15 parsed rows); 7 judge rejections of 60, all
+  reasonable. No Docling gateway timeouts this time; one OCR retry, one empty Docling result, one PDFFigures 400, one "All PDF URLs failed".
+
+Not exercised: the sub-question merge (the planner returned three distinct sub-questions, all with planner queries, [3, 3, 3]) and the
+PDF size cap (no oversized PDF).
+
+Observed problems:
+1. **Semantic Scholar is now about 40% of the run**: roughly 3 minutes of search (17 abandoned queries) plus 65 s of citation enrichment.
+2. **Some digests keep few verified findings**: "Speculative Speculative Decoding" 1 of 4 and "A Theoretical Perspective for Speculative
+   Decoding" 2 of 4 (math-heavy papers); the other digests are 3/4 to 5/5. A quote that does not match its chunk is dropped, so these
+   papers contribute little. Cause not yet investigated (likely equation or symbol text in the quote).
+3. Stage 3 still takes 3m 52s for 15 digests (13 Groq 429s).
+4. Whether OCR-off speeds up the host cannot be read from this run (most papers came from the cache).
+
+Fixes made after run 5:
+- **Groq key pool + parallel Stage 3 digests** (`groq_pool.py`, report 4 section 8): two independent keys, `Retry-After`-aware
+  retries, one worker per key. Stage 3 is bounded by tokens per minute (about 42k tokens per run), so the gain is moderate (about 2.5 to 3.5
+  minutes instead of 3m 52s to 5m 31s), not 2x.
+
 ## Remaining backlog (ordered)
 
 1. ~~Stage 3: choose papers with usable text first, then rank by `combined_score`.~~ Done (see above); not yet seen in a full pipeline run.
-2. Skip Semantic Scholar search when there is no API key (about 3 minutes saved).
+2. Skip Semantic Scholar search when there is no API key, or get a Semantic Scholar key (search about 3 min + enrichment about 1 min).
 3. Rank papers with a direct PDF link ahead of DOI-only ones when choosing what to parse.
 4. Planner: guarantee every sub-question gets planner queries (balanced assignment).
 5. Per-key OpenAlex concurrency / rate limits (two keys are available).
@@ -204,3 +245,4 @@ Fixes made after run 4:
 
 Benchmark follow-ups (separate track): rerun GLM-5.3, nemotron-lightning, nemotron-ultra, verify kimi-k3, flip or drop
 `sq29_09` and re-publish the dataset.
+- Investigate unverified quotes in math-heavy papers (1 of 4 and 2 of 4 verified in run 5) and the Groq 429s in Stage 3.

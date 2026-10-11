@@ -2,13 +2,11 @@ import json
 import logging
 import os
 from dotenv import load_dotenv
-from groq import Groq
+from apps.api.services import groq_pool
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-
-client = Groq(api_key=os.environ["GROQ_API_KEY"])
 
 QUERY_EXPANSION_PROMPT = """You are a search query optimizer for a research assistant.
 
@@ -32,11 +30,7 @@ def expand(main_topic: str, detail_questions: list[str]) -> list[str]:
         detail_questions="\n".join(f"- {q}" for q in detail_questions),
     )
 
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4,
-    )
+    response = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model="openai/gpt-oss-120b", temperature=0.4)
 
     raw = response.choices[0].message.content.strip()
     queries = _safe_parse(raw)[:4]
