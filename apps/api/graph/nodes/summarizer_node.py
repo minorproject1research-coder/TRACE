@@ -9,7 +9,7 @@ logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 MAX_PAPERS, MAX_WEB = 3, 2
 
 
-def _row(query_id, sq_id, source_type, src, findings, weight):
+def _row(query_id, sq_id, source_type, src, findings, weight, evidence_level):
     return {
         "query_id": query_id,
         "sub_question_id": sq_id,
@@ -21,6 +21,7 @@ def _row(query_id, sq_id, source_type, src, findings, weight):
         "total_count": len(findings),
         "weight": weight,
         "model": llm_service.MODEL_NAME,
+        "evidence_level": evidence_level,       # full_text | abstract | web_snippet
     }
 
 
@@ -34,22 +35,24 @@ def summarizer_node(state: SharedResearchState) -> dict:
         for p in db_service.get_papers_for_stage3(qid, sq.id)[:MAX_PAPERS]:
             selected = chunk_selector.select_chunks(sq.main_topic, chunk_selector.build_chunks(p))
             findings = digest_generator.generate_digest(sq.main_topic, selected) if selected else []
-            rows.append(_row(qid, sq.id, "paper", p, findings, p.get("combined_score")))
+            level = "full_text" if p.get("has_full_text") else "abstract"
+            rows.append(_row(qid, sq.id, "paper", p, findings, p.get("combined_score"), level))
 
         for w in db_service.get_web_sources_for_stage3(sq.id)[:MAX_WEB]:
             snippet = w.get("snippet") or ""
             if len(snippet) < 200:
                 continue
             findings = digest_generator.generate_digest(sq.main_topic, [(0, snippet)])
-            rows.append(_row(qid, sq.id, "web", w, findings, w.get("reliability_score")))
+            rows.append(_row(qid, sq.id, "web", w, findings, w.get("reliability_score"), "web_snippet"))
 
         cov = coverage_check.check_coverage(sq.detail_questions, rows)
         coverage[sq.id] = cov
         cov_rows.append({"query_id": qid, "sub_question_id": sq.id, **cov})
         all_rows.extend(rows)
 
-        logger.info("Sub-question '%s': %d digests, %d verified findings, coverage sufficient=%s",
+        logger.info("Sub-question '%s': %d digests (%d from full text), %d verified findings, coverage sufficient=%s",
                     sq.main_topic[:50], len(rows),
+                    sum(1 for r in rows if r["evidence_level"] == "full_text"),
                     sum(r["verified_count"] for r in rows), cov["sufficient"])
 
     db_service.write_digests(all_rows)

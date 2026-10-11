@@ -195,9 +195,15 @@ def find_cached_parse(paper: dict, min_version: int, min_chars: int) -> dict | N
 
 # ---------- Stage 3 (Summarizer) ----------
 
+STAGE3_MIN_FULL_TEXT_CHARS = 3000      # a paper counts as having full text above this many parsed characters
+
+
 def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
-    """Relevance-filtered papers for one sub-question, with their parsed
-    sections/full_text attached (empty if parsing failed), best combined_score first."""
+    """Relevance-filtered papers for one sub-question with their parsed sections / full_text attached.
+
+    Papers with usable parsed text come first (best combined_score first within each group), then abstract-only papers:
+    a digest built from one abstract is much thinner evidence than one built from the paper, so the limited number of
+    Stage 3 slots must not go to unparsed papers while parsed ones are left over. Each paper gets `has_full_text`."""
     papers = (
         supabase.table("retrieved_papers")
         .select("id,title,abstract,combined_score,reliability_score")
@@ -208,10 +214,6 @@ def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
     )
     if not papers:
         return []
-
-    # sorted in Python: Postgres puts NULL scores first on DESC, which would
-    # push unscored papers to the top
-    papers.sort(key=lambda p: p.get("combined_score") or 0, reverse=True)
 
     parsed = (
         supabase.table("parsed_papers")
@@ -226,6 +228,10 @@ def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
         r = by_id.get(p["id"], {})
         p["sections"] = r.get("sections") or []
         p["full_text"] = r.get("full_text") or ""
+        p["has_full_text"] = len(p["full_text"]) >= STAGE3_MIN_FULL_TEXT_CHARS
+
+    # sorted in Python: Postgres puts NULL scores first on DESC, which would push unscored papers to the top
+    papers.sort(key=lambda p: (p["has_full_text"], p.get("combined_score") or 0), reverse=True)
     return papers
 
 
@@ -242,6 +248,22 @@ def get_web_sources_for_stage3(sub_question_id: str) -> list[dict]:
     return rows
 
 
+OPTIONAL_DIGEST_COLUMNS = ("evidence_level",)                 # migration 010
+OPTIONAL_COVERAGE_COLUMNS = ("full_text_source_count",)       # migration 010
+
+
+def _insert_with_optional_columns(table: str, rows: list[dict], optional: tuple) -> None:
+    """Insert rows; if the table lacks an optional column (migration not run yet), store them without it."""
+    try:
+        supabase.table(table).insert(rows).execute()
+    except Exception as e:
+        missing = [c for c in optional if c in str(e)]
+        if not missing:
+            raise
+        logger.warning("%s.%s missing - run db/migrations/010; storing without it", table, ", ".join(missing))
+        supabase.table(table).insert([{k: v for k, v in r.items() if k not in missing} for r in rows]).execute()
+
+
 def write_digests(rows: list[dict]) -> None:
     """Store per-source digests (findings with quote verification flags)."""
     if not rows:
@@ -249,7 +271,7 @@ def write_digests(rows: list[dict]) -> None:
     now = _now_ist()
     for row in rows:
         row.setdefault("created_at", now)
-    supabase.table("digests").insert(rows).execute()
+    _insert_with_optional_columns("digests", rows, OPTIONAL_DIGEST_COLUMNS)
 
 
 def write_coverage(rows: list[dict]) -> None:
@@ -259,4 +281,4 @@ def write_coverage(rows: list[dict]) -> None:
     now = _now_ist()
     for row in rows:
         row.setdefault("created_at", now)
-    supabase.table("coverage_results").insert(rows).execute()
+    _insert_with_optional_columns("coverage_results", rows, OPTIONAL_COVERAGE_COLUMNS)

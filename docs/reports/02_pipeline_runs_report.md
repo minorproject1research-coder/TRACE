@@ -138,6 +138,10 @@ Problems found:
    cap may hide relevant papers.
 
 Fixes made after run 3 (built, not yet run):
+- **Stage 3 paper selection**: papers with usable parsed text are ranked first, then by `combined_score`; each digest records
+  its `evidence_level` (full text / abstract / web snippet) and coverage counts abstract-only and web-snippet sources as half
+  a source (migration 010). On the run-3 data the abstract-only picks among the 9 paper slots fall from 5 to 0, and the real
+  Stage 3 node ran end to end on that data (9 full-text digests, 6 web-snippet digests, 41 verified findings).
 - **Docling OCR off** (report 3): the pipeline sent a request field Docling ignores, so every paper was converted with OCR
   on. With `do_ocr=false` the same 5 papers took 70 s instead of 158 s with identical text; scanned PDFs are retried
   with OCR. Running more Docling containers did not help on the dev machine.
@@ -150,9 +154,45 @@ Fixes made after run 3 (built, not yet run):
   (duplicate paper downloaded once, lookup failure falls back to a normal parse, cache can be disabled). The
   version-filtered Supabase lookup could not be tested until migration 009 is applied.
 
+## Run 4 - same query as run 3, after the parser / cache / Stage 3 / OCR changes (16m 49s)
+
+Query id `2ba16f1f` (2026-10-11 19:28), same speculative-decoding question as run 3. 72 papers kept across **4**
+sub-questions, 20 usable full texts of 25 papers attempted.
+
+Timeline: planner 28 s, retrieval 4m 00s, filter 1m 02s, enrichment 21 s, parsing 5m 23s, Stage 3 5m 31s.
+
+Whether each earlier change worked (checked in the log and in the database):
+- Migrations 008 / 009 / 010 applied (judge verdict stored for 72 of 72, `parser_version=1` on all parsed rows,
+  `evidence_level` and `full_text_source_count` filled); no "missing column" warnings.
+- OpenAlex 429s: 0 (second run in a row); citation enrichment after the filter: 14 papers in 21 s, `citation_count`
+  filled for 72 of 72; top-5 parsing with replacement reached 5 usable texts in all four sub-questions.
+- Parser output clean: no polluted author lists, no abstract with a leading dash, sections and references for 20 of 20
+  parsed rows, median 75% of the text inside sections.
+- Stage 3 full-text-first: all 12 paper digests were `full_text` (run 3: 5 of 9 abstract-only). Coverage was "not
+  sufficient" for two sub-questions (1 and 2 detail questions uncovered), "sufficient" for two.
+- Judge: 8 rejections out of 80, all reasonable.
+
+What did not work as hoped:
+1. **Cross-run parse cache did nothing**: the 5 cache hits were duplicates inside the run. The previous run's 16 parsed rows
+   have `parser_version = NULL` (the backfill script had not been run), although 51 of the 72 papers were also in the
+   previous run (about 15 avoidable parses).
+2. **OCR off gave no visible speed-up in the pipeline**: 5m 23s for 20 real parses (about 16 s each) against 5m 36s for 20
+   in run 3. On the host a conversion took 27 to 37 s with three running at once. The 2.2x measured on the laptop is not
+   confirmed on the host (host benchmark pending).
+3. **The planner produced 4 sub-questions, two of them near-duplicates** (topic similarity 0.97). The same three papers
+   were digested twice, the run had 72 papers instead of about 53, and Stage 3 took 5m 31s with 20 Groq 429s.
+4. One Docling 504 Gateway Timeout from the host after only 27 s (not the 120 s wait limit), one paper still empty after the
+   OCR retry, 3 "All PDF URLs failed" (DOI landing pages and publisher 403s), 2 PDFFigures errors (400, 500).
+5. Semantic Scholar search again took about 4 minutes (24 abandoned queries). The PDF size cap was not exercised.
+
+Fixes made after run 4:
+- **Near-duplicate sub-questions are merged** in the planner step (`SUBQUESTION_MERGE_SIMILARITY`, default 0.92). On the run 4
+  plan it turns 4 sub-questions into 3 and folds the second copy's detail questions into the first; plans without a
+  duplicate (runs 2 and 3) are unchanged. Not yet seen in a full pipeline run.
+
 ## Remaining backlog (ordered)
 
-1. Stage 3: choose papers with usable text first, then rank by `combined_score`.
+1. ~~Stage 3: choose papers with usable text first, then rank by `combined_score`.~~ Done (see above); not yet seen in a full pipeline run.
 2. Skip Semantic Scholar search when there is no API key (about 3 minutes saved).
 3. Rank papers with a direct PDF link ahead of DOI-only ones when choosing what to parse.
 4. Planner: guarantee every sub-question gets planner queries (balanced assignment).

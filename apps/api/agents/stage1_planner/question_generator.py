@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 # Caps keep retrieval time bounded: every search query fans out to arXiv, Semantic Scholar, IEEE, OpenAlex and the web.
 MAX_SUBQUESTIONS = int(os.getenv("MAX_SUBQUESTIONS", "5"))
 MAX_QUERIES_PER_SUBQUESTION = int(os.getenv("MAX_QUERIES_PER_SUBQUESTION", "3"))
+# Sub-questions whose topics are at least this similar (bge cosine) are merged into one; 1.0 turns merging off.
+MERGE_SIMILARITY = float(os.getenv("SUBQUESTION_MERGE_SIMILARITY", "0.92"))
+MAX_DETAIL_QUESTIONS = int(os.getenv("MAX_DETAIL_QUESTIONS", "5"))      # detail questions kept after a merge
+DETAIL_DUPLICATE_SIMILARITY = 0.9                                       # a merged-in detail this close to one we have is dropped
 # groq: if the model server is unreachable, decompose with the Groq model instead; none: raise the error
 LLM_FALLBACK = os.getenv("TRACE_LLM_FALLBACK", "groq").lower()
 
@@ -37,6 +41,45 @@ def generate(raw_query: str) -> list[SubQuestion]:
     return sub_questions
 
 
+def _merge_similar(sub_questions: list[SubQuestion]) -> list[SubQuestion]:
+    """Merge sub-questions that ask the same thing in different words.
+
+    The planner sometimes emits a core question twice ("How does X affect Y?" and "How effective is X at reducing Y?",
+    topic similarity 0.97). Each copy would be searched, judged, parsed and summarised separately, with mostly the same
+    papers. The measured gap is wide: the most similar pair of genuinely different sub-questions seen so far scores
+    0.84, so the default threshold is 0.92. The first sub-question is kept; the later one's detail questions are
+    added to it (near-identical ones dropped), up to MAX_DETAIL_QUESTIONS."""
+    if len(sub_questions) < 2 or MERGE_SIMILARITY >= 1.0:
+        return sub_questions
+    try:
+        from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder   # shared bge model, loaded once
+        model = get_embedder()
+        topics = model.encode([sq.main_topic for sq in sub_questions], normalize_embeddings=True)
+    except Exception as e:                              # never let a merge problem break planning
+        logger.warning("Sub-question merge skipped (%s: %s)", type(e).__name__, e)
+        return sub_questions
+
+    kept: list[int] = []                                # indexes into sub_questions
+    for i, sq in enumerate(sub_questions):
+        target = next((k for k in kept if float(topics[i] @ topics[k]) >= MERGE_SIMILARITY), None)
+        if target is None:
+            kept.append(i)
+            continue
+        host = sub_questions[target]
+        logger.info("Merged near-duplicate sub-question '%s' into '%s' (similarity %.2f)",
+                    sq.main_topic[:70], host.main_topic[:70], float(topics[i] @ topics[target]))
+        known = host.detail_questions
+        known_vecs = model.encode(known, normalize_embeddings=True)
+        for detail in sq.detail_questions:
+            if len(known) >= MAX_DETAIL_QUESTIONS:
+                break
+            vec = model.encode([detail], normalize_embeddings=True)[0]
+            if float((known_vecs @ vec).max()) < DETAIL_DUPLICATE_SIMILARITY:
+                known.append(detail)
+                known_vecs = model.encode(known, normalize_embeddings=True)
+    return [sub_questions[i] for i in kept]
+
+
 def _build_sub_questions(plan: dict) -> list[SubQuestion]:
     seen, result = set(), []
     for s in plan["sub_questions"]:
@@ -45,6 +88,7 @@ def _build_sub_questions(plan: dict) -> list[SubQuestion]:
             continue
         seen.add(key)
         result.append(SubQuestion(main_topic=s["topic"], detail_questions=s["details"] or [s["topic"]]))
+    result = _merge_similar(result)
     if len(result) > MAX_SUBQUESTIONS:
         logger.warning("Planner returned %d sub-questions; keeping the first %d", len(result), MAX_SUBQUESTIONS)
         result = result[:MAX_SUBQUESTIONS]
