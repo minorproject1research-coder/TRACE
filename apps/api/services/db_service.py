@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import re
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -10,6 +12,8 @@ _url = os.environ["SUPABASE_URL"]
 _key = os.environ["SUPABASE_SERVICE_KEY"]
 
 supabase: Client = create_client(_url, _key)
+
+logger = logging.getLogger("apps.api.services.db")
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -117,34 +121,76 @@ def write_parsed_paper(
     references: list[str],
     figures: list[dict],
     full_text: str,
+    parser_version: int | None = None,
 ) -> None:
-    """Store parsed paper content in the database."""
-    now = _now_ist()
+    """Store parsed paper content in the database.
 
+    parser_version (migration 009) marks the row as reusable by the parse cache. If the column does not exist yet the
+    row is stored without it, so a missing migration costs the cache, not the parse."""
+    fields = {
+        "title": title,
+        "authors": authors,
+        "abstract": abstract,
+        "sections": sections,
+        "cited_references": references,
+        "figures": figures,
+        "full_text": full_text,
+    }
+    if parser_version is not None:
+        fields["parser_version"] = parser_version
+
+    try:
+        _upsert_parsed(retrieved_paper_id, fields)
+    except Exception as e:
+        if "parser_version" not in fields or "parser_version" not in str(e):
+            raise
+        logger.warning("parsed_papers.parser_version is missing - run db/migrations/009; stored without it (no caching)")
+        fields.pop("parser_version")
+        _upsert_parsed(retrieved_paper_id, fields)
+
+
+def _upsert_parsed(retrieved_paper_id: str, fields: dict) -> None:
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
-
     if existing.data:
-        supabase.table("parsed_papers").update({
-            "title": title,
-            "authors": authors,
-            "abstract": abstract,
-            "sections": sections,
-            "cited_references": references,
-            "figures": figures,
-            "full_text": full_text,
-            "updated_at": now,
-        }).eq("retrieved_paper_id", retrieved_paper_id).execute()
+        supabase.table("parsed_papers").update({**fields, "updated_at": _now_ist()})             .eq("retrieved_paper_id", retrieved_paper_id).execute()
     else:
-        supabase.table("parsed_papers").insert({
-            "retrieved_paper_id": retrieved_paper_id,
-            "title": title,
-            "authors": authors,
-            "abstract": abstract,
-            "sections": sections,
-            "cited_references": references,
-            "figures": figures,
-            "full_text": full_text,
-        }).execute()
+        supabase.table("parsed_papers").insert({"retrieved_paper_id": retrieved_paper_id, **fields}).execute()
+
+
+def _like_escape(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def find_cached_parse(paper: dict, min_version: int, min_chars: int) -> dict | None:
+    """An earlier parsed_papers row for the same paper (arXiv id, then DOI, then exact title) under any other
+    retrieved_paper, produced by parser version >= min_version and holding at least min_chars of full text.
+    Newest first. None when there is no usable row."""
+    lookups = []
+    arxiv = re.sub(r"v\d+$", "", (paper.get("arxiv_id") or "").strip())
+    if arxiv:
+        lookups.append(("arxiv_id", "like", f"{_like_escape(arxiv)}%"))
+    doi = (paper.get("doi") or "").strip().lower()
+    if doi:
+        lookups.append(("doi", "ilike", _like_escape(doi)))
+    title = (paper.get("title") or "").strip()
+    if len(title) >= 20:
+        lookups.append(("title", "eq", title))
+
+    for column, op, value in lookups:
+        query = supabase.table("retrieved_papers").select("id").neq("id", paper["id"])
+        query = getattr(query, op)(column, value)
+        ids = [r["id"] for r in query.limit(50).execute().data]
+        if not ids:
+            continue
+        rows = (
+            supabase.table("parsed_papers").select("*")
+            .in_("retrieved_paper_id", ids).gte("parser_version", min_version)
+            .order("created_at", desc=True).limit(5).execute().data
+        )
+        for row in rows:
+            if len(row.get("full_text") or "") >= min_chars:
+                return row
+    return None
 
 
 # ---------- Stage 3 (Summarizer) ----------

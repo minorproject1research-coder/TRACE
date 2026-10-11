@@ -11,6 +11,10 @@ import html
 import re
 from dataclasses import dataclass, field
 
+# Bump whenever the parsing rules change in a way that makes stored rows worse than a fresh parse: only parsed_papers
+# rows with parser_version >= this are reused by the parse cache.
+PARSER_VERSION = 1
+
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 NUMBERING_RE = re.compile(r"^(?:(\d+(?:\.\d+)*)\.?|([IVXLC]+)\.|([A-Z])\.)\s+\S")
 

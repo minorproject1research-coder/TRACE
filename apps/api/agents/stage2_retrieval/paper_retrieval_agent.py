@@ -20,11 +20,15 @@ import httpx
 from pydantic import BaseModel, Field
 
 from apps.api.agents.stage2_retrieval.key_pool import KeyPool
-from apps.api.agents.stage2_retrieval.markdown_parser import clean_abstract, parse_markdown
+from apps.api.agents.stage2_retrieval.markdown_parser import PARSER_VERSION, clean_abstract, parse_markdown
 from apps.api.services import db_service
 
 # PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
 MAX_PDF_SIZE_MB = float(os.getenv("MAX_PDF_SIZE_MB", "20"))
+
+# Parse cache: reuse a stored parse of the same paper (see PaperRetrievalAgent._parse_single_paper).
+PARSE_CACHE_ENABLED = os.getenv("PARSE_CACHE", "true").lower() not in ("0", "false", "no")
+PARSE_CACHE_MIN_CHARS = 3000        # a stored row counts as a real parse above this many characters of full text
 
 
 class PdfTooLargeError(Exception):
@@ -206,6 +210,7 @@ class PaperRetrievalAgent:
         # even though the per-second rate was fine. Backoff sleeps happen outside the semaphore.
         self.openalex_max_concurrent = max(1, int(os.getenv("OPENALEX_MAX_CONCURRENT", "2")))
         self._openalex_semaphore = asyncio.Semaphore(self.openalex_max_concurrent)
+        self._parse_in_flight: dict[str, asyncio.Future] = {}   # paper key -> parse running in this run
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -244,13 +249,83 @@ class PaperRetrievalAgent:
 
         return parsed
 
+    @staticmethod
+    def _paper_key(paper_metadata: dict) -> str:
+        """Identity of a paper across queries: arXiv id, else DOI, else normalised title."""
+        arxiv = re.sub(r"v\d+$", "", (paper_metadata.get("arxiv_id") or "").strip())
+        if arxiv:
+            return f"arxiv:{arxiv}"
+        doi = (paper_metadata.get("doi") or "").strip().lower()
+        if doi:
+            return f"doi:{doi}"
+        return "title:" + re.sub(r"[^a-z0-9]+", " ", (paper_metadata.get("title") or "").lower()).strip()
+
     async def _parse_single_paper(self, retrieved_paper_id: str) -> Optional[ParsedPaper]:
-        """Parse a single paper by its retrieved_paper_id."""
-        paper_metadata = db_service.get_retrieved_paper(retrieved_paper_id)
+        """Parse one paper, reusing an earlier parse of the same paper when there is one.
+
+        1. If another task of this run is parsing the same paper right now, wait for it (so a paper kept under two
+           sub-questions is downloaded once).
+        2. Look for a stored parse of the same paper (any earlier query, current parser version, real full text) and
+           copy it under this retrieved_paper_id - no download, no Docling, no PDFFigures.
+        3. Otherwise download and parse as usual."""
+        paper_metadata = await asyncio.to_thread(db_service.get_retrieved_paper, retrieved_paper_id)
         if not paper_metadata:
             logger.warning("Paper not found: %s", retrieved_paper_id)
             return None
+        if not PARSE_CACHE_ENABLED:
+            return await self._parse_single_paper_uncached(retrieved_paper_id, paper_metadata)
 
+        key = self._paper_key(paper_metadata)
+        in_flight = self._parse_in_flight.get(key)
+        if in_flight is not None:
+            try:
+                await asyncio.shield(in_flight)
+            except Exception:
+                pass                                    # the other parse failed; fall through and try ourselves
+
+        # register BEFORE the first await below, so a second task for the same paper sees us and waits
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
+        self._parse_in_flight[key] = future
+        try:
+            cached = await self._load_cached_parse(retrieved_paper_id, paper_metadata)
+            if cached is not None:
+                return cached
+            return await self._parse_single_paper_uncached(retrieved_paper_id, paper_metadata)
+        finally:
+            self._parse_in_flight.pop(key, None)
+            future.set_result(None)
+
+    async def _load_cached_parse(self, retrieved_paper_id: str, paper_metadata: dict) -> Optional[ParsedPaper]:
+        try:
+            row = await asyncio.to_thread(
+                db_service.find_cached_parse, paper_metadata, PARSER_VERSION, PARSE_CACHE_MIN_CHARS)
+        except Exception as e:                          # a cache problem must never block parsing
+            logger.warning("Parse cache lookup failed for %s: %s: %s", retrieved_paper_id, type(e).__name__, e)
+            return None
+        if row is None:
+            return None
+
+        parsed = ParsedPaper(
+            retrieved_paper_id=retrieved_paper_id,
+            title=row.get("title") or "",
+            authors=row.get("authors") or [],
+            abstract=row.get("abstract") or "",
+            sections=[Section(heading=s.get("heading", ""), text=s.get("text", ""), level=s.get("level", 1))
+                      for s in (row.get("sections") or [])],
+            references=row.get("cited_references") or [],
+            figures=[Figure(label=f.get("label", ""), caption=f.get("caption", ""),
+                            image_path=f.get("image_path"), page=f.get("page"))
+                     for f in (row.get("figures") or [])],
+            full_text=row.get("full_text") or "",
+        )
+        self._apply_metadata(parsed, paper_metadata)
+        await asyncio.to_thread(self._store_parsed_paper, parsed)
+        logger.info("Parse cache hit: '%s' (%d chars) reused from an earlier query - no download or parsing",
+                    (paper_metadata.get("title") or "")[:60], len(parsed.full_text))
+        return parsed
+
+    async def _parse_single_paper_uncached(self, retrieved_paper_id: str, paper_metadata: dict) -> Optional[ParsedPaper]:
+        """Download and parse one paper (Docling + PDFFigures), with the URL / Unpaywall / Playwright fallbacks."""
         pdf_urls = self._construct_pdf_url(paper_metadata)
         if not pdf_urls:
             logger.warning("No downloadable URL for paper: %s", retrieved_paper_id)
@@ -615,6 +690,7 @@ class PaperRetrievalAgent:
             references=paper.references,
             figures=[{"label": f.label, "caption": f.caption, "image_path": f.image_path, "page": f.page} for f in paper.figures],
             full_text=paper.full_text,
+            parser_version=PARSER_VERSION,
         )
 
     async def _download_pdf(self, client: httpx.AsyncClient, url: str) -> bytes:
