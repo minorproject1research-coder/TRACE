@@ -29,7 +29,7 @@ from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState
 
 app = build_graph()
-result = app.invoke(SharedResearchState(raw_query="Impact of RAG on hallucination rates in LLMs"))
+result = app.invoke(SharedResearchState(raw_query="How effective is speculative decoding at reducing LLM inference latency?"))
 
 print("\n=== TASK PLAN ===")
 print(result["task_plan"])

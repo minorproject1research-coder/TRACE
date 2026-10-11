@@ -44,6 +44,14 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
         sq.papers = relevant_papers
         all_papers.extend(relevant_papers)
 
+    # citation counts only for the papers that survived the filter (they feed the reliability score)
+    kept = asyncio.run(agent.enrich_papers(all_papers))
+    if len(kept) != len(all_papers):
+        kept_ids = {id(p) for p in kept}
+        for sq in state.task_plan.sub_questions:
+            sq.papers = [p for p in sq.papers if id(p) in kept_ids]
+        all_papers = kept
+
     # reliability scoring
     all_papers = reliability_scorer.score_all(all_papers)
 
@@ -129,4 +137,5 @@ async def _retrieve_for_subquestion(agent: PaperRetrievalAgent, sq) -> list[dict
     return await agent.retrieve(
         sub_question=sq.main_topic,
         query_variants=sq.queries,
+        enrich=False,       # citation counts are fetched after the relevance filter (agent.enrich_papers)
     )

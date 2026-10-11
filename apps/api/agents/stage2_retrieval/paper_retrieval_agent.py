@@ -13,12 +13,14 @@ import random
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Optional
 
 import httpx
 from pydantic import BaseModel, Field
 
 from apps.api.agents.stage2_retrieval.key_pool import KeyPool
+from apps.api.agents.stage2_retrieval.markdown_parser import clean_abstract, parse_markdown
 from apps.api.services import db_service
 
 # PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
@@ -200,6 +202,10 @@ class PaperRetrievalAgent:
         self._s2_limiter = AsyncRateLimiter(calls_per_second=0.1 if not self.api_key else 10.0)
         self._ieee_limiter = AsyncRateLimiter(calls_per_second=0.5)
         self._openalex_limiter = AsyncRateLimiter(calls_per_second=5.0)  # API allows 100/s
+        # Requests in flight at once, across all sub-questions: 9 queries x 2 searches fired together drew 429 bursts
+        # even though the per-second rate was fine. Backoff sleeps happen outside the semaphore.
+        self.openalex_max_concurrent = max(1, int(os.getenv("OPENALEX_MAX_CONCURRENT", "2")))
+        self._openalex_semaphore = asyncio.Semaphore(self.openalex_max_concurrent)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -280,6 +286,7 @@ class PaperRetrievalAgent:
                         )
 
                     docling_result.retrieved_paper_id = retrieved_paper_id
+                    self._apply_metadata(docling_result, paper_metadata)
                     docling_result.figures = figures if isinstance(figures, list) else []
 
                     self._store_parsed_paper(docling_result)
@@ -322,6 +329,7 @@ class PaperRetrievalAgent:
                             )
 
                         docling_result.retrieved_paper_id = retrieved_paper_id
+                        self._apply_metadata(docling_result, paper_metadata)
                         docling_result.figures = figures if isinstance(figures, list) else []
 
                         self._store_parsed_paper(docling_result)
@@ -362,6 +370,7 @@ class PaperRetrievalAgent:
                             )
 
                         docling_result.retrieved_paper_id = retrieved_paper_id
+                        self._apply_metadata(docling_result, paper_metadata)
                         docling_result.figures = figures if isinstance(figures, list) else []
 
                         self._store_parsed_paper(docling_result)
@@ -673,126 +682,44 @@ class PaperRetrievalAgent:
             resp.raise_for_status()
             data = resp.json()
         
-        title = "Unknown"
-        authors = []
-        abstract = ""
-        sections = []
-        references = []
-        
         document = data.get("document", {})
         md_content = ""
-        
+
         if document and "md_content" in document:
             md_content = document["md_content"] or ""
         elif "md_content" in data:
             md_content = data["md_content"] or ""
-        
+
         if not md_content or len(md_content.strip()) < 50:
             raise ValueError("Docling returned empty or minimal content")
-        
-        lines = md_content.split("\n")
-        current_section = None
-        in_abstract = False
-        in_references = False
-        authors_raw = []
-        collect_authors = False
-        stop_authors = False
-        
-        for line in lines:
-            line_stripped = line.strip()
-            
-            if line_stripped.startswith("# ") and title == "Unknown":
-                title = line_stripped[2:].strip()
-            elif line_stripped.startswith("## ") and title == "Unknown":
-                title = line_stripped[3:].strip()
-            elif line_stripped.lower().startswith("## abstract"):
-                in_abstract = True
-                in_references = False
-                current_section = None
-                collect_authors = False
-                stop_authors = True
-            elif line_stripped.lower().startswith("## ") and in_abstract:
-                in_abstract = False
-                heading = line_stripped.lstrip("#").strip()
-                if "reference" in heading.lower():
-                    in_references = True
-                    current_section = None
-                else:
-                    current_section = Section(heading=heading, text="", level=1)
-                    sections.append(current_section)
-            elif line_stripped.startswith("## ") or line_stripped.startswith("### "):
-                in_abstract = False
-                heading = line_stripped.lstrip("#").strip()
-                if "reference" in heading.lower():
-                    in_references = True
-                    current_section = None
-                else:
-                    current_section = Section(heading=heading, text="", level=1)
-                    sections.append(current_section)
-            elif in_abstract and line_stripped:
-                abstract += line_stripped + " "
-            elif in_references and line_stripped:
-                if line_stripped.startswith("- [") or line_stripped.startswith("["):
-                    references.append(line_stripped)
-                elif re.match(r'^\d+\.\s', line_stripped):
-                    references.append(line_stripped)
-            elif current_section and line_stripped:
-                current_section.text += line_stripped + "\n"
-            
-            if not stop_authors and not authors_raw and title != "Unknown" and line_stripped and not line_stripped.startswith("#"):
-                if re.match(r'^[\d\s,\s*]+$', line_stripped):
-                    continue
-                if any(c in line_stripped.lower() for c in ["university", "lab", "institute", "dept", "center", "school"]):
-                    continue
-                if line_stripped.startswith("http") or line_stripped.startswith("<!--"):
-                    continue
-                if len(line_stripped) > 5:
-                    collect_authors = True
-                    authors_raw.append(line_stripped)
-            elif collect_authors and not stop_authors and line_stripped and not line_stripped.startswith("#"):
-                if re.match(r'^[\d\s,\s*]+$', line_stripped):
-                    collect_authors = False
-                elif any(c in line_stripped.lower() for c in ["university", "lab", "institute", "dept", "center", "school"]):
-                    collect_authors = False
-                elif line_stripped.startswith("http") or line_stripped.startswith("<!--"):
-                    collect_authors = False
-                elif len(line_stripped) > 5:
-                    authors_raw.append(line_stripped)
-        
-        if not title or title == "Unknown":
-            title = document.get("title", "Unknown") or data.get("title", "Unknown") or "Unknown"
-        
-        parsed_authors = []
-        for raw_line in authors_raw:
-            for name in raw_line.split(","):
-                name = name.strip()
-                name = re.sub(r'\s*\d+\s*$', '', name).strip()
-                name = re.sub(r'^[\d\s*]+', '', name).strip()
-                name = name.lstrip("∗*").strip()
-                if name and len(name) > 2 and not name.isdigit():
-                    parsed_authors.append(name)
-        parsed_authors = list(dict.fromkeys(parsed_authors))
-        
-        abstract = abstract.strip()
-        
-        if not abstract:
-            for line in lines:
-                line_stripped = line.strip()
-                if re.match(r'^abstract[\s.:]', line_stripped, re.IGNORECASE):
-                    abstract = re.sub(r'^abstract[\s.:]*', '', line_stripped, flags=re.IGNORECASE).strip()
-                    if abstract:
-                        break
-        
+
+        parsed = parse_markdown(md_content)
+        title = parsed.title or document.get("title") or data.get("title") or "Unknown"
+
         return ParsedPaper(
             retrieved_paper_id="",
             title=title,
-            authors=parsed_authors,
-            abstract=abstract,
-            sections=sections,
-            references=references,
+            authors=parsed.authors,
+            abstract=parsed.abstract,
+            sections=[Section(heading=sec["heading"], text=sec["text"], level=sec["level"]) for sec in parsed.sections],
+            references=parsed.references,
             figures=[],
             full_text=md_content,
         )
+
+    @staticmethod
+    def _apply_metadata(parsed: "ParsedPaper", paper_metadata: dict) -> None:
+        """API metadata is cleaner than what can be recovered from a PDF's first page, so it wins for title, authors
+        and abstract; the parsed values only fill gaps. Sections, references and full text always come from the parse."""
+        title = (paper_metadata.get("title") or "").strip()
+        if title:
+            parsed.title = title
+        authors = [a for a in (paper_metadata.get("authors") or []) if a]
+        if authors:
+            parsed.authors = authors
+        abstract = clean_abstract(paper_metadata.get("abstract") or "")
+        if len(abstract) >= 100 or not parsed.abstract:
+            parsed.abstract = abstract or parsed.abstract
 
     async def _parse_with_pdffigures(self, client: httpx.AsyncClient, pdf_bytes: bytes) -> list[Figure]:
         """Parse PDF using PDFFigures 2.0 for figure/table extraction."""
@@ -825,6 +752,7 @@ class PaperRetrievalAgent:
         self,
         sub_question: str,
         query_variants: list[str],
+        enrich: bool = True,
     ) -> list[dict]:
         """
         Search all query variants concurrently across both APIs.
@@ -832,6 +760,8 @@ class PaperRetrievalAgent:
         Args:
             sub_question: The research sub-question being investigated.
             query_variants: Paraphrased/reformulated search queries.
+            enrich: fetch Semantic Scholar citation counts (and apply min_citations) now. The pipeline passes False
+                and calls enrich_papers() after the relevance filter, so only the kept papers are enriched.
 
         Returns:
             Deduplicated list of paper metadata dicts.
@@ -855,13 +785,39 @@ class PaperRetrievalAgent:
 
         merged = self._merge_and_dedupe(all_papers)
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._enrich_citation_counts(client, merged)
+        if enrich:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                await self._enrich_citation_counts(client, merged)
 
-        if self.min_citations > 0:
-            merged = [p for p in merged if (p.citation_count or 0) >= self.min_citations]
+            if self.min_citations > 0:
+                merged = [p for p in merged if (p.citation_count or 0) >= self.min_citations]
 
         return [p.model_dump() for p in merged]
+
+    async def enrich_papers(self, papers: list[dict]) -> list[dict]:
+        """Citation counts from Semantic Scholar for paper dicts (in place), then the min_citations filter.
+
+        Meant to run after the relevance filter: the counts only feed the reliability score, so fetching them for
+        candidates that are about to be dropped just spends the rate-limited Semantic Scholar budget. A paper kept
+        under several sub-questions is looked up once."""
+        by_arxiv: dict[str, list[dict]] = {}
+        for p in papers:
+            if p.get("arxiv_id") and p.get("citation_count") is None:
+                by_arxiv.setdefault(p["arxiv_id"], []).append(p)
+
+        if by_arxiv:
+            stand_ins = {aid: SimpleNamespace(arxiv_id=aid, citation_count=None, influential_citation_count=None)
+                         for aid in by_arxiv}
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                await self._enrich_citation_counts(client, list(stand_ins.values()))
+            for aid, rows in by_arxiv.items():
+                for row in rows:
+                    row["citation_count"] = stand_ins[aid].citation_count
+                    row["influential_citation_count"] = stand_ins[aid].influential_citation_count
+
+        if self.min_citations > 0:
+            papers = [p for p in papers if (p.get("citation_count") or 0) >= self.min_citations]
+        return papers
 
     # ──────────────────────────────────────────────────────────────────────────
     # arXiv Search
@@ -1256,12 +1212,13 @@ class PaperRetrievalAgent:
                 await asyncio.sleep(wait + 0.1)
                 continue
 
-            await self._openalex_limiter.acquire()
             try:
-                # Key goes in a header, not the query string, so it never shows up in httpx's URL logging.
-                resp = await client.get(self.OPENALEX_API_URL, params=params,
-                                        headers={"Authorization": f"Bearer {key}"},
-                                        timeout=self.openalex_timeout)
+                async with self._openalex_semaphore:
+                    await self._openalex_limiter.acquire()
+                    # Key goes in a header, not the query string, so it never shows up in httpx's URL logging.
+                    resp = await client.get(self.OPENALEX_API_URL, params=params,
+                                            headers={"Authorization": f"Bearer {key}"},
+                                            timeout=self.openalex_timeout)
             except httpx.TransportError as e:
                 backoffs += 1
                 if backoffs >= max_backoffs:
