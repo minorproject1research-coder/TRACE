@@ -76,8 +76,8 @@ async def run_level(client, fn, bases, pdfs, n):
     errs = [type(r).__name__ if isinstance(r, Exception) else r[1] for r in res if isinstance(r, Exception) or r[1] != 200]
     print(f"  {n:>2} concurrent | wall {wall:6.1f}s | per-request min/median/max "
           f"{(lat[0] if lat else 0):.0f}/{(statistics.median(lat) if lat else 0):.0f}/{(lat[-1] if lat else 0):.0f}s "
-          f"| ok {len(ok)}/{n} | {len(ok) / wall * 60:5.1f} papers/min" + (f" | errors {errs}" if errs else ""))
-    return len(ok) / wall * 60 if wall else 0
+          f"| ok {len(ok)}/{n} | {(len(ok) / wall * 60 if wall else 0):5.1f} papers/min" + (f" | errors {errs}" if errs else ""))
+    return (len(ok) / wall * 60) if wall else 0
 
 
 async def main():

@@ -226,6 +226,46 @@ Observed problems:
 3. Stage 3 still takes 3m 52s for 15 digests (13 Groq 429s).
 4. Whether OCR-off speeds up the host cannot be read from this run (most papers came from the cache).
 
+## Run 6 - Scopus, three Groq keys, Semantic Scholar breaker, parse cache all live (8m 58s, the fastest so far)
+
+Query id `c8ed356d` (2026-10-12 14:42; an earlier start at 14:42:12 was abandoned because Tailscale was down, the planner fell back to
+Groq, and the run was restarted). Same speculative-decoding question. 54 papers kept across 3 sub-questions, 15 usable full texts of 21
+attempted.
+
+| | Run 3 | Run 5 | Run 6 |
+|---|---|---|---|
+| Total time | 12m 43s | 10m 09s | **8m 58s** |
+| Planner | 22 s | 22 s | 27 s |
+| Retrieval | 3m 01s | 3m 01s | **31 s** |
+| Filter and judge | 42 s | about 1 min | 50 s |
+| Citation enrichment | 37 s | 65 s | 28 s |
+| Parsing | 5m 36s | 1m 03s | 4m 28s |
+| Stage 3 | 2m 24s | 3m 52s | **2m 03s** (75 s preparation + 48 s digests) |
+| Verified findings | 47 | 51 | 53 |
+
+What worked:
+- **Semantic Scholar breaker**: the probe failed (HTTP 429) one second after retrieval started and the rest of the run skipped it;
+  retrieval fell from about 3 minutes to 31 seconds.
+- **Scopus works in the pipeline**: 7 searches, 1 to 25 papers each, no failures. It supplied **21 of the 54 kept papers (39%) plus 4 shared
+  with other sources**, and all of the top 8 by combined score (mean reliability 0.71 against 0.55 for all kept papers). None of the 22
+  Scopus-only papers has full text, as expected (no PDF link).
+- **Three Groq keys**: 15 digests, 0 lost, 11 short rate-limit pauses spread over the keys; the digest phase took 48 s.
+- **Parse cache**: 12 hits. Judge columns stored for 54 of 54, parser output clean, 9 full-text digests and 6 web snippets.
+
+Observed problems:
+1. **Parsing is now half of the run (4m 28s)** even with 12 cache hits: 5 papers end in "All PDF URLs failed" (publisher 403s, DOI landing
+   pages) and 6 had no usable text. These are the same papers as in earlier runs (for example "Runtime-Controlled Evaluation of Speculative
+   Decoding", "Hybrid Speculative Decoding in RAG", "Towards Optimal Speculative Decoding", "Formal schedulability analysis...") and they are
+   retried, with Unpaywall and Playwright fallbacks, every run. About 2.5 minutes of the parsing is spent on failures that repeat.
+2. **Stage 3 preparation takes about 75 s, more than the digests**: the chunk embedding (bge on the CPU, about 5 chunks per second;
+   230 chunks for 9 papers took 45 s when timed alone). 21% of the chunks were embedded twice because a paper in two sub-questions is
+   embedded for each, and most papers repeat across runs.
+3. **The planner gave the core sub-question only 1 query** ([3, 3, 1]); the assignment by embedding similarity is lopsided.
+4. **Scopus returned 1 and 4 matches for two queries** ("speculative decoding definition", "...pros and cons"): when only one word remains
+   after the first two, it is required instead of optional.
+5. **The source mix shifted**: kept arXiv papers fell from 16 to 9 and OpenAlex papers from 33 to 20 because Scopus abstracts match the
+   sub-question well. All sub-questions still reached 5 parseable papers, but the pool of papers with a PDF source is smaller.
+
 Fixes made after run 5:
 - **Groq key pool + parallel Stage 3 digests** (`groq_pool.py`, report 4 section 8): two independent keys, `Retry-After`-aware
   retries, one worker per key. Stage 3 is bounded by tokens per minute (about 42k tokens per run), so the gain is moderate (about 2.5 to 3.5
@@ -236,10 +276,15 @@ Added after run 5 (built and tested offline, not yet run):
   abstracts, full author lists and citation counts for peer-reviewed articles and conference papers; results are DOI-only and mostly
   paywalled, so they usually stay abstract-only. Parsing now tries papers with a direct PDF source first (`PARSE_PREFER_DIRECT_PDF`).
 
+Added after run 5 (continued):
+- **Semantic Scholar search circuit breaker** (`S2_SEARCH=auto|off|on`): a one-attempt probe, then skip Semantic Scholar search for the
+  rest of the run if it fails. In the last six runs only 3 of 110 searches succeeded, and the failing calls cost about 3 minutes per run
+  (10 s limiter spacing). Offline test: 18 queries after a first 429 are skipped in 0.00 s instead of about 18 x 10 s. Not yet seen in a full run.
+
 ## Remaining backlog (ordered)
 
 1. ~~Stage 3: choose papers with usable text first, then rank by `combined_score`.~~ Done (see above); not yet seen in a full pipeline run.
-2. Skip Semantic Scholar search when there is no API key, or get a Semantic Scholar key (search about 3 min + enrichment about 1 min).
+2. ~~Skip Semantic Scholar search when it fails~~ Done (circuit breaker, see above). A Semantic Scholar key would additionally fix the citation enrichment (about 1 min).
 3. Rank papers with a direct PDF link ahead of DOI-only ones when choosing what to parse.
 4. Planner: guarantee every sub-question gets planner queries (balanced assignment).
 5. Per-key OpenAlex concurrency / rate limits (two keys are available).

@@ -119,7 +119,7 @@ In `_parse_with_docling`:
 | Question | Decision | Reason |
 |---|---|---|
 | Run several Docling containers on the dev machine? | **No** | measured slower, and it exhausts memory |
-| Run several Docling containers on the parsing host? | **Not yet; measure first** | a machine with many more cores might leave cores idle in one container, which only a run there can show |
+| Run several Docling containers on the parsing host? | **No (measured, section 10)** | 1, 2 and 4 containers all gave about 10 papers/min on the 32-core host |
 | Keep OCR on? | **No: off by default, automatic OCR retry for scanned PDFs** | 2.2x faster, same text |
 | Keep table recognition on? | **Yes** | switching it off loses most tables |
 | Change worker or thread settings? | **No** | no effect in the tests |
@@ -144,3 +144,37 @@ In `_parse_with_docling`:
    idle in one container).
 3. Run the full pipeline and compare the parsing time with run 3.
 4. Continue with the parsing-related backlog: prefer papers with a direct PDF link; Stage 3 choosing papers with usable text.
+
+## 10. Host benchmark (2026-10-12, `scripts/bench_host.sh`, OCR off)
+
+Host: 32 cores, about 31 GB free memory. Each row is one run of the same PDFs; `c` is the number of simultaneous requests.
+
+| Containers (cores each) | c | Wall time | Per-request min / median / max | Papers per minute |
+|---|---|---|---|---|
+| 1 (32) | 1 | 6.0 s | 6 / 6 / 6 | 10.0 |
+| 1 (32) | 2 | 8.0 s | 8 / 8 / 8 | 14.9 |
+| 1 (32) | 4 | 24.1 s | 6 / 11 / 24 | 10.0 |
+| 2 (16) | 1 | 6.0 s | 6 / 6 / 6 | 9.9 |
+| 2 (16) | 2 | 10.1 s | 8 / 9 / 10 | 11.9 |
+| 2 (16) | 4 | 24.3 s | 8 / 14 / 24 | 9.9 |
+| 2 (16) | 8 | 46.1 s | 6 / 22 / 46 | 10.4 |
+| 4 (8) | 1 | 8.0 s | 8 / 8 / 8 | 7.5 |
+| 4 (8) | 4 | 24.1 s | 10 / 14 / 24 | 10.0 |
+| 4 (8) | 8 | 44.2 s | 14 / 25 / 44 | 10.9 |
+| 4 (8) | 16 | 90.2 s | 10 / 44 / 90 | 10.6 |
+
+All 8 to 16 requests per level succeeded (no errors, no timeouts).
+
+Findings:
+- **More containers do not raise throughput**: about 10 to 11 papers/min for 1, 2 and 4 containers alike (the single 14.9 is a two-request burst, probably noise).
+- **The host is about twice as fast per paper as the laptop** (6 s against 10 to 12 s; about 10 against about 5 papers/min).
+- **A conversion hardly depends on core count**: 6 s on 32 cores, 6 s on 16, 8 s on 8. So a single conversion is not core-bound.
+- **Yet wall time is almost exactly 6 s x the number of requests** (4 -> 24 s, 8 -> 44 to 46 s, 16 -> 90 s) for any number of containers. Independent containers would finish 4 requests on 4 containers in about 8 s, not 24 s, so something shared and serial limits throughput. The data cannot say what: candidates are the benchmark client (one Python process on the host), a shared host resource, or other load on the host (the vLLM server runs there). Not resolved.
+- **The pipeline's own conversions took 27 to 37 s per paper** with 3 at once (run 4), against 6 s here, so Docling compute is not what makes the pipeline's parsing slow. Likely causes (not yet measured): sending each PDF from the dev machine to the host over Tailscale, PDFFigures running in parallel, and download failures with their fallbacks.
+
+Decision: keep a single Docling container; do not deploy more.
+
+To separate the open questions (each is one command):
+1. Client or host? Run two copies of the benchmark client at once against two containers; if throughput doubles, the single client was the limit.
+2. Upload cost: `python scripts/bench_parsers.py --docling http://<host>:5001 --figures http://<host>:5002 --concurrency 1,3 --options '{"do_ocr": false, "include_images": false}'` from the dev machine (over Tailscale), compared with the 6 s above.
+3. OCR on the host: the same benchmark on the host with `--options '{"do_ocr": true}'`, to confirm the 2.2x seen on the laptop.

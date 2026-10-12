@@ -42,6 +42,10 @@ PARSE_CACHE_ENABLED = os.getenv("PARSE_CACHE", "true").lower() not in ("0", "fal
 PARSE_CACHE_MIN_CHARS = 3000        # a stored row counts as a real parse above this many characters of full text
 
 
+class S2Unavailable(Exception):
+    """Semantic Scholar search gave up (HTTP 429 / 5xx after the allowed attempts)."""
+
+
 class PdfTooLargeError(Exception):
     """The PDF is over MAX_PDF_SIZE_MB; no other source is tried because it would be the same file."""
 
@@ -230,6 +234,23 @@ class PaperRetrievalAgent:
         self.scopus_min_year = int(os.getenv("SCOPUS_MIN_YEAR", "0"))                              # 0 = no year filter
         self._scopus_semaphore = asyncio.Semaphore(max(1, int(os.getenv("SCOPUS_MAX_CONCURRENT", "3"))))
         self._scopus_disabled: str | None = None
+
+        # Semantic Scholar SEARCH circuit breaker. Without an API key, nearly every search request is rate limited (3 of 110
+        # succeeded over six runs) and the 10 s limiter spacing made the failing calls cost about 3 minutes per run.
+        #   S2_SEARCH=auto (default): the first search is a single-attempt probe; if it fails (429 / 5xx / network) Semantic
+        #       Scholar search is skipped for the rest of the run, including calls already waiting; if it works, searching
+        #       continues with the normal retries, and S2_TRIP_AFTER consecutive give-ups trip the breaker too.
+        #   S2_SEARCH=off: never search Semantic Scholar.   S2_SEARCH=on: always search (no breaker).
+        # Citation enrichment (a different endpoint, used after the relevance filter) is not affected.
+        self.s2_mode = os.getenv("S2_SEARCH", "auto").strip().lower()
+        if self.s2_mode not in ("auto", "off", "on"):
+            logger.warning("Unknown S2_SEARCH=%r, using auto", self.s2_mode)
+            self.s2_mode = "auto"
+        self.s2_trip_after = max(1, int(os.getenv("S2_TRIP_AFTER", "3")))
+        self._s2_tripped = False
+        self._s2_probe_started = False
+        self._s2_probe_done = asyncio.Event()
+        self._s2_giveups = 0
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -1024,17 +1045,47 @@ class PaperRetrievalAgent:
     async def _safe_s2_search(
         self, client: httpx.AsyncClient, query: str
     ) -> list[PaperResult]:
-        """Wrapper that catches errors for a single Semantic Scholar query."""
+        """Semantic Scholar search for one query, behind the circuit breaker described in __init__ (S2_SEARCH)."""
+        if self.s2_mode == "off" or self._s2_tripped:
+            return []
+
+        if self.s2_mode == "auto":
+            if not self._s2_probe_started:
+                self._s2_probe_started = True             # this call is the probe: one attempt, no backoff
+                try:
+                    papers = await self._search_semantic_scholar(client, query, max_attempts=1)
+                    self._s2_giveups = 0
+                    return papers
+                except Exception as e:                    # 429 / 5xx / network: not usable right now
+                    self._s2_tripped = True
+                    logger.warning("Semantic Scholar probe failed (%s): skipping Semantic Scholar search for this run",
+                                   str(e)[:100])
+                    return []
+                finally:
+                    self._s2_probe_done.set()
+            await self._s2_probe_done.wait()              # callers queued behind the probe cost nothing while it runs
+            if self._s2_tripped:
+                return []
+
         try:
-            return await self._search_semantic_scholar(client, query)
+            papers = await self._search_semantic_scholar(client, query)
+            self._s2_giveups = 0
+            return papers
+        except S2Unavailable:
+            self._s2_giveups += 1
+            if self.s2_mode == "auto" and self._s2_giveups >= self.s2_trip_after and not self._s2_tripped:
+                self._s2_tripped = True
+                logger.warning("Semantic Scholar gave up %d searches in a row: skipping it for the rest of this run",
+                               self._s2_giveups)
+            return []
         except Exception as e:
             logger.warning("Semantic Scholar search failed for '%s': %s", query, e)
             return []
 
     async def _search_semantic_scholar(
-        self, client: httpx.AsyncClient, query: str
+        self, client: httpx.AsyncClient, query: str, max_attempts: int | None = None
     ) -> list[PaperResult]:
-        """Search Semantic Scholar /paper/search endpoint."""
+        """Search Semantic Scholar /paper/search endpoint. Raises S2Unavailable when it gives up on 429 / 5xx."""
         headers = {}
         if self.api_key:
             headers["x-api-key"] = self.api_key
@@ -1047,10 +1098,12 @@ class PaperRetrievalAgent:
         if self.min_citations > 0:
             params["minCitationCount"] = self.min_citations
 
-        max_attempts = self.s2_max_attempts
+        max_attempts = max_attempts or self.s2_max_attempts
         for attempt in range(max_attempts):
             # Every attempt (not just the first) goes through the shared limiter.
             await self._s2_limiter.acquire()
+            if self.s2_mode == "auto" and self._s2_tripped and max_attempts != 1:
+                return []                                   # tripped while this call waited its turn: send nothing
             try:
                 resp = await client.get(
                     f"{self.SEMANTIC_SCHOLAR_URL}/paper/search",
@@ -1084,7 +1137,7 @@ class PaperRetrievalAgent:
         if resp.status_code in (429, 500, 502, 503):
             logger.warning("S2 gave up on '%s' after %d attempts (last status %d)",
                            query[:60], max_attempts, resp.status_code)
-            return []
+            raise S2Unavailable(f"HTTP {resp.status_code}")
 
         data = resp.json()
         return self._parse_s2_results(data.get("data", []), query)
