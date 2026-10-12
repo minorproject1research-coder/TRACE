@@ -11,6 +11,10 @@ logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
 # How many papers per sub-question are parsed (best combined_score first). 0 = parse all kept papers.
 PARSE_TOP_N = max(0, int(os.getenv("PARSE_TOP_N_PER_SUBQUESTION", "5")))
+# Try papers that have a direct PDF source (an arXiv id or an open-access PDF link) before papers that only have a DOI. DOI-only
+# papers (most Scopus and many OpenAlex results) usually end at a paywalled landing page or HTTP 403, and every such miss costs
+# a download attempt plus the Unpaywall / Playwright fallbacks. Within each group the order is still by combined_score.
+PARSE_PREFER_DIRECT_PDF = os.getenv("PARSE_PREFER_DIRECT_PDF", "true").lower() not in ("0", "false", "no")
 # A sub-question may try up to this many times N papers to reach N with usable text.
 PARSE_MAX_ATTEMPTS_FACTOR = max(1, int(os.getenv("PARSE_MAX_ATTEMPTS_FACTOR", "2")))
 # A parse counts as usable full text above this many characters.
@@ -71,6 +75,12 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
     return {"paper_results": all_papers}
 
 
+def _parse_priority(row: dict) -> tuple:
+    """Sort key (descending): papers with a direct PDF source first (if enabled), then by combined_score."""
+    direct = bool(row.get("arxiv_id") or row.get("pdf_url")) if PARSE_PREFER_DIRECT_PDF else False
+    return (direct, row.get("combined_score") or 0)
+
+
 async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, papers: list[dict]):
     """Parses (full text/sections/figures via Docling + PDFFigures) the best papers of each sub-question only:
     the top PARSE_TOP_N_PER_SUBQUESTION by combined_score. Stage 3 reads at most a few papers per sub-question, so
@@ -80,7 +90,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
         return
 
     rows = db_service.supabase.table("retrieved_papers") \
-        .select("id,sub_question_id,title,combined_score") \
+        .select("id,sub_question_id,title,combined_score,arxiv_id,pdf_url") \
         .eq("query_id", query_id) \
         .execute().data
 
@@ -89,7 +99,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
         return
 
     by_sq: dict[str, list[dict]] = {}
-    for row in sorted(rows, key=lambda r: r.get("combined_score") or 0, reverse=True):
+    for row in sorted(rows, key=_parse_priority, reverse=True):
         by_sq.setdefault(row["sub_question_id"], []).append(row)
 
     queues = {sq: list(rs) for sq, rs in by_sq.items()}

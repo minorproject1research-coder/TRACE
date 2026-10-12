@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from apps.api.agents.stage2_retrieval.key_pool import KeyPool
 from apps.api.agents.stage2_retrieval.markdown_parser import PARSER_VERSION, clean_abstract, parse_markdown
-from apps.api.services import db_service
+from apps.api.services import db_service, trace_llm_service
 
 # PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
 MAX_PDF_SIZE_MB = float(os.getenv("MAX_PDF_SIZE_MB", "20"))
@@ -61,7 +61,7 @@ class PaperResult(BaseModel):
     citation_count: Optional[int] = None
     influential_citation_count: Optional[int] = None
     is_preprint: bool = False
-    source: str = "arxiv"  # "arxiv" | "semantic_scholar" | "ieee" | "openalex" | "both"
+    source: str = "arxiv"  # "arxiv" | "semantic_scholar" | "ieee" | "openalex" | "scopus" | "both"
     arxiv_id: Optional[str] = None
     doi: Optional[str] = None
     pdf_url: Optional[str] = None
@@ -222,6 +222,14 @@ class PaperRetrievalAgent:
         self.openalex_max_concurrent = max(1, int(os.getenv("OPENALEX_MAX_CONCURRENT", "2")))
         self._openalex_semaphore = asyncio.Semaphore(self.openalex_max_concurrent)
         self._parse_in_flight: dict[str, asyncio.Future] = {}   # paper key -> parse running in this run
+
+        # Scopus (optional): searched through the host, which has the entitlement to abstracts. Switched off for the rest
+        # of the run as soon as the host says it cannot serve it (endpoint missing, no key, no abstracts).
+        self.scopus_enabled = os.getenv("SCOPUS_ENABLED", "true").lower() not in ("0", "false", "no")
+        self.scopus_results = min(max(int(os.getenv("SCOPUS_RESULTS_PER_QUERY", "25")), 1), 25)   # one page; COMPLETE allows 25
+        self.scopus_min_year = int(os.getenv("SCOPUS_MIN_YEAR", "0"))                              # 0 = no year filter
+        self._scopus_semaphore = asyncio.Semaphore(max(1, int(os.getenv("SCOPUS_MAX_CONCURRENT", "3"))))
+        self._scopus_disabled: str | None = None
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -870,6 +878,8 @@ class PaperRetrievalAgent:
                 tasks.append(self._safe_ieee_search(client, query))
                 if self._openalex_pool:  # no key -> OpenAlex is skipped
                     tasks.append(self._safe_openalex_search(client, query))
+                if self.scopus_enabled and not self._scopus_disabled:
+                    tasks.append(self._safe_scopus_search(query))
 
             results = await asyncio.gather(*tasks, return_exceptions=False)
 
@@ -1513,6 +1523,113 @@ class PaperRetrievalAgent:
         text = re.sub(r"[^\w\s]", "", text)
         text = re.sub(r"\s+", " ", text)
         return text
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Scopus Search (optional - through the host, see infra/query_generator/scopus_router.py)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    SCOPUS_RESERVED = frozenset({"and", "or", "not", "near", "pre", "w"})
+
+    def _scopus_query(self, text: str) -> str | None:
+        """Scopus query from a natural-language search query: the first two content words are required, the rest only widen
+        the match (all-AND returned nothing for 3 of 16 real planner queries; this form returned results for all 16 and
+        Scopus sorts by relevance, so the top 25 are the best matches). Articles, conference papers and reviews in English."""
+        words = [
+            w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-]*", text)
+            if w.lower() not in self.OPENALEX_STOPWORDS and w.lower() not in self.SCOPUS_RESERVED and len(w) > 1
+        ]
+        words = list(dict.fromkeys(words))
+        if not words:
+            return None
+        query = f"TITLE-ABS-KEY({' AND '.join(words[:2])})"
+        if len(words) > 2:
+            query += f" AND TITLE-ABS-KEY({' OR '.join(words[2:])})"
+        query += " AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re)) AND LANGUAGE(english)"
+        if self.scopus_min_year:
+            query += f" AND PUBYEAR > {self.scopus_min_year - 1}"
+        return query
+
+    async def _safe_scopus_search(self, query: str) -> list[PaperResult]:
+        if self._scopus_disabled:
+            return []
+        scopus_query = self._scopus_query(query)
+        if not scopus_query:
+            return []
+        try:
+            async with self._scopus_semaphore:
+                data = await asyncio.to_thread(trace_llm_service.scopus_search, scopus_query, self.scopus_results)
+        except trace_llm_service.TraceLLMError as e:
+            text = str(e)
+            if any(code in text for code in ("HTTP 404", "HTTP 503", "marked unavailable", "rejected the API key")):
+                if not self._scopus_disabled:
+                    self._scopus_disabled = text[:120]
+                    logger.warning("Scopus unavailable, skipping it for this run: %s", text[:160])
+            else:
+                logger.warning("Scopus search failed for '%s': %s", query[:60], text[:160])
+            return []
+        except Exception as e:
+            logger.warning("Scopus search failed for '%s': %s: %s", query[:60], type(e).__name__, e)
+            return []
+
+        if data.get("view") != "COMPLETE":
+            if not self._scopus_disabled:
+                self._scopus_disabled = "host cannot read abstracts (STANDARD view only)"
+                logger.warning("Scopus gave no abstracts (view=%s): skipping it for this run", data.get("view"))
+            return []
+        papers = self._parse_scopus_results(data["entries"], query)
+        logger.info("Scopus: %d papers (of %s matches) for '%s'", len(papers), data.get("total"), query[:60])
+        return papers
+
+    @staticmethod
+    def _scopus_authors(entry: dict) -> list[str]:
+        raw = entry.get("author")
+        if isinstance(raw, dict):
+            raw = [raw]
+        names = []
+        for a in raw or []:
+            name = a.get("authname") or " ".join(x for x in (a.get("given-name"), a.get("surname")) if x)
+            if name:
+                names.append(name.strip())
+        return names or ([entry["dc:creator"]] if entry.get("dc:creator") else [])
+
+    def _parse_scopus_results(self, entries: list[dict], query: str) -> list[PaperResult]:
+        results = []
+        for e in entries:
+            title = (e.get("dc:title") or "").strip()
+            abstract = re.sub(r"\s+", " ", (e.get("dc:description") or "").strip())
+            abstract = re.sub(r"^(abstract|summary)\s*[:.\-]?\s*", "", abstract, flags=re.I)
+            abstract = re.sub(r"\s*©.*$", "", abstract).strip()          # trailing publisher copyright notice
+            if not title or not abstract:
+                continue
+            date = (e.get("prism:coverDate") or "").strip()
+            try:
+                year = int(date[:4])
+            except ValueError:
+                year = None
+            try:
+                citations = int(e.get("citedby-count"))
+            except (TypeError, ValueError):
+                citations = None
+            doi = (e.get("prism:doi") or "").strip().lower() or None
+            results.append(PaperResult(
+                title=title,
+                abstract=abstract,
+                authors=self._scopus_authors(e),
+                year=year,
+                venue=(e.get("prism:publicationName") or "").strip() or None,
+                citation_count=citations,
+                influential_citation_count=None,
+                is_preprint=False,                      # Scopus indexes peer-reviewed sources
+                source="scopus",
+                arxiv_id=None,
+                doi=doi,
+                pdf_url=None,                           # Scopus gives no PDF link; parsing goes through the DOI / Unpaywall path
+                published_date=date or None,
+                tldr=None,
+                fields_of_study=[],
+                query_variant_matched=[query],
+            ))
+        return results
 
     async def _enrich_citation_counts(
         self, client: httpx.AsyncClient, papers: list[PaperResult]

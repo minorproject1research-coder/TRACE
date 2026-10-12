@@ -166,6 +166,19 @@ def decompose(question: str, max_new_tokens: int = 768) -> dict:
     raise TraceLLMError("planner output was not valid JSON")
 
 
+def scopus_search(query: str, count: int = 25, start: int = 0) -> dict:
+    """Scopus search through the host (POST /scopus/search; the host's network is entitled to abstracts, the key stays there).
+
+    `query` is Scopus search syntax. Returns {"total": int, "entries": [raw Scopus entries], "view": "COMPLETE" | "STANDARD",
+    "quota": {...}}. view "STANDARD" means the host could not get abstracts. Raises TraceLLMError when the endpoint is not
+    deployed (HTTP 404), the key is missing (503), the host is unreachable, or Scopus refuses."""
+    data = _request("POST", "/scopus/search", {"query": query, "count": min(max(count, 1), 25), "start": start,
+                                                "sort": "relevancy"})
+    if not isinstance(data.get("entries"), list):
+        raise TraceLLMError("scopus search returned no 'entries' list")
+    return data
+
+
 def judge(sub_question: str, title: str, abstract: str, max_new_tokens: int = 256, thinking: bool = False) -> dict:
     """Judge. Returns {"relevant": bool, "confidence": float 0-1, "reason": str}."""
     data = _request("POST", "/judge", {

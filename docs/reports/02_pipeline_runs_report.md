@@ -231,6 +231,11 @@ Fixes made after run 5:
   retries, one worker per key. Stage 3 is bounded by tokens per minute (about 42k tokens per run), so the gain is moderate (about 2.5 to 3.5
   minutes instead of 3m 52s to 5m 31s), not 2x.
 
+Added after run 5 (built and tested offline, not yet run):
+- **Scopus as a retrieval source through the host** (router in the model-server wrapper, `SCOPUS_API_KEY` stays on the host). Adds
+  abstracts, full author lists and citation counts for peer-reviewed articles and conference papers; results are DOI-only and mostly
+  paywalled, so they usually stay abstract-only. Parsing now tries papers with a direct PDF source first (`PARSE_PREFER_DIRECT_PDF`).
+
 ## Remaining backlog (ordered)
 
 1. ~~Stage 3: choose papers with usable text first, then rank by `combined_score`.~~ Done (see above); not yet seen in a full pipeline run.
