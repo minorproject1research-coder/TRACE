@@ -37,6 +37,15 @@ def _docling_markdown(data: dict) -> str:
     return document.get("md_content") or data.get("md_content") or ""
 
 
+# PDF failure memory: a paper whose PDF could not be fetched for a lasting reason (HTTP 403 / 404 / 410 / 451, an HTML
+# landing page, an over-size file) is skipped for this many days instead of repeating the whole download-and-fallback chain
+# every run (16 of 40 failures in the logs were repeats). 0 turns it off. Bump DOWNLOADER_VERSION whenever the download
+# logic improves: failures recorded by an older version are then ignored.
+PDF_FAILURE_TTL_DAYS = float(os.getenv("PDF_FAILURE_TTL_DAYS", "7"))
+DOWNLOADER_VERSION = 2          # 2 = first-bytes PDF check + landing-page citation_pdf_url
+LASTING_HTTP_STATUS = (403, 404, 410, 451)
+LANDING_PAGE_BYTES = 600_000     # how much of an HTML landing page is read when looking for its PDF address
+
 # Parse cache: reuse a stored parse of the same paper (see PaperRetrievalAgent._parse_single_paper).
 PARSE_CACHE_ENABLED = os.getenv("PARSE_CACHE", "true").lower() not in ("0", "false", "no")
 PARSE_CACHE_MIN_CHARS = 3000        # a stored row counts as a real parse above this many characters of full text
@@ -226,6 +235,7 @@ class PaperRetrievalAgent:
         self.openalex_max_concurrent = max(1, int(os.getenv("OPENALEX_MAX_CONCURRENT", "2")))
         self._openalex_semaphore = asyncio.Semaphore(self.openalex_max_concurrent)
         self._parse_in_flight: dict[str, asyncio.Future] = {}   # paper key -> parse running in this run
+        self._download_failures: dict[str, tuple[str, str]] = {}  # retrieved_paper_id -> (error class, detail) of the last terminal failure
 
         # Scopus (optional): searched through the host, which has the entitlement to abstracts. Switched off for the rest
         # of the run as soon as the host says it cannot serve it (endpoint missing, no key, no abstracts).
@@ -292,13 +302,7 @@ class PaperRetrievalAgent:
     @staticmethod
     def _paper_key(paper_metadata: dict) -> str:
         """Identity of a paper across queries: arXiv id, else DOI, else normalised title."""
-        arxiv = re.sub(r"v\d+$", "", (paper_metadata.get("arxiv_id") or "").strip())
-        if arxiv:
-            return f"arxiv:{arxiv}"
-        doi = (paper_metadata.get("doi") or "").strip().lower()
-        if doi:
-            return f"doi:{doi}"
-        return "title:" + re.sub(r"[^a-z0-9]+", " ", (paper_metadata.get("title") or "").lower()).strip()
+        return db_service.paper_key(paper_metadata)
 
     async def _parse_single_paper(self, retrieved_paper_id: str) -> Optional[ParsedPaper]:
         """Parse one paper, reusing an earlier parse of the same paper when there is one.
@@ -313,7 +317,7 @@ class PaperRetrievalAgent:
             logger.warning("Paper not found: %s", retrieved_paper_id)
             return None
         if not PARSE_CACHE_ENABLED:
-            return await self._parse_single_paper_uncached(retrieved_paper_id, paper_metadata)
+            return await self._parse_guarded(retrieved_paper_id, paper_metadata)
 
         key = self._paper_key(paper_metadata)
         in_flight = self._parse_in_flight.get(key)
@@ -330,10 +334,44 @@ class PaperRetrievalAgent:
             cached = await self._load_cached_parse(retrieved_paper_id, paper_metadata)
             if cached is not None:
                 return cached
-            return await self._parse_single_paper_uncached(retrieved_paper_id, paper_metadata)
+            return await self._parse_guarded(retrieved_paper_id, paper_metadata)
         finally:
             self._parse_in_flight.pop(key, None)
             future.set_result(None)
+
+    @staticmethod
+    def _lasting_failure(error: Exception | None) -> tuple[str, str] | None:
+        """(error class, detail) when the failure will not fix itself, else None (timeouts, connection errors, 429, 5xx may succeed later)."""
+        if isinstance(error, httpx.HTTPStatusError) and error.response is not None and error.response.status_code in LASTING_HTTP_STATUS:
+            return f"HTTP {error.response.status_code}", str(error)[:200]
+        if isinstance(error, ValueError) and "Non-PDF response" in str(error):
+            return "html or non-PDF response", str(error)[:200]
+        if isinstance(error, PdfTooLargeError):
+            return "pdf over the size cap", str(error)[:200]
+        return None
+
+    async def _parse_guarded(self, retrieved_paper_id: str, paper_metadata: dict) -> Optional[ParsedPaper]:
+        """Download-and-parse with the PDF failure memory: skip a paper that failed lastingly in the last PDF_FAILURE_TTL_DAYS days,
+        remember a new lasting failure, forget a failure when the paper now parses."""
+        key = self._paper_key(paper_metadata)
+        if PDF_FAILURE_TTL_DAYS > 0:
+            known = await asyncio.to_thread(db_service.get_pdf_failures, [key], PDF_FAILURE_TTL_DAYS, DOWNLOADER_VERSION)
+            if key in known:
+                row = known[key]
+                logger.info("Skipping '%s': its PDF failed before (%s, %sx); retried after %.0f days or when the download logic improves",
+                            (paper_metadata.get("title") or "")[:60], row.get("error_class"), row.get("fail_count"), PDF_FAILURE_TTL_DAYS)
+                return self._empty_parsed(retrieved_paper_id, paper_metadata)
+
+        result = await self._parse_single_paper_uncached(retrieved_paper_id, paper_metadata)
+
+        if PDF_FAILURE_TTL_DAYS > 0:
+            failure = self._download_failures.pop(retrieved_paper_id, None)
+            if failure:
+                await asyncio.to_thread(db_service.record_pdf_failure, key, paper_metadata.get("title") or "",
+                                        paper_metadata.get("doi"), failure[0], failure[1], DOWNLOADER_VERSION)
+            elif result is not None and len(result.full_text or "") >= PARSE_CACHE_MIN_CHARS:
+                await asyncio.to_thread(db_service.clear_pdf_failure, key)
+        return result
 
     async def _load_cached_parse(self, retrieved_paper_id: str, paper_metadata: dict) -> Optional[ParsedPaper]:
         try:
@@ -409,6 +447,7 @@ class PaperRetrievalAgent:
 
             except PdfTooLargeError as e:
                 logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, e)
+                self._download_failures[retrieved_paper_id] = self._lasting_failure(e)
                 return self._empty_parsed(retrieved_paper_id, paper_metadata)
             except Exception as e:
                 last_error = e
@@ -494,6 +533,9 @@ class PaperRetrievalAgent:
                 logger.warning("Playwright fallback failed: %s: %r", type(e).__name__, e)
 
         logger.error("All PDF URLs failed for %s: %s: %r", retrieved_paper_id, type(last_error).__name__ if last_error else "None", last_error)
+        lasting = self._lasting_failure(last_error)
+        if lasting:
+            self._download_failures[retrieved_paper_id] = lasting
         return ParsedPaper(
             retrieved_paper_id=retrieved_paper_id,
             title="PDF access denied - unable to download",
@@ -733,6 +775,23 @@ class PaperRetrievalAgent:
             parser_version=PARSER_VERSION,
         )
 
+    @staticmethod
+    def _pdf_links_in_html(html: str, base_url: str) -> list[str]:
+        """PDF addresses a landing page announces: <meta name="citation_pdf_url" content="..."> and <link type="application/pdf" href="...">."""
+        from urllib.parse import urljoin
+        links = []
+        for m in re.finditer(r"<meta[^>]+>", html, flags=re.I):
+            tag = m.group(0)
+            if re.search(r'name=["\']citation_pdf_url["\']', tag, flags=re.I):
+                c = re.search(r'content=["\']([^"\']+)["\']', tag, flags=re.I)
+                if c:
+                    links.append(urljoin(base_url, c.group(1).replace("&amp;", "&")))
+        for m in re.finditer(r'<link[^>]+type=["\']application/pdf["\'][^>]*>', html, flags=re.I):
+            h = re.search(r'href=["\']([^"\']+)["\']', m.group(0), flags=re.I)
+            if h:
+                links.append(urljoin(base_url, h.group(1)))
+        return list(dict.fromkeys(links))
+
     async def _download_pdf(self, client: httpx.AsyncClient, url: str) -> bytes:
         """Download PDF from URL with browser-like headers. Tries fallback strategies."""
         logger.info("Downloading PDF from: %s", url[:100])
@@ -748,34 +807,65 @@ class PaperRetrievalAgent:
 
         max_bytes = MAX_PDF_SIZE_MB * 1024 * 1024 if MAX_PDF_SIZE_MB > 0 else 0
 
-        async def _fetch(target: str) -> tuple[int, str, bytes]:
-            """Streams the body so an oversized PDF is abandoned as soon as it is known to be too big."""
+        async def _fetch(target: str) -> tuple[int, str, bytes, str]:
+            """(status, kind, body, final url). kind is 'pdf' or 'html', decided by the first bytes ('%PDF-'), not by the
+            content-type (some servers send PDFs as application/octet-stream). Streams the body so an oversized PDF is abandoned
+            as soon as it is known to be too big; an HTML page is read only up to LANDING_PAGE_BYTES."""
             async with client.stream("GET", target, follow_redirects=True, headers=headers) as resp:
                 if resp.status_code >= 400:
                     if resp.status_code == 403:
-                        return 403, "", b""
+                        return 403, "", b"", target
                     resp.raise_for_status()
                 content_type = resp.headers.get("content-type", "").lower()
                 declared = int(resp.headers.get("content-length") or 0)
-                if max_bytes and declared > max_bytes:
+                if max_bytes and declared > max_bytes and "html" not in content_type:
                     raise PdfTooLargeError(f"{declared / 1048576:.1f} MB exceeds the {MAX_PDF_SIZE_MB} MB cap")
-                if "pdf" not in content_type:
-                    raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
-                chunks, size = [], 0
+                chunks, size, kind = [], 0, None
                 async for chunk in resp.aiter_bytes():
+                    if kind is None:
+                        start = chunk.lstrip()[:5]
+                        if start == b"%PDF-":
+                            kind = "pdf"
+                        elif "html" in content_type or start[:1] == b"<":
+                            kind = "html"
+                        else:
+                            raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
                     size += len(chunk)
-                    if max_bytes and size > max_bytes:
+                    if kind == "pdf" and max_bytes and size > max_bytes:
                         raise PdfTooLargeError(f"over the {MAX_PDF_SIZE_MB} MB cap (download stopped at {size / 1048576:.1f} MB)")
                     chunks.append(chunk)
-                return resp.status_code, content_type, b"".join(chunks)
+                    if kind == "html" and size >= LANDING_PAGE_BYTES:
+                        break
+                if kind is None:
+                    raise ValueError(f"Non-PDF response (content-type: {content_type}) for {url[:80]}")
+                return resp.status_code, kind, b"".join(chunks), str(resp.url)
 
-        status, _, body = await _fetch(url)
+        status, kind, body, final_url = await _fetch(url)
         if status == 403 and "?" in url:
             clean_url = url.split("?")[0]
             logger.info("Retrying without query params: %s", clean_url)
-            status, _, body = await _fetch(clean_url)
+            status, kind, body, final_url = await _fetch(clean_url)
         if status == 403:
             raise httpx.HTTPStatusError("403 Forbidden", request=httpx.Request("GET", url), response=httpx.Response(403))
+
+        if kind == "html":
+            # a landing page: most publishers and repositories name the PDF in <meta name="citation_pdf_url">
+            for link in self._pdf_links_in_html(body.decode("utf-8", "replace"), final_url)[:2]:
+                if link == url:
+                    continue
+                try:
+                    link_status, link_kind, link_body, _ = await _fetch(link)
+                except PdfTooLargeError:
+                    raise
+                except Exception as e:
+                    logger.info("citation_pdf_url %s failed: %s", link[:80], str(e)[:80])
+                    continue
+                if link_status == 200 and link_kind == "pdf":
+                    logger.info("Found the PDF through the landing page's citation_pdf_url: %s", link[:100])
+                    body = link_body
+                    break
+            else:
+                raise ValueError(f"Non-PDF response (content-type: text/html) for {url[:80]}")
 
         logger.info("Downloaded PDF: %d bytes", len(body))
         return body
@@ -1582,35 +1672,67 @@ class PaperRetrievalAgent:
     # ──────────────────────────────────────────────────────────────────────────
 
     SCOPUS_RESERVED = frozenset({"and", "or", "not", "near", "pre", "w"})
+    # Words that describe the kind of answer wanted, not the topic ("speculative decoding definition"). Required in the
+    # search they cut the matches to a handful (1 and 4 matches in run 6), so they are left out of the Scopus query.
+    SCOPUS_FILLER = frozenset({"definition", "definitions", "overview", "introduction", "intro", "basics", "basic", "concept",
+                               "concepts", "explained", "explanation", "meaning", "pros", "cons"})
+    SCOPUS_MIN_MATCHES = 10          # below this many matches the relaxed query is searched as well
 
-    def _scopus_query(self, text: str) -> str | None:
-        """Scopus query from a natural-language search query: the first two content words are required, the rest only widen
-        the match (all-AND returned nothing for 3 of 16 real planner queries; this form returned results for all 16 and
-        Scopus sorts by relevance, so the top 25 are the best matches). Articles, conference papers and reviews in English."""
+    def _scopus_queries(self, text: str) -> list[str]:
+        """Scopus queries for a natural-language search query: [strict] or [strict, relaxed].
+
+        Strict: the first two content words are required, the rest only widen the match (all-AND returned nothing for 3 of 16
+        real planner queries; Scopus sorts by relevance, so the top 25 are the best matches). When just ONE word is left over
+        it would become required too (an all-AND query that finds 1 to 4 papers), so a relaxed query without it is added; the
+        pipeline searches it only if the strict one finds fewer than SCOPUS_MIN_MATCHES. Articles, conference papers and
+        reviews in English."""
         words = [
             w for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-]*", text)
-            if w.lower() not in self.OPENALEX_STOPWORDS and w.lower() not in self.SCOPUS_RESERVED and len(w) > 1
+            if w.lower() not in self.OPENALEX_STOPWORDS and w.lower() not in self.SCOPUS_RESERVED
+            and w.lower() not in self.SCOPUS_FILLER and len(w) > 1
         ]
         words = list(dict.fromkeys(words))
         if not words:
-            return None
-        query = f"TITLE-ABS-KEY({' AND '.join(words[:2])})"
-        if len(words) > 2:
-            query += f" AND TITLE-ABS-KEY({' OR '.join(words[2:])})"
-        query += " AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re)) AND LANGUAGE(english)"
+            return []
+
+        suffix = " AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re)) AND LANGUAGE(english)"
         if self.scopus_min_year:
-            query += f" AND PUBYEAR > {self.scopus_min_year - 1}"
-        return query
+            suffix += f" AND PUBYEAR > {self.scopus_min_year - 1}"
+
+        def build(required: list[str], optional: list[str]) -> str:
+            query = f"TITLE-ABS-KEY({' AND '.join(required)})"
+            if optional:
+                query += f" AND TITLE-ABS-KEY({' OR '.join(optional)})"
+            return query + suffix
+
+        strict = build(words[:2], words[2:])
+        if len(words) == 3:                                    # the third word is required in the strict query
+            return [strict, build(words[:2], [])]
+        if len(words) == 2:                                    # both required: relax to either word
+            return [strict, f"TITLE-ABS-KEY({' OR '.join(words)})" + suffix]
+        return [strict]
+
+    def _scopus_query(self, text: str) -> str | None:
+        """The strict Scopus query for a search query (see _scopus_queries), or None if it has no content words."""
+        queries = self._scopus_queries(text)
+        return queries[0] if queries else None
 
     async def _safe_scopus_search(self, query: str) -> list[PaperResult]:
         if self._scopus_disabled:
             return []
-        scopus_query = self._scopus_query(query)
-        if not scopus_query:
+        scopus_queries = self._scopus_queries(query)
+        if not scopus_queries:
             return []
         try:
             async with self._scopus_semaphore:
-                data = await asyncio.to_thread(trace_llm_service.scopus_search, scopus_query, self.scopus_results)
+                data = await asyncio.to_thread(trace_llm_service.scopus_search, scopus_queries[0], self.scopus_results)
+                if len(scopus_queries) > 1 and data.get("view") == "COMPLETE" and (data.get("total") or 0) < self.SCOPUS_MIN_MATCHES:
+                    relaxed = await asyncio.to_thread(trace_llm_service.scopus_search, scopus_queries[1], self.scopus_results)
+                    logger.info("Scopus: strict query found %s matches for '%s'; relaxed query found %s",
+                                data.get("total"), query[:50], relaxed.get("total"))
+                    data = {**data, "entries": data["entries"] + [e for e in relaxed.get("entries", [])
+                                                                  if e.get("dc:identifier") not in {x.get("dc:identifier") for x in data["entries"]}],
+                            "total": relaxed.get("total", data.get("total"))}
         except trace_llm_service.TraceLLMError as e:
             text = str(e)
             if any(code in text for code in ("HTTP 404", "HTTP 503", "marked unavailable", "rejected the API key")):

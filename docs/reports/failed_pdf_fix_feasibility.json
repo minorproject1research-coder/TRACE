@@ -1,0 +1,233 @@
+[
+ {
+  "title": "Towards Optimal Speculative Decoding: A Comprehensive Surv",
+  "publisher": "ACM",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Hallucination Mitigation for Retrieval-Augmented Large Lan",
+  "publisher": "MDPI",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Optimizing LLM Inference: Metrics that Matter for Real Tim",
+  "publisher": "SRC / jaicc",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html"
+  ]
+ },
+ {
+  "title": "CRUD-RAG: A Comprehensive Chinese Benchmark for Retrieval-",
+  "publisher": "ACM",
+  "access": "CLOSED ACCESS (needs i",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "A Survey of Hallucination Problems Based on Large Language",
+  "publisher": "EWA Publishing",
+  "access": "open access, landing p",
+  "fixed_by": "landing-page citation_pdf_url",
+  "steps": [
+   "original URL (magic-byte check):html",
+   "landing->citation_pdf_url:pdf"
+  ]
+ },
+ {
+  "title": "Enhancing the Precision and Interpretability of Retrieval-",
+  "publisher": "IEEE",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html",
+   "other OA location:fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Hybrid Speculative Decoding in RAG: When Do the Pros Outwe",
+  "publisher": "IEEE",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html"
+  ]
+ },
+ {
+  "title": "Runtime-Controlled Evaluation of Speculative Decoding Meth",
+  "publisher": "MDPI",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "EXPLORING HALLUCINATIONS IN LARGE LANGUAGE MODELS (LLMs): ",
+  "publisher": "Zenodo",
+  "access": "open access, landing p",
+  "fixed_by": "landing-page citation_pdf_url",
+  "steps": [
+   "original URL (magic-byte check):html",
+   "landing->citation_pdf_url:pdf"
+  ]
+ },
+ {
+  "title": "Reducing AI RAG Hallucination by Optimizing Routing Techni",
+  "publisher": "osti.gov",
+  "access": "unknown (no DOI or no ",
+  "fixed_by": "landing-page citation_pdf_url",
+  "steps": [
+   "original URL (magic-byte check):html",
+   "landing->citation_pdf_url:pdf"
+  ]
+ },
+ {
+  "title": "LARGE LANGUAGE MODELS AS CLINICAL REASONING ASSISTANTS: CA",
+  "publisher": "10.53858",
+  "access": "CLOSED ACCESS (needs i",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html"
+  ]
+ },
+ {
+  "title": "Quantum-Enhanced Retrieval-Augmented Generation for Halluc",
+  "publisher": "10.63328",
+  "access": "CLOSED ACCESS (needs i",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html"
+  ]
+ },
+ {
+  "title": "A Substring Extraction-Based RAG Method for Minimising Hal",
+  "publisher": "ACM",
+  "access": "CLOSED ACCESS (needs i",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "LLM Hallucinations in Practical Code Generation: Phenomena",
+  "publisher": "ACM",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "From Hallucinations to Help: Can Retrieval‑Augmented Gener",
+  "publisher": "OSF Preprints",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html",
+   "other OA location:html",
+   "other OA location:html"
+  ]
+ },
+ {
+  "title": "Hallucination Reduction in Large Language Models with Retr",
+  "publisher": "OSF Preprints",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html",
+   "other OA location:html"
+  ]
+ },
+ {
+  "title": "Hallucinations in LLMs: Types, Causes, and Approaches for ",
+  "publisher": "OSF Preprints",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": "original URL (magic-byte check)",
+  "steps": [
+   "original URL (magic-byte check):pdf"
+  ]
+ },
+ {
+  "title": "A Survey on Hallucination in Large Language Models: Defini",
+  "publisher": "Preprints.org",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Reducing hallucination in medical question answering: A co",
+  "publisher": "SAGE",
+  "access": "CLOSED ACCESS (needs i",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Speculative Decoding and Cache Reuse",
+  "publisher": "Zenodo",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html",
+   "other OA location:html"
+  ]
+ },
+ {
+  "title": "🧜Siren’s Song in the AI Ocean: A Survey on Hallucination i",
+  "publisher": "direct.mit.edu",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)"
+  ]
+ },
+ {
+  "title": "Attention Mapping for Hallucination Reduction in Arabic Fi",
+  "publisher": "doi.org",
+  "access": "open access, landing p",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):html"
+  ]
+ },
+ {
+  "title": "Real-time Prevention of Factual Hallucinations in Retrieva",
+  "publisher": "doi.org",
+  "access": "open access, landing p",
+  "fixed_by": "landing-page citation_pdf_url",
+  "steps": [
+   "original URL (magic-byte check):html",
+   "landing->citation_pdf_url:pdf"
+  ]
+ },
+ {
+  "title": "Retrieval Augmented Generation: A Simplified Approach to I",
+  "publisher": "techrxiv.org",
+  "access": "OPEN ACCESS - a PDF li",
+  "fixed_by": null,
+  "steps": [
+   "original URL (magic-byte check):fail(HTTP 403)",
+   "other OA location:fail(HTTP 403)"
+  ]
+ }
+]

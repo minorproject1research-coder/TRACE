@@ -96,8 +96,14 @@ def _build_sub_questions(plan: dict) -> list[SubQuestion]:
 
 
 def _assign_queries(sub_questions: list[SubQuestion], queries: list[str]) -> None:
-    """Give each search query to the sub-question it matches best (embedding similarity of the query against the
-    sub-question's topic and detail questions), keeping at most MAX_QUERIES_PER_SUBQUESTION per sub-question."""
+    """Spread the planner's search queries over the sub-questions, balanced.
+
+    Giving every query to the sub-question it matches best (argmax) left the core question with 1 query ([3, 3, 1]), because
+    background sub-questions soak up most queries. Instead the (query, sub-question) pairs are taken in order of embedding
+    similarity (query against the sub-question's topic and detail questions), and a sub-question stops accepting queries at
+    an even share (queries // sub-questions, then the remainder one each, never more than MAX_QUERIES_PER_SUBQUESTION). Every query is used at most once (no
+    duplicate searches); with at least as many queries as sub-questions each sub-question gets at least one. Queries beyond
+    the total capacity (the least similar ones) are dropped."""
     queries = list(dict.fromkeys(queries))              # drop exact duplicates, keep order
     if not queries or not sub_questions:
         return
@@ -109,12 +115,19 @@ def _assign_queries(sub_questions: list[SubQuestion], queries: list[str]) -> Non
     q_vecs = model.encode(queries, normalize_embeddings=True)
     sims = q_vecs @ sq_vecs.T                           # (queries x sub-questions)
 
+    base, extra = divmod(len(queries), len(sub_questions))
+    pairs = sorted(((float(sims[i, j]), i, j) for i in range(len(queries)) for j in range(len(sub_questions))), reverse=True)
+    taken: set[int] = set()
     buckets: list[list[tuple[float, str]]] = [[] for _ in sub_questions]
-    for i, query in enumerate(queries):
-        best = int(sims[i].argmax())
-        buckets[best].append((float(sims[i, best]), query))
+    # phase 1: every sub-question up to the even share; phase 2: the remainder, one extra query per sub-question at most
+    for capacity in (min(MAX_QUERIES_PER_SUBQUESTION, base), min(MAX_QUERIES_PER_SUBQUESTION, base + 1)):
+        for sim, i, j in pairs:
+            if i in taken or len(buckets[j]) >= capacity:
+                continue
+            taken.add(i)
+            buckets[j].append((sim, queries[i]))
     for sq, bucket in zip(sub_questions, buckets):
-        sq.queries = [q for _, q in sorted(bucket, reverse=True)[:MAX_QUERIES_PER_SUBQUESTION]]
+        sq.queries = [q for _, q in sorted(bucket, reverse=True)]
 
 
 GROQ_DECOMPOSE_PROMPT = """You are a research planner. Break the research question into 2-5 sub-questions that together cover it

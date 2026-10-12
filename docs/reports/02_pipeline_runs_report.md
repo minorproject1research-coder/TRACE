@@ -266,6 +266,16 @@ Observed problems:
 5. **The source mix shifted**: kept arXiv papers fell from 16 to 9 and OpenAlex papers from 33 to 20 because Scopus abstracts match the
    sub-question well. All sub-questions still reached 5 parseable papers, but the pool of papers with a PDF source is smaller.
 
+Fixes made after run 6 (offline tests only, not yet run):
+- **Balanced query assignment** in the planner (even share per sub-question, each query used once): on the run-6 style plan 9 queries now
+  give [3, 3, 3] instead of [3, 3, 1]; 7 give [2, 3, 2].
+- **Scopus filler words and an adaptive relaxed query**: answer-type words (definition, overview, pros, cons, ...) are not required in
+  the Scopus search, and when the strict query finds fewer than 10 matches a relaxed one is searched too.
+
+Added after run 6 (continued):
+- **PDF download fix and failure memory** (report 5): first-bytes PDF check plus `citation_pdf_url` following (5 of the 24 papers that ever failed now download)
+  and a 7-day memory of lasting PDF failures (migration 011), so the same blocked papers are not retried every run.
+
 Fixes made after run 5:
 - **Groq key pool + parallel Stage 3 digests** (`groq_pool.py`, report 4 section 8): two independent keys, `Retry-After`-aware
   retries, one worker per key. Stage 3 is bounded by tokens per minute (about 42k tokens per run), so the gain is moderate (about 2.5 to 3.5

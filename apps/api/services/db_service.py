@@ -282,3 +282,80 @@ def write_coverage(rows: list[dict]) -> None:
     for row in rows:
         row.setdefault("created_at", now)
     _insert_with_optional_columns("coverage_results", rows, OPTIONAL_COVERAGE_COLUMNS)
+
+
+# ---------- PDF download failures (negative cache, migration 011) ----------
+
+_pdf_failures_unavailable = False                 # the table is missing: fall back to memory for this process
+_pdf_failures_memory: dict[str, dict] = {}
+
+
+def paper_key(paper: dict) -> str:
+    """Identity of a paper across queries: arXiv id, else DOI, else normalised title (same key as the parse cache)."""
+    arxiv = re.sub(r"v\d+$", "", (paper.get("arxiv_id") or "").strip())
+    if arxiv:
+        return f"arxiv:{arxiv}"
+    doi = (paper.get("doi") or "").strip().lower()
+    if doi:
+        return f"doi:{doi}"
+    return "title:" + re.sub(r"[^a-z0-9]+", " ", (paper.get("title") or "").lower()).strip()
+
+
+def _pdf_failures_missing(e: Exception) -> bool:
+    global _pdf_failures_unavailable
+    if "pdf_failures" in str(e):
+        if not _pdf_failures_unavailable:
+            logger.warning("table pdf_failures is missing - run db/migrations/011; PDF failures are remembered for this run only")
+        _pdf_failures_unavailable = True
+        return True
+    return False
+
+
+def get_pdf_failures(keys: list[str], max_age_days: float, min_fetcher_version: int) -> dict[str, dict]:
+    """Recorded PDF failures for these paper keys: seen within max_age_days and from a download logic at least as new as
+    min_fetcher_version. {key: row}."""
+    if not keys or max_age_days <= 0:
+        return {}
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+    found = {k: v for k, v in _pdf_failures_memory.items()
+             if k in keys and v["last_seen"] >= cutoff and v["fetcher_version"] >= min_fetcher_version}
+    if not _pdf_failures_unavailable:
+        try:
+            rows = (supabase.table("pdf_failures").select("*").in_("paper_key", list(keys))
+                    .gte("fetcher_version", min_fetcher_version).gte("last_seen", cutoff.isoformat()).execute().data)
+            for r in rows:
+                found.setdefault(r["paper_key"], r)
+        except Exception as e:
+            if not _pdf_failures_missing(e):
+                logger.warning("pdf_failures lookup failed: %s", str(e)[:150])
+    return found
+
+
+def record_pdf_failure(key: str, title: str, doi: str | None, error_class: str, error_detail: str, fetcher_version: int) -> None:
+    now = datetime.now(timezone.utc)
+    previous = _pdf_failures_memory.get(key, {})
+    _pdf_failures_memory[key] = {"paper_key": key, "error_class": error_class, "last_seen": now, "fetcher_version": fetcher_version,
+                                 "fail_count": previous.get("fail_count", 0) + 1}
+    if _pdf_failures_unavailable:
+        return
+    try:
+        existing = supabase.table("pdf_failures").select("fail_count,first_seen").eq("paper_key", key).execute().data
+        supabase.table("pdf_failures").upsert({
+            "paper_key": key, "title": (title or "")[:300], "doi": doi, "error_class": error_class, "error_detail": error_detail[:300],
+            "fail_count": (existing[0]["fail_count"] + 1) if existing else 1, "fetcher_version": fetcher_version,
+            "first_seen": existing[0]["first_seen"] if existing else now.isoformat(), "last_seen": now.isoformat(),
+        }).execute()
+    except Exception as e:
+        if not _pdf_failures_missing(e):
+            logger.warning("could not record a PDF failure: %s", str(e)[:150])
+
+
+def clear_pdf_failure(key: str) -> None:
+    """A paper that parsed fine is no longer a known failure."""
+    _pdf_failures_memory.pop(key, None)
+    if _pdf_failures_unavailable:
+        return
+    try:
+        supabase.table("pdf_failures").delete().eq("paper_key", key).execute()
+    except Exception as e:
+        _pdf_failures_missing(e)

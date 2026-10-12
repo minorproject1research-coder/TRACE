@@ -1,0 +1,227 @@
+[
+ {
+  "title": "CONTROL arXiv (works everywhere)",
+  "publisher": "arXiv",
+  "url": "https://arxiv.org/pdf/2411.13157",
+  "status": "success",
+  "md_chars": 50465,
+  "head": "## Closer Look at Efficient Inference Methods: A Survey of Speculative Decoding  Hyun Ryu ∗ KAIST hyunr01@kais",
+  "seconds": 6.2
+ },
+ {
+  "title": "Towards Optimal Speculative Decoding: A Comprehens",
+  "publisher": "ACM",
+  "url": "https://doi.org/10.1145/3846171",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "Hallucination Mitigation for Retrieval-Augmented L",
+  "publisher": "MDPI",
+  "url": "https://doi.org/10.3390/math13050856",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "Optimizing LLM Inference: Metrics that Matter for ",
+  "publisher": "SRC / jaicc",
+  "url": "https://doi.org/10.47363/jaicc/2025(4)446",
+  "status": "success",
+  "md_chars": 267,
+  "head": "[Return to Article Details Optimizing LLM Inference: Metrics that Matter for Real Time Applications](https://s",
+  "seconds": 2.0
+ },
+ {
+  "title": "CRUD-RAG: A Comprehensive Chinese Benchmark for Re",
+  "publisher": "ACM",
+  "url": "https://doi.org/10.1145/3701228",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.0
+ },
+ {
+  "title": "A Survey of Hallucination Problems Based on Large ",
+  "publisher": "EWA Publishing",
+  "url": "https://doi.org/10.54254/2755-2721/2024.17851",
+  "status": "success",
+  "md_chars": 5356,
+  "head": "# A Survey of Hallucination Problems Based on Large Language Models  Xinxin Liu *  School of Mathematics and C",
+  "seconds": 2.0
+ },
+ {
+  "title": "Enhancing the Precision and Interpretability of Re",
+  "publisher": "IEEE",
+  "url": "https://doi.org/10.1109/access.2025.3550145",
+  "status": "skipped",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.0
+ },
+ {
+  "title": "Hybrid Speculative Decoding in RAG: When Do the Pr",
+  "publisher": "IEEE",
+  "url": "https://doi.org/10.1109/access.2026.3737178",
+  "status": "skipped",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "Runtime-Controlled Evaluation of Speculative Decod",
+  "publisher": "MDPI",
+  "url": "https://doi.org/10.3390/electronics15143179",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "EXPLORING HALLUCINATIONS IN LARGE LANGUAGE MODELS ",
+  "publisher": "Zenodo",
+  "url": "https://doi.org/10.5281/zenodo.18998810",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 32.1
+ },
+ {
+  "title": "Reducing AI RAG Hallucination by Optimizing Routin",
+  "publisher": "osti.gov",
+  "url": "https://www.osti.gov/biblio/2474834",
+  "status": "success",
+  "md_chars": 5068,
+  "head": "# Reducing AI RAG Hallucination by Optimizing Routing Techniques  Conference ·  Fri Aug 16 00:00:00 EDT 2024  ",
+  "seconds": 2.1
+ },
+ {
+  "title": "LARGE LANGUAGE MODELS AS CLINICAL REASONING ASSIST",
+  "publisher": "10.53858",
+  "url": "https://doi.org/10.53858/bren03011426",
+  "status": "success",
+  "md_chars": 65335,
+  "head": "# LARGE LANGUAGE MODELS AS CLINICAL REASONING ASSISTANTS: CAPABILITIES, HALLUCINATIONS, AND SAFE DEPLOYMENT FR",
+  "seconds": 4.2
+ },
+ {
+  "title": "Quantum-Enhanced Retrieval-Augmented Generation fo",
+  "publisher": "10.63328",
+  "url": "https://doi.org/10.63328/ijcser-v3ri3p6",
+  "status": "success",
+  "md_chars": 7696,
+  "head": "# [International Journal of Computational Science and Engineering Research](index.php)  [Double-Blinded Peer R",
+  "seconds": 2.0
+ },
+ {
+  "title": "A Substring Extraction-Based RAG Method for Minimi",
+  "publisher": "ACM",
+  "url": "https://doi.org/10.1145/3731120.3744624",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.0
+ },
+ {
+  "title": "LLM Hallucinations in Practical Code Generation: P",
+  "publisher": "ACM",
+  "url": "https://dl.acm.org/doi/pdf/10.1145/3728894",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.0
+ },
+ {
+  "title": "From Hallucinations to Help: Can Retrieval‑Augment",
+  "publisher": "OSF Preprints",
+  "url": "https://osf.io/vb96h_v1/download",
+  "status": "success",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "Hallucination Reduction in Large Language Models w",
+  "publisher": "OSF Preprints",
+  "url": "https://doi.org/10.31219/osf.io/pv7r5",
+  "status": "success",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.0
+ },
+ {
+  "title": "Hallucinations in LLMs: Types, Causes, and Approac",
+  "publisher": "OSF Preprints",
+  "url": "https://osf.io/tj93u/download",
+  "status": "success",
+  "md_chars": 30959,
+  "head": "## Hallucinations in LLMs: Types, Causes, and Approaches for Enhanced Reliability  Meade Cleti 1,* , Pete Jano",
+  "seconds": 8.2
+ },
+ {
+  "title": "A Survey on Hallucination in Large Language Models",
+  "publisher": "Preprints.org",
+  "url": "https://www.preprints.org/frontend/manuscript/8c06ebcda2ba4f4c9610dfc0e4a64a3c/download_pub",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ },
+ {
+  "title": "Reducing hallucination in medical question answeri",
+  "publisher": "SAGE",
+  "url": "https://doi.org/10.1177/18758967261492002",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 6.1
+ },
+ {
+  "title": "Speculative Decoding and Cache Reuse",
+  "publisher": "Zenodo",
+  "url": "https://doi.org/10.5281/zenodo.19210814",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 32.1
+ },
+ {
+  "title": "🧜Siren’s Song in the AI Ocean: A Survey on Halluci",
+  "publisher": "direct.mit.edu",
+  "url": "https://direct.mit.edu/coli/article-pdf/doi/10.1162/coli.a.16/2535477/coli.a.16.pdf",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 14.1
+ },
+ {
+  "title": "Attention Mapping for Hallucination Reduction in A",
+  "publisher": "doi.org",
+  "url": "https://doi.org/10.65445/3106-1192.1006",
+  "status": "success",
+  "md_chars": 7777,
+  "head": "# [Attention Mapping for Hallucination Reduction in Arabic Financial Using Retrieval-Augmented Generation Syst",
+  "seconds": 2.0
+ },
+ {
+  "title": "Real-time Prevention of Factual Hallucinations in ",
+  "publisher": "doi.org",
+  "url": "https://doi.org/10.34726/hss.2026.137481",
+  "status": "success",
+  "md_chars": 288,
+  "head": "#### Page view(s)  177  checked on Jul 8, 2026  #### Download(s)  532  checked on Jul 8, 2026  <!-- image --> ",
+  "seconds": 2.0
+ },
+ {
+  "title": "Retrieval Augmented Generation: A Simplified Appro",
+  "publisher": "techrxiv.org",
+  "url": "https://www.techrxiv.org/doi/pdf/10.36227/techrxiv.175296343.33443046",
+  "status": "failure",
+  "md_chars": 0,
+  "head": "",
+  "seconds": 2.1
+ }
+]

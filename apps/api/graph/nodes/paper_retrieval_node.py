@@ -3,7 +3,7 @@ import logging
 import os
 
 from apps.api.graph.state import SharedResearchState
-from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
+from apps.api.agents.stage2_retrieval.paper_retrieval_agent import DOWNLOADER_VERSION, PDF_FAILURE_TTL_DAYS, PaperRetrievalAgent
 from apps.api.agents.stage2_retrieval import relevance_filter, reliability_scorer
 from apps.api.services import db_service
 
@@ -75,10 +75,11 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
     return {"paper_results": all_papers}
 
 
-def _parse_priority(row: dict) -> tuple:
-    """Sort key (descending): papers with a direct PDF source first (if enabled), then by combined_score."""
+def _parse_priority(row: dict, failed_keys: frozenset = frozenset()) -> tuple:
+    """Sort key (descending): papers whose PDF is not a known failure first, then papers with a direct PDF source (if enabled),
+    then by combined_score. A known failure is still in the queue, behind everything else, and is skipped cheaply by the agent."""
     direct = bool(row.get("arxiv_id") or row.get("pdf_url")) if PARSE_PREFER_DIRECT_PDF else False
-    return (direct, row.get("combined_score") or 0)
+    return (db_service.paper_key(row) not in failed_keys, direct, row.get("combined_score") or 0)
 
 
 async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, papers: list[dict]):
@@ -90,7 +91,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
         return
 
     rows = db_service.supabase.table("retrieved_papers") \
-        .select("id,sub_question_id,title,combined_score,arxiv_id,pdf_url") \
+        .select("id,sub_question_id,title,combined_score,arxiv_id,pdf_url,doi") \
         .eq("query_id", query_id) \
         .execute().data
 
@@ -99,7 +100,10 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
         return
 
     by_sq: dict[str, list[dict]] = {}
-    for row in sorted(rows, key=_parse_priority, reverse=True):
+    failed_keys = frozenset(db_service.get_pdf_failures([db_service.paper_key(r) for r in rows], PDF_FAILURE_TTL_DAYS, DOWNLOADER_VERSION))
+    if failed_keys:
+        logger.info("%d of the %d kept papers have a recorded PDF failure; they are tried last", len(failed_keys), len(rows))
+    for row in sorted(rows, key=lambda r: _parse_priority(r, failed_keys), reverse=True):
         by_sq.setdefault(row["sub_question_id"], []).append(row)
 
     queues = {sq: list(rs) for sq, rs in by_sq.items()}
