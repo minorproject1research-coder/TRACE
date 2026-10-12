@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 
 from apps.api.agents.stage2_retrieval.key_pool import KeyPool
 from apps.api.agents.stage2_retrieval.markdown_parser import PARSER_VERSION, clean_abstract, parse_markdown
+from apps.api.agents.stage2_retrieval.pdf_sources import (
+    HTML_FULLTEXT, HTML_FULLTEXT_MIN_CHARS, RESPECT_ROBOTS_TXT, PdfSources, PdfTooLargeError, PolitePolicy, env_flag,
+)
 from apps.api.services import db_service, trace_llm_service
 
 # PDFs larger than this are skipped (a 59 MB file held a Docling worker for ~2 minutes and then failed). 0 = no cap.
@@ -42,9 +45,17 @@ def _docling_markdown(data: dict) -> str:
 # every run (16 of 40 failures in the logs were repeats). 0 turns it off. Bump DOWNLOADER_VERSION whenever the download
 # logic improves: failures recorded by an older version are then ignored.
 PDF_FAILURE_TTL_DAYS = float(os.getenv("PDF_FAILURE_TTL_DAYS", "7"))
-DOWNLOADER_VERSION = 2          # 2 = first-bytes PDF check + landing-page citation_pdf_url
+DOWNLOADER_VERSION = 3          # 3 = + OpenAlex content API, OSF/Zenodo APIs, arXiv twin, HTML full text (2 = first-bytes check + citation_pdf_url)
 LASTING_HTTP_STATUS = (403, 404, 410, 451)
-LANDING_PAGE_BYTES = 600_000     # how much of an HTML landing page is read when looking for its PDF address
+LANDING_PAGE_BYTES = 600_000
+
+# Switches (true / false in .env). The new routes themselves are switched in pdf_sources.py (OPENALEX_CONTENT, REPOSITORY_APIS,
+# ARXIV_TITLE_TWIN, HTML_FULLTEXT, RESPECT_ROBOTS_TXT, POLITE_HOST_INTERVAL_SECONDS).
+PLAYWRIGHT_FALLBACK = env_flag("PLAYWRIGHT_FALLBACK", True)         # the headless-browser last resort (undetected_playwright)
+DOCLING_FETCH_FIRST = env_flag("DOCLING_FETCH_FIRST", False)        # the host's Docling fetches the URL itself: no upload, no figures
+HONEST_USER_AGENT = env_flag("HONEST_USER_AGENT", True)             # identify the pipeline (with a contact address) instead of posing as Chrome
+ROUTE_TIMEOUT_SECONDS = float(os.getenv("ROUTE_TIMEOUT_SECONDS", "90"))     # one fallback route may hold a parse slot at most this long
+RETRY_403_WITHOUT_QUERY = env_flag("RETRY_403_WITHOUT_QUERY", False)  # after an HTTP 403, retry the URL without its query string     # how much of an HTML landing page is read when looking for its PDF address
 
 # Parse cache: reuse a stored parse of the same paper (see PaperRetrievalAgent._parse_single_paper).
 PARSE_CACHE_ENABLED = os.getenv("PARSE_CACHE", "true").lower() not in ("0", "false", "no")
@@ -55,8 +66,7 @@ class S2Unavailable(Exception):
     """Semantic Scholar search gave up (HTTP 429 / 5xx after the allowed attempts)."""
 
 
-class PdfTooLargeError(Exception):
-    """The PDF is over MAX_PDF_SIZE_MB; no other source is tried because it would be the same file."""
+# PdfTooLargeError lives in pdf_sources (the PDF is over MAX_PDF_SIZE_MB; no other source is tried: it would be the same file).
 
 logger = logging.getLogger(__name__)
 
@@ -236,6 +246,11 @@ class PaperRetrievalAgent:
         self._openalex_semaphore = asyncio.Semaphore(self.openalex_max_concurrent)
         self._parse_in_flight: dict[str, asyncio.Future] = {}   # paper key -> parse running in this run
         self._download_failures: dict[str, tuple[str, str]] = {}  # retrieved_paper_id -> (error class, detail) of the last terminal failure
+        self._honest_ua = f"TRACE-research-pipeline/1.0 (+mailto:{self.UNPAYWALL_EMAIL})"
+        self._polite = PolitePolicy(self._honest_ua)
+        self._pdf_sources = PdfSources(
+            self._honest_ua, self._polite, self._openalex_pool, self._arxiv_limiter.acquire,
+            int(MAX_PDF_SIZE_MB * 1024 * 1024) if MAX_PDF_SIZE_MB > 0 else 0)
 
         # Scopus (optional): searched through the host, which has the entitlement to abstracts. Switched off for the rest
         # of the run as soon as the host says it cannot serve it (endpoint missing, no key, no abstracts).
@@ -402,135 +417,147 @@ class PaperRetrievalAgent:
                     (paper_metadata.get("title") or "")[:60], len(parsed.full_text))
         return parsed
 
+    async def _finish_pdf(self, client: httpx.AsyncClient, retrieved_paper_id: str, paper_metadata: dict, pdf_bytes: bytes, route: str) -> ParsedPaper:
+        """Docling + PDFFigures on a downloaded PDF, then store: the common end of every download route."""
+        logger.info("PDF obtained via %s (%d bytes): '%s'", route, len(pdf_bytes), (paper_metadata.get("title") or "")[:60])
+        docling_result, figures = await asyncio.gather(
+            self._safe_docling(pdf_bytes), self._safe_pdffigures(client, pdf_bytes), return_exceptions=True)
+        if isinstance(docling_result, Exception):
+            logger.warning("Docling unavailable, using basic metadata: %s", docling_result)
+            docling_result = self._empty_parsed(retrieved_paper_id, paper_metadata)
+        docling_result.retrieved_paper_id = retrieved_paper_id
+        self._apply_metadata(docling_result, paper_metadata)
+        docling_result.figures = figures if isinstance(figures, list) else []
+        self._store_parsed_paper(docling_result)
+        return docling_result
+
+    def _oversized(self, retrieved_paper_id: str, paper_metadata: dict, error: Exception) -> ParsedPaper:
+        logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, error)
+        self._download_failures[retrieved_paper_id] = self._lasting_failure(error)
+        return self._empty_parsed(retrieved_paper_id, paper_metadata)
+
+    async def _route_unpaywall(self, client: httpx.AsyncClient, paper_metadata: dict, failed_hosts: set) -> Optional[bytes]:
+        doi = paper_metadata.get("doi")
+        url = await self._get_unpaywall_url(client, doi, failed_hosts) if doi else None
+        return await self._download_pdf(client, url) if url else None
+
+    async def _store_text_only(self, retrieved_paper_id: str, paper_metadata: dict, parsed: ParsedPaper) -> ParsedPaper:
+        parsed.retrieved_paper_id = retrieved_paper_id
+        self._apply_metadata(parsed, paper_metadata)
+        parsed.figures = []                               # nothing was uploaded to PDFFigures
+        self._store_parsed_paper(parsed)
+        return parsed
+
+    async def _fetch_first(self, retrieved_paper_id: str, paper_metadata: dict, pdf_urls: list) -> Optional[ParsedPaper]:
+        """DOCLING_FETCH_FIRST: the Docling host downloads the PDF itself (about 6.5 s per paper faster than uploading it from here).
+        Figures are skipped. Returns None unless a real document came back, so the normal chain can take over."""
+        for url in pdf_urls:
+            if "doi.org/" in url:
+                continue                                   # a DOI link is a landing page: the HTML route and the other routes handle it
+            try:
+                parsed = await self._parse_with_docling(url=url)
+            except Exception as e:
+                logger.info("Host-side fetch failed for %s: %s", url[:70], str(e)[:90])
+                continue
+            if len(parsed.full_text) >= PARSE_CACHE_MIN_CHARS and parsed.sections:
+                logger.info("Parsed by the Docling host without an upload: '%s'", (paper_metadata.get("title") or "")[:60])
+                return await self._store_text_only(retrieved_paper_id, paper_metadata, parsed)
+        return None
+
+    async def _html_fulltext(self, retrieved_paper_id: str, paper_metadata: dict, pdf_urls: list) -> Optional[ParsedPaper]:
+        """Last resort: some landing pages hold the whole article as HTML. Docling fetches and converts the page; it is accepted only if
+        the text is long (an abstract page is 5,000 to 8,000 characters, a full article 30,000 and more) and has sections."""
+        tried = 0
+        for url in pdf_urls:
+            if "arxiv.org/" in url:
+                continue
+            tried += 1
+            if tried > 2:
+                break
+            try:
+                parsed = await self._parse_with_docling(url=url)
+            except Exception as e:
+                logger.info("HTML full-text attempt failed for %s: %s", url[:70], str(e)[:90])
+                continue
+            # long enough, and article-shaped: headings, or a reference list (many article pages have no markdown headings)
+            if len(parsed.full_text) >= HTML_FULLTEXT_MIN_CHARS and (len(parsed.sections) >= 3 or len(parsed.references) >= 10):
+                logger.info("Full text taken from the HTML page %s (%d characters)", url[:80], len(parsed.full_text))
+                return await self._store_text_only(retrieved_paper_id, paper_metadata, parsed)
+        return None
+
     async def _parse_single_paper_uncached(self, retrieved_paper_id: str, paper_metadata: dict) -> Optional[ParsedPaper]:
-        """Download and parse one paper (Docling + PDFFigures), with the URL / Unpaywall / Playwright fallbacks."""
+        """Get one paper's text, trying the routes in this order and stopping at the first that yields a real PDF:
+        the paper's own links (arXiv, PDF link, DOI), Unpaywall, the OpenAlex content API, the OSF / Zenodo APIs, the same paper on arXiv,
+        the headless browser (PLAYWRIGHT_FALLBACK), and last the full article in an HTML page (HTML_FULLTEXT). See docs/reports/06_pdf_access_plan.md."""
         pdf_urls = self._construct_pdf_url(paper_metadata)
-        if not pdf_urls:
+        if not pdf_urls and not (paper_metadata.get("title") or "").strip():
             logger.warning("No downloadable URL for paper: %s", retrieved_paper_id)
             return None
+
+        if DOCLING_FETCH_FIRST:
+            fast = await self._fetch_first(retrieved_paper_id, paper_metadata, pdf_urls)
+            if fast is not None:
+                return fast
 
         from urllib.parse import urlparse
         failed_hosts: set[str] = set()
         last_error = None
 
-        for pdf_url in pdf_urls:
-            try:
-                async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # 1. the paper's own links
+            for pdf_url in pdf_urls:
+                try:
                     pdf_bytes = await self._download_pdf(client, pdf_url)
+                    return await self._finish_pdf(client, retrieved_paper_id, paper_metadata, pdf_bytes, "its own link")
+                except PdfTooLargeError as e:
+                    return self._oversized(retrieved_paper_id, paper_metadata, e)
+                except Exception as e:
+                    last_error = e
+                    failed_hosts.add(urlparse(pdf_url).netloc)
+                    logger.warning("Failed to download from %s: %s: %r", pdf_url[:80], type(e).__name__, e)
 
-                    docling_task = self._safe_docling(pdf_bytes)
-                    figures_task = self._safe_pdffigures(client, pdf_bytes)
-
-                    docling_result, figures = await asyncio.gather(
-                        docling_task, figures_task, return_exceptions=True
-                    )
-
-                    if isinstance(docling_result, Exception):
-                        logger.warning("Docling unavailable, using basic metadata: %s", docling_result)
-                        docling_result = ParsedPaper(
-                            retrieved_paper_id=retrieved_paper_id,
-                            title=paper_metadata.get("title", ""),
-                            authors=paper_metadata.get("authors", []),
-                            abstract=paper_metadata.get("abstract", ""),
-                            sections=[],
-                            references=[],
-                            figures=[],
-                            full_text="",
-                        )
-
-                    docling_result.retrieved_paper_id = retrieved_paper_id
-                    self._apply_metadata(docling_result, paper_metadata)
-                    docling_result.figures = figures if isinstance(figures, list) else []
-
-                    self._store_parsed_paper(docling_result)
-                    return docling_result
-
-            except PdfTooLargeError as e:
-                logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, e)
-                self._download_failures[retrieved_paper_id] = self._lasting_failure(e)
-                return self._empty_parsed(retrieved_paper_id, paper_metadata)
-            except Exception as e:
-                last_error = e
-                failed_hosts.add(urlparse(pdf_url).netloc)
-                logger.warning("Failed to download from %s: %s: %r", pdf_url[:80], type(e).__name__, e)
-                continue
-
-        doi = paper_metadata.get("doi")
-        if doi:
-            try:
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    unpaywall_url = await self._get_unpaywall_url(client, doi, failed_hosts)
-                    if unpaywall_url:
-                        pdf_bytes = await self._download_pdf(client, unpaywall_url)
-
-                        docling_task = self._safe_docling(pdf_bytes)
-                        figures_task = self._safe_pdffigures(client, pdf_bytes)
-
-                        docling_result, figures = await asyncio.gather(
-                            docling_task, figures_task, return_exceptions=True
-                        )
-
-                        if isinstance(docling_result, Exception):
-                            docling_result = ParsedPaper(
-                                retrieved_paper_id=retrieved_paper_id,
-                                title=paper_metadata.get("title", ""),
-                                authors=paper_metadata.get("authors", []),
-                                abstract=paper_metadata.get("abstract", ""),
-                                sections=[],
-                                references=[],
-                                figures=[],
-                                full_text="",
-                            )
-
-                        docling_result.retrieved_paper_id = retrieved_paper_id
-                        self._apply_metadata(docling_result, paper_metadata)
-                        docling_result.figures = figures if isinstance(figures, list) else []
-
-                        self._store_parsed_paper(docling_result)
-                        return docling_result
-            except PdfTooLargeError as e:
-                logger.warning("Skipping oversized PDF for %s: %s", retrieved_paper_id, e)
-                return self._empty_parsed(retrieved_paper_id, paper_metadata)
-            except Exception as e:
-                logger.warning("Unpaywall fallback failed for %s: %s: %r", doi, type(e).__name__, e)
-
-        pdf_url = pdf_urls[0] if pdf_urls else None
-        if pdf_url:
-            try:
-                pdf_bytes = await self._download_pdf_playwright(pdf_url)
-                if pdf_bytes and MAX_PDF_SIZE_MB > 0 and len(pdf_bytes) > MAX_PDF_SIZE_MB * 1048576:
-                    logger.warning("Skipping oversized PDF for %s: %.1f MB exceeds the %s MB cap",
-                                   retrieved_paper_id, len(pdf_bytes) / 1048576, MAX_PDF_SIZE_MB)
-                    return self._empty_parsed(retrieved_paper_id, paper_metadata)
+            # 2. other legitimate sources, cheapest first
+            routes = (
+                ("Unpaywall", lambda: self._route_unpaywall(client, paper_metadata, failed_hosts)),
+                ("the OpenAlex content API", lambda: self._pdf_sources.openalex_content(client, paper_metadata)),
+                ("a repository API (OSF / Zenodo)", lambda: self._pdf_sources.repository(client, paper_metadata)),
+                ("the same paper on arXiv", lambda: self._pdf_sources.arxiv_twin(client, paper_metadata)),
+            )
+            for label, route in routes:
+                try:
+                    pdf_bytes = await asyncio.wait_for(route(), timeout=ROUTE_TIMEOUT_SECONDS)
+                except PdfTooLargeError as e:
+                    return self._oversized(retrieved_paper_id, paper_metadata, e)
+                except asyncio.TimeoutError:
+                    logger.warning("%s route timed out after %.0f s for '%s'", label, ROUTE_TIMEOUT_SECONDS, (paper_metadata.get("title") or "")[:50])
+                    continue
+                except Exception as e:
+                    logger.warning("%s route failed for '%s': %s: %s", label, (paper_metadata.get("title") or "")[:50], type(e).__name__, str(e)[:100])
+                    continue
                 if pdf_bytes:
-                    async with httpx.AsyncClient(timeout=60.0) as client:
-                        docling_task = self._safe_docling(pdf_bytes)
-                        figures_task = self._safe_pdffigures(client, pdf_bytes)
+                    return await self._finish_pdf(client, retrieved_paper_id, paper_metadata, pdf_bytes, label)
 
-                        docling_result, figures = await asyncio.gather(
-                            docling_task, figures_task, return_exceptions=True
-                        )
+            # 3. the headless browser (switch: PLAYWRIGHT_FALLBACK)
+            if PLAYWRIGHT_FALLBACK and pdf_urls:
+                try:
+                    pdf_bytes = await self._download_pdf_playwright(pdf_urls[0])
+                    if pdf_bytes and MAX_PDF_SIZE_MB > 0 and len(pdf_bytes) > MAX_PDF_SIZE_MB * 1048576:
+                        return self._oversized(retrieved_paper_id, paper_metadata,
+                                               PdfTooLargeError(f"{len(pdf_bytes) / 1048576:.1f} MB exceeds the {MAX_PDF_SIZE_MB} MB cap"))
+                    if pdf_bytes:
+                        return await self._finish_pdf(client, retrieved_paper_id, paper_metadata, pdf_bytes, "the headless browser")
+                except Exception as e:
+                    logger.warning("Playwright fallback failed: %s: %r", type(e).__name__, e)
 
-                        if isinstance(docling_result, Exception):
-                            docling_result = ParsedPaper(
-                                retrieved_paper_id=retrieved_paper_id,
-                                title=paper_metadata.get("title", ""),
-                                authors=paper_metadata.get("authors", []),
-                                abstract=paper_metadata.get("abstract", ""),
-                                sections=[],
-                                references=[],
-                                figures=[],
-                                full_text="",
-                            )
-
-                        docling_result.retrieved_paper_id = retrieved_paper_id
-                        self._apply_metadata(docling_result, paper_metadata)
-                        docling_result.figures = figures if isinstance(figures, list) else []
-
-                        self._store_parsed_paper(docling_result)
-                        return docling_result
-            except Exception as e:
-                logger.warning("Playwright fallback failed: %s: %r", type(e).__name__, e)
+            # 4. the full article as an HTML page (switch: HTML_FULLTEXT)
+            if HTML_FULLTEXT and pdf_urls:
+                try:
+                    html = await asyncio.wait_for(self._html_fulltext(retrieved_paper_id, paper_metadata, pdf_urls), timeout=ROUTE_TIMEOUT_SECONDS * 2)
+                except asyncio.TimeoutError:
+                    html = None
+                    logger.warning("HTML full-text route timed out for '%s'", (paper_metadata.get("title") or "")[:50])
+                if html is not None:
+                    return html
 
         logger.error("All PDF URLs failed for %s: %s: %r", retrieved_paper_id, type(last_error).__name__ if last_error else "None", last_error)
         lasting = self._lasting_failure(last_error)
@@ -539,12 +566,7 @@ class PaperRetrievalAgent:
         return ParsedPaper(
             retrieved_paper_id=retrieved_paper_id,
             title="PDF access denied - unable to download",
-            authors=[],
-            abstract="",
-            sections=[],
-            references=[],
-            figures=[],
-            full_text="",
+            authors=[], abstract="", sections=[], references=[], figures=[], full_text="",
         )
 
     @staticmethod
@@ -796,8 +818,8 @@ class PaperRetrievalAgent:
         """Download PDF from URL with browser-like headers. Tries fallback strategies."""
         logger.info("Downloading PDF from: %s", url[:100])
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "User-Agent": self._honest_ua if HONEST_USER_AGENT else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/pdf,text/html;q=0.9,application/xhtml+xml;q=0.8,*/*;q=0.5",
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
             "Referer": "https://www.mdpi.com/",
@@ -811,6 +833,7 @@ class PaperRetrievalAgent:
             """(status, kind, body, final url). kind is 'pdf' or 'html', decided by the first bytes ('%PDF-'), not by the
             content-type (some servers send PDFs as application/octet-stream). Streams the body so an oversized PDF is abandoned
             as soon as it is known to be too big; an HTML page is read only up to LANDING_PAGE_BYTES."""
+            await self._polite.wait(target)                 # at most one request per POLITE_HOST_INTERVAL_SECONDS per host
             async with client.stream("GET", target, follow_redirects=True, headers=headers) as resp:
                 if resp.status_code >= 400:
                     if resp.status_code == 403:
@@ -841,7 +864,7 @@ class PaperRetrievalAgent:
                 return resp.status_code, kind, b"".join(chunks), str(resp.url)
 
         status, kind, body, final_url = await _fetch(url)
-        if status == 403 and "?" in url:
+        if status == 403 and "?" in url and RETRY_403_WITHOUT_QUERY:
             clean_url = url.split("?")[0]
             logger.info("Retrying without query params: %s", clean_url)
             status, kind, body, final_url = await _fetch(clean_url)
@@ -852,6 +875,9 @@ class PaperRetrievalAgent:
             # a landing page: most publishers and repositories name the PDF in <meta name="citation_pdf_url">
             for link in self._pdf_links_in_html(body.decode("utf-8", "replace"), final_url)[:2]:
                 if link == url:
+                    continue
+                if RESPECT_ROBOTS_TXT and not await self._polite.robots_allows(client, link):
+                    logger.info("robots.txt disallows following %s; skipping it", link[:80])
                     continue
                 try:
                     link_status, link_kind, link_body, _ = await _fetch(link)
@@ -870,19 +896,24 @@ class PaperRetrievalAgent:
         logger.info("Downloaded PDF: %d bytes", len(body))
         return body
 
-    async def _parse_with_docling(self, pdf_bytes: bytes) -> ParsedPaper:
-        """Parse PDF using Docling Docker API for metadata, sections, and references."""
+    async def _parse_with_docling(self, pdf_bytes: Optional[bytes] = None, url: Optional[str] = None) -> ParsedPaper:
+        """Parse a PDF with the Docling Docker API for metadata, sections and references. Either the PDF bytes are uploaded, or `url` is
+        given and the Docling host downloads it itself (no upload from here; it converts an HTML page just as well)."""
         import base64
-        
-        b64_data = base64.b64encode(pdf_bytes).decode("utf-8")
-        logger.info("Parsing PDF with Docling Docker API (%d bytes)", len(pdf_bytes))
+
+        if url:
+            source = {"kind": "http", "url": url}
+            logger.info("Docling fetches and parses %s", url[:90])
+        else:
+            source = {"kind": "file", "base64_string": base64.b64encode(pdf_bytes).decode("utf-8"), "filename": "paper.pdf"}
+            logger.info("Parsing PDF with Docling Docker API (%d bytes)", len(pdf_bytes))
 
         async def convert(do_ocr: bool) -> dict:
             async with httpx.AsyncClient(timeout=DOCLING_TIMEOUT_SECONDS) as client:
                 resp = await client.post(
                     f"{self.docling_url}/v1/convert/source",
                     json={
-                        "sources": [{"kind": "file", "base64_string": b64_data, "filename": "paper.pdf"}],
+                        "sources": [source],
                         "options": {"to_formats": ["md"], "do_ocr": do_ocr, "include_images": False},
                     },
                 )
@@ -892,7 +923,7 @@ class PaperRetrievalAgent:
         # Born-digital papers have a text layer, so OCR (the slowest step: 2.2x on the benchmark papers, identical
         # Markdown) is skipped. A scanned PDF comes back nearly empty and is retried once with OCR on.
         data = await convert(do_ocr=DOCLING_DO_OCR)
-        if not DOCLING_DO_OCR and len(_docling_markdown(data).strip()) < DOCLING_OCR_RETRY_BELOW_CHARS:
+        if not DOCLING_DO_OCR and not url and len(_docling_markdown(data).strip()) < DOCLING_OCR_RETRY_BELOW_CHARS:
             logger.info("Docling returned little text without OCR (scanned PDF?) - retrying with OCR")
             data = await convert(do_ocr=True)
 

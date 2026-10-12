@@ -75,20 +75,25 @@ class GroqPool:
             self._parked_until[key] = max(self._parked_until.get(key, 0.0), time.time() + seconds)
 
     def chat(self, messages: list[dict], model: str, temperature: float = 0.1, **kwargs):
-        """chat.completions.create with key rotation. Returns the SDK response; raises GroqRateLimitExhausted when the
-        keys stay rate limited past MAX_WAIT_SECONDS, or the last API error after MAX_ATTEMPTS."""
+        """chat.completions.create with key rotation. Returns the SDK response.
+
+        A 429 only parks its key and the call goes on (to another key, or after the Retry-After): rate limits are NOT counted against
+        MAX_ATTEMPTS, because with every key near its tokens-per-minute limit a call can be refused many times in a row and still be
+        fine a few seconds later (a digest was lost that way after 8 refusals). Only real errors (connection, 5xx) use up
+        MAX_ATTEMPTS. The whole call is bounded by CALL_TIME_BUDGET_SECONDS, and GroqRateLimitExhausted is raised at once when every
+        key is limited for longer than MAX_WAIT_SECONDS (a daily limit)."""
         last: Exception | None = None
-        calls = 0
+        errors = 0
         deadline = time.time() + CALL_TIME_BUDGET_SECONDS
-        while calls < MAX_ATTEMPTS:
+        while errors < MAX_ATTEMPTS:
+            if time.time() > deadline:
+                raise GroqRateLimitExhausted(f"gave up after {CALL_TIME_BUDGET_SECONDS:.0f}s of rate limits") from last
             key, wait = self._acquire()
             if key is None:
                 if wait > MAX_WAIT_SECONDS or time.time() + wait > deadline:
                     raise GroqRateLimitExhausted(f"all {len(self._keys)} Groq key(s) are rate limited for {wait:.0f}s")
                 time.sleep(max(wait, 0.2))
                 continue
-            calls += 1
-            attempt = calls - 1
             try:
                 return self._clients[key].chat.completions.create(
                     model=model, messages=messages, temperature=temperature, **kwargs)
@@ -99,9 +104,8 @@ class GroqPool:
                 logger.info("Groq key ...%s rate limited, parked %.0fs (%d key(s) in the pool)", key[-4:], seconds, len(self._keys))
             except (groq.APIConnectionError, groq.InternalServerError) as e:
                 last = e
-                time.sleep(min(2 ** attempt, 15))
-        if isinstance(last, groq.RateLimitError):
-            raise GroqRateLimitExhausted(f"still rate limited after {calls} calls") from last
+                errors += 1
+                time.sleep(min(2 ** (errors - 1), 15))
         raise last if last else GroqRateLimitExhausted("no attempt was made")
 
 

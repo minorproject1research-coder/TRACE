@@ -273,8 +273,45 @@ Fixes made after run 6 (offline tests only, not yet run):
   the Scopus search, and when the strict query finds fewer than 10 matches a relaxed one is searched too.
 
 Added after run 6 (continued):
+- **Compliant PDF download routes** (report 6): OpenAlex content API, OSF / Zenodo APIs, arXiv preprint, HTML full text, honest User-Agent and polite access, each with an
+  environment switch; 14 of the 24 papers that ever failed to download now yield a document (5 before).
+
 - **PDF download fix and failure memory** (report 5): first-bytes PDF check plus `citation_pdf_url` following (5 of the 24 papers that ever failed now download)
   and a 7-day memory of lasting PDF failures (migration 011), so the same blocked papers are not retried every run.
+
+## Run 7 - compliant PDF routes, failure memory, balanced queries, all switches live (5m 24s, the fastest so far)
+
+Query id `75138fe1` (2026-10-12 16:35), same speculative-decoding question. 53 papers kept across 3 sub-questions, 15 usable full texts of 16 attempted.
+
+| | Run 3 | Run 5 | Run 6 | Run 7 |
+|---|---|---|---|---|
+| Total time | 12m 43s | 10m 09s | 8m 58s | **5m 24s** |
+| Retrieval | 3m 01s | 3m 01s | 31 s | 41 s (9 Scopus searches) |
+| Filter and judge | 42 s | about 1 min | 50 s | 57 s |
+| Citation enrichment | 37 s | 65 s | 28 s | 11 s |
+| Parsing | 5m 36s | 1m 03s | 4m 28s | **1m 13s** |
+| Stage 3 preparation (chunk embedding) | included | included | 75 s | 75 s |
+| Stage 3 digests | 2m 24s total | 3m 52s total | 48 s | 40 s |
+| Verified findings | 47 | 51 | 53 | 46 (one digest lost, see below) |
+| Planner queries per sub-question | [3, 3, 0] | [3, 3, 3] | [3, 3, 1] | **[3, 3, 3]** |
+
+What worked (log and database):
+- **Parsing 4m 28s -> 1m 13s**: 10 parse-cache hits, 3 papers by their own link, **2 by the OpenAlex content API** (the "Formal schedulability analysis" and "Optimizing LLM
+  Inference" papers, which failed in every earlier run), 1 failure. Only 1 "All PDF URLs failed" instead of 5.
+- **Failure memory live**: the `pdf_failures` table exists and holds the one failure of this run (the IEEE Access paper "Hybrid Speculative Decoding in RAG", downloader version 3);
+  the next run will skip it.
+- **Balanced queries**: [3, 3, 3] with every sub-question served by the planner; 9 Scopus searches returned 25 papers each (the filler-word fix removed the 1 and 4 match queries).
+- **Semantic Scholar breaker**: the probe failed one second after retrieval started; no time lost. Scopus papers: 24 of the 53 kept (45%), 7 more shared with other sources; none
+  of the Scopus-only papers has full text, as expected. OpenAlex 429s: 0.
+- Parser output clean, judge columns stored for 53 of 53, 9 full-text digests plus 6 web snippets, coverage not sufficient / not sufficient / sufficient.
+
+What went wrong:
+1. **One digest was lost to Groq rate limits** ("still rate limited after 8 calls"; "Unlocking Efficiency in LLM Inference" shows 0 of 0 findings, so that sub-question had 2 full-text sources
+   instead of 3). Cause: every refusal counted against the retry budget; with three keys near their per-minute limit a single call can be refused 8 times and still succeed seconds later.
+   **Fixed after the run**: only real errors (connection, 5xx) count against `MAX_ATTEMPTS`; rate limits are bounded by the time budget (300 s). Tested with 12 refusals in a row.
+2. **Stage 3 preparation is now the largest fixed cost: 75 s of 5m 24s (23%)**, the bge embedding of the paper chunks on the CPU; the digests themselves take 40 s.
+3. Other remaining time: filter and judge 57 s, retrieval 41 s.
+4. The headless browser was tried once (the IEEE paper) and failed, as in every earlier run.
 
 Fixes made after run 5:
 - **Groq key pool + parallel Stage 3 digests** (`groq_pool.py`, report 4 section 8): two independent keys, `Retry-After`-aware
