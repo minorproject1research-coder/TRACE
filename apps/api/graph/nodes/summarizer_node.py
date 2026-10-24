@@ -1,15 +1,30 @@
 import logging
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 from apps.api.graph.state import SharedResearchState
-from apps.api.agents.stage3_summarizer import chunk_selector, digest_generator, coverage_check
+from apps.api.agents.stage3_summarizer import (
+    chunk_selector,
+    digest_generator,
+    coverage_check,
+    detail_aspects,
+)
 from apps.api.services import db_service, groq_pool, llm_service
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 
 # keep small for the first run (free-tier API limits); raise to 8 and 5 later
-MAX_PAPERS, MAX_WEB = 3, 2
+MAX_PAPERS = int(os.getenv("MAX_PAPERS") or 3)
+MAX_WEB = int(os.getenv("MAX_WEB_SEARCHES") or 2)
+
+
+def _clean_topic(main_topic: str) -> str:
+    """Strip leading 'What is' and trailing '?' from main topic."""
+    t = main_topic.strip()
+    t = re.sub(r"^what\s+is\s+", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\?$", "", t).strip()
+    return t
 
 
 def _workers() -> int:
@@ -44,20 +59,42 @@ def summarizer_node(state: SharedResearchState) -> dict:
     # 1. Prepare every digest job locally (chunking and embedding are fast); no model call yet.
     jobs = []           # (sub_question index, source_type, source, selected chunks, weight, evidence level)
     for si, sq in enumerate(sub_questions):
+        cleaned_topic = _clean_topic(sq.main_topic)
+        original_details = sq.detail_questions
+        
+        # Split details into aspects
+        aspects, aspect_to_detail = detail_aspects.flatten_aspects(
+            original_details, sq.id, cleaned_topic
+        )
+        logger.info(
+            "Sub-question '%s': %d original details -> %d aspects",
+            sq.main_topic[:50], len(original_details), len(aspects)
+        )
+        
         for p in db_service.get_papers_for_stage3(qid, sq.id)[:MAX_PAPERS]:
-            selected = chunk_selector.select_chunks(sq.main_topic, chunk_selector.build_chunks(p))
+            selected = chunk_selector.select_chunks(
+                sq.main_topic,
+                chunk_selector.build_chunks(p),
+                detail_questions=aspects,
+                main_topic=cleaned_topic,
+            )
             level = "full_text" if p.get("has_full_text") else "abstract"
-            jobs.append((si, "paper", p, selected, p.get("combined_score"), level))
+            jobs.append((si, "paper", p, selected, p.get("combined_score"), level, aspects, original_details, aspect_to_detail))
         for w in db_service.get_web_sources_for_stage3(sq.id)[:MAX_WEB]:
             snippet = w.get("snippet") or ""
             if len(snippet) < 200:
                 continue
-            jobs.append((si, "web", w, [(0, snippet)], w.get("reliability_score"), "web_snippet"))
+            jobs.append((si, "web", w, [(0, snippet)], w.get("reliability_score"), "web_snippet", aspects, original_details, aspect_to_detail))
 
     # 2. Run the digests in parallel (Groq calls; the pool spreads them over the keys and waits out 429s).
     def run(job):
-        si, _, _, selected, _, _ = job
-        return digest_generator.generate_digest(sub_questions[si].main_topic, selected) if selected else []
+        si, _, _, selected, _, _, aspects, original_details, aspect_to_detail = job
+        return digest_generator.generate_digest(
+            sub_questions[si].main_topic,
+            selected,
+            detail_aspects=aspects,
+            main_topic=_clean_topic(sub_questions[si].main_topic),
+        ) if selected else []
 
     workers = _workers()
     logger.info("Stage 3: %d digests for %d sub-questions, %d worker(s), %d Groq key(s)",
@@ -69,8 +106,17 @@ def summarizer_node(state: SharedResearchState) -> dict:
     all_rows, cov_rows, coverage = [], [], {}
     for si, sq in enumerate(sub_questions):
         rows = [_row(qid, sq.id, st, src, findings, weight, level)
-                for (j_si, st, src, _, weight, level), findings in zip(jobs, findings_per_job) if j_si == si]
-        cov = coverage_check.check_coverage(sq.detail_questions, rows)
+                for (j_si, st, src, _, weight, level, _, _, _), findings in zip(jobs, findings_per_job) if j_si == si]
+        
+        # Get aspects and mapping for this sub-question
+        cleaned_topic = _clean_topic(sq.main_topic)
+        aspects, aspect_to_detail = detail_aspects.flatten_aspects(
+            sq.detail_questions, sq.id, cleaned_topic
+        )
+        
+        cov = coverage_check.check_coverage(
+            aspects, aspect_to_detail, sq.detail_questions, rows
+        )
         coverage[sq.id] = cov
         cov_rows.append({"query_id": qid, "sub_question_id": sq.id, **cov})
         all_rows.extend(rows)
@@ -79,6 +125,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
                     sq.main_topic[:50], len(rows),
                     sum(1 for r in rows if r["evidence_level"] == "full_text"),
                     sum(r["verified_count"] for r in rows), cov["sufficient"])
+        if cov.get("uncovered_aspects"):
+            logger.info("  Uncovered aspects: %s", cov["uncovered_aspects"])
 
     db_service.write_digests(all_rows)
     db_service.write_coverage(cov_rows)

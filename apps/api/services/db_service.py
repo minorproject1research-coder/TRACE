@@ -249,7 +249,7 @@ def get_web_sources_for_stage3(sub_question_id: str) -> list[dict]:
 
 
 OPTIONAL_DIGEST_COLUMNS = ("evidence_level",)                 # migration 010
-OPTIONAL_COVERAGE_COLUMNS = ("full_text_source_count",)       # migration 010
+OPTIONAL_COVERAGE_COLUMNS = ("full_text_source_count", "uncovered_aspects")  # migration 010
 
 
 def _insert_with_optional_columns(table: str, rows: list[dict], optional: tuple) -> None:

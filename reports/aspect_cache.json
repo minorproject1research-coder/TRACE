@@ -1,0 +1,29 @@
+{"key": "c307383d55cf4c5f", "aspects": ["advantages of X", "disadvantages of X"]}
+{"key": "9c20665ea28a70b1", "aspects": ["adv of X", "disadv of X"]}
+{"key": "38bf79e2adab1310", "aspects": ["adv of X", "disadv of X"]}
+{"key": "a368c0fe6b47789c", "aspects": ["What are the main components of RAG?"]}
+{"key": "635342159cd8ba91", "aspects": ["How does RAG work?"]}
+{"key": "74baee5f90352fd0", "aspects": ["What are the characteristics of LLMs?"]}
+{"key": "af5fa6aca3f9a429", "aspects": ["How do large language models generate text?"]}
+{"key": "4994ad7a10637d16", "aspects": ["How are hallucinations defined?", "How are hallucinations measured?"]}
+{"key": "127d6269b71172fa", "aspects": ["causes of hallucinations in LLMs", "consequences of hallucinations in LLMs"]}
+{"key": "c77880df5f1d7030", "aspects": ["How does RAG improve the quality of the input data for LLMs?", "How does RAG improve the relevance of the input data for LLMs?"]}
+{"key": "c8a94ca5ceb30f91", "aspects": ["How does Retrieval-Augmented Generation (RAG) constrain the output space of large language models (LLMs)?"]}
+{"key": "ddafbeb9714a8929", "aspects": ["How does RAG enable fact-checking and verification of LLM outputs?"]}
+{"key": "d0985e9854796ab6", "aspects": ["What are the limitations of RAG?", "What are the challenges of RAG?"]}
+{"key": "6cb18eff08d31c41", "aspects": ["How does LoRA fine-tuning work?", "What are the main components of LoRA fine-tuning?"]}
+{"key": "7e4f3e3c8454fdb2", "aspects": ["advantages of LoRA fine-tuning", "disadvantages of LoRA fine-tuning"]}
+{"key": "50345bc75a3dad1f", "aspects": ["How does full fine-tuning work?", "What are the main components of full fine-tuning?"]}
+{"key": "9a1c07d2880a0e65", "aspects": ["advantages of full fine-tuning", "disadvantages of full fine-tuning"]}
+{"key": "601dfe0d0cd7a18b", "aspects": ["What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?"]}
+{"key": "f7f89ced90e1d075", "aspects": ["What are the results or findings from existing studies or experiments comparing LoRA and full fine-tuning?"]}
+{"key": "7cb846d552addaad", "aspects": ["how memory cost is defined", "how memory cost is measured"]}
+{"key": "fd79737289224685", "aspects": ["What are the factors that affect memory cost for LoRA and full fine-tuning?"]}
+{"key": "d45041df4b108bf7", "aspects": ["What are the main components of a transformer model?"]}
+{"key": "7529a67821b21c67", "aspects": ["How does the attention mechanism enable transformer models to capture dependencies and relationships between different parts of the input sequence?"]}
+{"key": "04e39300aef437ba", "aspects": ["What are the limitations of the attention mechanism in terms of computational complexity as the input sequence length increases?", "What are the limitations of the attention mechanism in terms of memory usage as the input sequence length increases?"]}
+{"key": "d71f68fe14ca852c", "aspects": ["What are some examples of natural language tasks that require or benefit from long context windows?"]}
+{"key": "c5ffd5a9e940d9ed", "aspects": ["What are the difficulties or problems that arise when dealing with long context windows in natural language tasks?"]}
+{"key": "c6eff8d91026a299", "aspects": ["What are the main categories of techniques that address the challenge of long context windows for transformer models?"]}
+{"key": "c1d27efb174b4d5b", "aspects": ["How do the techniques that address the challenge of long context windows for transformer models work?", "What are the advantages of the techniques that address the challenge of long context windows for transformer models?", "What are the disadvantages of the techniques that address the challenge of long context windows for transformer models?"]}
+{"key": "04178f20712f7b91", "aspects": ["performance comparison of techniques that address long context windows for transformer models", "scalability comparison of techniques that address long context windows for transformer models", "interpretability comparison of techniques that address long context windows for transformer models"]}

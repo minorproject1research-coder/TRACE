@@ -29,10 +29,10 @@ from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState
 
 app = build_graph()
-result = app.invoke(SharedResearchState(raw_query="How effective is speculative decoding at reducing LLM inference latency?"))
+result = app.invoke(SharedResearchState(raw_query="Why do transformer models struggle with long context windows and what techniques address this?"))
 
 print("\n=== TASK PLAN ===")
-print(result["task_plan"])
+# print(result["task_plan"])
 
 print("\n=== WEB SOURCES ===")
 web_sources = result.get("web_sources", [])
