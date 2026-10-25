@@ -162,12 +162,20 @@ class TestAspectSplitting:
     def test_flatten_aspects_maps_correctly(self, mock_squeezer_json):
         from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, _load_cache
         
-        mock_squeezer_json.return_value = {"aspects": ["adv of X", "disadv of X"]}
+        # Return different aspects for each detail to avoid near-duplicate merging
+        call_count = [0]
+        def mock_return(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return {"aspects": ["adv of X", "disadv of X"]}
+            else:
+                return {"aspects": ["examples of X", "benefits of X"]}
+        mock_squeezer_json.side_effect = mock_return
         
         details = ["advantages and disadvantages", "examples and benefits"]
         aspects, mapping = flatten_aspects(details, "sq_flatten_test", "X")
         
-        assert aspects == ["adv of X", "disadv of X", "adv of X", "disadv of X"]
+        assert aspects == ["adv of X", "disadv of X", "examples of X", "benefits of X"]
         assert mapping == [0, 0, 1, 1]
 
 

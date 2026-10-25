@@ -1,0 +1,92 @@
+Source: 7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3
+  Claim: Performance is measured using the MT‑Bench benchmark, where models answer 80 mul
+  answers_details: [1]
+  verified: False
+  Claim: LoRA slightly outperforms full fine‑tuning on average across several vision‑lang
+  answers_details: [2]
+  verified: False
+  Claim: Memory cost is reported as the percentage of total model parameters that are tra
+  answers_details: [3]
+  verified: False
+  Claim: The number of trainable parameters—and thus memory cost—is mainly affected by th
+  answers_details: [4]
+  verified: False
+Source: 7ec50e01-95d9-4bad-9888-4ef2955a63be
+  Claim: Full fine-tuning requires storing gradients for every trainable weight, leading 
+  answers_details: [3]
+  verified: True
+  Claim: LoRA reduces the number of trainable parameters, lowering memory requirements co
+  answers_details: [4]
+  verified: True
+  Claim: Performance is measured using test accuracy on benchmarks such as BoolQ and Comm
+  answers_details: [1, 2]
+  verified: True
+  Claim: When the adaptation has low effective rank, LoRA outperforms full fine-tuning.
+  answers_details: [2]
+  verified: True
+  Claim: Overall, full fine-tuning usually yields the highest performance, while LoRA off
+  answers_details: [2]
+  verified: True
+Source: c251352e-c7ce-4536-9f0e-cc4416140b32
+  Claim: Performance is measured using accuracy on benchmarks such as GSM8K, math, and co
+  answers_details: [1]
+  verified: True
+  Claim: LoRA can be aligned with full fine‑tuning dynamics, yielding further performance
+  answers_details: [2]
+  verified: False
+Source: aa38540b-62d9-4bff-a9b7-cbd079bd7ec8
+  Claim: LoRA-FA matches or exceeds full fine‑tuning accuracy, achieving 87.5% (RoBERTa‑b
+  answers_details: [1, 2]
+  verified: False
+  Claim: Fine‑tuned LLMs are evaluated with GSM8K accuracy, MT‑Bench GPT‑4 first‑turn sco
+  answers_details: [1]
+  verified: False
+  Claim: LoRA provides substantial savings in optimizer‑state and gradient memory compare
+  answers_details: [3, 4]
+  verified: True
+  Claim: LoRA‑FA stores only the small intermediate activation XA instead of the full act
+  answers_details: [3, 4]
+  verified: False
+  Claim: LoRA‑FA achieves competitive performance while significantly lowering activation
+  answers_details: [2, 3, 4]
+  verified: True
+Source: 1077df3b-0218-4e7f-ac82-9542fe7ad52c
+  Claim: LoRA can achieve comparable performance to full fine‑tuning on several standard 
+  answers_details: [1, 2]
+  verified: True
+  Claim: LoRA may underperform full fine‑tuning unless rank and hyper‑parameters are prop
+  answers_details: [2]
+  verified: False
+  Claim: LoRA reduces peak memory usage by roughly 40 % for small batch sizes compared wi
+  answers_details: [3, 4]
+  verified: True
+  Claim: LoRA forgets less than full fine‑tuning while achieving similar learning perform
+  answers_details: [2]
+  verified: True
+Source: 306fc0f3-2162-4397-a477-124f86913ecd
+  Claim: LoRA typically matches full fine‑tuning performance while using less memory and 
+  answers_details: [2]
+  verified: True
+  Claim: Full fine‑tuning updates all parameters and must store gradients for every weigh
+  answers_details: [3, 4]
+  verified: True
+Source: a8759415-8bcf-458f-ba3b-f325bf4a3df5
+  Claim: LoRA matches full fine-tuning performance on tasks such as sequence classificati
+  answers_details: [2]
+  verified: True
+  Claim: LoRA struggles to match full fine-tuning performance on difficult tasks like cod
+  answers_details: [2]
+  verified: True
+  Claim: LoRA forgets less and stays closer to the pre-trained model than full fine-tunin
+  answers_details: [2]
+  verified: True
+Source: 6888052d-e093-4172-82b2-232938b1bff7
+  Claim: LoRA often matches or exceeds the performance of full fine-tuning on downstream 
+  answers_details: [2]
+  verified: True
+  Claim: LoRA fine‑tuning reduces memory usage by training only a small number of additio
+  answers_details: [4]
+  verified: True
+  Claim: LoRA adapters are small and require no architectural changes, which lowers memor
+  answers_details: [4]
+  verified: True

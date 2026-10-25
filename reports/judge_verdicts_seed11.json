@@ -1,0 +1,330 @@
+{
+  "1": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "2": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "3": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "4": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "5": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "6": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "7": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "8": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "9": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "10": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "11": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "12": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "13": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "14": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "15": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "16": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "17": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "18": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "19": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "20": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "21": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "22": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "23": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "24": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "25": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "26": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "27": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "28": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "29": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "30": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "31": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "32": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "33": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "34": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "35": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "36": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "37": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "38": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "39": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "40": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  },
+  "41": {
+    "final": "error",
+    "quote_supports_claim": "error",
+    "answers_aspect": "error",
+    "reason": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond",
+    "raw_output": "",
+    "error": "[WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
+  }
+}

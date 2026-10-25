@@ -32,7 +32,14 @@ from apps.api.services.db_service import (
     supabase,
 )
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
-from apps.api.agents.stage3_summarizer import chunk_selector, digest_generator, quote_verifier, coverage_check
+from apps.api.agents.stage3_summarizer import (
+    chunk_selector, 
+    digest_generator, 
+    quote_verifier, 
+    coverage_check,
+    detail_aspects,
+    evidence_judge,
+)
 from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic
 from apps.api.agents.stage3_summarizer.coverage_check import MIN_TAG_SIM, EVIDENCE_WEIGHT
 
@@ -76,7 +83,12 @@ def build_jobs_for_subquestion(
     """Build jobs exactly like the orchestrator does."""
     jobs = []
     cleaned_topic = _clean_topic(sq["main_topic"])
-    detail_questions = sq["detail_questions"]
+    original_details = sq["detail_questions"]
+    
+    # Split details into aspects (with near-duplicate merging)
+    aspects, aspect_to_detail = detail_aspects.flatten_aspects(
+        original_details, sq["id"], cleaned_topic
+    )
     
     papers = get_papers_for_stage3(query_id, sq["id"])
     for p in papers[:max_papers]:
@@ -84,7 +96,7 @@ def build_jobs_for_subquestion(
         selected = chunk_selector.select_chunks(
             sq["main_topic"],
             chunks,
-            detail_questions=detail_questions,
+            detail_questions=aspects,
             main_topic=cleaned_topic,
         )
         level = "full_text" if p.get("has_full_text") else "abstract"
@@ -94,6 +106,9 @@ def build_jobs_for_subquestion(
             "selected": selected,
             "weight": p.get("combined_score"),
             "evidence_level": level,
+            "aspects": aspects,
+            "aspect_to_detail": aspect_to_detail,
+            "original_details": original_details,
         })
     
     web_sources = get_web_sources_for_stage3(sq["id"])
@@ -106,6 +121,9 @@ def build_jobs_for_subquestion(
                 "selected": [(0, snippet)],
                 "weight": w.get("reliability_score"),
                 "evidence_level": "web_snippet",
+                "aspects": aspects,
+                "aspect_to_detail": aspect_to_detail,
+                "original_details": original_details,
             })
     
     return jobs
@@ -132,10 +150,13 @@ def run_digest_jobs(
             findings_per_job.append([])
             continue
         
+        # Use aspects from job for digest generation
+        aspects = job.get("aspects", detail_questions)
+        
         findings = digest_generator.generate_digest(
             sub_question,
             selected,
-            detail_questions=detail_questions,
+            detail_aspects=aspects,
             main_topic=cleaned_topic,
         )
         findings_per_job.append(findings)
@@ -146,8 +167,11 @@ def run_digest_jobs(
 
 
 def run_coverage_check(
-    detail_questions: List[str],
+    aspects: List[str],
+    aspect_to_detail: List[int],
+    original_details: List[str],
     digests: List[Dict],
+    judge_verdicts: Dict = None,
 ) -> Dict:
     """Run coverage_check with the modified detail list."""
     # Convert digests to the format expected by coverage_check
@@ -158,7 +182,9 @@ def run_coverage_check(
             "evidence_level": d.get("evidence_level", "full_text"),
             "findings": d["findings"],
         })
-    return coverage_check.check_coverage(detail_questions, rows)
+    return coverage_check.check_coverage_judged(
+        aspects, aspect_to_detail, original_details, rows, judge_verdicts or {}
+    )
 
 
 def run_negative_control(
@@ -180,18 +206,63 @@ def run_negative_control(
     cleaned_topic = _clean_topic(main_topic)
     original_details = sq["detail_questions"]
     
+    # Get base aspects and mapping (without control)
+    base_aspects, base_aspect_to_detail = detail_aspects.flatten_aspects(
+        original_details, sq["id"], cleaned_topic
+    )
+    
     # Build control detail
     control_detail = control_template.format(topic=cleaned_topic)
     modified_details = original_details + [control_detail]
     control_idx = len(modified_details) - 1  # 0-indexed
     
+    # Get aspects for modified details (with control)
+    modified_aspects, modified_aspect_to_detail = detail_aspects.flatten_aspects(
+        modified_details, sq["id"], cleaned_topic
+    )
+    
     logger.info(f"Running control for sub-question {sub_question_id}")
     logger.info(f"  Main topic: {main_topic}")
-    logger.info(f"  Original details: {len(original_details)}")
+    logger.info(f"  Original details: {len(original_details)} -> {len(base_aspects)} aspects")
     logger.info(f"  Control detail: {control_detail}")
+    logger.info(f"  Modified details: {len(modified_details)} -> {len(modified_aspects)} aspects")
     
-    # Build jobs (same as orchestrator)
-    jobs = build_jobs_for_subquestion(query_id, sq)
+    # Build jobs using modified aspects (including control)
+    jobs = []
+    for p in get_papers_for_stage3(query_id, sq["id"])[:3]:
+        chunks = chunk_selector.build_chunks(p)
+        selected = chunk_selector.select_chunks(
+            sq["main_topic"],
+            chunks,
+            detail_questions=modified_aspects,
+            main_topic=cleaned_topic,
+        )
+        level = "full_text" if p.get("has_full_text") else "abstract"
+        jobs.append({
+            "source_type": "paper",
+            "source": p,
+            "selected": selected,
+            "weight": p.get("combined_score"),
+            "evidence_level": level,
+            "aspects": modified_aspects,
+            "aspect_to_detail": modified_aspect_to_detail,
+            "original_details": modified_details,
+        })
+    
+    for w in get_web_sources_for_stage3(sq["id"])[:2]:
+        snippet = w.get("snippet") or ""
+        if len(snippet) >= 200:
+            jobs.append({
+                "source_type": "web",
+                "source": w,
+                "selected": [(0, snippet)],
+                "weight": w.get("reliability_score"),
+                "evidence_level": "web_snippet",
+                "aspects": modified_aspects,
+                "aspect_to_detail": modified_aspect_to_detail,
+                "original_details": modified_details,
+            })
+    
     logger.info(f"  Built {len(jobs)} jobs ({sum(1 for j in jobs if j['source_type']=='paper')} papers, {sum(1 for j in jobs if j['source_type']=='web')} web)")
     
     # Run digest generation
@@ -210,11 +281,36 @@ def run_negative_control(
             "findings": findings,
         })
     
-    # Run coverage check with MODIFIED details (including control)
-    coverage = run_coverage_check(modified_details, digests)
+    # Build chunk_lookup for judge
+    chunk_lookup = {}
+    for job in jobs:
+        for chunk_id, chunk_text in job["selected"]:
+            chunk_lookup[str(chunk_id)] = chunk_text
     
-    # Also run with ORIGINAL details for comparison
-    original_coverage = run_coverage_check(original_details, digests)
+    # Run judge for modified aspects
+    judge_verdicts = {}
+    has_verified = any(f.get("verified") for d in digests for f in d.get("findings", []))
+    if has_verified and modified_aspects:
+        candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
+            modified_aspects, digests, chunk_lookup
+        )
+    
+    # Run coverage check with MODIFIED details (including control) using judge
+    coverage = run_coverage_check(
+        modified_aspects, modified_aspect_to_detail, modified_details, digests, judge_verdicts
+    )
+    
+    # Also run with ORIGINAL details for comparison (using base aspects, no judge)
+    original_digests = []
+    for job, findings in zip(jobs, findings_per_job):
+        original_digests.append({
+            "source_id": str(job["source"].get("id")),
+            "evidence_level": job["evidence_level"],
+            "findings": findings,
+        })
+    original_coverage = run_coverage_check(
+        base_aspects, base_aspect_to_detail, original_details, original_digests, {}
+    )
     
     # Check if control detail was covered
     control_covered = control_detail not in coverage.get("uncovered_details", [])
@@ -226,7 +322,6 @@ def run_negative_control(
         for f in d.get("findings", []):
             answers = f.get("answers_details", [])
             if (control_idx + 1) in answers:
-                # Compute similarity for reporting
                 model = get_embedder()
                 claim = f.get("claim", "")
                 if claim:
@@ -246,7 +341,6 @@ def run_negative_control(
     # Check if original details' coverage changed
     original_uncovered = set(stored_cov.get("uncovered_details", [])) if stored_cov else set()
     new_uncovered = set(coverage.get("uncovered_details", []))
-    # Filter to only original details
     new_uncovered_orig = {d for d in new_uncovered if d in original_details}
     original_changed = original_uncovered != new_uncovered_orig
     
@@ -255,7 +349,7 @@ def run_negative_control(
         "main_topic": main_topic,
         "cleaned_topic": cleaned_topic,
         "control_detail": control_detail,
-        "control_idx": control_idx + 1,  # 1-indexed for display
+        "control_idx": control_idx + 1,
         "control_covered": control_covered,
         "control_uncovered": control_uncovered,
         "tagged_control_findings": tagged_control_findings,
@@ -263,6 +357,9 @@ def run_negative_control(
         "stored_uncovered": list(original_uncovered),
         "new_uncovered_original": list(new_uncovered_orig),
         "coverage_sufficient": coverage.get("sufficient"),
+        "judge_used": coverage.get("judge_used"),
+        "judge_stats": coverage.get("judge_stats"),
+        "fallback_reason": coverage.get("fallback_reason"),
         "llm_calls_used": llm_calls[0],
     }
     

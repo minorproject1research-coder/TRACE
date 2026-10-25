@@ -10,14 +10,18 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
+from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 from apps.api.services.llm_service import squeezer_json
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.detail_aspects")
 
 # Cache file for aspect splits (JSONL, one per line: key -> aspects)
 ASPECT_CACHE_PATH = Path("reports/aspect_cache.json")
+
+# Near-duplicate aspect merging threshold
+NEAR_DUP_ASPECT_SIM = float(os.getenv("NEAR_DUP_ASPECT_SIM", "0.92"))
 
 
 ASPECT_SPLIT_PROMPT = """Split the following detail question into distinct aspects ONLY if it explicitly asks for two or more separate things to be answered individually.
@@ -136,17 +140,68 @@ def split_detail_aspects(
         return [detail_text]
 
 
+def _merge_near_duplicate_aspects(
+    aspects: List[str],
+    aspect_to_detail: List[int],
+    embedder=None,
+) -> Tuple[List[str], List[int], List[List[int]]]:
+    """
+    Merge aspects with cosine similarity >= NEAR_DUP_ASPECT_SIM.
+    
+    Returns:
+        (merged_aspects, merged_aspect_to_detail, parent_mapping)
+        - merged_aspects: deduplicated aspect texts (keeps first occurrence)
+        - merged_aspect_to_detail: detail index for each merged aspect
+        - parent_mapping: for each merged aspect, list of original aspect indices it represents
+    """
+    if not aspects or len(aspects) <= 1:
+        return aspects, aspect_to_detail, [[i] for i in range(len(aspects))]
+    
+    if embedder is None:
+        embedder = get_embedder()
+    
+    embeddings = embedder.encode(aspects, normalize_embeddings=True)
+    n = len(aspects)
+    merged = [False] * n
+    parent_mapping = []
+    merged_aspects = []
+    merged_aspect_to_detail = []
+    
+    for i in range(n):
+        if merged[i]:
+            continue
+        # Start a new group with aspect i
+        group = [i]
+        merged[i] = True
+        for j in range(i + 1, n):
+            if merged[j]:
+                continue
+            sim = float(embeddings[i] @ embeddings[j])
+            if sim >= NEAR_DUP_ASPECT_SIM:
+                group.append(j)
+                merged[j] = True
+                logger.info(
+                    f"Merging near-duplicate aspects (sim={sim:.3f}): "
+                    f"'{aspects[i][:80]}' | '{aspects[j][:80]}'"
+                )
+        parent_mapping.append(group)
+        merged_aspects.append(aspects[i])
+        merged_aspect_to_detail.append(aspect_to_detail[i])
+    
+    return merged_aspects, merged_aspect_to_detail, parent_mapping
+
+
 def flatten_aspects(
     detail_questions: List[str],
     sub_question_id: str,
     main_topic: str,
 ) -> tuple[List[str], List[int]]:
     """
-    Flatten all detail questions into a single list of aspects.
+    Flatten all detail questions into a single list of aspects, then merge near-duplicates.
     
     Returns:
         (aspects_list, aspect_to_detail_map)
-        - aspects_list: flattened list of all aspects
+        - aspects_list: flattened list of all aspects (after near-duplicate merge)
         - aspect_to_detail_map: for each aspect index, the original detail index (0-based)
     """
     all_aspects = []
@@ -158,4 +213,7 @@ def flatten_aspects(
             aspect_to_detail.append(detail_idx)
         all_aspects.extend(aspects)
     
-    return all_aspects, aspect_to_detail
+    # Merge near-duplicate aspects
+    merged_aspects, merged_mapping, _ = _merge_near_duplicate_aspects(all_aspects, aspect_to_detail)
+    
+    return merged_aspects, merged_mapping

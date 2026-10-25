@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 from apps.api.graph.state import SharedResearchState
@@ -9,6 +10,7 @@ from apps.api.agents.stage3_summarizer import (
     digest_generator,
     coverage_check,
     detail_aspects,
+    evidence_judge,
 )
 from apps.api.services import db_service, groq_pool, llm_service
 
@@ -89,18 +91,39 @@ def summarizer_node(state: SharedResearchState) -> dict:
     # 2. Run the digests in parallel (Groq calls; the pool spreads them over the keys and waits out 429s).
     def run(job):
         si, _, _, selected, _, _, aspects, original_details, aspect_to_detail = job
-        return digest_generator.generate_digest(
-            sub_questions[si].main_topic,
-            selected,
-            detail_aspects=aspects,
-            main_topic=_clean_topic(sub_questions[si].main_topic),
-        ) if selected else []
+        if not selected:
+            return [], 0
+        
+        # Retry once on JSON parse failure
+        digest_failures = 0
+        for attempt in range(2):
+            try:
+                findings = digest_generator.generate_digest(
+                    sub_questions[si].main_topic,
+                    selected,
+                    detail_aspects=aspects,
+                    main_topic=_clean_topic(sub_questions[si].main_topic),
+                )
+                return findings, digest_failures
+            except json.JSONDecodeError as e:
+                digest_failures += 1
+                logger.warning(f"Digest JSON parse failed (attempt {attempt + 1}/2): {e}")
+                if attempt == 0:
+                    continue
+                logger.error(f"Digest generation failed after 2 attempts for sub-question {sub_questions[si].id}")
+                return [], digest_failures
+            except Exception as e:
+                logger.error(f"Digest generation failed: {e}")
+                return [], digest_failures
+        return [], digest_failures
 
     workers = _workers()
     logger.info("Stage 3: %d digests for %d sub-questions, %d worker(s), %d Groq key(s)",
                 len(jobs), len(sub_questions), workers, groq_pool.key_count() if llm_service.BACKEND == "groq" else 0)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        findings_per_job = list(pool.map(run, jobs))        # keeps the job order
+        results = list(pool.map(run, jobs))
+    findings_per_job = [r[0] for r in results]
+    digest_failures_per_job = [r[1] for r in results]
 
     # 3. Assemble rows and coverage per sub-question, in the original order.
     all_rows, cov_rows, coverage = [], [], {}
@@ -114,9 +137,30 @@ def summarizer_node(state: SharedResearchState) -> dict:
             sq.detail_questions, sq.id, cleaned_topic
         )
         
-        cov = coverage_check.check_coverage(
-            aspects, aspect_to_detail, sq.detail_questions, rows
+        # Build chunk_lookup for judge context
+        chunk_lookup = {}
+        for (j_si, st, src, selected, weight, level, _, _, _), findings in zip(jobs, findings_per_job):
+            if j_si != si:
+                continue
+            for chunk_id, chunk_text in selected:
+                chunk_lookup[str(chunk_id)] = chunk_text
+        
+        # Run judge for this sub-question if there are verified findings
+        judge_verdicts = {}
+        has_verified = any(f.get("verified") for r in rows for f in r.get("findings", []))
+        if has_verified and aspects:
+            candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
+                aspects, rows, chunk_lookup
+            )
+        
+        # Judge-based coverage with fallback
+        cov = coverage_check.check_coverage_judged(
+            aspects, aspect_to_detail, sq.detail_questions, rows, judge_verdicts
         )
+        # Add digest failures count
+        sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
+        cov["digest_failures"] = sq_failures
+        
         coverage[sq.id] = cov
         cov_rows.append({"query_id": qid, "sub_question_id": sq.id, **cov})
         all_rows.extend(rows)
@@ -127,6 +171,10 @@ def summarizer_node(state: SharedResearchState) -> dict:
                     sum(r["verified_count"] for r in rows), cov["sufficient"])
         if cov.get("uncovered_aspects"):
             logger.info("  Uncovered aspects: %s", cov["uncovered_aspects"])
+        if cov.get("judge_used") is not None:
+            logger.info("  Judge used: %s, stats: %s", cov.get("judge_used"), cov.get("judge_stats"))
+        if cov.get("fallback_reason"):
+            logger.warning("  Judge fallback: %s", cov.get("fallback_reason"))
 
     db_service.write_digests(all_rows)
     db_service.write_coverage(cov_rows)

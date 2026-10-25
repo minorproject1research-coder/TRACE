@@ -1,6 +1,7 @@
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 import logging
-from typing import List, Dict, Any, Set
+import os
+from typing import List, Dict, Any, Set, Optional, Tuple
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.coverage_check")
 
@@ -15,6 +16,15 @@ MIN_TAG_SIM = 0.40
 # from at least MIN_COVER_SOURCES distinct source IDs.
 MIN_COVER_FINDINGS = 2
 MIN_COVER_SOURCES = 2
+
+# Judge-based coverage constants
+JUDGE_MIN_YES = 2
+JUDGE_ERROR_THRESHOLD = 0.30  # fallback if >30% items end as error
+
+
+def _use_judge_coverage() -> bool:
+    """Check if judge coverage should be used (reads env at runtime)."""
+    return os.getenv("USE_JUDGE_COVERAGE", "true").lower() == "true"
 
 
 def _extract_tags(finding: dict) -> list[dict]:
@@ -208,6 +218,209 @@ def check_coverage(
         "full_text_source_count": sum(1 for level in by_source.values() if level == "full_text"),
         "uncovered_details": uncovered_details,
         "uncovered_aspects": uncovered_aspects,
+    }
+
+
+def check_coverage_judged(
+    aspects: List[str],
+    aspect_to_detail: List[int],
+    original_details: List[str],
+    digests: List[Dict[str, Any]],
+    judge_verdicts: Dict[Tuple[int, str, str], Dict],
+    min_sources: int = 3,
+    fallback: bool = True,
+) -> Dict[str, Any]:
+    """
+    Judge-based coverage check with explicit per-aspect states.
+    
+    Per-aspect states:
+    - covered_judge: at least JUDGE_MIN_YES "yes" verdicts from at least MIN_COVER_SOURCES distinct sources
+    - uncovered_judged: judged but fewer than JUDGE_MIN_YES qualifying "yes" or not enough distinct sources
+    - unjudged: verdicts missing after retries (verdict missing or "error")
+    
+    Rules:
+    - unjudged aspects count as NOT covered and make sufficient=False
+    - unjudged aspects listed in new key "unjudged_aspects", NOT in "uncovered_aspects"
+    - uncovered_reasons: {aspect_text: "no_candidates" | "judged_insufficient"} for uncovered aspects
+    - Fallback to tag-based rule only when endpoint completely unreachable (zero verdicts for whole sub-question)
+    - judge_used=True only if EVERY aspect was judged (no unjudged aspects)
+    - Never mix judge and tag logic within a sub-question
+    """
+    verified = [(d, f) for d in digests for f in d["findings"] if f["verified"]]
+    by_source: Dict[str, str] = {}
+    for d, _ in verified:
+        by_source[d["source_id"]] = d.get("evidence_level") or "full_text"
+    weighted_sources = sum(EVIDENCE_WEIGHT.get(level, 1.0) for level in by_source.values())
+
+    # Judge stats
+    total_items = len(judge_verdicts) if judge_verdicts else 0
+    yes_count = sum(1 for v in (judge_verdicts or {}).values() if v.get("verdict", {}).get("final") == "yes")
+    partial_count = sum(1 for v in (judge_verdicts or {}).values() if v.get("verdict", {}).get("final") == "partial")
+    no_count = sum(1 for v in (judge_verdicts or {}).values() if v.get("verdict", {}).get("final") == "no")
+    error_count = sum(1 for v in (judge_verdicts or {}).values() if v.get("verdict", {}).get("final") == "error")
+    
+    judge_stats = {
+        "candidates": total_items,
+        "yes": yes_count,
+        "partial": partial_count,
+        "no": no_count,
+        "error": error_count,
+    }
+    
+    # Check if judge endpoint completely unreachable (zero verdicts for whole sub-question)
+    use_judge = (
+        _use_judge_coverage() and
+        judge_verdicts and
+        total_items > 0
+    )
+    
+    fallback_reason = None
+    if not _use_judge_coverage():
+        fallback_reason = "judge disabled"
+        use_judge = False
+    elif not judge_verdicts or total_items == 0:
+        fallback_reason = "judge unavailable (no verdicts)"
+        use_judge = False
+    else:
+        error_rate = error_count / total_items if total_items > 0 else 1.0
+        if error_rate > JUDGE_ERROR_THRESHOLD:
+            use_judge = False
+            fallback_reason = f"judge_error_rate_exceeded ({error_rate:.1%} > {JUDGE_ERROR_THRESHOLD:.0%})"
+            logger.warning(f"Judge fallback triggered: {fallback_reason}")
+    
+    if not use_judge:
+        if fallback:
+            logger.warning(f"Falling back to tag-based coverage: {fallback_reason or 'judge disabled or unavailable'}")
+            result = check_coverage(aspects, aspect_to_detail, original_details, digests, min_sources)
+            result["judge_used"] = False
+            result["judge_stats"] = judge_stats
+            result["aspect_evidence"] = {}
+            result["unjudged_aspects"] = []
+            result["uncovered_reasons"] = {}
+            if fallback_reason:
+                result["fallback_reason"] = fallback_reason
+            return result
+        else:
+            return {
+                "sufficient": False,
+                "source_count": len(by_source),
+                "full_text_source_count": sum(1 for level in by_source.values() if level == "full_text"),
+                "uncovered_details": list(original_details),
+                "uncovered_aspects": list(aspects),
+                "unjudged_aspects": list(aspects),
+                "uncovered_reasons": {a: "endpoint_unreachable" for a in aspects},
+                "judge_used": False,
+                "judge_stats": judge_stats,
+                "aspect_evidence": {},
+                "fallback_reason": fallback_reason or "judge disabled",
+            }
+
+    # Judge-based coverage with explicit per-aspect states
+    n_aspects = len(aspects)
+    aspect_covered = [False] * n_aspects
+    aspect_evidence = {}
+    unjudged_aspects = []
+    uncovered_reasons = {}
+    
+    # Build claim_hash -> verdict lookup for quick access
+    verdict_lookup = {}
+    for (asp_idx, src_id, claim_hash), verdict_data in judge_verdicts.items():
+        verdict = verdict_data.get("verdict", {})
+        if verdict.get("final") == "yes":
+            verdict_lookup.setdefault(asp_idx, []).append((src_id, claim_hash, verdict))
+    
+    for i in range(n_aspects):
+        covering = verdict_lookup.get(i, [])
+        # Count distinct sources with "yes"
+        yes_sources = set()
+        evidence_list = []
+        for src_id, claim_hash, verdict in covering:
+            yes_sources.add(src_id)
+            evidence_list.append({
+                "source_id": src_id,
+                "claim_prefix": verdict.get("reason", "")[:80] if verdict.get("reason") else "",
+                "verdict": verdict.get("final"),
+                "quote_supports_claim": verdict.get("quote_supports_claim"),
+                "answers_aspect": verdict.get("answers_aspect"),
+                "reason": verdict.get("reason"),
+            })
+        
+        aspect_evidence[i] = evidence_list
+        
+        # Determine aspect state
+        covered = len(covering) >= JUDGE_MIN_YES and len(yes_sources) >= MIN_COVER_SOURCES
+        if covered:
+            aspect_covered[i] = True
+            logger.info(
+                f"Aspect {i+1} covered_judge: yes={len(covering)} sources={len(yes_sources)} "
+                f"evidence={evidence_list}"
+            )
+        else:
+            # Check if aspect was judged but insufficient
+            all_verdicts_for_aspect = [
+                v for (asp_idx, _, _), v in judge_verdicts.items() 
+                if asp_idx == i and v.get("verdict", {}).get("final") in ("yes", "partial", "no")
+            ]
+            error_verdicts = [
+                v for (asp_idx, _, _), v in judge_verdicts.items() 
+                if asp_idx == i and v.get("verdict", {}).get("final") == "error"
+            ]
+            missing_verdicts = n_aspects - len([
+                v for (asp_idx, _, _), v in judge_verdicts.items() 
+                if asp_idx == i
+            ])
+            
+            if all_verdicts_for_aspect and not error_verdicts:
+                # Judged but insufficient
+                aspect_covered[i] = False
+                uncovered_reasons[aspects[i]] = "judged_insufficient"
+                logger.info(
+                    f"Aspect {i+1} uncovered_judged: yes={len(covering)} (need {JUDGE_MIN_YES}) "
+                    f"sources={len(yes_sources)} (need {MIN_COVER_SOURCES})"
+                )
+            elif error_verdicts or missing_verdicts > 0:
+                # Unjudged (errors or missing)
+                aspect_covered[i] = False
+                unjudged_aspects.append(aspects[i])
+                uncovered_reasons[aspects[i]] = "unjudged"
+                logger.info(
+                    f"Aspect {i+1} unjudged: errors={len(error_verdicts)} missing={missing_verdicts}"
+                )
+            else:
+                # No candidates at all for this aspect
+                aspect_covered[i] = False
+                uncovered_reasons[aspects[i]] = "no_candidates"
+                logger.info(f"Aspect {i+1} uncovered: no_candidates")
+    
+    # Determine uncovered aspects (only judged but insufficient)
+    uncovered_aspects = [aspects[i] for i, covered in enumerate(aspect_covered) if not covered and aspects[i] not in unjudged_aspects]
+    
+    # Map uncovered aspects back to original details
+    # A detail is uncovered if ANY of its aspects are either uncovered_judged OR unjudged
+    n_details = len(original_details)
+    detail_covered = [True] * n_details
+    for i, covered in enumerate(aspect_covered):
+        if not covered:
+            detail_idx = aspect_to_detail[i]
+            if detail_idx < n_details:
+                detail_covered[detail_idx] = False
+    
+    uncovered_details = [original_details[i] for i, covered in enumerate(detail_covered) if not covered]
+    
+    sufficient = weighted_sources >= min_sources and not uncovered_details
+    judge_used = len(unjudged_aspects) == 0
+    
+    return {
+        "sufficient": sufficient,
+        "source_count": len(by_source),
+        "full_text_source_count": sum(1 for level in by_source.values() if level == "full_text"),
+        "uncovered_details": uncovered_details,
+        "uncovered_aspects": uncovered_aspects,
+        "unjudged_aspects": unjudged_aspects,
+        "uncovered_reasons": uncovered_reasons,
+        "judge_used": judge_used,
+        "judge_stats": judge_stats,
+        "aspect_evidence": aspect_evidence,
     }
 
 
