@@ -363,3 +363,72 @@ def clear_pdf_failure(key: str) -> None:
         supabase.table("pdf_failures").delete().eq("paper_key", key).execute()
     except Exception as e:
         _pdf_failures_missing(e)
+
+
+# ---------- Stage 4 (Fact checking) ----------
+
+def _ts(row: dict):
+    try:
+        return datetime.fromisoformat(str(row.get("created_at")).replace("Z", "+00:00"))
+    except Exception:
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+
+def get_digests_for_stage4(query_id: str, sub_question_id: str) -> list[dict]:
+    """Newest digest per source for one sub-question, each with the source's reliability_score.
+    select('*') so a missing optional column (evidence_level) never breaks the read."""
+    rows = (
+        supabase.table("digests").select("*")
+        .eq("query_id", query_id).eq("sub_question_id", sub_question_id)
+        .execute().data
+    )
+    newest = {}
+    for r in sorted(rows, key=_ts):          
+        newest[str(r["source_id"])] = r
+    rows = list(newest.values())
+
+    rel = {}
+    paper_ids = [r["source_id"] for r in rows if r["source_type"] == "paper"]
+    web_ids = [r["source_id"] for r in rows if r["source_type"] == "web"]
+    if paper_ids:
+        for p in (supabase.table("retrieved_papers").select("id,reliability_score")
+                  .in_("id", paper_ids).execute().data):
+            rel[str(p["id"])] = p["reliability_score"]
+    if web_ids:
+        for w in (supabase.table("web_sources").select("id,reliability_score")
+                  .in_("id", web_ids).execute().data):
+            rel[str(w["id"])] = w["reliability_score"]
+    for r in rows:
+        r["reliability"] = rel.get(str(r["source_id"])) or 0.3
+    return rows
+
+
+def get_missing_evidence(sub_question_id: str) -> list[str]:
+    """Detail questions Stage 3's coverage check could not cover (latest row)."""
+    rows = (
+        supabase.table("coverage_results").select("uncovered_details")
+        .eq("sub_question_id", sub_question_id)
+        .order("created_at", desc=True).limit(1).execute().data
+    )
+    return (rows[0]["uncovered_details"] or []) if rows else []
+
+
+def write_fact_claims(query_id: str, rows: list[dict]) -> None:
+    """Idempotent: replaces any earlier fact-check result for this query."""
+    supabase.table("fact_claims").delete().eq("query_id", query_id).execute()
+    if not rows:
+        return
+    now = _now_ist()
+    for row in rows:
+        row.setdefault("created_at", now)
+    supabase.table("fact_claims").insert(rows).execute()
+
+
+def write_contradictions(query_id: str, rows: list[dict]) -> None:
+    supabase.table("contradictions").delete().eq("query_id", query_id).execute()
+    if not rows:
+        return
+    now = _now_ist()
+    for row in rows:
+        row.setdefault("created_at", now)
+    supabase.table("contradictions").insert(rows).execute()
