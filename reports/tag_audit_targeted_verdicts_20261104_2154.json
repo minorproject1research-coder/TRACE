@@ -1,0 +1,278 @@
+{
+  "1": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 4,
+    "item_id": "7fef12a9cdaa0fe3",
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "digest_id": "2788bd57-791a-4e31-afe0-5fb4934c2619",
+    "finding_idx": 2,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [
+      3,
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly confirms the 40% memory reduction and attributes it to the smaller optimizer state, directly answering the aspect."
+  },
+  "2": {
+    "sub_question_id": "e96996ab",
+    "aspect_idx": 0,
+    "item_id": "1fd00c4f73402219",
+    "source_id": "ec1bd39a-f1b3-4e7b-aa3c-a0a946b4f791",
+    "digest_id": "f47d06e1-bfaf-46ca-9dc5-4ea5910cc05d",
+    "finding_idx": 1,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states that retrieval queries should reflect future generation intents, directly supporting the claim and answering the aspect regarding the motivation for such queries."
+  },
+  "3": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "item_id": "dbf12a2d2f6f4e77",
+    "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+    "digest_id": "1a1c3187-960a-43df-94e9-1cb2ea4ba629",
+    "finding_idx": 1,
+    "tag_strength": null,
+    "also_yes_for_aspects": [
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly defines the memory cost of full fine-tuning by stating that gradients must be computed and stored for every trainable weight, directly answering the aspect."
+  },
+  "4": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 0,
+    "item_id": "ff3a28b0badda329",
+    "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+    "digest_id": "5a35b52f-5665-468f-83d3-28bb46571500",
+    "finding_idx": 1,
+    "tag_strength": null,
+    "also_yes_for_aspects": [
+      2
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly describes the two-stage training process (pre-training and fine-tuning) which directly answers the aspect regarding the basic components of LLMs."
+  },
+  "5": {
+    "sub_question_id": "e96996ab",
+    "aspect_idx": 0,
+    "item_id": "97abcca8037ed589",
+    "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+    "digest_id": "cc2eebe0-1dfc-425c-858e-483d108abc69",
+    "finding_idx": 3,
+    "tag_strength": null,
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states that iterative retrieval alternates searching and generating to provide a more comprehensive knowledge base, which directly supports the claim and answers the aspect regarding the motivation of this method."
+  },
+  "6": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "item_id": "a1f3dbaaacb75ad2",
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "digest_id": "2788bd57-791a-4e31-afe0-5fb4934c2619",
+    "finding_idx": 3,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [
+      3
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly defines the measurement of memory cost as peak active memory in GB, directly answering the aspect."
+  },
+  "7": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 3,
+    "item_id": "f88965c213b7c609",
+    "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+    "digest_id": "6ee2808e-5c95-406d-ae8c-6dd962effdc3",
+    "finding_idx": 0,
+    "tag_strength": null,
+    "also_yes_for_aspects": [
+      2,
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states that full fine-tuning incurs high memory costs due to the need to compute and store gradients for every trainable weight, directly answering how this cost is measured."
+  },
+  "8": {
+    "sub_question_id": "e96996ab",
+    "aspect_idx": 0,
+    "item_id": "64e8d980c6487a33",
+    "source_id": "6280a009-2238-4605-8725-31a3edaa86d4",
+    "digest_id": "be53e32e-8b17-49cd-8731-b1d5cf7200c1",
+    "finding_idx": 2,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote directly confirms the claim's statement about the motivation to save resources and speed up responses by using retrieval."
+  },
+  "9": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "item_id": "227b00ec31f62704",
+    "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+    "digest_id": "6ee2808e-5c95-406d-ae8c-6dd962effdc3",
+    "finding_idx": 0,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [
+      3,
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly defines the high memory cost of full fine-tuning by stating that gradients must be computed and stored for every trainable weight, directly answering how this cost is defined."
+  },
+  "10": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 0,
+    "item_id": "d22deb00d652a2d2",
+    "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+    "digest_id": "e7dcc88a-d313-431b-81a4-b100fdcef2e6",
+    "finding_idx": 0,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [
+      1
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly lists the three architectural designs and mentions core components, directly supporting the claim and answering the aspect."
+  },
+  "11": {
+    "sub_question_id": "e96996ab",
+    "aspect_idx": 0,
+    "item_id": "11b69fffd9bf2a9b",
+    "source_id": "4ecd842a-2b55-4487-a326-e2e87ed616d6",
+    "digest_id": "65a319f8-75c2-441c-9377-eeb0730a8c3a",
+    "finding_idx": 0,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states that RAG addresses specific challenges (memorization/reasoning distinction) by accessing external information, which directly supports the claim and answers the aspect regarding RAG's motivation."
+  },
+  "12": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 3,
+    "item_id": "51d0de3138297916",
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "digest_id": "2788bd57-791a-4e31-afe0-5fb4934c2619",
+    "finding_idx": 3,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [
+      2
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly defines the measurement of memory cost as peak active memory in GB, directly answering the aspect."
+  },
+  "13": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 4,
+    "item_id": "b2462d23f79894c8",
+    "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+    "digest_id": "1a1c3187-960a-43df-94e9-1cb2ea4ba629",
+    "finding_idx": 0,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly confirms that LoRA reduces memory and computation costs, directly answering the aspect about factors affecting memory cost."
+  },
+  "14": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 0,
+    "item_id": "ff6da0d5b010eb26",
+    "source_id": "7774de19-d441-4560-a996-fba7e8679e6a",
+    "digest_id": "48504f29-229f-42dd-9393-7c4a41715e5f",
+    "finding_idx": 0,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states the two major components of LLMs as a retriever and a language model, directly answering the aspect."
+  },
+  "15": {
+    "sub_question_id": "cdf8f029",
+    "aspect_idx": 0,
+    "item_id": "2005d0150e0d9be8",
+    "source_id": "349a93b5-8f2a-44f0-a9d0-ea1fe23bd779",
+    "digest_id": "cf9757ab-484a-48a5-aecb-75fc09126010",
+    "finding_idx": 1,
+    "tag_strength": null,
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote directly confirms that quadratic complexity causes resource challenges limiting context length, which fully answers how the mechanism fails with long windows."
+  },
+  "16": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 3,
+    "item_id": "d52119b870ab7e16",
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "digest_id": "2788bd57-791a-4e31-afe0-5fb4934c2619",
+    "finding_idx": 2,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [
+      4,
+      5
+    ],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly states the 40% memory reduction and attributes it to the smaller optimizer state, directly answering how the cost is measured and why."
+  },
+  "17": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 0,
+    "item_id": "12628d980e8ff993",
+    "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+    "digest_id": "bfea3f8a-e4d4-4744-802f-16832139feee",
+    "finding_idx": 3,
+    "tag_strength": "full",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote explicitly lists the specific components mentioned in the claim as parameters used to compare LLMs."
+  },
+  "18": {
+    "sub_question_id": "cdf8f029",
+    "aspect_idx": 0,
+    "item_id": "047959136fb342b2",
+    "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+    "digest_id": "707b3b09-7ddd-48db-a9d1-6cd7df32b538",
+    "finding_idx": 3,
+    "tag_strength": "partial",
+    "also_yes_for_aspects": [],
+    "final": "yes",
+    "quote_supports_claim": "yes",
+    "answers_aspect": "yes",
+    "reason": "The quote confirms that learned memory operations maintain performance on long sequences, directly supporting the claim that attention degradation is mitigated and answering the aspect about how the mechanism fails or is fixed."
+  }
+}

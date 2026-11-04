@@ -1,0 +1,69 @@
+{
+  "query_id": "780ed8a5-8794-49df-97e2-4548bbe10aeb",
+  "sub_question_id": "856b9105",
+  "papers": 3,
+  "web": 1,
+  "digest_model": "openai/gpt-oss-120b",
+  "modes": {
+    "default": {
+      "findings_run1": 8,
+      "findings_run2": 10,
+      "findings_in_both": 0,
+      "findings_identical_sets": false,
+      "claim_overlap_pct": 0.0,
+      "coverage_identical": false,
+      "yes_run1_run2": [
+        0,
+        0
+      ],
+      "uncovered_aspects_run1": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ],
+      "uncovered_aspects_run2": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ]
+    },
+    "seeded": {
+      "findings_run1": 8,
+      "findings_run2": 7,
+      "findings_in_both": 0,
+      "findings_identical_sets": false,
+      "claim_overlap_pct": 0.0,
+      "coverage_identical": false,
+      "yes_run1_run2": [
+        0,
+        1
+      ],
+      "uncovered_aspects_run1": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ],
+      "uncovered_aspects_run2": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ]
+    },
+    "cached": {
+      "findings_run1": 8,
+      "findings_run2": 8,
+      "findings_in_both": 8,
+      "findings_identical_sets": true,
+      "claim_overlap_pct": 100.0,
+      "coverage_identical": true,
+      "yes_run1_run2": [
+        0,
+        0
+      ],
+      "uncovered_aspects_run1": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ],
+      "uncovered_aspects_run2": [
+        "How does retrieval-augmented generation constrain the creativity of large language models?",
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?"
+      ]
+    }
+  }
+}

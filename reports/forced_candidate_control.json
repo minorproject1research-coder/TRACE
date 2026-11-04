@@ -1,0 +1,626 @@
+[
+  {
+    "control": "What are the legal and regulatory requirements for What are large language models and how do they generate text?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.762,
+        "claim": "Large language models are capable of producing grammatical and coherent text.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.734,
+        "claim": "Controllable text generation is an emerging application of large language models, but it r",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.73,
+        "claim": "Large language models are applied in many domains, with common applications highlighted fo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.725,
+        "claim": "Large language models consist of a retriever component and a language model component.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.715,
+        "claim": "During inference, a large language model generates text by conditioning on an input prompt",
+        "final": "no",
+        "quote_supports_claim": "no",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.715,
+        "claim": "LLMs are transformer‑based models whose primary capability is generating coherent text.",
+        "final": "no",
+        "quote_supports_claim": "no",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "b4ff92b2"
+  },
+  {
+    "control": "What is the history of What are large language models and how do they generate text before 2000?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.764,
+        "claim": "Large language models are capable of producing grammatical and coherent text.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.739,
+        "claim": "Controllable text generation is an emerging application of large language models, but it r",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.735,
+        "claim": "Large language models consist of a retriever component and a language model component.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.73,
+        "claim": "Large language models often use an encoder‑decoder framework where the encoder creates low",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.729,
+        "claim": "Large language models are applied in many domains, with common applications highlighted fo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.728,
+        "claim": "LLMs are deep‑learning models built from hundreds of millions to billions of parameters an",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "b4ff92b2"
+  },
+  {
+    "control": "How much does What are large language models and how do they generate text cost to deploy in cloud pricing terms?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.707,
+        "claim": "A major challenge of large language models is their bulky, resource‑hungry Transformer bac",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.701,
+        "claim": "Large language models are capable of producing grammatical and coherent text.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.684,
+        "claim": "Large language models consist of a retriever component and a language model component.",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.681,
+        "claim": "Scaling model size, data, and compute leads to smooth, predictable improvements in languag",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.68,
+        "claim": "Large language models are applied in many domains, with common applications highlighted fo",
+        "final": "no",
+        "quote_supports_claim": "no",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.678,
+        "claim": "Performance of language models improves smoothly as model size, data, and compute are scal",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "b4ff92b2"
+  },
+  {
+    "control": "What are the legal and regulatory requirements for What are hallucinations in large language models and why do they occur?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.828,
+        "claim": "Hallucinations in large language models are outputs that are incorrect, fabricated, ill‑lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.825,
+        "claim": "Hallucinations in large language models are outputs that are harmful, erroneous, incomplet",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.807,
+        "claim": "Hallucinations in large language models are outputs that are factually incorrect, fabricat",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.805,
+        "claim": "In large visual language models, hallucinations appear as misidentified objects, attribute",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.798,
+        "claim": "Hallucinations in large language models are outputs that appear fluent and coherent but ar",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.765,
+        "claim": "Hallucinations in LLMs are fluent, grammatically correct outputs that are not faithful to ",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      }
+    ],
+    "sub_question_id": "3ac5d8ed"
+  },
+  {
+    "control": "What is the history of What are hallucinations in large language models and why do they occur before 2000?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.829,
+        "claim": "Hallucinations in large language models are outputs that are incorrect, fabricated, ill‑lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.818,
+        "claim": "Hallucinations in large language models are outputs that are harmful, erroneous, incomplet",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.804,
+        "claim": "Hallucinations in large language models are outputs that are factually incorrect, fabricat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.795,
+        "claim": "In large visual language models, hallucinations appear as misidentified objects, attribute",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.793,
+        "claim": "Hallucinations in large language models are outputs that appear fluent and coherent but ar",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.785,
+        "claim": "Vision‑language models often generate plausible but ungrounded details, exemplifying hallu",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "3ac5d8ed"
+  },
+  {
+    "control": "How much does What are hallucinations in large language models and why do they occur cost to deploy in cloud pricing terms?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.78,
+        "claim": "Hallucinations in large language models are outputs that are incorrect, fabricated, ill‑lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.759,
+        "claim": "Hallucinations in large language models are outputs that are harmful, erroneous, incomplet",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.757,
+        "claim": "Hallucinations in large language models are outputs that are factually incorrect, fabricat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.751,
+        "claim": "In large visual language models, hallucinations appear as misidentified objects, attribute",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.75,
+        "claim": "Hallucinations in large language models are outputs that appear fluent and coherent but ar",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.738,
+        "claim": "Vision‑language models often generate plausible but ungrounded details, exemplifying hallu",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "3ac5d8ed"
+  },
+  {
+    "control": "What are the legal and regulatory requirements for retrieval-augmented generation and how does it work?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.833,
+        "claim": "Retrieval‑augmented generation is a new paradigm that combines deep learning with traditio",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.807,
+        "claim": "Retrieval‑augmented generation has been applied to tasks such as dialogue response generat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.807,
+        "claim": "Retrieval‑augmented generation aims to reduce computational cost and speed up responses by",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.806,
+        "claim": "Retrieval-augmented generation consists of three key components: retrieval sources, retrie",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.799,
+        "claim": "Retrieval‑augmented generation pairs a language model with a retriever that fetches docume",
+        "final": "partial",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "partial"
+      },
+      {
+        "similarity": 0.791,
+        "claim": "The main components of retrieval‑augmented generation are retrieval sources, retrieval met",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "e96996ab"
+  },
+  {
+    "control": "What is the history of retrieval-augmented generation and how does it work before 2000?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.849,
+        "claim": "Retrieval‑augmented generation aims to reduce computational cost and speed up responses by",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.848,
+        "claim": "Retrieval‑augmented generation is a new paradigm that combines deep learning with traditio",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.838,
+        "claim": "Retrieval‑augmented generation has been applied to tasks such as dialogue response generat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.827,
+        "claim": "Retrieval-augmented generation consists of three key components: retrieval sources, retrie",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.821,
+        "claim": "Retrieval‑augmented generation has been shown effective across several long‑form generatio",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.813,
+        "claim": "The main components of retrieval‑augmented generation are retrieval sources, retrieval met",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "e96996ab"
+  },
+  {
+    "control": "How much does retrieval-augmented generation and how does it work cost to deploy in cloud pricing terms?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.777,
+        "claim": "Retrieval‑augmented generation aims to reduce computational cost and speed up responses by",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.768,
+        "claim": "Retrieval‑augmented generation is a new paradigm that combines deep learning with traditio",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.734,
+        "claim": "Retrieval-augmented generation consists of three key components: retrieval sources, retrie",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.727,
+        "claim": "Retrieval‑augmented generation has been shown effective across several long‑form generatio",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.726,
+        "claim": "Retrieval‑augmented generation has been applied to tasks such as dialogue response generat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.718,
+        "claim": "Retrieval‑augmented generation pairs a language model with a retriever that fetches docume",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "e96996ab"
+  },
+  {
+    "control": "What are the legal and regulatory requirements for How does retrieval-augmented generation reduce hallucinations in large language models?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.865,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by cro",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.852,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by all",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.849,
+        "claim": "Retrieval‑augmented generation has been widely used and shown promising results in mitigat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.823,
+        "claim": "Iteratively refining queries in a retrieval-augmented generation framework reduces halluci",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.822,
+        "claim": "Retrieval‑augmented generation supplies external factual knowledge to LLMs, which helps lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.787,
+        "claim": "Retrieving information from external knowledge resources helps LLMs reduce language halluc",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "856b9105"
+  },
+  {
+    "control": "What is the history of How does retrieval-augmented generation reduce hallucinations in large language models before 2000?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.885,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by cro",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.862,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by all",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.856,
+        "claim": "Iteratively refining queries in a retrieval-augmented generation framework reduces halluci",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.854,
+        "claim": "Retrieval‑augmented generation has been widely used and shown promising results in mitigat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.818,
+        "claim": "Retrieval‑augmented generation supplies external factual knowledge to LLMs, which helps lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.799,
+        "claim": "MixAlign, a retrieval‑augmented generation method, reduces hallucinations and improves the",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "856b9105"
+  },
+  {
+    "control": "How much does How does retrieval-augmented generation reduce hallucinations in large language models cost to deploy in cloud pricing terms?",
+    "status": "PASS",
+    "candidates": 6,
+    "yes": 0,
+    "errors": 0,
+    "rows": [
+      {
+        "similarity": 0.838,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by cro",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.835,
+        "claim": "Iteratively refining queries in a retrieval-augmented generation framework reduces halluci",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.824,
+        "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by all",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.811,
+        "claim": "Retrieval‑augmented generation has been widely used and shown promising results in mitigat",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.788,
+        "claim": "MixAlign, a retrieval‑augmented generation method, reduces hallucinations and improves the",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      },
+      {
+        "similarity": 0.779,
+        "claim": "Retrieval‑augmented generation supplies external factual knowledge to LLMs, which helps lo",
+        "final": "no",
+        "quote_supports_claim": "yes",
+        "answers_aspect": "no"
+      }
+    ],
+    "sub_question_id": "856b9105"
+  }
+]

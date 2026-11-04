@@ -1,10 +1,10 @@
 # TRACE Stage 3 Coverage Validation Report
 
-Prepared 24 October 2026. Covers the Loop 2 (insufficient coverage) work, the Stage 3 coverage fixes, three tag-precision audits, and the decision to add an independent judge pass.
+Covers the Loop 2 (insufficient coverage) work, the Stage 3 coverage fixes, six labeled audits, the independent judge pass and its validation. Sections 1 to 8 are the original report, sections 9 to 12 are an earlier update, and section 13 holds the latest results and corrections and takes precedence where they differ.
 
 ## 1. Summary
 
-We set out to make Loop 2 regenerate queries for uncovered detail questions. While preparing it we found that Stage 3 was reporting many details as uncovered even though verified evidence existed. We fixed that, but the fix over-corrected: the tagging that now decides coverage is noisy and unreliable. Three labeled audits show precision of the tags that count toward coverage between 50% and 69% (strict) and 81% to 94% (lenient), and it varies from run to run. The conclusion is that the generator should not judge its own evidence. We are adding an independent judge pass, served through the existing vLLM wrapper, which decides whether each candidate finding is supported by its quote and directly answers the aspect.
+We set out to make Loop 2 regenerate queries for uncovered detail questions. While preparing it we found that Stage 3 was reporting many details as uncovered even though verified evidence existed. We fixed that, but the fix over-corrected: the tagging that now decides coverage is noisy and unreliable. Three labeled audits show precision of the tags that count toward coverage between 50% and 69% (strict) and 81% to 94% (lenient), and it varies from run to run. The conclusion is that the generator should not judge its own evidence. We added an independent judge pass, served through the existing vLLM wrapper, which decides whether each candidate finding is supported by its quote and directly answers the aspect.
 
 ## 2. Starting point
 
@@ -86,14 +86,14 @@ What is working: retrieval, source counts, chunk selection, quote existence chec
 - A separate judge (base Qwen3.5-9B on the existing vLLM server) answers two questions per candidate: does the quote support the claim, and does the claim directly answer the aspect (each yes, partial or no).
 - An aspect is covered only with at least 2 "yes" verdicts from 2 distinct sources.
 - Near-duplicate aspects are merged so one claim cannot cover two aspects that are really the same question.
-- Verdicts are cached so reruns are stable.
+- Verdicts are cached, but digests are regenerated on every run, so coverage can still change between runs (see section 13).
 - New wrapper endpoints `/verify_evidence` and `/verify_evidence_batch` serve the judge.
 - Before enabling by default, the judge is evaluated against the roughly 125 labeled audit rows, and we require high precision on its "yes" verdicts.
 
 ## 7. Open items
 
-- Build the judge pass (pipeline) and the wrapper endpoints.
-- Fix `tests/negative_control_coverage.py`, which still uses the old `generate_digest` signature. The negative control (a detail the papers cannot answer must come back uncovered) has not run yet and is the only direct test that the stricter rule can still return "uncovered".
+- Done: the judge pass and the wrapper endpoints are built (see sections 9 and 13).
+- Fix `tests/negative_control_coverage.py`, which still uses the old `generate_digest` signature. The negative control (a detail the papers cannot answer must come back uncovered) ran later, but only trivially (see section 13). It is the only direct test that the stricter rule can still return "uncovered".
 - Make digest JSON parsing robust (retry once, log failures per sub-question). Silent failures mean coverage is computed on fewer sources.
 - Build Loop 2 using `uncovered_aspects` as input. One real candidate already exists: "How does retrieval-augmented generation constrain the creativity and diversity of large language models?".
 
@@ -102,3 +102,264 @@ What is working: retrieval, source counts, chunk selection, quote existence chec
 - Labels in all audits were assigned by an LLM (Claude) from claim, quote, and aspect text, not by a human. Hand-check disagreements, especially the 0.5 labels.
 - Samples are small (16 `full` tags per round), so differences of about 10 to 12 points are within noise.
 - The judge pass is untested until it is evaluated against the labeled rows and a fresh audit.
+
+## 9. Update: judge pass built (superseded by section 13)
+
+The judge pass is built and wired into Stage 3, but it is not validated, and at the time of writing testing was paused because the machine hosting the judge was offline (it has since come back online). This update supersedes the first open item in section 7.
+
+### 9.1 What was built
+
+- Wrapper endpoints `/verify_evidence` and `/verify_evidence_batch` on the existing FastAPI wrapper, served by the base Qwen3.5-9B judge at temperature 0. Each returns `quote_supports_claim` and `answers_aspect` (yes, partial or no), and the final verdict is computed in code.
+- Pipeline: `evidence_judge.py` (candidate shortlist from the generator's tags plus top-by-similarity extras, batching, retries, caching), near-duplicate aspect merging at 0.92 in `detail_aspects.py`, `check_coverage_judged()` in `coverage_check.py`, and integration in `summarizer_node.py`, which also retries a failed Groq JSON parse once.
+- Rule: an aspect is covered only with at least 2 "yes" verdicts from at least 2 distinct sources, and a detail is covered only if all its aspects are. The weighted source rule (full text 1.0, abstract or web snippet 0.5, minimum 3) is unchanged.
+- 53 pytest tests pass. Scripts exist for judge calibration, negative control, positive control (not completed) and audit export.
+
+### 9.2 Results so far
+
+| Check                                       | Result                                                                                              | Status                                                        |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Mock calibration                            | 1.000 on every metric                                                                               | Meaningless: the mock returns the labels                      |
+| Real calibration, 125 labeled rows          | Strict yes-precision 0.703, lenient 0.865, recall of label 1 0.634                                  | Gate fails (needs 0.85, 0.95 and 0.60)                        |
+| Blind comparison, seed-11 sample (41 rows)  | Judge said yes 5 times: 4 were label 1, 1 was label 0.5, none label 0; it found 4 of 8 label-1 rows | Cautious, but too strict on broad aspects                     |
+| Combined 166-row calibration (agent report) | Internally inconsistent; recomputed from its own matrix: strict 0.66, lenient 0.83, recall 0.625    | Must be recomputed with a verified script                     |
+| Negative control (9 controls)               | All pass                                                                                            | Weak evidence: the judge says "no" to about 60% of candidates |
+| Positive control                            | Not completed (endpoint timeouts)                                                                   | Open                                                          |
+| Judge-enabled Stage 3 re-run                | Several aspects fell back with "judge unavailable (no verdicts)"                                    | Open: key matching or timeouts                                |
+
+### 9.3 What we learned
+
+- The judge errs in both directions. It is too strict on broad aspects (a correct core answer is marked partial because it does not cover "various tasks and models"), and too lenient on adjacent-topic claims (causes accepted as risks, general LLM applications accepted as long-context tasks, the motivation of adaptive retrieval accepted as the motivation of RAG).
+- The judge's reason text sometimes contradicts its structured verdict, so only the structured fields should be used.
+- Silent per-aspect fallback mixes two rule sets inside one sub-question. It should be replaced by explicit states: covered, uncovered after judging, and unjudged.
+- The audit CSVs were written with the Windows default encoding, so claims were garbled (for example "â€‘"), and the seed-11 verdicts were computed on that text. A later re-run of the seed-11 verdicts on clean UTF-8 text changed only 2 of 41 final verdicts (both rows labeled 0.5, partial versus no) and none of the 5 yes verdicts, so the encoding problem did not materially affect the results.
+- The `coverage_results` table has no columns for the new judge fields, so they are not persisted. A migration is needed.
+- The audit export samples only one of the three audit queries and has no covering rows from the judge path.
+
+### 9.4 Status
+
+Superseded: the judge host came back online and validation resumed. See section 13 for the results.
+
+## 10. Resume checklist
+
+1. Reproduce and fix the verdict key-matching bug by giving each candidate a stable item id; log items sent, returned and matched.
+2. Log batch latency and timeouts against the real wrapper (report only, no tuning).
+3. Replace silent fallback with explicit aspect states. Unjudged aspects count as not covered but must never trigger Loop 2 query generation.
+4. Add a migration for the judge fields on `coverage_results`.
+5. Recompute calibration over all four labeled files with file-prefixed row ids and sum assertions, and list every false "yes".
+6. Re-run the seed-11 judge verdicts on UTF-8 text and compare them with the old ones.
+7. Re-run Stage 3 with the judge on the three audit queries and check the state of every aspect.
+8. Fix the audit export (all queries, judge-path covering rows, a `covering_basis` column).
+9. Run the positive and negative controls.
+10. Superseded (see section 13): do not loosen the judge. If a second prompt is tested, tighten it against adjacent-topic answers without adding false "yes" verdicts, tuning on rounds 1 and 2 and evaluating on round 3 and seed 11.
+
+## 11. Loop 2: insufficient coverage
+
+Loop 2 is designed but not implemented or wired into the pipeline. It should wait until the coverage decision is reproducible (see section 13).
+
+**Trigger.** After Stage 3, every aspect whose state is "uncovered after judging" enters Loop 2. Unjudged aspects are never retried here, because they were never evaluated. The reason for the gap (no candidate findings versus candidates judged insufficient) decides the first step.
+
+**Escalation ladder, cheapest first, per aspect:**
+
+1. Re-select the top 1 to 2 chunks for that aspect from papers that are already parsed, then digest, verify and judge them.
+2. Take the next-ranked papers from the Stage 2 pool, parse them, then digest, verify and judge.
+3. Generate new queries with the planner and run retrieval again.
+
+After each step the aspect is judged again, and the ladder stops as soon as it is covered.
+
+**Query generation.**
+
+- Turn the uncovered aspect into a standalone question that includes the main topic, because aspects such as "how memory cost is measured" are vague on their own.
+- Send it through the existing `/decompose` endpoint with the same prompt format and the empty think block, keep only the search queries from the output, and drop any query too similar (cosine 0.90 with bge) to one already tried. Keep 3 to 4.
+- No new endpoint is required. Optional `temperature` and `n` fields on `/decompose` would give more varied queries.
+- Extract queries from planner output keyed by "queries" or "search\_queries". This is an assumption about the planner's output format and should be checked against a real output.
+
+**Limits.** At most 2 rounds per aspect, and the loop stops early if a round adds no new relevant source. After the cap the aspect becomes a known gap that goes to the report generator, which should say that evidence was not found. Tried queries, the round count and the state of each aspect are kept in the shared research state.
+
+**First test case.** "How does retrieval-augmented generation constrain the creativity and diversity of large language models?" already came back uncovered under the stricter rule, probably because the retrieved papers do not discuss it.
+
+**Metrics to track.** Share of aspects covered after each ladder step, new sources added per round, judge calls per round, and the number of known gaps at the end.
+
+## 12. Updated caveats
+
+- All labels in the six labeled audit files were assigned by an LLM. Judge-versus-label agreement is therefore LLM against LLM, and disagreements should be spot-checked by hand.
+- Samples are small: 16 `full` tags per audit round, and 41 rows in seed 11 from a single topic.
+- Sections 9 to 11 were written before the later results in section 13; where they differ, section 13 applies.
+
+## 13. Latest results and corrections
+
+This section takes precedence over sections 1 to 12 where they differ. In short: the judge's "yes" verdicts are precise on fresh samples, but coverage still changes between runs, some aspects look over-covered, and the controls do not yet test the judge.
+
+### 13.1 Corrections to earlier sections
+
+- A notebook was mentioned in an earlier version of this report. It was never created, so there is no reference implementation of Loop 2 yet.
+- The judge host came back online and validation resumed (section 9 said it was paused).
+- Encoding: re-running the seed-11 verdicts on clean text changed only 2 of 41 final verdicts and none of the "yes" verdicts, so it was not a significant cause of the earlier results.
+- Caching: only judge verdicts are cached. Digests (findings) are regenerated on every run, so coverage can change between runs on the same sources.
+
+### 13.2 Judge versus labels on fresh samples
+
+| Sample                        | Rows | Judge "yes" | Yes precision (strict) | Yes precision (lenient) | Recall of label 1 |
+| ----------------------------- | ---- | ----------- | ---------------------- | ----------------------- | ----------------- |
+| Seed 11, re-run on clean text | 41   | 5           | 4 of 5                 | 5 of 5                  | 4 of 8            |
+| Export A                      | 45   | 24          | 20 of 24               | 24 of 24                | 20 of 23          |
+| Export B                      | 45   | 23          | 19 of 23               | 22 of 23                | 19 of 21          |
+
+- Labels were assigned by an LLM without seeing the verdicts. Exports A and B share many findings, so the results should not be pooled as if they were independent.
+- Across the three samples the judge said "yes" to a label-0 row once: a claim that an implementation hides internal steps, accepted as an advantage of transformer models. Its other false "yes" verdicts were half answers: loosely stated advantages, the first step of a process, and the source of a cost accepted as a definition.
+- Misses were broad aspects judged "partial", and one context-window claim judged "no" twice because its quote only gives an example limit (my label there may have been generous).
+- Exact agreement with the labels was 68% (seed 11), 73% (export A) and 73% (export B).
+- The generator's `full` tags in exports A and B scored 17 of 21 and 16 of 21 strict (19 of 21 lenient in both), compared with 69% and 50% strict in earlier rounds. Tag quality moves a lot between runs.
+- Recommendation: keep the current judge prompt and do not loosen it, because recall is acceptable. Tighten it against adjacent-topic answers only if the targeted audit below confirms false "yes" verdicts.
+
+### 13.3 Pipeline run results and concerns
+
+- Fixed: the evidence log now holds the real claim prefix, quote prefix and item id, and the migration warning is no longer printed. No database read-back has been shown yet.
+- 10 of 11 sub-questions were fully judged. One transient judge error left one aspect "unjudged", which is the intended state.
+- Coverage is not reproducible. On the same sources, "disadvantages of LoRA" had 4 yes verdicts in one run and 1 in the next, and a quadratic-complexity claim covered the complexity aspect in one run and the attention-degradation aspect in the next.
+- Aspects that may be over-covered (judged from claim prefixes and judge reasons only, not yet labeled): the same gradient-storage claim covers "memory cost defined", "measured" and "factors"; "basic components of LLMs" is covered partly by a training-process claim and by a claim about a retriever and a language model, which describes RAG; "motivation of RAG" is covered partly by method descriptions; "how attention degrades with long context" is covered partly by a mitigation claim.
+- Negative control: all 6 controls passed, but trivially. The control aspect had no candidate findings, so the judge was never asked to reject anything. The log also shows a fallback to the tag rule after the judge returned 25 verdicts, because one aspect had no verdicts, and the 30-call cap was reached on the last control.
+- Audit export: covering rows are still chosen by tag strength rather than by the judge's verdict, only 2 of the 3 audit queries were sampled, and there were no untagged rows.
+
+### 13.4 Open items, in priority order
+
+1. Fix the audit export: covering rows must be findings the judge rated "yes" that count toward a covered aspect, from all three queries, with untagged and judged-partial or no rows included.
+2. Targeted audit: label every "yes" finding for the memory-cost, LLM-components, RAG-motivation and attention-degradation aspects.
+3. Test a rule that lets a finding cover only one aspect (the one it matches best).
+4. Make digests reproducible (cache plus temperature) and show that two consecutive runs give identical coverage results.
+5. Fall back to the tag rule only when a whole sub-question has zero verdicts, and add a forced-candidate negative control that sends adjacent-topic findings for a control aspect to the judge.
+6. Show a database read-back of every judge field for all 11 sub-questions.
+7. Recompute calibration over all six labeled files with file-prefixed row ids and sum assertions.
+8. Implement Loop 2 after items 4 and 5. First test case: "How does retrieval-augmented generation constrain the creativity of large language models?", which still has no "yes" verdicts.
+
+I have no results for these items, so they are listed as open until each one is verified.
+
+### 13.5 Caveats
+
+- All labels are LLM-assigned, so judge-versus-label agreement is LLM against LLM. Hand-check disagreements and the 0.5 labels.
+- Samples are small and overlapping.
+- Run results above come from pasted logs and were not independently re-run.
+
+## 14. Judge prompt V2 (to be deployed on the host wrapper and evaluated)
+
+Written 2026-11-04 after the targeted audit (`docs/reports/08_stage3_targeted_audit.md`): on the 18 findings the judge rated "yes" for the six suspect aspects, 10 were label 0 and only 1 was a direct answer, and on all 10 both `quote_supports_claim` and `answers_aspect` were "yes". The errors were about the KIND of answer, not about the quote: a training process accepted as "components", a cause or a result accepted as a definition, measurement or factor, a method description accepted as a motivation, an answer about a variant method accepted for the general topic, and a mitigation accepted as the problem. V2 changes only question 2 (`answers_aspect`) plus one clause in question 1, and keeps the output format, so the wrapper's parser and the `final` computation do not change.
+
+### 14.1 Before deploying: the judge cache
+
+The pipeline caches judge verdicts under a key made of the aspect, claim, quote and `JUDGE_MODEL_ID`, not the prompt. If the prompt changes and the id stays `judge`, V1 verdicts will be served as if they were V2. After the host runs V2, set `JUDGE_MODEL_ID=judge-v2` in the TRACE `.env` (new cache keys), and keep the V1 results under the old id for comparison.
+
+### 14.2 V2 prompt text (replace the V1 text in the wrapper; keep the placeholders and the output format)
+
+```
+You are an evidence checker for a research assistant. You are given a research aspect (a question to answer), a claim extracted from a paper, the exact quote it was based on, and optionally the passage around the quote.
+
+Aspect: {aspect}
+Claim: {claim}
+Quote: {quote}
+Surrounding passage (may be empty): {context}
+
+Answer two questions.
+
+1. quote_supports_claim. Does the quote itself state what the claim says? Use the passage only to work out what words such as "it", "our method" or table columns refer to.
+   yes = the claim is a faithful restatement of the quote.
+   partial = the quote supports only part of the claim, or the claim generalizes (for example "generally", "always"), adds details, names a subject the quote does not mention, or draws an inference the quote does not state.
+   no = the quote does not say this. This includes quotes that are only table fragments, headers or captions that do not state the claimed meaning.
+
+2. answers_aspect. Would the claim, on its own, be an acceptable one-sentence answer to the aspect?
+   First decide what KIND of answer the aspect asks for, for example: a definition, a way of measuring, the factors or causes of something, the components or parts, the motivation or goal, how something works, results or evidence, advantages or disadvantages, examples, challenges or limitations. Then decide what KIND of statement the claim is. The claim answers the aspect only if it is that kind of statement, about the same subject.
+   yes = the claim is the kind of answer the aspect asks for, about the same subject, and complete enough to stand alone as the answer. When the aspect asks for examples, items, advantages, metrics and similar lists, one concrete valid item counts as yes.
+   partial = related but incomplete, vague, or only touches the topic; or it gives one half of a two-part aspect; or it is the right kind of answer but about a variant, a specific system or a special case when the aspect asks about the topic in general.
+   no = it is about a different subject, a different kind of thing than the aspect asks for, or only shares vocabulary with the aspect.
+
+   These are NOT answers, even when they are true and on topic:
+   - A cause, reason or source of something is not its definition and not a way of measuring it. A result or number is not a way of measuring, a definition, or a factor, unless the claim says that this is the factor or the measure.
+   - A description of how a method works is not the motivation for it, and a motivation is not a description of how it works.
+   - A list of things or a process is not "the components" unless the claim names the parts the thing is made of. A training procedure, a list of properties used to compare models, or the parts of a different system are not the components of the subject.
+   - A fix, mitigation or improvement is not an account of the problem it addresses, and a statement of a problem is not an account of its fix.
+   - A claim about a different system or modality than the one the aspect asks about is "no" unless the aspect is general. A claim about a named variant of the subject is at most "partial" when the aspect is about the subject in general.
+   Examples on an unrelated topic, to show the rule: for the aspect "how the size of a database index is measured", the claim "indexes slow down writes because every insert must update them" is "no" (a consequence, not a measurement); for "components of a database index", the claim "an index is built with a sorted copy of one column plus row pointers" is "yes", and "indexes are created by running a CREATE INDEX statement" is "no" (a procedure, not components); for "motivation of caching", the claim "a cache stores results in a hash table" is "no" (how it works), and "caches avoid recomputing results that are requested again, which saves time" is "yes".
+
+Be strict. Sharing words with the aspect is not an answer. Return ONLY a JSON object, nothing else, in this exact format:
+{"quote_supports_claim": "yes" or "partial" or "no", "answers_aspect": "yes" or "partial" or "no", "reason": "one short sentence"}
+```
+
+Differences from V1: (1) question 1 `partial` also covers a claim that names a subject the quote does not mention (rows 17 and 18 of the audit); (2) question 2 now asks for the kind of answer before the verdict; (3) `partial` also covers one half of a two-part aspect and a variant or special case; (4) a list of five "not answers" rules taken from the observed errors; (5) three examples on an unrelated topic. The examples are deliberately NOT taken from the audit rows, so the 18 audit rows remain a fair test. Keep `max_new_tokens` at 200 (the output format and length are unchanged), temperature 0, thinking off.
+
+### 14.2a Braces in the wrapper (found on the first test run)
+
+The prompt above shows the JSON answer line with single braces. If the wrapper builds the prompt with Python `str.format()` (the placeholders `{aspect}`, `{claim}`, `{quote}`, `{context}` suggest it does), every literal brace must be doubled in the wrapper's string or the server fails with `KeyError: '"quote_supports_claim"'` for every item (observed 2026-11-04: all 18 test rows came back as errors). In the wrapper the last line must read:
+
+```
+{{"quote_supports_claim": "yes" or "partial" or "no", "answers_aspect": "yes" or "partial" or "no", "reason": "one short sentence"}}
+```
+
+(or fill the four placeholders with `.replace()` instead of `.format()`). V2 has no other braces.
+
+### 14.3 How to evaluate V2 before using it (rule: no prompt change without held-out before/after numbers)
+
+1. Rebuild the wrapper, set `JUDGE_MODEL_ID=judge-v2` locally, and keep the V1 verdicts you already have as the baseline.
+2. Targeted rows (the test the prompt was written for): run the judge on `reports/tag_audit_labeled_targeted.csv` and report how many of the 10 label-0 rows are still "yes" and how many of the 8 label >= 0.5 rows stay "yes". Targets: at most 3 of the 10 false "yes" remain; the row labeled 1 (row 12) stays "yes".
+3. Regression rows: `python tests/eval_judge_vs_labels.py --csv reports/tag_audit_labeled.csv reports/tag_audit_labeled_round2.csv reports/tag_audit_labeled_round3.csv reports/tag_audit_labeled_judge2.csv` (the other labeled files are missing from the repo; restore them first if you have them) and compare with V1: strict yes-precision at least 0.85, lenient at least 0.95, recall of label 1 at least 0.60 and not more than 5 points below V1.
+4. Report the numbers for V1 and V2 side by side, including every row whose verdict changed. The main risk is recall: the "kind" rules may turn correct but loosely worded answers into "partial", which would leave real aspects uncovered. If recall falls below 0.60, relax the "components" rule in the "not answers" list first and re-test.
+5. Only then switch the pipeline to V2. If V2 is adopted, re-run Stage 3 on the three audit queries and compare the covered aspects with the V1 run.
+
+If V2 is not enough, the next step is a two-field output that forces the reasoning before the verdict (`kind_asked`, `kind_given`, then the two answers). That changes the output format and needs a wrapper change, so it is not part of V2.
+
+### 14.4 Results of the V2 test (2026-11-04, `reports/judge_eval_judge-v2_20261104_2243.json`)
+
+Real judge, `JUDGE_MODEL_ID=judge-v2`, 204 labeled rows (194 unique), no surrounding passage, labels LLM-assigned. Script: `tests/eval_judge_prompt.py`.
+
+| Rows | V1 | V2 |
+|---|---|---|
+| Targeted audit, 18 rows (10 label 0, 7 label 0.5, 1 label 1) | 18 of 18 "yes" (pipeline, wrong passage; fresh V1 without passage: 12, see 14.5) | **8 "yes"**: 3 of 10 label-0, 4 of 7 label-0.5, 1 of 1 label-1 |
+| Dropped-by-rule rows, 16 (5 label 0, 8 label 0.5, 3 label 1) | 16 of 16 "yes" (pipeline; fresh V1: 11, see 14.5) | **7 "yes"**: 0 of 5 label-0, 4 of 8 label-0.5, 3 of 3 label-1 |
+| Round 1-3, 125 rows | strict 0.703, lenient 0.865, recall 0.634 (earlier run, not re-verified) | strict 0.660 (31/47), lenient 0.936 (44/47), recall 0.756 (31/41) |
+| Export B, 45 rows | strict 19/23, lenient 22/23, recall 19/21 (section 13.2) | strict 17/22, lenient 20/22, recall 17/21 |
+| All four regression files, 170 rows | not available | strict 0.696, lenient 0.928, recall 0.774 |
+| Pooled, 194 unique rows | not available | strict 0.622, lenient 0.902, recall 0.785 (gate FAIL) |
+
+Reading: the two goals of V2 are met on the rows it was written for (at most 3 of the 10 false "yes" remain: 3; the label-1 rows stay "yes": 4 of 4; no label-0 "yes" survives on the dropped-by-rule rows). On the older rows it is mixed and does not pass the gate: strict precision is about the same as V1's reported numbers or slightly lower, lenient is higher on round 1-3 and slightly lower on export B, recall is higher. The V1 numbers for the older rows come from earlier logs, not from a re-run, and differences of 1-2 rows (export B) are noise.
+
+What V2 still gets wrong: (1) subject confusion is not fixed: "retriever + language model" and "decoder-only / encoder-decoder / hybrid designs" are still accepted as the components of an LLM, and the FLARE "intuition" is still accepted as the motivation of RAG (3 of the 8 label-0 "yes" rows); (2) new misses: of 14 label-1 rows V2 does not call "yes", 8 have a supported quote but `answers_aspect` partial or no, mostly "a specific result or example is not comprehensive" for aspects that ask for results or evidence (for example one task result for "results of experiments comparing LoRA and full fine-tuning"). The phrase "complete enough to stand alone as the answer" in the `yes` line is the likely cause, because V1 and V2 both say one concrete item counts as "yes" for list-type aspects, and the judge reads "complete" as stronger.
+
+Not yet done: a paired V1 versus V2 comparison on rows neither prompt was written for, and any V2.1 change. Any V2.1 must be tested on fresh labeled rows, not on these 204.
+
+### 14.5 V1 baseline on the same rows (2026-11-04, `reports/judge_eval_judge-v1_20261104_2303.json`) and a correction to 14.4
+
+V1 was redeployed on the host, `JUDGE_MODEL_ID=judge-v1`, and the same 204 rows were judged under the same conditions as V2 (no surrounding passage, `tests/eval_judge_prompt.py`). Table 14.4 compared V2 with V1 verdicts from the pipeline (which had the wrong-paper passage, see below) and with figures from earlier logs; use this table instead.
+
+| Rows | V1 (fresh) | V2 |
+|---|---|---|
+| Targeted audit, 18 | 12 yes: strict 1/12, lenient 6/12, recall 1/1 | 8 yes: strict 1/8, lenient 5/8, recall 1/1 |
+| Dropped-by-rule, 16 | 11 yes: strict 3/11, lenient 8/11, recall 3/3 | 7 yes: strict 3/7, lenient 7/7, recall 3/3 |
+| Round 1-3, 125 | strict 0.703, lenient 0.892, recall 0.634 | strict 0.660, lenient 0.936, recall 0.756 |
+| Export B, 45 | strict 18/22 = 0.818, lenient 0.955, recall 0.857 | strict 17/22 = 0.773, lenient 0.909, recall 0.810 |
+| Regression files, 170 | strict 0.746, lenient 0.915, recall 0.710 | strict 0.696, lenient 0.928, recall 0.774 |
+| **Pooled, 194 unique** | **strict 0.610, lenient 0.844, recall 0.723, agreement 0.603** | **strict 0.622, lenient 0.902, recall 0.785, agreement 0.619** |
+
+Paired, on the 194 unique rows: V1 "yes" -> V2 not "yes": 5 label-0, 2 label-0.5, 3 label-1. V1 not "yes" -> V2 "yes": 1 label-0, 7 label-0.5, 7 label-1. False "yes" on label-0 rows: V1 12, V2 8.
+
+Corrections:
+1. The fresh V1 numbers on round 1-3 reproduce the earlier logged figures (strict 0.703, recall 0.634; lenient 0.892 vs 0.865), so those logged V1 numbers were reliable. Export B differs by one row (18/22 vs 19/23).
+2. "V1 said yes to all 18 targeted rows" (report 8, section 14.4) was the pipeline run, where the judge was shown a passage from the wrong paper (chunk ids repeat in every source; fixed 2026-11-04). With no passage, V1 says "yes" to 12 of the 18. So V2's improvement on those rows is 12 -> 8 "yes", not 18 -> 8, and part of the pipeline's V1 behaviour came from the wrong passage. How much is not measured; it needs a re-judge of the stored runs with the correct passage.
+3. The V2 rules were written while looking at the targeted rows, so the targeted and dropped rows overstate V2's benefit.
+
+Reading: V2 is modestly better on every pooled number (strict +0.012, lenient +0.058, recall +0.062, agreement +0.016) and removes 4 more false label-0 "yes", but on the regression files its strict precision is lower, and every difference rests on a handful of rows (for example label-1 rows gained 7 vs lost 3), so it is not a demonstrated improvement. Neither prompt passes the gate on these rows (strict ~0.61). Decision still open: test V1 and V2 on a fresh labeled sample that neither prompt has seen.
+
+### 14.6 Held-out test: V1 versus V2 on 50 fresh rows (2026-11-04)
+
+Rows: `reports/tag_audit_labeled_heldout.csv` (the 50-row audit export of `reports/tag_audit_export_11_20261104_2153.csv`: 19 label 1, 15 label 0.5, 16 label 0). Labels assigned by an LLM from the CSV alone, before any judge verdict was seen; neither prompt was written or tuned on these rows. Same conditions for both prompts (no surrounding passage). Results: `reports/judge_eval_judge-v1_20261104_2306.json`, `reports/judge_eval_judge-v2_20261104_2326.json`.
+
+| 50 held-out rows | V1 | V2 |
+|---|---|---|
+| Judge "yes" | 24 | 25 |
+| Strict precision | 17/24 = 0.708 | 18/25 = 0.720 |
+| Lenient precision | 21/24 = 0.875 | 23/25 = 0.920 |
+| Recall of label 1 | 17/19 = 0.895 | 18/19 = 0.947 |
+| False "yes" on label-0 rows | 3 (rows 8, 15, 44) | 2 (rows 15, 44) |
+| Exact agreement with the labels | 0.58 | 0.64 |
+
+Nine verdicts changed: six moved closer to the label, three further away (a sign test on 6 against 3 is nowhere near significant). The only "yes" V2 removed was a label-0 row (8, the 40% memory result offered for "how memory cost is measured"). The two it added were one label-1 row and one label-0.5 row. The two remaining label-0 "yes" rows are the same two that survived V2 earlier: the FLARE query-design principle for "motivation of RAG" (15) and a vision-hallucination definition for "defined in large language models" (44).
+
+All 233 unique rows tested so far (the 194 of section 14.5 plus these 50, duplicates removed): V1 strict 0.646, lenient 0.865, recall 0.756; V2 strict 0.650, lenient 0.913, recall 0.817.
+
+Reading: V2 is equal or slightly better than V1 on every measure on fresh rows and on all rows together, with no sign of the recall loss that the first test suggested. The size of the gain is small (strict precision is unchanged at about 0.65; the gain is in lenient precision, +0.05, and recall, +0.06), it rests on a few rows, and neither prompt passes the gate (strict >= 0.85). About half of the strict shortfall is half answers (label 0.5) that the judge accepts, which depends on how strictly my labels read "source of a cost is not a definition" and similar; a human review of the 0.5 labels would show how much of the gap is real. Recommendation: keep V2 deployed (`JUDGE_MODEL_ID=judge-v2`), do not expect it to fix over-coverage by itself, and measure its effect on real coverage by re-running the judge on the stored runs with the correct passages. A V2.1 aimed at the two remaining subject-confusion cases should wait for fresh rows to test it on.

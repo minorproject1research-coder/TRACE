@@ -1,0 +1,146 @@
+{
+  "1": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 3,
+    "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+    "_kept_for_aspect": 5,
+    "_kept_for_text": "factors that affect memory cost for full fine-tuning",
+    "_sim_here": 0.5975888967514038,
+    "_sim_kept": 0.8152957558631897
+  },
+  "2": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 1,
+    "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "basic components of large language models",
+    "_sim_here": 0.7033778429031372,
+    "_sim_kept": 0.7061054706573486
+  },
+  "3": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "_kept_for_aspect": 3,
+    "_kept_for_text": "how memory cost is measured",
+    "_sim_here": 0.7223681807518005,
+    "_sim_kept": 0.7773215770721436
+  },
+  "4": {
+    "sub_question_id": "ec5a0fcd",
+    "aspect_idx": 1,
+    "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "How does full fine-tuning work?",
+    "_sim_here": 0.7007961273193359,
+    "_sim_kept": 0.7556716203689575
+  },
+  "5": {
+    "sub_question_id": "1fa8b305",
+    "aspect_idx": 0,
+    "source_id": "9ef5155a-6c22-48d7-ae65-c3b0ef3656b0",
+    "_kept_for_aspect": 1,
+    "_kept_for_text": "how a context window is measured",
+    "_sim_here": 0.736443042755127,
+    "_sim_kept": 0.7606743574142456
+  },
+  "6": {
+    "sub_question_id": "b4ff92b2",
+    "aspect_idx": 0,
+    "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+    "_kept_for_aspect": 2,
+    "_kept_for_text": "training processes of large language models",
+    "_sim_here": 0.7667447924613953,
+    "_sim_kept": 0.8393673896789551
+  },
+  "7": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 3,
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "_kept_for_aspect": 4,
+    "_kept_for_text": "factors that affect memory cost for LoRA",
+    "_sim_here": 0.5117517113685608,
+    "_sim_kept": 0.7192761301994324
+  },
+  "8": {
+    "sub_question_id": "1fa8b305",
+    "aspect_idx": 1,
+    "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "how a context window is defined",
+    "_sim_here": 0.7235001921653748,
+    "_sim_kept": 0.73808753490448
+  },
+  "9": {
+    "sub_question_id": "ec5a0fcd",
+    "aspect_idx": 1,
+    "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "How does full fine-tuning work?",
+    "_sim_here": 0.7387945652008057,
+    "_sim_kept": 0.8066893815994263
+  },
+  "10": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+    "_kept_for_aspect": 5,
+    "_kept_for_text": "factors that affect memory cost for full fine-tuning",
+    "_sim_here": 0.6197672486305237,
+    "_sim_kept": 0.8152957558631897
+  },
+  "11": {
+    "sub_question_id": "1fa8b305",
+    "aspect_idx": 1,
+    "source_id": "ab8f3837-6870-4f4f-b26e-e538ed35825e",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "how a context window is defined",
+    "_sim_here": 0.7443589568138123,
+    "_sim_kept": 0.7605262994766235
+  },
+  "12": {
+    "sub_question_id": "935cc3b6",
+    "aspect_idx": 1,
+    "source_id": "ced0e842-799e-4a2e-8e75-cf73ba23f912",
+    "_kept_for_aspect": 0,
+    "_kept_for_text": "How does LoRA fine-tuning work?",
+    "_sim_here": 0.7783205509185791,
+    "_sim_kept": 0.8171537518501282
+  },
+  "13": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 5,
+    "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+    "_kept_for_aspect": 4,
+    "_kept_for_text": "factors that affect memory cost for LoRA",
+    "_sim_here": 0.7299015522003174,
+    "_sim_kept": 0.8111737966537476
+  },
+  "14": {
+    "sub_question_id": "b83277e7",
+    "aspect_idx": 2,
+    "source_id": "ba278bf6-9cca-4974-87f8-823f6daf71c7",
+    "_kept_for_aspect": 1,
+    "_kept_for_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+    "_sim_here": 0.7281047701835632,
+    "_sim_kept": 0.7459134459495544
+  },
+  "15": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 2,
+    "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+    "_kept_for_aspect": 5,
+    "_kept_for_text": "factors that affect memory cost for full fine-tuning",
+    "_sim_here": 0.5998214483261108,
+    "_sim_kept": 0.7961375713348389
+  },
+  "16": {
+    "sub_question_id": "763a1e90",
+    "aspect_idx": 5,
+    "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+    "_kept_for_aspect": 4,
+    "_kept_for_text": "factors that affect memory cost for LoRA",
+    "_sim_here": 0.5799826383590698,
+    "_sim_kept": 0.7192761301994324
+  }
+}

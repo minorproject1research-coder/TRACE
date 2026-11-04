@@ -1,0 +1,3704 @@
+{
+  "judge_model_id": "judge-v2",
+  "sub_questions": [
+    {
+      "sub_question_id": "1e8f8a8c",
+      "topic": "What are transformer models and how do they work?",
+      "aspects": [
+        "What are the main components of a transformer model?",
+        "How do transformer models process input sequences of tokens?",
+        "What are the advantages of transformer models compared to other models?",
+        "What are the limitations of transformer models compared to other models?"
+      ],
+      "pairs": 21,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          2
+        ],
+        "ctx": [
+          0,
+          1,
+          2
+        ],
+        "noctx": [
+          0,
+          1,
+          2
+        ],
+        "ctx_rule": [
+          0,
+          1,
+          2
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 3,
+          "1": 1,
+          "2": 4,
+          "3": 1
+        },
+        "ctx": {
+          "0": 3,
+          "1": 3,
+          "2": 3,
+          "3": 1
+        },
+        "noctx": {
+          "0": 3,
+          "1": 3,
+          "2": 2,
+          "3": 1
+        },
+        "ctx_rule": {
+          "0": 3,
+          "1": 3,
+          "2": 3,
+          "3": 1
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "1fa8b305",
+      "topic": "What is a context window and why is it important for transformer models?",
+      "aspects": [
+        "how a context window is defined",
+        "how a context window is measured",
+        "How does a context window affect the performance of a transformer model?",
+        "What are some examples of tasks or applications that require a large context window?"
+      ],
+      "pairs": 24,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1,
+          2
+        ],
+        "ctx": [
+          0,
+          1,
+          2
+        ],
+        "noctx": [
+          0,
+          1,
+          2
+        ],
+        "ctx_rule": [
+          0,
+          1,
+          2
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 4,
+          "1": 3,
+          "2": 4,
+          "3": 1
+        },
+        "ctx": {
+          "0": 4,
+          "1": 4,
+          "2": 3,
+          "3": 1
+        },
+        "noctx": {
+          "0": 4,
+          "1": 4,
+          "2": 3,
+          "3": 1
+        },
+        "ctx_rule": {
+          "0": 3,
+          "1": 4,
+          "2": 3,
+          "3": 1
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "cdf8f029",
+      "topic": "What are the challenges or problems that transformer models face with long context windows?",
+      "aspects": [
+        "How does the attention mechanism degrade with long context windows?",
+        "How does the computational complexity increase with long context windows?",
+        "How does the memory usage increase with long context windows?",
+        "How does the quality and diversity of training data affect the ability of transformer models to learn long-range dependencies?",
+        "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+        "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?"
+      ],
+      "pairs": 32,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          2
+        ],
+        "ctx": [
+          0
+        ],
+        "noctx": [
+          0,
+          2
+        ],
+        "ctx_rule": [
+          0
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 2,
+          "1": 0,
+          "2": 2,
+          "3": 0,
+          "4": 1,
+          "5": 0
+        },
+        "ctx": {
+          "0": 2,
+          "1": 1,
+          "2": 1,
+          "3": 0,
+          "4": 1,
+          "5": 1
+        },
+        "noctx": {
+          "0": 2,
+          "1": 1,
+          "2": 2,
+          "3": 0,
+          "4": 1,
+          "5": 1
+        },
+        "ctx_rule": {
+          "0": 2,
+          "1": 1,
+          "2": 0,
+          "3": 0,
+          "4": 1,
+          "5": 1
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "b83277e7",
+      "topic": "How effective are these techniques in improving the performance and capabilities of transformer models with long context windows?",
+      "aspects": [
+        "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+        "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+        "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?"
+      ],
+      "pairs": 18,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1,
+          2
+        ],
+        "ctx": [
+          0,
+          1,
+          2
+        ],
+        "noctx": [
+          0,
+          1,
+          2
+        ],
+        "ctx_rule": [
+          0,
+          1,
+          2
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 2,
+          "1": 3,
+          "2": 3
+        },
+        "ctx": {
+          "0": 2,
+          "1": 2,
+          "2": 3
+        },
+        "noctx": {
+          "0": 2,
+          "1": 3,
+          "2": 3
+        },
+        "ctx_rule": {
+          "0": 2,
+          "1": 2,
+          "2": 3
+        }
+      },
+      "sufficient": {
+        "stored": true,
+        "ctx": true,
+        "noctx": true,
+        "ctx_rule": true
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "935cc3b6",
+      "topic": "What is LoRA (Low-Rank Adaptation) fine-tuning?",
+      "aspects": [
+        "How does LoRA fine-tuning work?",
+        "What are the main components of LoRA fine-tuning?",
+        "advantages of LoRA fine-tuning",
+        "disadvantages of LoRA fine-tuning"
+      ],
+      "pairs": 24,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "ctx": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "noctx": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "ctx_rule": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 2,
+          "1": 2,
+          "2": 2,
+          "3": 3
+        },
+        "ctx": {
+          "0": 2,
+          "1": 2,
+          "2": 3,
+          "3": 3
+        },
+        "noctx": {
+          "0": 2,
+          "1": 2,
+          "2": 3,
+          "3": 3
+        },
+        "ctx_rule": {
+          "0": 2,
+          "1": 2,
+          "2": 3,
+          "3": 3
+        }
+      },
+      "sufficient": {
+        "stored": true,
+        "ctx": true,
+        "noctx": true,
+        "ctx_rule": true
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "ec5a0fcd",
+      "topic": "What is full fine-tuning?",
+      "aspects": [
+        "How does full fine-tuning work?",
+        "What are the main components of full fine-tuning?",
+        "advantages of full fine-tuning",
+        "disadvantages of full fine-tuning"
+      ],
+      "pairs": 24,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "ctx": [
+          0,
+          2,
+          3
+        ],
+        "noctx": [
+          0,
+          2,
+          3
+        ],
+        "ctx_rule": [
+          0,
+          2,
+          3
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 4,
+          "1": 2,
+          "2": 4,
+          "3": 4
+        },
+        "ctx": {
+          "0": 4,
+          "1": 1,
+          "2": 4,
+          "3": 4
+        },
+        "noctx": {
+          "0": 3,
+          "1": 1,
+          "2": 4,
+          "3": 4
+        },
+        "ctx_rule": {
+          "0": 4,
+          "1": 1,
+          "2": 4,
+          "3": 4
+        }
+      },
+      "sufficient": {
+        "stored": true,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "763a1e90",
+      "topic": "How do LoRA and full fine-tuning compare in terms of performance?",
+      "aspects": [
+        "What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?",
+        "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+        "how memory cost is defined",
+        "how memory cost is measured",
+        "factors that affect memory cost for LoRA",
+        "factors that affect memory cost for full fine-tuning"
+      ],
+      "pairs": 33,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "ctx": [
+          1,
+          5
+        ],
+        "noctx": [
+          1,
+          5
+        ],
+        "ctx_rule": [
+          1,
+          5
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 1,
+          "1": 5,
+          "2": 3,
+          "3": 3,
+          "4": 2,
+          "5": 4
+        },
+        "ctx": {
+          "0": 1,
+          "1": 5,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 3
+        },
+        "noctx": {
+          "0": 1,
+          "1": 3,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 3
+        },
+        "ctx_rule": {
+          "0": 1,
+          "1": 5,
+          "2": 0,
+          "3": 1,
+          "4": 1,
+          "5": 2
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "b4ff92b2",
+      "topic": "What are large language models and how do they generate text?",
+      "aspects": [
+        "basic components of large language models",
+        "architectures of large language models",
+        "training processes of large language models",
+        "inference processes of large language models",
+        "What are some common applications of large language models?",
+        "What are some challenges of large language models?"
+      ],
+      "pairs": 36,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1,
+          2,
+          4,
+          5
+        ],
+        "ctx": [
+          1,
+          2,
+          4,
+          5
+        ],
+        "noctx": [
+          0,
+          1,
+          2,
+          4,
+          5
+        ],
+        "ctx_rule": [
+          1,
+          2,
+          4,
+          5
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 4,
+          "1": 2,
+          "2": 2,
+          "3": 0,
+          "4": 3,
+          "5": 3
+        },
+        "ctx": {
+          "0": 0,
+          "1": 5,
+          "2": 4,
+          "3": 2,
+          "4": 3,
+          "5": 3
+        },
+        "noctx": {
+          "0": 2,
+          "1": 5,
+          "2": 5,
+          "3": 3,
+          "4": 3,
+          "5": 3
+        },
+        "ctx_rule": {
+          "0": 0,
+          "1": 4,
+          "2": 4,
+          "3": 1,
+          "4": 3,
+          "5": 3
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "3ac5d8ed",
+      "topic": "What are hallucinations in large language models and why do they occur?",
+      "aspects": [
+        "how hallucinations are defined in large language models"
+      ],
+      "pairs": 6,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0
+        ],
+        "ctx": [
+          0
+        ],
+        "noctx": [
+          0
+        ],
+        "ctx_rule": [
+          0
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 5
+        },
+        "ctx": {
+          "0": 5
+        },
+        "noctx": {
+          "0": 5
+        },
+        "ctx_rule": {
+          "0": 5
+        }
+      },
+      "sufficient": {
+        "stored": true,
+        "ctx": true,
+        "noctx": true,
+        "ctx_rule": true
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "e96996ab",
+      "topic": "What is retrieval-augmented generation and how does it work?",
+      "aspects": [
+        "motivation of retrieval-augmented generation",
+        "steps of retrieval-augmented generation"
+      ],
+      "pairs": 12,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [
+          0,
+          1
+        ],
+        "ctx": [
+          0,
+          1
+        ],
+        "noctx": [
+          0,
+          1
+        ],
+        "ctx_rule": [
+          0,
+          1
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 4,
+          "1": 4
+        },
+        "ctx": {
+          "0": 4,
+          "1": 4
+        },
+        "noctx": {
+          "0": 3,
+          "1": 2
+        },
+        "ctx_rule": {
+          "0": 4,
+          "1": 4
+        }
+      },
+      "sufficient": {
+        "stored": true,
+        "ctx": true,
+        "noctx": true,
+        "ctx_rule": true
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    },
+    {
+      "sub_question_id": "856b9105",
+      "topic": "How does retrieval-augmented generation reduce hallucinations in large language models?",
+      "aspects": [
+        "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+        "How does retrieval-augmented generation constrain the creativity of large language models?"
+      ],
+      "pairs": 9,
+      "pairs_without_passage": 0,
+      "covered": {
+        "stored": [],
+        "ctx": [
+          0
+        ],
+        "noctx": [
+          0
+        ],
+        "ctx_rule": [
+          0
+        ]
+      },
+      "yes": {
+        "stored": {
+          "0": 1,
+          "1": 0
+        },
+        "ctx": {
+          "0": 2,
+          "1": 0
+        },
+        "noctx": {
+          "0": 2,
+          "1": 0
+        },
+        "ctx_rule": {
+          "0": 2,
+          "1": 0
+        }
+      },
+      "sufficient": {
+        "stored": false,
+        "ctx": false,
+        "noctx": false,
+        "ctx_rule": false
+      },
+      "errors": {
+        "ctx": 0,
+        "noctx": 0
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "db74e5f2-97d6-4310-8284-a52376852549",
+      "claim": "Vision transformers often outperform CNNs on image segmentation, object detection, and related tasks, illustrating an advantage of transformer models.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 3,
+      "aspect_text": "What are the limitations of transformer models compared to other models?",
+      "source_id": "db74e5f2-97d6-4310-8284-a52376852549",
+      "claim": "Vision transformers often outperform CNNs on image segmentation, object detection, and related tasks, illustrating an advantage of transformer models.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "7b5e4ebb-2ffe-4894-a87c-9d7414343d9c",
+      "claim": "Transformers consist of deep feed‑forward layers combined with a self‑attention mechanism, which form their core architecture.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "7b5e4ebb-2ffe-4894-a87c-9d7414343d9c",
+      "claim": "Transformers have achieved great success in NLP, demonstrating a performance advantage over many prior models.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "Transformers are built from self‑attention mechanisms and feed‑forward layers.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "Transformers are built from self‑attention mechanisms and feed‑forward layers.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "A Transformer receives a sequence of tokens as its input.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "A Transformer receives a sequence of tokens as its input.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 3,
+      "aspect_text": "What are the limitations of transformer models compared to other models?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "A Transformer receives a sequence of tokens as its input.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "Transformers enable parallel, direct computation of contextual token representations, unlike sequential RNNs.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "Attention alone can capture all dependencies between inputs and outputs in a Transformer.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "8b5cb94a-bd6f-4d94-9733-b6eaf5052090",
+      "claim": "Attention alone can capture all dependencies between inputs and outputs in a Transformer.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "1c2acd92-503d-49b9-b05b-a4b0a3273989",
+      "claim": "Because they use a generic token representation, transformers can be applied to many data modalities without bespoke architectures.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "1c2acd92-503d-49b9-b05b-a4b0a3273989",
+      "claim": "A transformer processes the token matrix through M stacked layers, producing a new representation matrix of the same dimensions.",
+      "stored": "error",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 3,
+      "aspect_text": "What are the limitations of transformer models compared to other models?",
+      "source_id": "1c2acd92-503d-49b9-b05b-a4b0a3273989",
+      "claim": "Transformers are often slow to train and can become unstable, requiring tricks like gradient clipping and learning‑rate schedules to mitigate these issues.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "3b631bd6-ef10-42a7-ad82-b640721fa339",
+      "claim": "A transformer block’s two main components are a multi‑head self‑attention mechanism and a position‑wise feed‑forward neural network.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "3b631bd6-ef10-42a7-ad82-b640721fa339",
+      "claim": "Positional encoding adds information to each token’s embedding to indicate its position in the sequence.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "3b631bd6-ef10-42a7-ad82-b640721fa339",
+      "claim": "Input embeddings provide the initial token representations before they are processed by the transformer blocks.",
+      "stored": "no",
+      "ctx": "partial",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 0,
+      "aspect_text": "What are the main components of a transformer model?",
+      "source_id": "540c8b71-e0ef-4296-9939-86a427f2d058",
+      "claim": "Transformers use high‑dimensional embedding vectors that are altered to create informative representations of inputs and outputs.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "540c8b71-e0ef-4296-9939-86a427f2d058",
+      "claim": "Transformers use high‑dimensional embedding vectors that are altered to create informative representations of inputs and outputs.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 1,
+      "aspect_text": "How do transformer models process input sequences of tokens?",
+      "source_id": "540c8b71-e0ef-4296-9939-86a427f2d058",
+      "claim": "Input tokens are integer IDs looked up in an embedding table and converted to D‑dimensional vectors before processing.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "4169d14f-c0f3-41d7-8592-81a2c30b7216",
+      "claim": "A context window is the maximum input length a transformer can process, determined by the longest sequence seen during training.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "4169d14f-c0f3-41d7-8592-81a2c30b7216",
+      "claim": "A context window is the maximum input length a transformer can process, determined by the longest sequence seen during training.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "4169d14f-c0f3-41d7-8592-81a2c30b7216",
+      "claim": "Tasks that involve long documents or extended discourse, referred to as long‑context tasks, demand larger context windows.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "a6cbc4a7-110d-4119-811b-50abe12a9783",
+      "claim": "Increasing the number of context lines improves transformer performance on code‑repair tasks, yielding up to 29% relative gain in repair success.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "a6cbc4a7-110d-4119-811b-50abe12a9783",
+      "claim": "Code‑repair (bug‑fixing) applications require larger context windows to capture sufficient surrounding code for accurate fixes.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "A context window is the maximum number of input tokens a model can consider at one time.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "A context window is the maximum number of input tokens a model can consider at one time.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "A context window is the maximum number of input tokens a model can consider at one time.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "Applications such as legal reasoning, scientific literature synthesis, financial document analysis, and multimodal video/audio correlation require very large context windows.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "A context window is the maximum number of tokens a transformer can attend to, e.g., 4096 tokens for LLaMA2.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "A context window is the maximum number of tokens a transformer can attend to, e.g., 4096 tokens for LLaMA2.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "Performance drops when inputs exceed the context window because the model has not been trained on those positions.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "Context window size is measured in tokens (L) and extensions are expressed as a ratio s = L′/L.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "Context window size is measured in tokens (L) and extensions are expressed as a ratio s = L′/L.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "e560494b-f385-40fc-bfbd-153e00e03b4f",
+      "claim": "Tasks such as language modeling, document classification, question answering, summarization, and retrieval require reasoning over extended contexts, highlighting the need for large context windows.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "e560494b-f385-40fc-bfbd-153e00e03b4f",
+      "claim": "Model performance varies with input length; some models (BigBird, Transformer-XL) generalize to longer contexts while low‑rank methods degrade, showing that context window size impacts transformer performance.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "3676277b-a613-4e4f-b689-ade633ff7e5f",
+      "claim": "A context window is the limited input length of an LLM, determined by the maximum length of its training data.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "3676277b-a613-4e4f-b689-ade633ff7e5f",
+      "claim": "When text exceeds the context window, transformer performance degrades significantly.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "9ef5155a-6c22-48d7-ae65-c3b0ef3656b0",
+      "claim": "The context window is the maximum amount of tokenized text a model can see at once, and it is measured in tokens.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "9ef5155a-6c22-48d7-ae65-c3b0ef3656b0",
+      "claim": "The context window is the maximum amount of tokenized text a model can see at once, and it is measured in tokens.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "ab8f3837-6870-4f4f-b26e-e538ed35825e",
+      "claim": "A context window is the maximum token count of text a model can retain and reference during a single interaction.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "ab8f3837-6870-4f4f-b26e-e538ed35825e",
+      "claim": "A context window is the maximum token count of text a model can retain and reference during a single interaction.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 3,
+      "aspect_text": "What are some examples of tasks or applications that require a large context window?",
+      "source_id": "ab8f3837-6870-4f4f-b26e-e538ed35825e",
+      "claim": "A context window is the maximum token count of text a model can retain and reference during a single interaction.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "ab8f3837-6870-4f4f-b26e-e538ed35825e",
+      "claim": "The size of a context window is measured by counting the tokens of all input and output elements the model processes at once.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "Transformers must attend to distant tokens, showing that local attention is insufficient for long-context tasks.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "The benchmark includes extensive analysis of both computational efficiency and memory usage for transformers on long sequences.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "The benchmark includes extensive analysis of both computational efficiency and memory usage for transformers on long sequences.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "The benchmark includes extensive analysis of both computational efficiency and memory usage for transformers on long sequences.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "Empirical results show that long‑range tasks remain very challenging even for specialized transformer models.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 3,
+      "aspect_text": "How does the quality and diversity of training data affect the ability of transformer models to learn long-range dependencies?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "Empirical results show that long‑range tasks remain very challenging even for specialized transformer models.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "Empirical results show that long‑range tasks remain very challenging even for specialized transformer models.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "a0c40ded-da07-4d49-902b-6608efe703a6",
+      "claim": "Empirical results show that long‑range tasks remain very challenging even for specialized transformer models.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "76f5ff62-9258-4877-95af-b4434117f5e9",
+      "claim": "Self‑attention’s O(n²) complexity makes it costly in time and memory for long sequences.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "76f5ff62-9258-4877-95af-b4434117f5e9",
+      "claim": "Even efficient long‑text variants still generally underperform full self‑attention, showing difficulty handling long contexts.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "RMT achieves linear inference scaling and constant memory, highlighting that standard transformers incur higher computational and memory costs as context length grows.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "State‑of‑the‑art long‑context models like CoLT5 and LongNet exhaust GPU memory on longer inputs, providing empirical evidence of memory bottlenecks.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "State‑of‑the‑art long‑context models like CoLT5 and LongNet exhaust GPU memory on longer inputs, providing empirical evidence of memory bottlenecks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "RMT’s learned memory operations preserve attention quality on extremely long sequences, indicating that attention degradation can be mitigated.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "07eac321-24b0-4805-8f6b-c311aecdd39a",
+      "claim": "Summarizing long‑range context into fixed‑size vectors is a proposed technique to mitigate the challenges of very long contexts.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "19e00384-18cf-4617-8982-e37d15c0b7bd",
+      "claim": "Sparse attention, kernel‑based approximations, and state‑space models modify the transformer architecture to reduce quadratic cost, though each incurs trade‑offs.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "19e00384-18cf-4617-8982-e37d15c0b7bd",
+      "claim": "Sparse attention, kernel‑based approximations, and state‑space models modify the transformer architecture to reduce quadratic cost, though each incurs trade‑offs.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "19e00384-18cf-4617-8982-e37d15c0b7bd",
+      "claim": "ETT attains linear computation growth and constant memory usage across increasing context lengths, highlighting the inefficiency of standard transformers for long contexts.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "19e00384-18cf-4617-8982-e37d15c0b7bd",
+      "claim": "ETT attains linear computation growth and constant memory usage across increasing context lengths, highlighting the inefficiency of standard transformers for long contexts.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 3,
+      "aspect_text": "How does the quality and diversity of training data affect the ability of transformer models to learn long-range dependencies?",
+      "source_id": "349a93b5-8f2a-44f0-a9d0-ea1fe23bd779",
+      "claim": "Transformers have difficulty capturing long‑term dependencies because their in‑context working memory is limited.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "349a93b5-8f2a-44f0-a9d0-ea1fe23bd779",
+      "claim": "Quadratic time and space complexity of full attention creates resource bottlenecks that restrict context length during training and inference.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "349a93b5-8f2a-44f0-a9d0-ea1fe23bd779",
+      "claim": "Adding recurrent mechanisms with internal memory caches to attention layers lets the model retain information over longer contexts.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "349a93b5-8f2a-44f0-a9d0-ea1fe23bd779",
+      "claim": "Adding recurrent mechanisms with internal memory caches to attention layers lets the model retain information over longer contexts.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "15d13a81-9b57-4ca5-9fe5-f097fee7de7c",
+      "claim": "Position Interpolation allows models to handle context windows up to 32768 tokens after only 1000 fine‑tuning steps, indicating that extending context length is not inherently difficult.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "15d13a81-9b57-4ca5-9fe5-f097fee7de7c",
+      "claim": "Position Interpolation allows models to handle context windows up to 32768 tokens after only 1000 fine‑tuning steps, indicating that extending context length is not inherently difficult.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "15d13a81-9b57-4ca5-9fe5-f097fee7de7c",
+      "claim": "Fine‑tuning to extend context length incurs negligible cost relative to pre‑training, suggesting low computational overhead.",
+      "stored": "no",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "Memory usage grows quadratically with longer context windows, causing rapid scaling of required resources.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 1,
+      "aspect_text": "How does the computational complexity increase with long context windows?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "The computational cost of long contexts makes transformers unsuitable for latency‑sensitive applications.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "The computational cost of long contexts makes transformers unsuitable for latency‑sensitive applications.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 4,
+      "aspect_text": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "The computational cost of long contexts makes transformers unsuitable for latency‑sensitive applications.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "Attention mechanisms struggle with very long distances, leading to unreliable multi‑hop reasoning.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "d6f97807-54a7-4c99-9658-9795c52cece0",
+      "claim": "Transformers cannot simply extend their context window beyond the size seen during training.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "Improving long‑context performance requires trade‑offs between model quality and computational resources.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "The Long‑Range Arena benchmark supplies systematic empirical comparisons of ten efficient transformer models on long‑context tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "The Long‑Range Arena benchmark supplies systematic empirical comparisons of ten efficient transformer models on long‑context tasks.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "The Long‑Range Arena benchmark supplies systematic empirical comparisons of ten efficient transformer models on long‑context tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "Diverse tasks such as synthetic probing and real‑world problems with sequences up to 16 K tokens benefit from long‑context transformer techniques.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "Diverse tasks such as synthetic probing and real‑world problems with sequences up to 16 K tokens benefit from long‑context transformer techniques.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "827cee99-0fa7-4717-8b19-3b1583aadb69",
+      "claim": "Fastformer matches or exceeds other efficient Transformers on classification tasks, showing strong performance for long‑text modeling.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "827cee99-0fa7-4717-8b19-3b1583aadb69",
+      "claim": "Fastformer matches or exceeds other efficient Transformers on classification tasks, showing strong performance for long‑text modeling.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "827cee99-0fa7-4717-8b19-3b1583aadb69",
+      "claim": "Fastformer matches or exceeds other efficient Transformers on classification tasks, showing strong performance for long‑text modeling.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "827cee99-0fa7-4717-8b19-3b1583aadb69",
+      "claim": "Fastformer runs faster than other linear‑complexity Transformers during training and inference, highlighting its efficiency advantage.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "909546a0-6d20-49e2-8e98-7888d9608d61",
+      "claim": "Increasing document length causes quadratic growth in time and memory, making long‑context Transformers computationally expensive.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "0a6905aa-322c-4f36-853c-1eb69bfe80ba",
+      "claim": "Extending transformer context from 256 to 768 tokens reduces perplexity by about 4%, showing measurable performance gains.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "5f16577a-cfd6-4b7d-9471-caf314ae29e2",
+      "claim": "Transformer LLMs are used in knowledge bases, human interfaces, and dynamic agents, showing tasks that benefit from long‑context capabilities.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "ba278bf6-9cca-4974-87f8-823f6daf71c7",
+      "claim": "The approach improves performance on long-context language modeling, 1 M‑token passkey retrieval, and 500 K‑token book summarization tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "ba278bf6-9cca-4974-87f8-823f6daf71c7",
+      "claim": "The approach improves performance on long-context language modeling, 1 M‑token passkey retrieval, and 500 K‑token book summarization tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "1abc661b-7cf0-450d-8f45-a46a09248d38",
+      "claim": "Windowed attention designs like Swin (image) and SepTr (audio) improve transformer handling of long inputs in those domains.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "1abc661b-7cf0-450d-8f45-a46a09248d38",
+      "claim": "Windowed attention designs like Swin (image) and SepTr (audio) improve transformer handling of long inputs in those domains.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "1abc661b-7cf0-450d-8f45-a46a09248d38",
+      "claim": "Training transformer models is especially costly for long input sequences.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "7f6a4a7b-18cd-42c6-9a1c-9775269e2d48",
+      "claim": "When the required adaptation has low rank, LoRA achieves higher test accuracy than full fine‑tuning.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning works by approximating the full fine‑tuning gradient with low‑rank updates.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning works by approximating the full fine‑tuning gradient with low‑rank updates.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning works by approximating the full fine‑tuning gradient with low‑rank updates.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning works by approximating the full fine‑tuning gradient with low‑rank updates.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA can achieve performance close to full fine‑tuning while being more efficient.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA can achieve performance close to full fine‑tuning while being more efficient.",
+      "stored": "no",
+      "ctx": "partial",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning is highly sensitive to the choice of learning rate.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning is highly sensitive to the choice of learning rate.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning is highly sensitive to the choice of learning rate.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "Using improper learning rates can give a false impression of LoRA improvements.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "LoRA fine‑tuning works by adding a trainable low‑rank adapter matrix to the frozen pretrained weights.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "LoRA fine‑tuning works by adding a trainable low‑rank adapter matrix to the frozen pretrained weights.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "The main components of LoRA are the low‑rank adapter matrix and the hyperparameters rank and learning rate.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "A drawback of LoRA is that it may underperform on complex, long‑form generation tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "e68f6a04-e47d-4f42-93df-09a009a38b5f",
+      "claim": "LoRA fine‑tuning works by adding low‑rank adapter matrices to selected weights while freezing the rest of the pretrained model.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "e68f6a04-e47d-4f42-93df-09a009a38b5f",
+      "claim": "LoRA fine‑tuning works by adding low‑rank adapter matrices to selected weights while freezing the rest of the pretrained model.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "e68f6a04-e47d-4f42-93df-09a009a38b5f",
+      "claim": "LoRA includes hyperparameters such as target modules, rank, scaling factors, and learning rates.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "e68f6a04-e47d-4f42-93df-09a009a38b5f",
+      "claim": "LoRA underperforms full fine‑tuning on code and math domains.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "ced0e842-799e-4a2e-8e75-cf73ba23f912",
+      "claim": "LoRA fine‑tuning works by adding a small set of trainable low‑rank weight matrices that reduce the number of parameters that must be updated.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "ced0e842-799e-4a2e-8e75-cf73ba23f912",
+      "claim": "LoRA fine‑tuning works by adding a small set of trainable low‑rank weight matrices that reduce the number of parameters that must be updated.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "ced0e842-799e-4a2e-8e75-cf73ba23f912",
+      "claim": "LoRA provides significant memory‑ and compute‑efficiency advantages over full fine‑tuning.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "b2048d78-bb83-4ad8-80fc-17ce0cb745c8",
+      "claim": "The main advantage of LoRA fine‑tuning is its drastic reduction of trainable parameters, making it faster, cheaper, and less memory‑intensive.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "b2048d78-bb83-4ad8-80fc-17ce0cb745c8",
+      "claim": "The main advantage of LoRA fine‑tuning is its drastic reduction of trainable parameters, making it faster, cheaper, and less memory‑intensive.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+      "claim": "Full fine-tuning works by jointly updating the pretrained feature extractor and the classification head to fit the downstream task.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "partial"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+      "claim": "Full fine-tuning works by jointly updating the pretrained feature extractor and the classification head to fit the downstream task.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+      "claim": "Full fine-tuning usually yields higher in‑distribution accuracy than linear probing.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+      "claim": "Full fine-tuning can distort pretrained features, causing increased out‑of‑distribution error.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine-tuning updates every parameter of the pre‑trained model.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine-tuning updates every parameter of the pre‑trained model.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine-tuning treats the learned update as a full‑size weight matrix ΔW for each layer.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine-tuning treats the learned update as a full‑size weight matrix ΔW for each layer.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "An advantage of full fine‑tuning is that it preserves most of the original model’s structure.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine‑tuning becomes increasingly challenging and expensive as model size grows.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "b3ee3aec-eb30-4283-b955-e270331ed49e",
+      "claim": "Full fine‑tuning requires updating mn trainable parameters per weight matrix, leading to higher computational cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "7d606cf4-29c8-40e8-8183-52c504cb4887",
+      "claim": "Full fine-tuning tends to overfit on limited data and requires high computational resources.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "ead72bf3-3ba9-4369-9ae3-5d0108e020be",
+      "claim": "Full fine-tuning involves storing the model’s parameters, their gradients, and optimizer states during training.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "ead72bf3-3ba9-4369-9ae3-5d0108e020be",
+      "claim": "Full fine-tuning is highly effective at improving performance on downstream tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "ead72bf3-3ba9-4369-9ae3-5d0108e020be",
+      "claim": "Full fine-tuning is highly effective at improving performance on downstream tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "ead72bf3-3ba9-4369-9ae3-5d0108e020be",
+      "claim": "Full fine-tuning is highly effective at improving performance on downstream tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning works by updating every parameter of the model.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning works by updating every parameter of the model.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning provides comprehensive adaptation to the new task, an advantage over partial methods.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning provides comprehensive adaptation to the new task, an advantage over partial methods.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning provides comprehensive adaptation to the new task, an advantage over partial methods.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "d4d9ffcf-c622-4ace-a7c2-840dcbd4753f",
+      "claim": "Full fine-tuning provides comprehensive adaptation to the new task, an advantage over partial methods.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 0,
+      "aspect_text": "How does full fine-tuning work?",
+      "source_id": "66427b3f-86e4-4d59-9caa-875148a4c437",
+      "claim": "Full fine-tuning updates every model parameter by computing and storing gradients for each weight.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "66427b3f-86e4-4d59-9caa-875148a4c437",
+      "claim": "Full fine-tuning incurs high memory and computational costs because gradients for all weights must be stored.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 0,
+      "aspect_text": "What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Performance is measured using the MT‑Bench benchmark, where GPT‑4 scores model answers on a set of 80 multi‑turn questions.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 0,
+      "aspect_text": "What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "On a suite of seven vision‑language benchmarks, LoRA (4.61 % parameters) achieves an average accuracy of 66.9, slightly higher than full fine‑tuning (100 % parameters) which scores 66.5.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "On a suite of seven vision‑language benchmarks, LoRA (4.61 % parameters) achieves an average accuracy of 66.9, slightly higher than full fine‑tuning (100 % parameters) which scores 66.5.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is defined as the proportion of model parameters that are trainable, and full fine‑tuning uses 100 % of the parameters, representing the highest memory cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is defined as the proportion of model parameters that are trainable, and full fine‑tuning uses 100 % of the parameters, representing the highest memory cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is defined as the proportion of model parameters that are trainable, and full fine‑tuning uses 100 % of the parameters, representing the highest memory cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is measured by the percentage of trainable parameters; LoRA fine‑tunes only 2.31 % of the model weights, greatly reducing memory usage.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is measured by the percentage of trainable parameters; LoRA fine‑tunes only 2.31 % of the model weights, greatly reducing memory usage.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is measured by the percentage of trainable parameters; LoRA fine‑tunes only 2.31 % of the model weights, greatly reducing memory usage.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Full fine‑tuning incurs high memory cost because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Full fine‑tuning incurs high memory cost because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Full fine‑tuning incurs high memory cost because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 0,
+      "aspect_text": "What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Test accuracy on benchmark datasets (e.g., BoolQ, CommonsenseQA) is used to compare LoRA and full fine‑tuning performance.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Test accuracy on benchmark datasets (e.g., BoolQ, CommonsenseQA) is used to compare LoRA and full fine‑tuning performance.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "Across many model sizes and tasks, full fine‑tuning usually yields the highest performance, while LoRA provides a better trade‑off between performance and efficiency.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "The rank of LoRA adapters determines the number of trainable parameters, directly affecting its memory cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "The rank of LoRA adapters determines the number of trainable parameters, directly affecting its memory cost.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "7ec50e01-95d9-4bad-9888-4ef2955a63be",
+      "claim": "The rank of LoRA adapters determines the number of trainable parameters, directly affecting its memory cost.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "LoRA reduces peak memory by about 40% for small batch sizes because its optimizer state is much smaller.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "LoRA reduces peak memory by about 40% for small batch sizes because its optimizer state is much smaller.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "LoRA reduces peak memory by about 40% for small batch sizes because its optimizer state is much smaller.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "Memory cost is measured as peak active memory in gigabytes during training.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "Memory cost is measured as peak active memory in gigabytes during training.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "LoRA reduces memory and computation costs while achieving performance close to full fine-tuning.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "LoRA reduces memory and computation costs while achieving performance close to full fine-tuning.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "Full fine-tuning incurs substantial memory and computational costs because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "Full fine-tuning incurs substantial memory and computational costs because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "a8759415-8bcf-458f-ba3b-f325bf4a3df5",
+      "claim": "LoRA matches full fine-tuning performance on tasks such as sequence classification, instruction tuning, and chat.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "a8759415-8bcf-458f-ba3b-f325bf4a3df5",
+      "claim": "LoRA exhibits a performance gap compared to full fine-tuning on harder tasks like code generation.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "a8759415-8bcf-458f-ba3b-f325bf4a3df5",
+      "claim": "LoRA forgets less than full fine-tuning when adapted to math and code tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "a8759415-8bcf-458f-ba3b-f325bf4a3df5",
+      "claim": "LoRA forgets less than full fine-tuning when adapted to math and code tasks.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 0,
+      "aspect_text": "What metrics or benchmarks are used to measure performance of LoRA and full fine-tuning?",
+      "source_id": "6888052d-e093-4172-82b2-232938b1bff7",
+      "claim": "LoRA often matches or exceeds the performance of full fine-tuning on downstream tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "6888052d-e093-4172-82b2-232938b1bff7",
+      "claim": "LoRA often matches or exceeds the performance of full fine-tuning on downstream tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "partial"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+      "claim": "Performance of language models improves smoothly as model size, data, and compute are scaled up.",
+      "stored": "no",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+      "claim": "Large language models can reproduce and amplify biases, producing toxic or misinformation content, which is a major challenge.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+      "claim": "Key components of LLMs include network depth, width, hardware, objectives, datasets, and the size of the pretraining corpus.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "4f6d9d33-d49a-46c9-9d17-737521287f48",
+      "claim": "LLMs are used to generate coherent text, translate languages, and understand natural language.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "4f6d9d33-d49a-46c9-9d17-737521287f48",
+      "claim": "Auto‑regressive LLMs employ a decoder‑only architecture that is optimized for text generation.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "4f6d9d33-d49a-46c9-9d17-737521287f48",
+      "claim": "Training LLMs at massive scale relies on transformer‑based methods and techniques such as chain‑of‑thought and reinforcement learning with human feedback.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "4f6d9d33-d49a-46c9-9d17-737521287f48",
+      "claim": "LLMs generate coherent text by conditioning on structured input and following given instructions.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "4f6d9d33-d49a-46c9-9d17-737521287f48",
+      "claim": "A major challenge for LLMs is the huge computational resources required for pre‑training and fine‑tuning.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "2b8dce6f-c47f-456f-a984-5044f4f23d9c",
+      "claim": "Neural networks can memorize large amounts of data and reveal it under adversarial attacks, posing security challenges for large language models.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "2b8dce6f-c47f-456f-a984-5044f4f23d9c",
+      "claim": "Large language models are built using either recurrent (LSTM) or self‑attention (Transformer) architectures, with some models combining both mechanisms.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "2b8dce6f-c47f-456f-a984-5044f4f23d9c",
+      "claim": "During inference, a large language model generates text by conditioning on an input prompt and producing a continuation of tokens.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models use a sequence‑to‑sequence encoder‑decoder framework where the encoder maps inputs to low‑dimensional embeddings.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Training large language models involves pre‑training on massive unsupervised corpora followed by fine‑tuning on downstream supervised tasks.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "A major challenge for large language models is their size, prompting research on compression techniques such as quantization, pruning, and knowledge distillation.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models are applied in many domains, with common applications highlighted for practitioners.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models are applied in many domains, with common applications highlighted for practitioners.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models are applied in many domains, with common applications highlighted for practitioners.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models are applied in many domains, with common applications highlighted for practitioners.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "At inference time, the decoder generates the final text from the learned embeddings.",
+      "stored": "no",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+      "claim": "Large language models come in decoder‑only, encoder‑decoder, and hybrid designs and have core components that enable their capabilities.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+      "claim": "Large language models come in decoder‑only, encoder‑decoder, and hybrid designs and have core components that enable their capabilities.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+      "claim": "LLMs are applied across fourteen everyday domains such as medicine, education, agriculture, and the arts.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "7774de19-d441-4560-a996-fba7e8679e6a",
+      "claim": "LLMs consist of two major components: a retriever and a language model.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "7774de19-d441-4560-a996-fba7e8679e6a",
+      "claim": "CodeT5+ trains an encoder‑decoder model with multiple objectives, activating encoder, decoder, or both depending on the task.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "e4c352ed-be4b-4f49-b32c-93479b74dd48",
+      "claim": "LLMs can be trained and fine‑tuned for tasks such as text generation, summarization, translation, and prediction.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 3,
+      "aspect_text": "inference processes of large language models",
+      "source_id": "e4c352ed-be4b-4f49-b32c-93479b74dd48",
+      "claim": "LLMs are generative AI models that produce text.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "df46e13d-6d22-44c3-8baf-3c6bfb584c1e",
+      "claim": "Hallucinations in large language models are outputs that are incorrect, fabricated, ill‑logical, or contradictory.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "fee7ce9b-58c4-49a6-bd3d-22f3d6ac161e",
+      "claim": "Hallucinations are outputs that diverge from the user input, contradict prior context, or misalign with world knowledge.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "f961851e-a721-4a06-91f9-10bdee548836",
+      "claim": "Hallucinations in large language models are outputs that appear fluent and coherent but are factually incorrect, fabricated, or logically inconsistent.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "0cafffde-48c7-48f7-bf2d-04c5b5c48ec4",
+      "claim": "Hallucinations in LLMs are fluent, grammatically correct outputs that are not faithful to the source input or factual reality.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "ef418ac6-976f-46e6-8c0b-e139380edc85",
+      "claim": "Hallucinations in LLMs are defined as fluent, syntactically correct content that is factually inaccurate or lacks external evidence.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "9f172ed3-800e-4946-be4e-7687c0b2287d",
+      "claim": "Hallucinations in LLMs are defined as model outputs that can be labeled as intrinsic, extrinsic, factual, or logical hallucinations.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "6280a009-2238-4605-8725-31a3edaa86d4",
+      "claim": "Retrieval-augmented generation consists of two core modules—a retriever that fetches relevant information and a generator that produces the required output.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "6280a009-2238-4605-8725-31a3edaa86d4",
+      "claim": "Speculative RAG is motivated by the desire to save resources and speed up responses by using retrieval instead of pure generation.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+      "claim": "RAG is built around three core stages: retrieval, generation, and augmentation.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+      "claim": "Iterative retrieval alternates retrieval and generation to supply richer context for the LLM.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "no"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+      "claim": "Iterative retrieval alternates retrieval and generation to supply richer context for the LLM.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "partial"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "3476a3da-6993-459a-bfb2-362c79c80caa",
+      "claim": "Retrieval-augmented generation consists of three key components: retrieval sources, retrieval metrics, and generation models.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "3476a3da-6993-459a-bfb2-362c79c80caa",
+      "claim": "Retrieval-augmented generation consists of three key components: retrieval sources, retrieval metrics, and generation models.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "3476a3da-6993-459a-bfb2-362c79c80caa",
+      "claim": "It is motivated by avoiding the need to store all knowledge in model parameters and by simplifying generation through plug‑and‑play retrieval of human‑written references.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "4ecd842a-2b55-4487-a326-e2e87ed616d6",
+      "claim": "RAG addresses memory, temporal, and factual limitations of LLMs by letting models retrieve external information during inference.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "ec1bd39a-f1b3-4e7b-aa3c-a0a946b4f791",
+      "claim": "Effective retrieval requires queries that anticipate the model’s future generation intents.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "ec1bd39a-f1b3-4e7b-aa3c-a0a946b4f791",
+      "claim": "Effective retrieval requires queries that anticipate the model’s future generation intents.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "partial"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "2047ad06-f990-4569-807f-cf35e35782b8",
+      "claim": "RAG combines information‑retrieval models with generative AI models as its core components.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "no"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "08394fda-6670-49be-ac3e-81b99cc4787c",
+      "claim": "RAG conditions the language model’s generation on retrieved documents, limiting unconstrained creative output.",
+      "stored": "partial",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 1,
+      "aspect_text": "How does retrieval-augmented generation constrain the creativity of large language models?",
+      "source_id": "08394fda-6670-49be-ac3e-81b99cc4787c",
+      "claim": "RAG conditions the language model’s generation on retrieved documents, limiting unconstrained creative output.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "90943d74-760c-4b95-8fb9-f42f0dac1422",
+      "claim": "MixAlign, a retrieval‑augmented generation method, reduces hallucinations and improves the quality of LLM output by iteratively aligning user queries with retrieved knowledge.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "f96559c7-feaa-44a3-b888-37fbff72369c",
+      "claim": "Retrieval‑augmented generation supplies external factual knowledge to LLMs, which helps lower hallucinations.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "f96559c7-feaa-44a3-b888-37fbff72369c",
+      "claim": "RAG improves answer accuracy by fetching relevant external data before generation, allowing the model to combine retrieved facts with its internal knowledge.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "339dad72-2879-4228-9bf8-4ea75e33718d",
+      "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by cross‑referencing external knowledge.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "yes"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 1,
+      "aspect_text": "How does retrieval-augmented generation constrain the creativity of large language models?",
+      "source_id": "339dad72-2879-4228-9bf8-4ea75e33718d",
+      "claim": "Retrieval‑augmented generation improves factual accuracy and reduces hallucinations by cross‑referencing external knowledge.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 0,
+      "aspect_text": "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+      "source_id": "0a6241f0-c39a-4377-96f7-cf97f1e7ae5a",
+      "claim": "Retrieval‑augmented generation improves the accuracy and reliability of LLM‑generated responses.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "no"
+    },
+    {
+      "sq": "856b9105",
+      "aspect_idx": 1,
+      "aspect_text": "How does retrieval-augmented generation constrain the creativity of large language models?",
+      "source_id": "0a6241f0-c39a-4377-96f7-cf97f1e7ae5a",
+      "claim": "Retrieval‑augmented generation improves the accuracy and reliability of LLM‑generated responses.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no"
+    }
+  ],
+  "labeled": [
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "LoRA reduces peak memory by about 40% for small batch sizes because its optimizer state is much smaller.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "ec1bd39a-f1b3-4e7b-aa3c-a0a946b4f791",
+      "claim": "Effective retrieval requires queries that anticipate the model’s future generation intents.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "Full fine-tuning incurs substantial memory and computational costs because gradients must be computed and stored for every trainable weight.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+      "claim": "Iterative retrieval alternates retrieval and generation to supply richer context for the LLM.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 2,
+      "aspect_text": "how memory cost is defined",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "Memory cost is measured as peak active memory in gigabytes during training.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "6280a009-2238-4605-8725-31a3edaa86d4",
+      "claim": "Speculative RAG is motivated by the desire to save resources and speed up responses by using retrieval instead of pure generation.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+      "claim": "Large language models come in decoder‑only, encoder‑decoder, and hybrid designs and have core components that enable their capabilities.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes",
+      "label": 0.0,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 0,
+      "aspect_text": "motivation of retrieval-augmented generation",
+      "source_id": "4ecd842a-2b55-4487-a326-e2e87ed616d6",
+      "claim": "RAG addresses memory, temporal, and factual limitations of LLMs by letting models retrieve external information during inference.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "Memory cost is measured as peak active memory in gigabytes during training.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 4,
+      "aspect_text": "factors that affect memory cost for LoRA",
+      "source_id": "306fc0f3-2162-4397-a477-124f86913ecd",
+      "claim": "LoRA reduces memory and computation costs while achieving performance close to full fine-tuning.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "7774de19-d441-4560-a996-fba7e8679e6a",
+      "claim": "LLMs consist of two major components: a retriever and a language model.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "yes",
+      "label": 0.0,
+      "file": "tag_audit_labeled_targeted"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 0,
+      "aspect_text": "basic components of large language models",
+      "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+      "claim": "Key components of LLMs include network depth, width, hardware, objectives, datasets, and the size of the pretraining corpus.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 0,
+      "aspect_text": "How does the attention mechanism degrade with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "RMT’s learned memory operations preserve attention quality on extremely long sequences, indicating that attention degradation can be mitigated.",
+      "stored": "yes",
+      "ctx": "partial",
+      "noctx": "partial",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 1,
+      "aspect_text": "architectures of large language models",
+      "source_id": "77627a24-5f16-493c-afb4-37937421f3c9",
+      "claim": "Large language models come in decoder‑only, encoder‑decoder, and hybrid designs and have core components that enable their capabilities.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of full fine-tuning?",
+      "source_id": "54721b52-0df3-4010-947f-80f36a21a0cb",
+      "claim": "Full fine-tuning works by jointly updating the pretrained feature extractor and the classification head to fit the downstream task.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "9ef5155a-6c22-48d7-ae65-c3b0ef3656b0",
+      "claim": "The context window is the maximum amount of tokenized text a model can see at once, and it is measured in tokens.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 1,
+      "aspect_text": "how a context window is measured",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "A context window is the maximum number of input tokens a model can consider at one time.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "ced0e842-799e-4a2e-8e75-cf73ba23f912",
+      "claim": "LoRA fine‑tuning works by adding a small set of trainable low‑rank weight matrices that reduce the number of parameters that must be updated.",
+      "stored": "yes",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "ba278bf6-9cca-4974-87f8-823f6daf71c7",
+      "claim": "The approach improves performance on long-context language modeling, 1 M‑token passkey retrieval, and 500 K‑token book summarization tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 5,
+      "aspect_text": "factors that affect memory cost for full fine-tuning",
+      "source_id": "1077df3b-0218-4e7f-ac82-9542fe7ad52c",
+      "claim": "LoRA reduces peak memory by about 40% for small batch sizes because its optimizer state is much smaller.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_dropped"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "e68f6a04-e47d-4f42-93df-09a009a38b5f",
+      "claim": "LoRA includes hyperparameters such as target modules, rank, scaling factors, and learning rates.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "LoRA fine‑tuning works by adding a trainable low‑rank adapter matrix to the frozen pretrained weights.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 5,
+      "aspect_text": "How do techniques that address long-context challenges modify or improve the transformer model architecture, e.g., adding new layers, heads, or mechanisms?",
+      "source_id": "15d13a81-9b57-4ca5-9fe5-f097fee7de7c",
+      "claim": "Position Interpolation allows models to handle context windows up to 32768 tokens after only 1000 fine‑tuning steps, indicating that extending context length is not inherently difficult.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "827cee99-0fa7-4717-8b19-3b1583aadb69",
+      "claim": "Fastformer matches or exceeds other efficient Transformers on classification tasks, showing strong performance for long‑text modeling.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 3,
+      "aspect_text": "how memory cost is measured",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "Memory cost is measured by the percentage of trainable parameters; LoRA fine‑tunes only 2.31 % of the model weights, greatly reducing memory usage.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 2,
+      "aspect_text": "How does a context window affect the performance of a transformer model?",
+      "source_id": "6edea942-2e09-49ba-a0f9-8aa637d01b70",
+      "claim": "Performance drops when inputs exceed the context window because the model has not been trained on those positions.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 1,
+      "aspect_text": "What are the main components of LoRA fine-tuning?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning works by approximating the full fine‑tuning gradient with low‑rank updates.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 1,
+      "aspect_text": "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?",
+      "source_id": "ba278bf6-9cca-4974-87f8-823f6daf71c7",
+      "claim": "The approach improves performance on long-context language modeling, 1 M‑token passkey retrieval, and 500 K‑token book summarization tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of full fine-tuning",
+      "source_id": "ead72bf3-3ba9-4369-9ae3-5d0108e020be",
+      "claim": "Full fine-tuning is highly effective at improving performance on downstream tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 5,
+      "aspect_text": "What are some challenges of large language models?",
+      "source_id": "d12bd96c-13fb-4809-add5-fb2a62c21325",
+      "claim": "Large language models can reproduce and amplify biases, producing toxic or misinformation content, which is a major challenge.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "ec5a0fcd",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of full fine-tuning",
+      "source_id": "66427b3f-86e4-4d59-9caa-875148a4c437",
+      "claim": "Full fine-tuning incurs high memory and computational costs because gradients for all weights must be stored.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 2,
+      "aspect_text": "advantages of LoRA fine-tuning",
+      "source_id": "b2048d78-bb83-4ad8-80fc-17ce0cb745c8",
+      "claim": "The main advantage of LoRA fine‑tuning is its drastic reduction of trainable parameters, making it faster, cheaper, and less memory‑intensive.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "763a1e90",
+      "aspect_idx": 1,
+      "aspect_text": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+      "source_id": "7bc7204b-0c82-40b2-a9f0-a42d37a5d4c3",
+      "claim": "On a suite of seven vision‑language benchmarks, LoRA (4.61 % parameters) achieves an average accuracy of 66.9, slightly higher than full fine‑tuning (100 % parameters) which scores 66.5.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "2145b97c-cb34-43c7-a885-36f0bc3ceab0",
+      "claim": "Diverse tasks such as synthetic probing and real‑world problems with sequences up to 16 K tokens benefit from long‑context transformer techniques.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "909546a0-6d20-49e2-8e98-7888d9608d61",
+      "claim": "Increasing document length causes quadratic growth in time and memory, making long‑context Transformers computationally expensive.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 2,
+      "aspect_text": "training processes of large language models",
+      "source_id": "e19fc5ba-014b-4d26-910f-3a014bc8dcd4",
+      "claim": "Large language models are applied in many domains, with common applications highlighted for practitioners.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "9ae69654-7c5f-492e-b358-7abe9d4f92de",
+      "claim": "Iterative retrieval alternates retrieval and generation to supply richer context for the LLM.",
+      "stored": "partial",
+      "ctx": "yes",
+      "noctx": "partial",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "e96996ab",
+      "aspect_idx": 1,
+      "aspect_text": "steps of retrieval-augmented generation",
+      "source_id": "6280a009-2238-4605-8725-31a3edaa86d4",
+      "claim": "Retrieval-augmented generation consists of two core modules—a retriever that fetches relevant information and a generator that produces the required output.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "3ac5d8ed",
+      "aspect_idx": 0,
+      "aspect_text": "how hallucinations are defined in large language models",
+      "source_id": "0cafffde-48c7-48f7-bf2d-04c5b5c48ec4",
+      "claim": "Hallucinations in LLMs are fluent, grammatically correct outputs that are not faithful to the source input or factual reality.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 2,
+      "aspect_text": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+      "source_id": "5f16577a-cfd6-4b7d-9471-caf314ae29e2",
+      "claim": "Transformer LLMs are used in knowledge bases, human interfaces, and dynamic agents, showing tasks that benefit from long‑context capabilities.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "1fa8b305",
+      "aspect_idx": 0,
+      "aspect_text": "how a context window is defined",
+      "source_id": "21295a0d-d907-4f40-a8e1-eccf980a1d79",
+      "claim": "A context window is the maximum number of input tokens a model can consider at one time.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 3,
+      "aspect_text": "disadvantages of LoRA fine-tuning",
+      "source_id": "3086d847-cb33-4aa5-b6e8-d7e031336642",
+      "claim": "A drawback of LoRA is that it may underperform on complex, long‑form generation tasks.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "1e8f8a8c",
+      "aspect_idx": 2,
+      "aspect_text": "What are the advantages of transformer models compared to other models?",
+      "source_id": "db74e5f2-97d6-4310-8284-a52376852549",
+      "claim": "Vision transformers often outperform CNNs on image segmentation, object detection, and related tasks, illustrating an advantage of transformer models.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b83277e7",
+      "aspect_idx": 0,
+      "aspect_text": "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?",
+      "source_id": "1abc661b-7cf0-450d-8f45-a46a09248d38",
+      "claim": "Training transformer models is especially costly for long input sequences.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "cdf8f029",
+      "aspect_idx": 2,
+      "aspect_text": "How does the memory usage increase with long context windows?",
+      "source_id": "70a4148a-35cf-4072-b4af-64f86c1f64b9",
+      "claim": "State‑of‑the‑art long‑context models like CoLT5 and LongNet exhaust GPU memory on longer inputs, providing empirical evidence of memory bottlenecks.",
+      "stored": "partial",
+      "ctx": "partial",
+      "noctx": "partial",
+      "label": 0.5,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "b4ff92b2",
+      "aspect_idx": 4,
+      "aspect_text": "What are some common applications of large language models?",
+      "source_id": "e4c352ed-be4b-4f49-b32c-93479b74dd48",
+      "claim": "LLMs can be trained and fine‑tuned for tasks such as text generation, summarization, translation, and prediction.",
+      "stored": "yes",
+      "ctx": "yes",
+      "noctx": "yes",
+      "label": 1.0,
+      "file": "tag_audit_labeled_heldout"
+    },
+    {
+      "sq": "935cc3b6",
+      "aspect_idx": 0,
+      "aspect_text": "How does LoRA fine-tuning work?",
+      "source_id": "90754ec4-1b17-4903-ae5a-0dc5a92b8532",
+      "claim": "LoRA fine‑tuning is highly sensitive to the choice of learning rate.",
+      "stored": "no",
+      "ctx": "no",
+      "noctx": "no",
+      "label": 0.0,
+      "file": "tag_audit_labeled_heldout"
+    }
+  ]
+}
