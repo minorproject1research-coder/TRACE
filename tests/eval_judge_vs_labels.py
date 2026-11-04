@@ -91,8 +91,7 @@ def map_label(label_str: str) -> float:
 def run_judge_on_rows(rows: List[Dict]) -> List[Dict]:
     """Run judge on all rows and return results with predictions."""
     import hashlib
-    # Build judge items with proper ID format: a{aspect_idx}_s{source_id}_f{finding_idx}
-    # For eval, we use aspect_idx=0, source_id=row_{row_id}, finding_idx=0
+    # Build judge items with proper ID format using stable item_id
     items = []
     for i, row in enumerate(rows):
         aspect = row.get("aspect_text") or row.get("detail_text", "")
@@ -104,8 +103,14 @@ def run_judge_on_rows(rows: List[Dict]) -> List[Dict]:
             items.append(None)
             continue
         
+        # Create stable item_id based on aspect_text, source_id, finding_idx
+        stable_content = f"{aspect}|row_{i}|0"
+        item_id = hashlib.sha256(stable_content.encode()).hexdigest()[:16]
+        
         items.append({
-            "id": f"a0_srow_{i}_f0",
+            "id": item_id,
+            "aspect_idx": 0,
+            "source_id": f"row_{i}",
             "aspect": aspect,
             "claim": claim,
             "quote": quote,
@@ -128,10 +133,8 @@ def run_judge_on_rows(rows: List[Dict]) -> List[Dict]:
     results = []
     for orig_idx, item in valid_items:
         # The verdict key is (aspect_idx, source_id, claim_hash)
-        # aspect_idx is 0 for all (single aspect per row), source_id from item id
-        source_id = item["id"].split("_")[1][1:] if "_" in item["id"] else "src"
         claim_hash = hashlib.sha256(item["claim"].encode()).hexdigest()[:16]
-        verdict_key = (0, source_id, claim_hash)
+        verdict_key = (0, item["source_id"], claim_hash)
         v = verdicts.get(verdict_key, {})
         judge_verdict = v.get("verdict", {})
         pred = map_judge_verdict(judge_verdict)

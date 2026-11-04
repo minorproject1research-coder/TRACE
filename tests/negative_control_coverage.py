@@ -141,7 +141,8 @@ def run_digest_jobs(
     findings_per_job = []
     for job in jobs:
         if llm_call_counter[0] >= max_llm_calls:
-            logger.warning(f"Max LLM calls ({max_llm_calls}) reached, stopping")
+            logger.warning(f"Max LLM calls ({max_llm_calls}) reached: this source gets NO digest (control truncated)")
+            llm_call_counter.append(1)          # marks truncation; llm_call_counter[0] is still the call count
             findings_per_job.append([])
             continue
         
@@ -172,6 +173,7 @@ def run_coverage_check(
     original_details: List[str],
     digests: List[Dict],
     judge_verdicts: Dict = None,
+    candidates: List[Dict] = None,
 ) -> Dict:
     """Run coverage_check with the modified detail list."""
     # Convert digests to the format expected by coverage_check
@@ -183,7 +185,7 @@ def run_coverage_check(
             "findings": d["findings"],
         })
     return coverage_check.check_coverage_judged(
-        aspects, aspect_to_detail, original_details, rows, judge_verdicts or {}
+        aspects, aspect_to_detail, original_details, rows, judge_verdicts or {}, candidates=candidates
     )
 
 
@@ -289,6 +291,7 @@ def run_negative_control(
     
     # Run judge for modified aspects
     judge_verdicts = {}
+    candidates = []
     has_verified = any(f.get("verified") for d in digests for f in d.get("findings", []))
     if has_verified and modified_aspects:
         candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
@@ -297,7 +300,7 @@ def run_negative_control(
     
     # Run coverage check with MODIFIED details (including control) using judge
     coverage = run_coverage_check(
-        modified_aspects, modified_aspect_to_detail, modified_details, digests, judge_verdicts
+        modified_aspects, modified_aspect_to_detail, modified_details, digests, judge_verdicts, candidates=candidates
     )
     
     # Also run with ORIGINAL details for comparison (using base aspects, no judge)
@@ -309,7 +312,7 @@ def run_negative_control(
             "findings": findings,
         })
     original_coverage = run_coverage_check(
-        base_aspects, base_aspect_to_detail, original_details, original_digests, {}
+        base_aspects, base_aspect_to_detail, original_details, original_digests, {}, candidates=None
     )
     
     # Check if control detail was covered
@@ -321,7 +324,8 @@ def run_negative_control(
     for d in digests:
         for f in d.get("findings", []):
             answers = f.get("answers_details", [])
-            if (control_idx + 1) in answers:
+            detail_numbers = [t.get("detail") if isinstance(t, dict) else t for t in answers]
+            if (control_idx + 1) in detail_numbers:
                 model = get_embedder()
                 claim = f.get("claim", "")
                 if claim:
@@ -361,6 +365,7 @@ def run_negative_control(
         "judge_stats": coverage.get("judge_stats"),
         "fallback_reason": coverage.get("fallback_reason"),
         "llm_calls_used": llm_calls[0],
+        "cap_truncated": len(llm_calls) > 1,
     }
     
     return result
@@ -418,6 +423,8 @@ def main():
             print(f"Sub-question: {sq_id}")
             print(f"Verdict: {verdict}")
             print(f"LLM calls this run: {result.get('llm_calls_used', 0)}")
+            if result.get("cap_truncated"):
+                print("  WARNING: the LLM call cap truncated this control (some sources got no digest); the verdict is not reliable")
             
             if result.get("tagged_control_findings"):
                 print(f"  Tagged findings for control ({len(result['tagged_control_findings'])}):")

@@ -22,15 +22,12 @@ from pathlib import Path
 # ============================================================
 
 @pytest.fixture(autouse=True)
-def _clear_judge_cache():
-    """Clear judge cache before each test to avoid cross-test contamination."""
-    cache_path = Path("reports/judge_cache.json")
-    if cache_path.exists():
-        cache_path.unlink()
+def _clear_judge_cache(tmp_path, monkeypatch):
+    """Every test gets its own empty judge cache file; the real reports/judge_cache.json is never touched or deleted."""
+    from apps.api.agents.stage3_summarizer import evidence_judge
+    cache_path = tmp_path / "judge_cache.json"
+    monkeypatch.setattr(evidence_judge, "JUDGE_CACHE_PATH", cache_path)
     yield
-    # Also clear after test
-    if cache_path.exists():
-        cache_path.unlink()
 
 
 @pytest.fixture
@@ -661,7 +658,14 @@ class TestCoverageWithJudge:
             (1, "src2", self.claim_hash("c2")): self.make_verdict("yes"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+            {"aspect_idx": 0, "source_id": "src2", "claim": "c2", "quote": "q2", "item_id": "item2"},
+            {"aspect_idx": 1, "source_id": "src1", "claim": "c1", "quote": "q3", "item_id": "item3"},
+            {"aspect_idx": 1, "source_id": "src2", "claim": "c2", "quote": "q4", "item_id": "item4"},
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         assert result["judge_used"] is True
         assert result["uncovered_aspects"] == []  # both aspects covered
@@ -686,7 +690,12 @@ class TestCoverageWithJudge:
             (0, "src1", self.claim_hash("c2")): self.make_verdict("yes"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c2", "quote": "q2", "item_id": "item2"},
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         assert result["judge_used"] is True
         assert "advantages of X" in result["uncovered_aspects"]
@@ -709,7 +718,11 @@ class TestCoverageWithJudge:
             (0, "src1", self.claim_hash("c1")): self.make_verdict("yes"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         assert result["judge_used"] is True
         assert "advantages of X" in result["uncovered_aspects"]
@@ -737,7 +750,12 @@ class TestCoverageWithJudge:
             (0, "src2", self.claim_hash("c2")): self.make_verdict("partial"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+            {"aspect_idx": 0, "source_id": "src2", "claim": "c2", "quote": "q2", "item_id": "item2"},
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         assert result["judge_used"] is True
         assert "advantages of X" in result["uncovered_aspects"]
@@ -772,7 +790,12 @@ class TestCoverageWithJudge:
             (0, "src7", self.claim_hash("c7")): self.make_verdict("no"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": f"src{i+1}", "claim": f"c{i+1}", "quote": f"q{i+1}", "item_id": f"item{i+1}"}
+            for i in range(7)
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         # With new logic: error verdicts make aspect "unjudged"
         assert result["judge_used"] is False
@@ -806,15 +829,82 @@ class TestCoverageWithJudge:
             # Aspect 1 (disadvantages) has no verdicts -> unjudged
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+            {"aspect_idx": 0, "source_id": "src2", "claim": "c2", "quote": "q2", "item_id": "item2"},
+        ]
         
-        # Aspect 1 has no verdicts -> unjudged
-        assert result["judge_used"] is False
-        assert "disadvantages of X" in result["unjudged_aspects"]
-        assert "disadvantages of X" not in result["uncovered_aspects"]
-        assert result["uncovered_reasons"].get("disadvantages of X") == "unjudged"
-        # Detail should be uncovered because one aspect is unjudged
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
+        
+        # Aspect 1 has no candidates at all: uncovered_judged / no_candidates (NOT unjudged, NOT a whole-sub-question fallback)
+        assert result["judge_used"] is True
+        assert "fallback_reason" not in result
+        assert result["unjudged_aspects"] == []
+        assert "disadvantages of X" in result["uncovered_aspects"]
+        assert result["uncovered_reasons"].get("disadvantages of X") == "no_candidates"
+        assert result["uncovered_reasons"].get("advantages of X") is None   # covered
+        # Detail is uncovered because one of its aspects is uncovered
         assert "advantages and disadvantages of X" in result["uncovered_details"]
+
+    def test_no_candidates_anywhere_is_not_a_fallback(self, mock_embedder):
+        """candidates=[] (nothing verified) -> every aspect no_candidates, judge path kept, no tag-rule fallback."""
+        from apps.api.agents.stage3_summarizer.coverage_check import check_coverage_judged
+        os.environ["USE_JUDGE_COVERAGE"] = "true"
+        result = check_coverage_judged(["a", "b"], [0, 1], ["a", "b"], [], {}, candidates=[])
+        assert result["judge_used"] is True
+        assert "fallback_reason" not in result
+        assert result["uncovered_reasons"] == {"a": "no_candidates", "b": "no_candidates"}
+        assert result["sufficient"] is False
+
+    def test_all_verdicts_failed_falls_back_whole_subquestion(self, mock_embedder):
+        """Candidates exist but every verdict is an error (endpoint down) -> tag-rule fallback for the whole sub-question."""
+        from apps.api.agents.stage3_summarizer.coverage_check import check_coverage_judged
+        os.environ["USE_JUDGE_COVERAGE"] = "true"
+        digests = [{"source_id": "s1", "evidence_level": "full_text", "findings": [{"claim": "c1", "verified": True}]}]
+        verdicts = {(0, "s1", self.claim_hash("c1")): self.make_verdict("error")}
+        candidates = [{"aspect_idx": 0, "source_id": "s1", "claim": "c1", "quote": "q", "item_id": "i1"}]
+        result = check_coverage_judged(["a"], [0], ["a"], digests, verdicts, candidates=candidates)
+        assert result["judge_used"] is False
+        assert "every verdict failed" in result["fallback_reason"]
+
+    def test_one_aspect_without_verdicts_does_not_fall_back(self, mock_embedder):
+        """Other aspects were judged, one candidate lacks a verdict -> that aspect is unjudged; no whole-sub-question fallback."""
+        from apps.api.agents.stage3_summarizer.coverage_check import check_coverage_judged
+        os.environ["USE_JUDGE_COVERAGE"] = "true"
+        digests = [
+            {"source_id": "s1", "evidence_level": "full_text", "findings": [{"claim": "c1", "verified": True}]},
+            {"source_id": "s2", "evidence_level": "full_text", "findings": [{"claim": "c2", "verified": True}]},
+        ]
+        verdicts = {
+            (0, "s1", self.claim_hash("c1")): self.make_verdict("yes"),
+            (0, "s2", self.claim_hash("c2")): self.make_verdict("yes"),
+            (1, "s1", self.claim_hash("c1")): self.make_verdict("yes"),
+            (1, "s2", self.claim_hash("c2")): self.make_verdict("yes"),
+            (2, "s1", self.claim_hash("c1")): self.make_verdict("yes"),
+            (2, "s2", self.claim_hash("c2")): self.make_verdict("yes"),
+        }
+        candidates = [{"aspect_idx": i, "source_id": s, "claim": c, "quote": "q", "item_id": f"{i}{s}"}
+                      for i in range(3) for s, c in (("s1", "c1"), ("s2", "c2"))]
+        candidates.append({"aspect_idx": 3, "source_id": "s1", "claim": "c1", "quote": "q", "item_id": "x"})  # no verdict returned
+        result = check_coverage_judged(["a", "b", "c", "d"], [0, 1, 2, 3], ["a", "b", "c", "d"], digests, verdicts, candidates=candidates)
+        assert "fallback_reason" not in result
+        assert result["unjudged_aspects"] == ["d"]
+        assert result["judge_used"] is False
+        assert result["uncovered_aspects"] == []          # unjudged is never listed as uncovered (Loop 2 must not act on it)
+
+    def test_aspect_evidence_uses_each_aspects_own_quote(self, mock_embedder):
+        """The same claim judged for two aspects keeps the quote and item id of each candidate."""
+        from apps.api.agents.stage3_summarizer.coverage_check import check_coverage_judged
+        digests = [
+            {"source_id": "s1", "evidence_level": "full_text", "findings": [{"claim": "c1", "verified": True}]},
+            {"source_id": "s2", "evidence_level": "full_text", "findings": [{"claim": "c2", "verified": True}]},
+        ]
+        verdicts = {(i, s, self.claim_hash(c)): self.make_verdict("yes") for i in (0, 1) for s, c in (("s1", "c1"), ("s2", "c2"))}
+        candidates = [{"aspect_idx": i, "source_id": s, "claim": c, "quote": f"quote-{i}-{s}", "item_id": f"item-{i}-{s}"}
+                      for i in (0, 1) for s, c in (("s1", "c1"), ("s2", "c2"))]
+        result = check_coverage_judged(["a", "b"], [0, 1], ["a", "b"], digests, verdicts, candidates=candidates)
+        assert {e["item_id"] for e in result["aspect_evidence"][0]} == {"item-0-s1", "item-0-s2"}
+        assert {e["quote_prefix"] for e in result["aspect_evidence"][1]} == {"quote-1-s1", "quote-1-s2"}
 
     def test_fallback_on_endpoint_failure(self, mock_embedder):
         """Test fallback to tag-based when judge endpoint unavailable."""
@@ -956,7 +1046,11 @@ class TestCoverageWithJudge:
             (0, "src1", self.claim_hash("c1")): self.make_verdict("yes"),
         }
         
-        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts)
+        candidates = [
+            {"aspect_idx": 0, "source_id": "src1", "claim": "c1", "quote": "q1", "item_id": "item1"},
+        ]
+        
+        result = check_coverage_judged(aspects, aspect_to_detail, original_details, digests, verdicts, candidates=candidates)
         
         assert "judge_used" in result
         assert "judge_stats" in result
@@ -1008,3 +1102,36 @@ class TestIntegration:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+class TestJudgeConfigAndChunkContext:
+    def test_judge_uses_trace_llm_url_and_key_when_no_judge_vars(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer import evidence_judge
+        monkeypatch.setenv("TRACE_LLM_URL", "http://model-server/")
+        monkeypatch.setenv("TRACE_LLM_API_KEY", "k-trace")
+        cfg = evidence_judge._get_config()
+        assert cfg["JUDGE_URL"] == "http://model-server" and cfg["API_KEY"] == "k-trace"
+
+    def test_judge_vars_override_when_set(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer import evidence_judge
+        monkeypatch.setenv("TRACE_LLM_URL", "http://model-server")
+        monkeypatch.setenv("JUDGE_URL", "http://elsewhere")
+        monkeypatch.setenv("JUDGE_API_KEY", "k-judge")
+        cfg = evidence_judge._get_config()
+        assert cfg["JUDGE_URL"] == "http://elsewhere" and cfg["API_KEY"] == "k-judge"
+
+    def test_nothing_configured_means_empty_url(self):
+        from apps.api.agents.stage3_summarizer import evidence_judge
+        assert evidence_judge._get_config()["JUDGE_URL"] == ""
+
+    def test_same_chunk_id_in_two_sources_gets_each_sources_own_context(self):
+        from apps.api.agents.stage3_summarizer.evidence_judge import build_judge_items
+        cands = [{"aspect_idx": 0, "aspect_text": "a", "source_id": s, "claim": "c", "quote": q, "chunk_id": 3, "item_id": s}
+                 for s, q in (("srcA", "alpha beta"), ("srcB", "gamma delta"))]
+        lookup = {"srcA:3": "text of A: alpha beta gamma", "srcB:3": "text of B: gamma delta epsilon", "3": "WRONG other paper"}
+        items = {i["source_id"]: i["context"] for i in build_judge_items(cands, lookup)}
+        assert items["srcA"].startswith("text of A") and items["srcB"].startswith("text of B")
+
+    def test_plain_chunk_key_still_works_as_fallback(self):
+        from apps.api.agents.stage3_summarizer.evidence_judge import build_judge_items
+        cands = [{"aspect_idx": 0, "aspect_text": "a", "source_id": "s", "claim": "c", "quote": "alpha", "chunk_id": 1, "item_id": "x"}]
+        assert build_judge_items(cands, {"1": "alpha old style"})[0]["context"] == "alpha old style"
