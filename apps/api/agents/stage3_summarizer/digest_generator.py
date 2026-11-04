@@ -1,14 +1,21 @@
 import logging
+import os
 import re
 from typing import Any, List
 
+from apps.api.services import llm_service
 from apps.api.services.llm_service import squeezer_json
+from apps.api.agents.stage3_summarizer import digest_cache
 from apps.api.agents.stage3_summarizer.quote_verifier import verify_quote
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 
 # --- Constants ---
 VALID_STRENGTHS = {"full", "partial"}
+# Sampling of the digest call. Defaults keep the old behaviour (temperature 0.1, no seed); DIGEST_TEMPERATURE=0 and DIGEST_SEED=<int>
+# make repeated calls MORE alike but not identical on a hosted model - the digest cache (digest_cache.py) is what guarantees identical reruns.
+DIGEST_TEMPERATURE = float(os.getenv("DIGEST_TEMPERATURE", "0.1"))
+DIGEST_SEED = int(os.environ["DIGEST_SEED"]) if os.getenv("DIGEST_SEED", "").strip() else None
 
 
 DIGEST_PROMPT = """You extract evidence from a research source for ONE research question.
@@ -100,10 +107,12 @@ def generate_digest(
     *,
     detail_aspects: list[str] | None = None,
     main_topic: str | None = None,
+    cache_scope: tuple[str, str] | None = None,
 ) -> list[dict]:
     """
     selected = [(chunk_id, chunk_text)].
     detail_aspects = flattened list of aspects (already split from detail questions).
+    cache_scope = (sub_question_id, source_id): when given (and DIGEST_CACHE is on) the model's reply is cached and reused.
     Returns findings with answers_details tags.
     """
     n_details = len(detail_aspects) if detail_aspects else 0
@@ -120,15 +129,23 @@ def generate_digest(
     question_for_prompt = f"{cleaned_topic}: {sub_question}" if cleaned_topic else sub_question
 
     block = "\n\n".join(f"[chunk {i}]\n{t}" for i, t in selected)
-    try:
-        data = squeezer_json(DIGEST_PROMPT.format(
-            question=question_for_prompt,
-            detail_aspects=detail_text,
-            chunks=block
-        ))
-    except Exception as e:
-        logger.error("Digest generation failed: %s", e)
-        return []
+    prompt = DIGEST_PROMPT.format(question=question_for_prompt, detail_aspects=detail_text, chunks=block)
+    key = None
+    data = None
+    if cache_scope is not None and digest_cache.enabled():
+        key = digest_cache.make_key(cache_scope, detail_aspects, llm_service.MODEL_NAME, DIGEST_PROMPT,
+                                    f"t={DIGEST_TEMPERATURE}|seed={DIGEST_SEED}", prompt)
+        data = digest_cache.get(key)
+        if data is not None:
+            logger.info("Digest cache hit for source %s", cache_scope[1])
+    if data is None:
+        try:
+            data = squeezer_json(prompt, temperature=DIGEST_TEMPERATURE, seed=DIGEST_SEED)
+        except Exception as e:
+            logger.error("Digest generation failed: %s", e)
+            return []                                   # a failed call is never cached
+        if key is not None:
+            digest_cache.put(key, data)
 
     texts = [t for _, t in selected]
     findings = []

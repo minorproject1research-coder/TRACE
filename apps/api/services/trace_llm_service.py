@@ -41,12 +41,16 @@ def base_url() -> str:
     return os.getenv("TRACE_LLM_URL", DEFAULT_URL).rstrip("/")
 
 
-def _api_key() -> str:
+def api_key() -> str:
+    """The server API key (TRACE_LLM_API_KEY, or x-api-key), shared by the planner, the relevance judge and the evidence judge."""
     for name in ("TRACE_LLM_API_KEY", "x-api-key", "X_API_KEY"):
         value = os.getenv(name, "").strip()
         if value:
             return value
     return ""
+
+
+_api_key = api_key      # old private name, kept for existing callers
 
 
 def _get_client() -> httpx.Client:

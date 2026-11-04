@@ -7,3 +7,4 @@ __pycache__/
 logs/
 evaluation/relevance_judge/raw
 evaluation/relevance_judge/candidates.jsonl
+.cache/

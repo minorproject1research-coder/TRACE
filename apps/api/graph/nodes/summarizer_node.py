@@ -90,7 +90,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
 
     # 2. Run the digests in parallel (Groq calls; the pool spreads them over the keys and waits out 429s).
     def run(job):
-        si, _, _, selected, _, _, aspects, original_details, aspect_to_detail = job
+        si, _, src, selected, _, _, aspects, original_details, aspect_to_detail = job
         if not selected:
             return [], 0
         
@@ -103,6 +103,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
                     selected,
                     detail_aspects=aspects,
                     main_topic=_clean_topic(sub_questions[si].main_topic),
+                    cache_scope=(str(sub_questions[si].id), str(src["id"])),
                 )
                 return findings, digest_failures
             except json.JSONDecodeError as e:
@@ -143,10 +144,11 @@ def summarizer_node(state: SharedResearchState) -> dict:
             if j_si != si:
                 continue
             for chunk_id, chunk_text in selected:
-                chunk_lookup[str(chunk_id)] = chunk_text
+                chunk_lookup[f"{src['id']}:{chunk_id}"] = chunk_text      # chunk ids repeat in every source: key by source too
         
         # Run judge for this sub-question if there are verified findings
         judge_verdicts = {}
+        candidates = []
         has_verified = any(f.get("verified") for r in rows for f in r.get("findings", []))
         if has_verified and aspects:
             candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
@@ -155,7 +157,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
         
         # Judge-based coverage with fallback
         cov = coverage_check.check_coverage_judged(
-            aspects, aspect_to_detail, sq.detail_questions, rows, judge_verdicts
+            aspects, aspect_to_detail, sq.detail_questions, rows, judge_verdicts, candidates=candidates
         )
         # Add digest failures count
         sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)

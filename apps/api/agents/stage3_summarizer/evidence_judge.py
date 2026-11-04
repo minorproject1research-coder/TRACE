@@ -17,14 +17,17 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
+from apps.api.services import trace_llm_service
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.evidence_judge")
 
 # --- Configuration constants (env-overridable, read at runtime) ---
 def _get_config():
     return {
-        "JUDGE_URL": os.getenv("JUDGE_URL", "").rstrip("/"),
-        "API_KEY": os.getenv("JUDGE_API_KEY", ""),
+        # The judge is the "judge" role of the same model server as the planner, so it uses TRACE_LLM_URL and TRACE_LLM_API_KEY.
+        # JUDGE_URL / JUDGE_API_KEY are optional overrides (only needed if the judge ever runs somewhere else).
+        "JUDGE_URL": (os.getenv("JUDGE_URL") or os.getenv("TRACE_LLM_URL") or "").strip().rstrip("/"),
+        "API_KEY": os.getenv("JUDGE_API_KEY") or trace_llm_service.api_key(),
         "JUDGE_MODEL_ID": os.getenv("JUDGE_MODEL_ID", "judge"),
         "JUDGE_CANDIDATES_PER_ASPECT": int(os.getenv("JUDGE_CANDIDATES_PER_ASPECT", "6")),
         "JUDGE_EXTRA_BY_SIM": int(os.getenv("JUDGE_EXTRA_BY_SIM", "2")),
@@ -36,7 +39,7 @@ def _get_config():
         "NEAR_DUP_ASPECT_SIM": float(os.getenv("NEAR_DUP_ASPECT_SIM", "0.92")),
     }
 
-JUDGE_CACHE_PATH = Path("reports/judge_cache.json")
+JUDGE_CACHE_PATH = Path(os.getenv("JUDGE_CACHE_PATH", "reports/judge_cache.json"))
 
 
 # --- Cache helpers ---
@@ -226,7 +229,11 @@ def build_judge_items(candidates: List[Dict], chunk_lookup: Dict[str, str]) -> L
     items = []
     for c in candidates:
         chunk_id = c.get("chunk_id")
-        chunk_text = chunk_lookup.get(str(chunk_id), "") if chunk_id is not None else ""
+        # chunk ids are positions inside ONE source's chunk list, so the lookup key is "<source_id>:<chunk_id>"; the plain "<chunk_id>"
+        # key is only a fallback for old callers (it collides across sources and gives the judge another paper's passage)
+        chunk_text = ""
+        if chunk_id is not None:
+            chunk_text = chunk_lookup.get(f"{c['source_id']}:{chunk_id}") or chunk_lookup.get(str(chunk_id), "")
 
         # Find quote position in chunk, extract CONTEXT_CHARS around it
         quote = c["quote"]
@@ -320,7 +327,7 @@ def judge_candidates(
     batch_size = batch_size or config["JUDGE_BATCH_SIZE"]
 
     if not judge_url:
-        logger.warning("JUDGE_URL not configured, returning error verdicts")
+        logger.warning("judge URL not configured (set TRACE_LLM_URL), returning error verdicts")
         return {
             (0, "src", hashlib.sha256(item["claim"].encode()).hexdigest()[:16]): {
                 "verdict": {"final": "error", "quote_supports_claim": "error", "answers_aspect": "error", "reason": "JUDGE_URL not configured"},
@@ -431,7 +438,7 @@ def write_verdicts_to_findings(
 ) -> None:
     """
     Inject judge verdicts into digests.findings JSON under new key "judge":
-    {"<aspect_idx>": {"final": ..., "quote_supports_claim": ..., "answers_aspect": ..., "reason": ...}}
+    {"<aspect_idx>": {"aspect": <text>, "final": ..., "quote_supports_claim": ..., "answers_aspect": ..., "reason": ...}}
     """
     for c in candidates:
         aspect_idx = c["aspect_idx"]
@@ -454,6 +461,7 @@ def write_verdicts_to_findings(
             if "judge" not in finding:
                 finding["judge"] = {}
             finding["judge"][str(aspect_idx)] = {
+                "aspect": c["aspect_text"],          # the exact aspect text the judge saw (aspect splits are LLM output and can change between runs)
                 "final": v.get("final"),
                 "quote_supports_claim": v.get("quote_supports_claim"),
                 "answers_aspect": v.get("answers_aspect"),
