@@ -67,3 +67,13 @@
 {"key": "a2576d344637073c", "aspects": ["What are the relevant metrics or indicators of long-sequence performance?"]}
 {"key": "ca08bdc5ab2343aa", "aspects": ["How do state space models, transformers, and Mamba differ in their ability to handle long-range dependencies, attention, and context?"]}
 {"key": "5bb115324d4544be", "aspects": ["What are the empirical results or benchmarks of long-sequence performance for state space models, transformers, and Mamba?"]}
+{"key": "4cd32b3aad84bc4b", "aspects": ["key components of a state space model", "parameters of a state space model"]}
+{"key": "44e4f1dfca920fea", "aspects": ["advantages of state space models", "limitations of state space models"]}
+{"key": "f76f3f4655dd3119", "aspects": ["What are the key components of a transformer model?", "What are the parameters of a transformer model?"]}
+{"key": "28ffced9b331c8e0", "aspects": ["advantages of transformers", "limitations of transformers"]}
+{"key": "fdb8517b86d250f8", "aspects": ["What is the main innovation of Mamba?", "How does Mamba improve upon state space models?"]}
+{"key": "f0530b331d28b46c", "aspects": ["How does Mamba integrate with transformers?", "How does Mamba replace transformers?"]}
+{"key": "c57479d663b7db57", "aspects": ["factors that affect the training efficiency of state space models and transformers"]}
+{"key": "ce328dab75ef3489", "aspects": ["How do state space models and transformers perform on different types of tasks and datasets (e.g., natural language processing, computer vision)?"]}
+{"key": "316514af2d17edaa", "aspects": ["How does Mamba compare to state space models in training efficiency?", "How does Mamba compare to transformers in training efficiency?"]}
+{"key": "748e657af1535671", "aspects": ["What are the challenges for measuring long-sequence performance when comparing state space models and transformers in training efficiency?", "What are the metrics for measuring long-sequence performance when comparing state space models and transformers in training efficiency?"]}
