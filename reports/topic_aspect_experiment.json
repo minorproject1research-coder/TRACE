@@ -1,0 +1,421 @@
+[
+ {
+  "query_id": "cc81e9cc-1bfd-48d1-a3cc-ed23e8c00320",
+  "sub_question": "What is a large language model (LLM)?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 3,
+   "partial": 2,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "LLMs are large language models that scale up statistical language properties from massive text collections.",
+   "An LLM is an AI model trained on massive text data that learns statistical language patterns to understand word and idea relationships.",
+   "LLMs are pre‑trained on large‑scale datasets using substantial computational resources."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "9235d7e3-4598-4e80-99a6-eab203c39b6c",
+     "claim_prefix": "An LLM is an AI model trained on massive text data that learns statistical langu",
+     "quote_prefix": "A large language model (LLM) is an AI model trained on enormous amounts of text ",
+     "item_id": "7d128d2405041e78",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines an LLM by describing its training data and mechanism, which fully answers the aspect asking for a definition."
+    },
+    {
+     "source_id": "d78cdacb-e283-43f3-8f0b-6ddbfbca1744",
+     "claim_prefix": "LLMs are large language models that scale up statistical language properties fro",
+     "quote_prefix": "LLMs scale up the statistical language properties garnered from large text colle",
+     "item_id": "7575df8a60d58f65",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines LLMs by stating their core mechanism, which serves as a complete and accurate answer to the question asking for a definition."
+    },
+    {
+     "source_id": "d78cdacb-e283-43f3-8f0b-6ddbfbca1744",
+     "claim_prefix": "LLMs are pre‑trained on large‑scale datasets using substantial computational res",
+     "quote_prefix": "An LLM is typically a model which is pre‑trained on existing large‑scale dataset",
+     "item_id": "f12c4ba64deb3270",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines an LLM by stating its pre-training method and resource requirements, which fully answers the aspect asking 'What is a large language model?'"
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "cc81e9cc-1bfd-48d1-a3cc-ed23e8c00320",
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 3,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "MoE consists of multiple expert sub‑networks that specialize and only the relevant experts are activated for each input, reducing computation while keeping a large pool of knowledge.",
+   "An MoE layer consists of many parallel expert networks and a gating function that routes each input to a few experts, unlike a single monolithic neural network."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "06681023-5595-4f33-88bd-4a27bc7e897b",
+     "claim_prefix": "An MoE layer consists of many parallel expert networks and a gating function tha",
+     "quote_prefix": "Generally speaking, an MoE layer contains many experts that share the same netwo",
+     "item_id": "f6699727d0f0409c",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's definition of an MoE model, and the claim provides a complete, standalone definition answering the aspect."
+    },
+    {
+     "source_id": "2ec01cf7-00e7-4544-b010-d234ed70fefe",
+     "claim_prefix": "MoE consists of multiple expert sub‑networks that specialize and only the releva",
+     "quote_prefix": "different parts of a model, known as experts, specialize in different tasks or a",
+     "item_id": "4f8d4f6e6ccddbdf",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the definition of MoE provided in the claim, and the claim serves as a complete, standalone answer to the question asking what an MoE model is."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "cc81e9cc-1bfd-48d1-a3cc-ed23e8c00320",
+  "sub_question": "How is MoE applied to LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 3,
+   "no": 2,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "MoE lets LLMs increase parameter count without extra computation, yielding strong downstream performance."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "21483212-94f8-4b49-9098-bafe75084f39",
+     "claim_prefix": "MoE lets LLMs increase parameter count without extra computation, yielding stron",
+     "quote_prefix": "MoE is applied to the feedforward sublayer of Transformers (Fedus et al., 2022; ",
+     "item_id": "5e47b5e6c7a44e40",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly states that MoE is applied to the feedforward sublayer of Transformers, which directly answers how it is applied, and the claim accurately summarizes this mechanism and its benefits."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "cc81e9cc-1bfd-48d1-a3cc-ed23e8c00320",
+  "sub_question": "What is expert routing in MoE models?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 4,
+   "partial": 0,
+   "no": 2,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Expert routing in MoE uses a dynamic routing mechanism that assigns different feed‑forward expert networks to specific data or tasks.",
+   "Expert routing selects a sparse subset of experts for each token by computing probabilities and activating the top‑K experts.",
+   "Expert routing computes a probability distribution over experts for each token, selects the top‑k experts, activates only those, and combines their outputs with mixture weights.",
+   "Expert routing computes scores with a softmax and then selects the top‑k experts for each token."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "5a21bd90-52d9-4b1e-b15b-a12ff8b484b9",
+     "claim_prefix": "Expert routing selects a sparse subset of experts for each token by computing pr",
+     "quote_prefix": "Each MoE layer is composed of N parallel experts E1, E2, . . . , EN, and, depend",
+     "item_id": "472d382b90eb0a0b",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines expert routing as the router selecting a sparse subset of experts for each token, which directly answers the definition question."
+    },
+    {
+     "source_id": "87964ca1-582b-45ad-9b02-8728a786eec1",
+     "claim_prefix": "Expert routing computes a probability distribution over experts for each token, ",
+     "quote_prefix": "In topk routing, the k experts with highest probability are selected. Only these",
+     "item_id": "8755bab22001ce2a",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's description of the expert routing process, and the claim provides a complete definition answering the aspect."
+    },
+    {
+     "source_id": "afcc8de6-fbe3-411d-b8a1-a79178d4664b",
+     "claim_prefix": "Expert routing in MoE uses a dynamic routing mechanism that assigns different fe",
+     "quote_prefix": "incorporates a dynamic routing mechanism that assigns different “experts” (feed ",
+     "item_id": "a71a4153f40b4eda",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's definition of expert routing, and the claim provides a complete, standalone answer to the aspect."
+    },
+    {
+     "source_id": "b0485f97-96a9-4889-973a-41b0e399d9af",
+     "claim_prefix": "Expert routing computes scores with a softmax and then selects the top‑k experts",
+     "quote_prefix": "In standard MoE architectures, the router computes expert scores by applying a s",
+     "item_id": "e4f86c02b0003dc5",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines expert routing by describing the softmax scoring and top-k selection process, which directly answers the aspect asking for an explanation of what it is."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "cc81e9cc-1bfd-48d1-a3cc-ed23e8c00320",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 5,
+   "partial": 1,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Expert routing is typically implemented with a single learned linear projection followed by top‑k selection of experts.",
+   "Hierarchical expert compositions with stacked routing layers are used in deeper MoE variants.",
+   "ScoutRoute implements routing by extracting hidden‑state embeddings and confidence measures from a lightweight scout model to predict expert competence without running all experts.",
+   "PMoE routes new knowledge to deep-layer experts using a router that selects experts based on deep features.",
+   "Post‑hoc routing methods typically use prompt embeddings, handcrafted confidence measures, or multi‑model inference."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "07a524cd-f8b9-4cde-89c3-afa73940092b",
+     "claim_prefix": "Hierarchical expert compositions with stacked routing layers are used in deeper ",
+     "quote_prefix": "Deeper variants such as the Deep Mixture of Experts model propose hierarchical e",
+     "item_id": "0fda0fec952426a2",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly describes the implementation of expert routing in deeper variants using hierarchical compositions and stacked layers, which directly answers how it is implemented."
+    },
+    {
+     "source_id": "254f7c03-42ab-409d-bbf9-4dc23d4d1b83",
+     "claim_prefix": "Expert routing is typically implemented with a single learned linear projection ",
+     "quote_prefix": "The component that decides which experts process each token is the router, typic",
+     "item_id": "9a397265477e90e2",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly describes the implementation mechanism (linear projection followed by top-k selection) which directly answers how expert routing is implemented."
+    },
+    {
+     "source_id": "b71602be-834e-4acf-9479-5fa86301db41",
+     "claim_prefix": "PMoE routes new knowledge to deep-layer experts using a router that selects expe",
+     "quote_prefix": "By using shallow layers for general knowledge and deep layers for new knowledge,",
+     "item_id": "ccc1b57e528ad70e",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly describes the mechanism of expert routing in PMoE (using a router based on deep features to allocate new knowledge), which directly answers how it is implemented."
+    },
+    {
+     "source_id": "e1875d03-e6f3-4844-ab5a-85b35e0bebe9",
+     "claim_prefix": "Post‑hoc routing methods typically use prompt embeddings, handcrafted confidence",
+     "quote_prefix": "Existing post-hoc routing methods instead rely on prompt embeddings, handcrafted",
+     "item_id": "58b4b3503ebd952e",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim, which directly lists the specific methods (prompt embeddings, handcrafted confidence measures, multi-model inference) used to implement post-hoc expert routing, thereby answering how it is implemented."
+    },
+    {
+     "source_id": "e1875d03-e6f3-4844-ab5a-85b35e0bebe9",
+     "claim_prefix": "ScoutRoute implements routing by extracting hidden‑state embeddings and confiden",
+     "quote_prefix": "ScoutRoute performs a single forward pass through an inexpensive scout model to ",
+     "item_id": "252b8a78834d66ae",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's description of the routing mechanism, and the claim directly answers how expert routing is implemented in this specific system."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What are state space models (SSMs) and how do they work?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 2,
+   "no": 3,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "A linear continuous-time state space model is defined by a state matrix A, an input matrix B, an output matrix C, and a feedthrough matrix D that relate the input, latent state, and output."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "8baadec2-3bb9-4091-8fa6-66e30dd23325",
+     "claim_prefix": "A linear continuous-time state space model is defined by a state matrix A, an in",
+     "quote_prefix": "a state matrix A ∈ R P × P , an input matrix B ∈ R P × U , an output matrix C ∈ ",
+     "item_id": "664a58745fcc4240",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the four matrices that define the model, faithfully restating the claim and providing a complete definition of the components as requested by the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What are transformers and how do they work?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 3,
+   "no": 2,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Transformers provide powerful sequence‑modeling capabilities through an encoder‑decoder architecture, self‑attention, multi‑head attention, and masking."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "1792bcb5-6118-4336-a307-cca040e0f89b",
+     "claim_prefix": "Transformers provide powerful sequence‑modeling capabilities through an encoder‑",
+     "quote_prefix": "We illustrate the principle of transformer with powerful sequence modeling capab",
+     "item_id": "0285064f11ded0cc",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's list of architectural components and mechanisms, which directly answers the aspect asking for an explanation of what transformers are and how they work."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What is Mamba and how does it relate to SSMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 3,
+   "partial": 3,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Mamba is a discrete version of a continuous state‑space system, making it an SSM.",
+   "Mamba adds a selective state‑space model with input‑dependent matrices, improving adaptability over prior SSMs.",
+   "Mamba adds a Selective State Space (S6) with dynamic time‑aware step size parameters that enable context‑aware propagation or forgetting, improving over earlier SSMs."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "1af14389-ac29-40c0-8be1-2a16d4ac288a",
+     "claim_prefix": "Mamba adds a Selective State Space (S6) with dynamic time‑aware step size parame",
+     "quote_prefix": "Mamba ... introduces Selective State Space for Sequences (S6) that incorporates ",
+     "item_id": "a8d4f94cc60d3463",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim that Mamba introduces S6 with dynamic time-aware mechanisms, and the claim effectively defines Mamba and its relationship to SSMs as requested by the aspect."
+    },
+    {
+     "source_id": "26f3a710-b8e6-416e-a608-54af21baea9d",
+     "claim_prefix": "Mamba is a discrete version of a continuous state‑space system, making it an SSM",
+     "quote_prefix": "The S4 and Mamba are the discrete versions of the continuous system.",
+     "item_id": "91ccb756632038b2",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines Mamba as a discrete version of a continuous system, which directly answers what Mamba is and confirms its relationship to SSMs."
+    },
+    {
+     "source_id": "5995b04b-a575-450a-a16c-d21dc19eb9dc",
+     "claim_prefix": "Mamba adds a selective state‑space model with input‑dependent matrices, improvin",
+     "quote_prefix": "Mamba introduces a selective SSM, incorporating input-dependent matrices to enha",
+     "item_id": "a6bce1041b38a3da",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim that Mamba is a selective SSM with input-dependent matrices, which directly answers the aspect by defining Mamba and explaining its relationship to SSMs."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "How are SSMs and transformers trained and evaluated?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 1,
+   "no": 5,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 4,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "SSMs provide clearer advantages for long‑context, streaming, and resource‑constrained scenarios compared to Transformers."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "790e8a80-770f-4fea-8673-d216ecda1ce1",
+     "claim_prefix": "SSMs provide clearer advantages for long‑context, streaming, and resource‑constr",
+     "quote_prefix": "Transformers are often preferred for intensive tasks, whereas SSMs offer clearer",
+     "item_id": "48099e05ba1825a9",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim's comparison of SSMs and Transformers regarding specific advantages, which fully addresses the aspect's request for a comparison of training efficiency and long-sequence performance."
+    }
+   ]
+  }
+ }
+]

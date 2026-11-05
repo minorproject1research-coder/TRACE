@@ -1,0 +1,247 @@
+[
+ {
+  "raw": "Impact of RAG on hallucination rates in LLMs",
+  "sq": "Limitations of RAG in reducing hallucinations",
+  "sim": 0.8531867265701294
+ },
+ {
+  "raw": "Impact of RAG on hallucination rates in LLMs",
+  "sq": "Effect of RAG on hallucination rates",
+  "sim": 0.9055808782577515
+ },
+ {
+  "raw": "Impact of RAG on hallucination rates in LLMs",
+  "sq": "What is RAG (retrieval-augmented generation)?",
+  "sim": 0.703374981880188
+ },
+ {
+  "raw": "Impact of RAG on hallucination rates in LLMs",
+  "sq": "What is hallucination in LLMs?",
+  "sim": 0.7714540958404541
+ },
+ {
+  "raw": "Impact of RAG on hallucination rates in LLMs",
+  "sq": "How does RAG affect hallucination rates in LLMs?",
+  "sim": 0.940699577331543
+ },
+ {
+  "raw": "How effective is speculative decoding at reducing LLM inference latency?",
+  "sq": "What is speculative decoding?",
+  "sim": 0.8149017095565796
+ },
+ {
+  "raw": "How effective is speculative decoding at reducing LLM inference latency?",
+  "sq": "What is LLM inference latency?",
+  "sim": 0.8115400075912476
+ },
+ {
+  "raw": "How effective is speculative decoding at reducing LLM inference latency?",
+  "sq": "How does speculative decoding affect LLM inference latency?",
+  "sim": 0.9780712127685547
+ },
+ {
+  "raw": "How effective is speculative decoding at reducing LLM inference latency?",
+  "sq": "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines?",
+  "sim": 0.9878346920013428
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What is retrieval-augmented generation (RAG)?",
+  "sim": 0.7800698280334473
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What are hallucinations in large language models (LLMs)?",
+  "sim": 0.834276020526886
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "How does RAG reduce hallucinations in LLMs?",
+  "sim": 0.6724318265914917
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What are large language models (LLMs)?",
+  "sim": 0.6689508557319641
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What are hallucinations in LLMs?",
+  "sim": 0.6468363404273987
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What are large language models and how do they generate text?",
+  "sim": 0.7332004308700562
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What are hallucinations in large language models and why do they occur?",
+  "sim": 0.8286994099617004
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "What is retrieval-augmented generation and how does it work?",
+  "sim": 0.8647209405899048
+ },
+ {
+  "raw": "What is retrieval-augmented generation and how does it reduce hallucinations in large language models?",
+  "sq": "How does retrieval-augmented generation reduce hallucinations in large language models?",
+  "sim": 0.9815734624862671
+ },
+ {
+  "raw": "How does LoRA fine-tuning compare with full fine-tuning in terms of performance and memory cost?",
+  "sq": "What is LoRA (Low-Rank Adaptation) fine-tuning?",
+  "sim": 0.8204618692398071
+ },
+ {
+  "raw": "How does LoRA fine-tuning compare with full fine-tuning in terms of performance and memory cost?",
+  "sq": "What is full fine-tuning?",
+  "sim": 0.7198362350463867
+ },
+ {
+  "raw": "How does LoRA fine-tuning compare with full fine-tuning in terms of performance and memory cost?",
+  "sq": "How do LoRA and full fine-tuning compare in terms of performance?",
+  "sim": 0.9622597694396973
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What are transformer models and how do they work?",
+  "sim": 0.7648677229881287
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What is a context window and why is it important for transformer models?",
+  "sim": 0.8816950917243958
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What are the challenges or problems that transformer models face with long context windows?",
+  "sim": 0.9548187255859375
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "How effective are these techniques in improving the performance and capabilities of transformer models with long context windows?",
+  "sim": 0.9188970327377319
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What are transformer models and how do they process input sequences?",
+  "sim": 0.7891191244125366
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What are long context windows and why are they useful or challenging for natural language tasks?",
+  "sim": 0.7952166795730591
+ },
+ {
+  "raw": "Why do transformer models struggle with long context windows and what techniques address this?",
+  "sq": "What are the techniques that address the challenge of long context windows for transformer models?",
+  "sim": 0.9685814380645752
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What are state space models and how do they work?",
+  "sim": 0.7359491586685181
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What are transformers and how do they work?",
+  "sim": 0.5903730392456055
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What is Mamba and how does it relate to state space models and transformers?",
+  "sim": 0.881034791469574
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What are the metrics and methods for measuring training efficiency and long-sequence performance?",
+  "sim": 0.7072840929031372
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sim": 0.9999999403953552
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How is training efficiency measured and compared for state space models, transformers, and Mamba?",
+  "sim": 0.9166319966316223
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How is long-sequence performance measured and compared for state space models, transformers, and Mamba?",
+  "sim": 0.9144952297210693
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How do state space models and transformers compare in training efficiency?",
+  "sim": 0.9185476303100586
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How are training efficiency and long-sequence performance measured and compared?",
+  "sim": 0.7251222133636475
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How do state space models and transformers compare in long-sequence performance?",
+  "sim": 0.9074665307998657
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What are state space models (SSMs) and how do they work?",
+  "sim": 0.6918540000915527
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "What is Mamba and how does it relate to SSMs?",
+  "sim": 0.5651558041572571
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How are SSMs and transformers trained and evaluated?",
+  "sim": 0.7235441207885742
+ },
+ {
+  "raw": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?",
+  "sq": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "sim": 0.7999337911605835
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "What is a large language model (LLM)?",
+  "sim": 0.7178441286087036
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "What is a mixture of experts (MoE) architecture?",
+  "sim": 0.7446809411048889
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "What is expert routing in MoE models?",
+  "sim": 0.8218685388565063
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "How does expert routing work in LLMs?",
+  "sim": 0.7909061312675476
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "What is a mixture of experts (MoE) model?",
+  "sim": 0.7820321917533875
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "How is MoE applied to LLMs?",
+  "sim": 0.5484739542007446
+ },
+ {
+  "raw": "What is mixture of experts in large language models and how does expert routing work?",
+  "sq": "How is expert routing implemented in LLMs?",
+  "sim": 0.7718406915664673
+ }
+]

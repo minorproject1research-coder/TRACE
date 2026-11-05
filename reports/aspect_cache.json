@@ -112,3 +112,15 @@
 {"key": "3c16d88ef0e8cea7", "aspects": ["What are the empirical results and findings from existing studies or papers that compare SSMs and transformers?"]}
 {"key": "027e679c183cf5f9", "aspects": ["What are the theoretical explanations or hypotheses for the observed differences or similarities between SSMs and transformers?"]}
 {"key": "1ae9454f4f16ef69", "aspects": ["open challenges or limitations for SSMs", "open challenges or limitations for transformers"]}
+{"key": "ea7e2b0f877bd90f", "aspects": ["How are LLMs trained?", "How are LLMs used?"]}
+{"key": "e48f9207b51f1958", "aspects": ["main challenges of LLMs", "main limitations of LLMs"]}
+{"key": "1d7aa1e875d73e4a", "aspects": ["How does a MoE model differ from a standard neural network model?"]}
+{"key": "a00dbab838d42c25", "aspects": ["advantages of using a MoE model", "disadvantages of using a MoE model"]}
+{"key": "c9282c8edd150226", "aspects": ["What are the benefits of using MoE in LLMs?"]}
+{"key": "dd0c1330e58cbd37", "aspects": ["What are the challenges of using MoE in LLMs?"]}
+{"key": "1990b3d0d1fd01f9", "aspects": ["How does expert routing work in MoE models?"]}
+{"key": "2318d229e0db1182", "aspects": ["different types of expert routing strategies in MoE models"]}
+{"key": "f0f77ace2037d64a", "aspects": ["How does expert routing affect the performance of MoE models?", "How does expert routing affect the efficiency of MoE models?"]}
+{"key": "db69651f14a1e106", "aspects": ["What are the existing methods for expert routing in LLMs?", "What are the existing architectures for expert routing in LLMs?"]}
+{"key": "9fcc6bea1bfdc652", "aspects": ["accuracy comparison of expert routing implementations in LLMs", "speed comparison of expert routing implementations in LLMs", "scalability comparison of expert routing implementations in LLMs"]}
+{"key": "75aacbaea0faaca0", "aspects": ["What are the open problems for expert routing in LLMs?", "What are the future directions for expert routing in LLMs?"]}

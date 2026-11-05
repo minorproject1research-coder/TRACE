@@ -1,0 +1,122 @@
+[
+ [
+  true,
+  "Mamba‑2‑Hybrid attains an MFU of 29.9%, only slightly below the 30.7% MFU of an equivalent Transformer, showing comparable training efficiency.",
+  "our Mamba-2-Hybrid achieves an MFU of 29.9% ... compared to the 30.7% MFU of a corresponding 8B parameter Transformer implemented in Megatron-LM",
+  "An Empirical Study of Mamba-based Language Models"
+ ],
+ [
+  true,
+  "Expert routing uses a sparse gating function that selects the top‑K experts for each input, limiting computation to those experts and enabling fast inference.",
+  "an MoE layer contains many experts ... with a gating (or routing) function that routes individual inputs to a few experts ... Through the sparse gating function, the router ... can route each input to the topK (K ≥ 2) best experts ... This routing scheme only costs the computation of K experts for a new input, which enjoys fast inference time.",
+  "Towards Understanding Mixture of Experts in Deep Learning"
+ ],
+ [
+  true,
+  "Standard transformers face limitations such as redundant multi‑head attention representations and high computational cost for long input sequences.",
+  "They show that increasing the number of transformer heads can lead to redundant representations (Voita et al., 2019a; Michel et al., 2019) and using fixed attention heads with predefined patterns ... improves performance.",
+  "DeLighT: Deep and Light-weight Transformer"
+ ],
+ [
+  true,
+  "A naive SSM matrix computation scales quadratically with sequence length, but can be faster than linear methods for short sequences due to constant‑factor and hardware advantages.",
+  "A naive computation of the matrix SSM representation ... will scale quadratically in sequence length. However, when the sequence length T is short, this can actually be more efficient than the linear algorithm due to constant factors and the hardware‑friendliness of the computation pattern.",
+  "Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality"
+ ],
+ [
+  true,
+  "Position Interpolation modifies the positional encoding to enable very long context windows with minimal fine‑tuning.",
+  "Position Interpolation can easily enable very long context windows (e.g. 32768), requiring only fine-tuning for 1000 steps on the Pile ... to achieve a good quality.",
+  "Aren't context lengths for transformers an artificial restriction?"
+ ],
+ [
+  true,
+  "Even though longer contexts lower perplexity, many alterations to that context provide no usable information, showing limited benefit from added tokens.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "Current post‑training weight pruning methods cannot be efficiently deployed on MoE LLMs without specialized hardware.",
+  "Existing posttraining weight pruning methods for LLMs ... do not support efficient deployment of MoE LLMs without specialized hardware implementations.",
+  "Not All Experts are Equal: Efficient Expert Pruning and Skipping for Mixture-of-Experts Large Language Models"
+ ],
+ [
+  true,
+  "SSMs avoid the quadratic cost of self‑attention, enabling more efficient training on long sequences compared to Transformers.",
+  "Self‑attention ... cost of maintaining all pairwise interactions increases rapidly with sequence length. SSMs ... enable efficient long‑sequence processing.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  true,
+  "Advanced LoRA variants often do not outperform vanilla LoRA, indicating limited benefit of added complexity.",
+  "all methods achieve accuracies within a narrow 0.84% range... highlighting the importance of verifying improvements across the entire rank spectrum.",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "Directly swapping Transformers for Mamba in dual‑path speech systems can eliminate Mamba’s low time‑complexity advantage.",
+  "In [20], each Mamba is directly employed as a substitute for a Transformer within a dual‑path framework for speech separation. ... these methods negate the low time complexity of Mamba.",
+  "Mamba in Speech: Towards an Alternative to Self-Attention"
+ ],
+ [
+  true,
+  "The Long-Range Arena benchmark provides empirical comparisons of ten efficient Transformer models on long‑context tasks.",
+  "We propose a new benchmark, Long-Range Arena (LRA), for the purpose of benchmarking sequence models under the long-context scenario... we also conduct extensive efficiency and memory usage analysis of these models.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Empirical results show long‑context tasks remain very challenging for transformers, forcing trade‑offs between accuracy and speed/memory.",
+  "The experimental results show that these tasks are very challenging even for long-range Transformer models. ... trade‑offs have to be made in terms of model quality and speed/memory.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "After training, the LoRA update can be merged into the original weights, so inference incurs no extra latency.",
+  "we can merge the learned ∆W with the pre‑trained weight W0 ... LoRA ... do not introduce any extra latency during the inference compared to the original model.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "The restricted sequence‑mixing form and fixed‑size memory of SSMs limit their expressive power compared with transformers.",
+  "The key limitation of SSMs is the restricted form that the sequence mixing can take ... and the compression of all information into a fixed size memory. This renders the expressive power of SSMs less than transformers in theory",
+  "Zamba: A Compact 7B SSM Hybrid Model"
+ ],
+ [
+  true,
+  "Techniques such as tree‑based drafting and block verification are proposed to further accelerate strict speculative decoding, implying reduced latency.",
+  "SpecInfer ... use tree‑based drafting to generate multiple drafts and increase acceptance.",
+  "A Practical Investigation of Training-free Relaxed Speculative Decoding"
+ ],
+ [
+  true,
+  "State-space models consist of a state model describing latent dynamics and an observation model linking data to those states.",
+  "State-­ space models (SSMs) ... separate these into (a) a state model ... and (b) an observation model that describes how observed data are stochastic functions of the true underlying state.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "Reducing self‑attention’s O(n²) cost to O(n) via local or sliding‑window patterns lowers time and memory usage.",
+  "The main consumption of time and memory comes from the self‑attention mechanism... decrease the O ( n 2 ) complexity to efficiently model longer texts.",
+  "A Survey on Long Text Modeling with Transformers"
+ ],
+ [
+  true,
+  "Early speculative decoding approaches (SpS) use a smaller draft model to speed up LLM inference.",
+  "SpS Chen et al. (2023a) ... utilizing a smaller LM from the same model series as the drafter to accelerate LLM inference.",
+  "Unlocking Efficiency in Large Language Model Inference:A Comprehensive Survey of Speculative Decoding"
+ ],
+ [
+  true,
+  "Mamba SSMs suffer from instability and gradient issues when scaled to large networks.",
+  "The current instantiation of Mamba has stability issues i.e. the training loss is not converging while scaling to large-sized networks ... leads to vanishing/exploding gradients commonly observed in Mamba.",
+  "SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time series"
+ ],
+ [
+  true,
+  "The autoregressive next‑token prediction mechanism has fundamental flaws, making hallucinations difficult to fully eliminate.",
+  "Their studies show that the method of predicting the next best token based on autoregressive assumption has serious flaws ... hallucinations may be a problem that cannot be entirely resolved in the field of large language models.",
+  "A review of methods for alleviating hallucination issues in large language models"
+ ]
+]

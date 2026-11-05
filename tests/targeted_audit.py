@@ -75,7 +75,7 @@ def main() -> int:
     load_dotenv()
     from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
     from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic
-    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode
+    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode, run_topic_aspect, with_topic_aspect
     from apps.api.services.db_service import supabase
     import audit_tag_precision as at
 
@@ -86,7 +86,8 @@ def main() -> int:
         digests = at.latest_generation(supabase.table("digests").select("*").eq("sub_question_id", sid).execute().data)
         cov = sorted(at.latest_generation(supabase.table("coverage_results").select("*").eq("sub_question_id", sid).execute().data),
                      key=lambda c: c["created_at"])[-1]
-        aspects, _ = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=run_merge_mode(cov))
+        aspects, a2d_ = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=run_merge_mode(cov))
+        aspects, _, _ = with_topic_aspect(aspects, a2d_, sq["detail_questions"], sq["main_topic"], enabled=run_topic_aspect(cov))
         at.check_split_matches_run(sid, aspects, digests)
         at.check_alignment(sid, aspects, cov, embedder)
         rows = build_rows(digests, sq, aspects, targets)

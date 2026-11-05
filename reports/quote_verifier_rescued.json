@@ -1,0 +1,1028 @@
+[
+ [
+  true,
+  "When context quality is poor, hallucinations act as indicators of low‑quality retrieval, prompting, or training rather than inherent model flaws.",
+  "…the “hallucinations” … become the flags of poor context quality (or prompt clarity failure), low quality of training/fine‑tuning or application workflow design not thought through enough.",
+  "Mitigating Hallucinations in RAG - a 2025 review - Community - OpenAI Developer Community"
+ ],
+ [
+  true,
+  "RAG can reduce hallucinations but does not eliminate them, so the hallucination problem remains significant.",
+  "However, even with RAG’s capabilities, the challenge of AI hallucinations remains a significant [...] we can flag sentences with consistently low BERT scores as potential hallucinations, because they demonstrate semantic inconsistency across multiple generations from the same model.",
+  "Detect hallucinations for RAG-based systems | Artificial Intelligence"
+ ],
+ [
+  true,
+  "Decentralized speculative decoding (DSD) cuts synchronization rounds, decreasing communication latency by roughly (N‑1) t per link.",
+  "DSD verifies k tokens jointly across distributed nodes, reducing synchronization from k rounds to a single round. ... this reduces communication latency by approximately ( N - 1) t",
+  "Speculative Decoding in Decentralized LLM Inference: Turning Communication Latency into Computation Throughput"
+ ],
+ [
+  true,
+  "Early speculative decoding approaches (SpS) use a smaller draft model to speed up LLM inference.",
+  "SpS Chen et al. (2023a) ... utilizing a smaller LM from the same model series as the drafter to accelerate LLM inference.",
+  "Unlocking Efficiency in Large Language Model Inference:A Comprehensive Survey of Speculative Decoding"
+ ],
+ [
+  true,
+  "Speculative decoding uses a fast draft model to predict several upcoming tokens and then verifies them with the target model in a single parallel pass.",
+  "Speculative decoding ... is a technique ... Instead of slow, autoregressive sampling from a desired 'target model,' it uses a fast 'draft model' to predict the next few tokens ... and then 'verifies' these tokens in one parallel forward pass of the target model.",
+  "Speculative Speculative Decoding"
+ ],
+ [
+  true,
+  "Some parallel speculative decoding methods only prepare for the verification outcome where all drafted tokens are accepted, a special case among many possible outcomes.",
+  "Parallel Speculative Decoding. AMUSD ... and PEARL ... propose speculating the next round during ongoing verification, but only prepare for the verification outcome in which all tokens are accepted, which is one special case of many possible outcomes.",
+  "Speculative Speculative Decoding"
+ ],
+ [
+  true,
+  "It builds on speculative execution and applies rejection‑sampling to speed up large‑language‑model decoding.",
+  "Speculative execution ... can expedite computation ... Recently, Chen et al. formalize this idea with rejection sampling based design for LLM Decoding and achieve multiple-time inference acceleration compared to vanilla autoregressive decoding.",
+  "A Theoretical Perspective for Speculative Decoding Algorithm"
+ ],
+ [
+  false,
+  "Latency improvements from speculative decoding depend on draft model efficiency, token acceptance rate, and average acceptance length.",
+  "The primary factors for the acceleration effect of SD are threefold: 1) the inference efficiency of the introduced draft model, 2) the acceptance rate of the drafted tokens, and 3) the average token acceptance length",
+  "Tutorial Proposal: Speculative Decoding for Efficient LLM Inference"
+ ],
+ [
+  true,
+  "Speculative decoding methods are divided into two draft‑model architectures: independent drafting with smaller models and self‑drafting that adds lightweight modules to the target LLM.",
+  "SD approaches can be categorized by draft model architectures into two main types: 1) independent drafting methods such as leveraging smaller LMs ... and 2) self-drafting approaches that integrate lightweight draft modules into the target LLM",
+  "Tutorial Proposal: Speculative Decoding for Efficient LLM Inference"
+ ],
+ [
+  true,
+  "Preemptive scheduling is proposed to reduce head‑of‑line blocking and thereby lower average latency.",
+  "preemptive scheduling can be employed... to prevent head-of-line blocking and optimize average latency.",
+  "Fast Distributed Inference Serving for Large Language Models"
+ ],
+ [
+  false,
+  "The latency gains of SD depend on the draft model’s efficiency, token acceptance rate, and average acceptance length.",
+  "The primary factors for the acceleration effect of SD are threefold: 1) the inference efficiency of the introduced draft model, 2) the acceptance rate of the drafted tokens, and 3) the average token acceptance length throughout the inference process.",
+  "Tutorial Proposal: Speculative Decoding for Efficient LLM Inference"
+ ],
+ [
+  false,
+  "Speculative decoding can dramatically reduce inference latency, achieving multiple‑fold speedups compared to standard autoregressive decoding.",
+  "PEARL further advances this through pre‑verify and post‑verify strategies with adaptive draft lengths, achieving 4.43× speedup over AR decoding and 1.50× over standard SD",
+  "Speculative Decoding and Beyond: An In-Depth Survey of Techniques"
+ ],
+ [
+  false,
+  "Latency improvements depend on draft model efficiency, token acceptance rate, and average acceptance length.",
+  "the primary factors for the acceleration effect of SD are threefold: 1) the inference efficiency of the introduced draft model, 2) the acceptance rate of the drafted tokens, and 3) the average token acceptance length throughout the inference process.",
+  "Tutorial Proposal: Speculative Decoding for Efficient LLM Inference"
+ ],
+ [
+  true,
+  "The authors evaluate speed‑up of speculative decoding by measuring accepted draft length and applying a latency model.",
+  "we ... use Eq. (4) ... to estimate speed-up over a broad range of settings.",
+  "A Practical Investigation of Training-free Relaxed Speculative Decoding"
+ ],
+ [
+  true,
+  "Techniques such as tree‑based drafting and block verification are proposed to further accelerate strict speculative decoding, implying reduced latency.",
+  "SpecInfer ... use tree‑based drafting to generate multiple drafts and increase acceptance.",
+  "A Practical Investigation of Training-free Relaxed Speculative Decoding"
+ ],
+ [
+  true,
+  "Speculative decoding uses a drafting model that predicts multiple future tokens (or activations) ahead of the main language model.",
+  "The EAGLE models innovate the drafting method by trying to autoregressively predict next tokens efficiently. Yet, rather than directly extrapolating tokens, EAGLE predicts activations before the final LM head... It is used autoregressively, to draft multiple tokens ahead.",
+  "Hybrid Speculative Decoding in RAG: When Do the Pros Outweigh the Cons?"
+ ],
+ [
+  true,
+  "LLM inference latency is measured using metrics such as time‑to‑first‑token (TTFT) and end‑to‑end request latency.",
+  "TTFT ... The time it takes to generate the first token in the output. ... End-to-End Latency ... measured from submission to completion and is a key responsiveness metric for an inference system.",
+  "A Survey on Inference Engines for Large Language Models: Perspectives on Optimization and Efficiency"
+ ],
+ [
+  true,
+  "The benefit of speculative decoding depends heavily on batch size, context length, and draft model, making it ineffective in some scenarios.",
+  "Batch size is the biggest variable... Understanding those variables is the difference between a meaningful latency reduction and wasted engineering effort.",
+  "Speculative decoding: how it works & when to use it"
+ ],
+ [
+  true,
+  "During inference LLMs can perform tasks in zero‑ or few‑shot mode without any gradient updates or fine‑tuning.",
+  "The largest model achieved remarkable results across diverse tasks ... without any gradient updates or fine‑tuning.",
+  "DEMYSTIFYING LARGE LANGUAGE MODELS: A TECHNICAL DEEP DIVE"
+ ],
+ [
+  true,
+  "Hallucinations arise from massive, noisy training data that contains fabricated, outdated, or biased information.",
+  "Massive training data ... makes it difficult to eliminate fabricated, outdated or biased information.",
+  "🧜Siren’s Song in the AI Ocean: A Survey on Hallucination in Large Language Models"
+ ],
+ [
+  true,
+  "The autoregressive next‑token prediction mechanism has fundamental flaws, making hallucinations difficult to fully eliminate.",
+  "Their studies show that the method of predicting the next best token based on autoregressive assumption has serious flaws ... hallucinations may be a problem that cannot be entirely resolved in the field of large language models.",
+  "A review of methods for alleviating hallucination issues in large language models"
+ ],
+ [
+  true,
+  "Benchmarks such as AMBER and the HuggingFace Hallucination Leaderboard are used to assess hallucinations in large language models.",
+  "Newer benchmarks e.g., AMBER (Wang et al., [2023c. ... The hallucinations leaderboard—An open effort to measure hallucinations in large language models.",
+  "Hallucinations in generative artificial intelligence and large language models: tests, datasets, detection and correction methods | Language Resources and Evaluation | Springer Nature Link"
+ ],
+ [
+  true,
+  "The approach consists of three key components: retrieval sources, relevance metrics, and integration methods that combine retrieved examples with the generator.",
+  "In general, the retrieval memory can be retrieved from three kinds of sources... Metrics that evaluate the relevance between text are varied... Finally, how to integrate the retrieval memory to the generation model is also significant.",
+  "A Survey on Retrieval-Augmented Text Generation"
+ ],
+ [
+  true,
+  "Retrieval‑augmented generation aims to produce answers by conditioning on documents retrieved from a large corpus.",
+  "the goal of retrieval augmented LMs is to generate the answer y ... leveraging information retrieved from the corpus.",
+  "Active Retrieval Augmented Generation"
+ ],
+ [
+  true,
+  "The process interleaves retrieval and generation: a query is formed from the input and prior output, documents are retrieved, and the model generates until the next retrieval trigger.",
+  "at step t ... the retrieval query q_t is formulated based on both the user input x and previously generated output ... Given retrieved documents D_qt, LMs continually generate the answer until the next retrieval is triggered",
+  "Active Retrieval Augmented Generation"
+ ],
+ [
+  true,
+  "Retrieval‑augmented generation (RAG) has been shown to mitigate hallucinations in large language models.",
+  "The introduction of the Retrieval Augmented Generation (RAG) method ... has also shown effectiveness in mitigating hallucinations (Shuster et al., 2021).",
+  "RAG-HAT: A Hallucination-Aware Tuning Pipeline for LLM in Retrieval-Augmented Generation"
+ ],
+ [
+  true,
+  "RAG grounds LLM outputs in external documents, which reduces hallucinations and improves factual consistency.",
+  "Retrieval-Augmented Generation (RAG) is a hybrid approach that incorporates external document retrieval into the generation process, aiming to ground responses in factual information... RAG offers a mechanism to reduce hallucinations and enhance factual consistency.",
+  "Retrieval-Augmented Generation and Hallucination in Large Language Models: A Scholarly Overview"
+ ],
+ [
+  false,
+  "LoRA updates a pretrained weight matrix by adding a low‑rank product BA, where A and B are small matrices and the rank r is much smaller than the original dimensions.",
+  "LoRA models the weight update ∆W ∈ R^{d×k} utilizing a low‑rank decomposition, expressed as BA, where B ∈ R^{d×r} and A ∈ R^{r×k} represent two low‑rank matrices, with r ≪ min(d, k).",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "After training, the LoRA update can be merged into the original weights, so inference incurs no extra latency.",
+  "we can merge the learned ∆W with the pre‑trained weight W0 ... LoRA ... do not introduce any extra latency during the inference compared to the original model.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "Advanced LoRA variants often do not outperform vanilla LoRA, indicating limited benefit of added complexity.",
+  "all methods achieve accuracies within a narrow 0.84% range... highlighting the importance of verifying improvements across the entire rank spectrum.",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "Full fine‑tuning requires updating all model parameters, making it less parameter‑efficient compared to approaches that only fine‑tune a subset of parameters.",
+  "Full fine-tuning updates all parameters of the model, ensuring comprehensive adaptation to the new task. Alternatively, Half fine-tuning (HFT) … can be employed to partially fine-tune the model.",
+  "The Ultimate Guide to Fine-Tuning LLMs from Basics to Breakthroughs: An Exhaustive Review of Technologies, Research, Best Practices, Applied Research Challenges and Opportunities (Version 1.0)"
+ ],
+ [
+  true,
+  "LoRA can be aligned with full fine‑tuning dynamics, yielding further performance gains.",
+  "LoFT reported a further 40.0% improvement over DoRA ... by aligning LoRA's optimizer dynamics with those of full FT.",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "After attention, each token’s features are refined by a shared multi‑layer perceptron applied position‑wise.",
+  "To do this, we simply apply a multi-layer perceptron (MLP) to the vector of features at each location n in the sequence, ... Notice that the parameters of the MLP, θ , are the same for each location n .",
+  "An Introduction to Transformers"
+ ],
+ [
+  false,
+  "A context window is defined by the number of lines before and after a target location, expressed as pre‑context and post‑context lines.",
+  "x / y denotes x lines of pre-context and y lines of post-context.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Sparse and kernel‑based attention variants reduce quadratic cost but sacrifice accuracy and training stability compared to full Softmax attention.",
+  "Sparse attention mechanisms selectively limit which tokens should participate in self-attention, reducing the complexity from quadratic to linear ... However, kernel-based methods fall short of Softmax attention both in terms of accuracy and training stability",
+  "ETT: Expanding the Long Context Understanding Capability of LLMs at Test-Time"
+ ],
+ [
+  true,
+  "State‑space alternatives achieve linear complexity but have limited expressiveness, leading to lower accuracy on long‑context evaluations.",
+  "these models often suffer from limited expressiveness ... which constrains their ability to capture complex dependencies and ultimately leads to lower accuracy compared to Transformers in long-context evaluation",
+  "ETT: Expanding the Long Context Understanding Capability of LLMs at Test-Time"
+ ],
+ [
+  true,
+  "The Long‑Range Arena benchmark supplies empirical comparisons of efficient transformer techniques on long‑context tasks.",
+  "We propose a new benchmark, Long-Range Arena (LRA), for the purpose of benchmarking sequence models under the long-context scenario... provide relative comparisons for ten recently proposed efficient Transformer models.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Extending context from 256 to 768 tokens yields a modest 4% perplexity reduction, showing measurable but limited gains.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "Many alterations to long‑range context (e.g., shuffling, deleting function words) have little impact on model performance, indicating that not all contextual information is useful.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "A transformer consists of M stacked layers that map the input token matrix to an output matrix of the same dimensions.",
+  "The transformer will ingest the input data X and return a representation of the sequence in terms of another matrix X^M which is also of size D × N. ... Here M denotes the number of layers in the transformer.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "Transformers are slower to train, can become unstable, and attention masking can reduce representational power, highlighting key limitations.",
+  "They are often slow to train compared to other architectures and typically get more unstable as training progresses. ... This restriction to the attention will cause a loss of representational power.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "Context windows are measured by the number of tokens (or lines) they contain, limited by the model’s maximum input length (e.g., 1024 tokens).",
+  "Since our model's input window is limited to a 1024 tokens... median token count of 592 and an upper quartile of 699 at 56 lines of context we are well within this limit.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Empirical results show long‑context tasks remain very challenging for transformers, forcing trade‑offs between accuracy and speed/memory.",
+  "The experimental results show that these tasks are very challenging even for long-range Transformer models. ... trade‑offs have to be made in terms of model quality and speed/memory.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  false,
+  "Pretraining the models is computationally costly, limiting the practicality of long‑context techniques.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Extending the transformer’s context from 256 to 768 tokens improves predictive performance, lowering perplexity by about 4%.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "After attention, each token’s features are refined by a shared MLP applied position‑wise.",
+  "To do this, we simply apply a multi-layer perceptron (MLP) to the vector of features at each location n in the sequence, ... the parameters of the MLP, θ, are the same for each location n.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "Model performance changes with input length, and architectures like Sparse (BigBird) and memory‑based (Transformer‑XL) maintain strong performance on much longer sequences, showing the context window size directly impacts performance.",
+  "We plot model performance vs. input length ... Models trained on 4K inputs are evaluated on longer sequences.",
+  "Long-Context Efficient Transformers: A Comprehensive Survey of Techniques, Applications, and Future Directions"
+ ],
+ [
+  true,
+  "Reducing self‑attention’s O(n²) cost to O(n) via local or sliding‑window patterns lowers time and memory usage.",
+  "The main consumption of time and memory comes from the self‑attention mechanism... decrease the O ( n 2 ) complexity to efficiently model longer texts.",
+  "A Survey on Long Text Modeling with Transformers"
+ ],
+ [
+  true,
+  "Even state‑of‑the‑art LLMs with 2k–4k token windows still encounter texts that exceed their maximum context length.",
+  "the maximum lengths of the context window in LLMs greatly exceed those in traditional PLMs, ( e.g., 2048 tokens in GPT‑3 ...), however there still exist texts exceeding the maximum length",
+  "A Survey on Long Text Modeling with Transformers"
+ ],
+ [
+  true,
+  "Some methods redesign self‑attention to reduce complexity, limit attention distance, and add global tokens to keep long‑range dependencies.",
+  "Some approaches redesign the self-attention mechanism to reduce computational complexity while minimizing input coverage loss. ... limit attention distance and employ techniques such as global representations to preserve long-range dependencies.",
+  "Scaling Transformer to 1M tokens and beyond with RMT"
+ ],
+ [
+  true,
+  "Extending context from 256 to 768 tokens yields only a modest ~4% perplexity reduction, showing limited gains from longer windows.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  false,
+  "Pretraining large transformer models remains computationally expensive, limiting the practicality of many long‑context techniques.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Fastformer is applicable to long‑document NLP tasks such as classification and summarization and to future use cases like e‑commerce recommendation and ad CTR prediction.",
+  "we plan to pre‑train Fastformer‑based language models to better empower NLP tasks with long document modeling... apply Fastformer to other scenarios such as e‑commerce recommendation and Ads CTR prediction to improve user modeling based on long user behavior sequences.",
+  "Fastformer: Additive Attention Can Be All You Need"
+ ],
+ [
+  true,
+  "Extending context from 256 to 768 tokens reduces perplexity by about 4%, showing a clear performance gain.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "Context window size is the most important factor for model accuracy, dramatically affecting performance.",
+  "Context window size is the most important factor for determining model accuracy. ... can vary a model's performance from near 100% accuracy to near 0% accuracy.",
+  "Context Is What You Need: The Maximum Effective Context Window for Real World Limits of LLMs"
+ ],
+ [
+  true,
+  "Even though longer contexts lower perplexity, many alterations to that context provide no usable information, showing limited benefit from added tokens.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "Position Interpolation modifies the positional encoding to enable very long context windows with minimal fine‑tuning.",
+  "Position Interpolation can easily enable very long context windows (e.g. 32768), requiring only fine-tuning for 1000 steps on the Pile ... to achieve a good quality.",
+  "Aren't context lengths for transformers an artificial restriction?"
+ ],
+ [
+  false,
+  "Pretraining is computationally expensive, limiting the accessibility of efficient Transformer research.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Extending the context from 256 to 768 tokens reduces perplexity by roughly 4%, showing that longer contexts improve transformer performance.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  true,
+  "Transformers require input data to be tokenized into a D × N matrix of vector tokens.",
+  "In order to apply a transformer, data must be converted into a set or sequence of N tokens x (0) n of dimension D ... The tokens can be collected into a matrix X (0) which is D × N.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "Each transformer block contains a position‑wise MLP applied identically to every token’s features.",
+  "we simply apply a multi-layer perceptron (MLP) to the vector of features at each location n in the sequence ... the parameters of the MLP, θ , are the same for each location n.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "A context window is defined as a fixed number of lines of code before and after a target location.",
+  "For each context size of 1 to 28 lines of code (on both sides) and each of the three datasets ... we fine‑tune and evaluate a CodeT5 Transformer",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Tasks such as in‑context learning with many examples and LLM agents need larger context windows.",
+  "This poses challenges in important scenarios like in-context learning with numerous examples ... and LLM agents",
+  "LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens"
+ ],
+ [
+  true,
+  "Sparse‑attention reduces complexity but depends on predefined patterns, limiting its ability to capture arbitrary long‑range dependencies.",
+  "Sparse attention mechanisms selectively limit which tokens should participate in self-attention, reducing the complexity from quadratic to linear or sub-quadratic levels... they rely on predefined attention patterns",
+  "ETT: Expanding the Long Context Understanding Capability of LLMs at Test-Time"
+ ],
+ [
+  true,
+  "State‑space alternatives have limited expressiveness, leading to lower accuracy on long‑context tasks.",
+  "these models often suffer from limited expressiveness ... which constrains their ability to capture complex dependencies and ultimately leads to lower accuracy compared to Transformers in long-context evaluation",
+  "ETT: Expanding the Long Context Understanding Capability of LLMs at Test-Time"
+ ],
+ [
+  false,
+  "Pretraining efficient transformer models is computationally expensive, limiting accessibility of research on long‑context techniques.",
+  "Pretraining itself is a computationally expensive endeavour and de‑coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "RAG consists of four core components: pre-retrieval, retrieval, post-retrieval, and generation.",
+  "The efficacy of basic RAG systems ... depends on the seamless operation of four core components: pre-retrieval, retrieval, post-retrieval, and generation.",
+  "XRAG: Examining the Core - Benchmarking Foundational Components in Advanced Retrieval-Augmented Generation"
+ ],
+ [
+  true,
+  "In RAG settings, hallucinations are statements not present in the reference, even if they could be true, and LLMs are instructed not to generate such unsupported factual content.",
+  "we have labeled information that is not mentioned in the reference but may be truthful as hallucinations... RAG applications usually instruct LLMs not to generate factual content without the support of references.",
+  "RAGTruth: A Hallucination Corpus for Developing Trustworthy Retrieval-Augmented Language Models"
+ ],
+ [
+  true,
+  "Hallucinations are categorized as baseless or conflicting with the context, with baseless hallucinations being more common and severe types like Evident baseless info and Evident conflict accounting for a large share.",
+  "generation of information baseless in the context was significantly more prevalent than the generation of information conflicting with the context... more severe hallucinations, namely Evident baseless info and Evident conflict, respectively, account for a significant portion.",
+  "RAGTruth: A Hallucination Corpus for Developing Trustworthy Retrieval-Augmented Language Models"
+ ],
+ [
+  true,
+  "LoRA approximates full fine‑tuning but its limited number of trainable parameters can cause an accuracy gap.",
+  "LoRA can be considered a general approximation of full fine‑tuning... many previous studies have attributed the discrepancy in accuracy between LoRA and FT primarily to the limited number of trainable parameters.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "LoRA reduces GPU memory use and achieves performance comparable to or better than full fine‑tuning.",
+  "Parameter-efficient finetuning methods reduce the memory footprint... LoRA is widely adopted for finetuning LLMs under hardware constraints... reported that LoRA performs better or equivalent to full finetuning.",
+  "LoRA Learns Less and Forgets Less"
+ ],
+ [
+  true,
+  "Full fine‑tuning’s memory cost is defined by the need to compute and store gradients for every trainable weight.",
+  "full fine-tuning (FFT) ... incurs substantial memory and computational costs, as gradients must be computed and stored for every trainable weight",
+  "LoRA vs. Full Fine-Tuning: A Theoretical Perspective"
+ ],
+ [
+  true,
+  "Memory cost is defined as peak active memory (GB) and measured during training; LoRA reduces peak memory by about 40 % for small batches.",
+  "We measured both the throughput (in tokens per second) and peak active memory (in GB) for training runs ... LoRA provides a substantial reduction in peak memory (∼ 40%).",
+  "LoRA Learns Less and Forgets Less"
+ ],
+ [
+  true,
+  "LoRA and full fine-tuning differ in memory requirements, with LoRA having distinct memory cost characteristics.",
+  "We extend the findings of Biderman et al. (2024) to the case when there is equal fine-tuning performance between LoRA and full fine-tuning, showing that ... memory requirements relative to full fine-tuning.",
+  "LoRA vs Full Fine-tuning: An Illusion of Equivalence"
+ ],
+ [
+  true,
+  "Improper learning rates can give a false sense of LoRA improvements, while vanilla LoRA often matches or outperforms variants.",
+  "improper learning rates give a false sense of LoRA advancements . ... vanilla LoRA frequently matching or even outperforming them.",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "Randomly initialized heads cause large alignment error, leading fine‑tuning to distort features and raise OOD error.",
+  "under random or zero initialization, ϕ2 is usually large and ... the features get distorted in a manner that increases the OOD error.",
+  "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution"
+ ],
+ [
+  true,
+  "When the rank of the LoRA adapter matches the true adaptation rank, LoRA achieves better performance than full fine‑tuning in low‑noise, overdetermined settings.",
+  "In the overdetermined regime, LoRA with rank matching the true rank achieves the best performance: ... followed by LoRA with r = 8 , and then FFT.",
+  "LoRA vs. Full Fine-Tuning: A Theoretical Perspective"
+ ],
+ [
+  true,
+  "Performance is measured using accuracy on benchmark tasks such as GSM8K, math, code, and commonsense reasoning.",
+  "presented around a 10% accuracy improvement on GSM8K ... LoFT reported a further 40.0% improvement over DoRA in the same evaluation setting by aligning LoRA's optimizer dynamics with those of full FT.",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "LoRA matches full fine‑tuning in accuracy while forgetting less over longer training.",
+  "LoRA also forgets less. ... the solid slateblue line shows that LoRA (r=256) learns as much as full finetuning, weight decay, and attention dropout, while forgetting much less.",
+  "LoRA Learns Less and Forgets Less"
+ ],
+ [
+  true,
+  "Batch size, intermediate activation size, and LoRA rank are key factors influencing peak memory usage.",
+  "For peak memory, we notice that for small batch sizes, LoRA provides a substantial reduction ... as batch size increases, the size of intermediate activations increases proportionally, dominating the required memory.",
+  "LoRA Learns Less and Forgets Less"
+ ],
+ [
+  true,
+  "LoRA can approximate full fine‑tuning, but its limited number of trainable parameters may lead to a lower accuracy compared with full fine‑tuning.",
+  "LoRA can be considered a general approximation of full fine‑tuning. ... many previous studies have attributed the discrepancy in accuracy between LoRA and FT primarily to the limited number of trainable parameters.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "The MT‑Bench benchmark, scored by GPT‑4 on a 0‑10 scale, is used to evaluate fine‑tuned models.",
+  "The performance of the fine‑tuned models is then evaluated on the MT‑Bench benchmark (Zheng et al., 2023) ... evaluated by GPT‑4, which reviews each answer and assigns a numerical score out of 10.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "Performance is measured by accuracy on seven vision‑language benchmarks such as VQA v2, GQA, and MMBench.",
+  "Table 12 presents the evaluation result ... on an array of seven different vision‑language benchmarks.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "In these experiments a context window is defined by the number of lines of code on each side of the target location.",
+  "For each context size of 1 to 28 lines of code (on both sides) ... we fine-tune and evaluate a CodeT5 Transformer.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Ensembling models trained with different context‑window positions provides a noticeable boost in performance.",
+  "When taking the five highest ranking unique (that is filtering out duplicates) predictions from the six models trained on different window positions ... we observe a significant boost in performance.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Long‑range benchmark results show tasks remain difficult, requiring trade‑offs between model quality and speed/memory.",
+  "The experimental results show that these tasks are very challenging even for long‑range Transformer models. ... trade‑offs have to be made in terms of model quality and speed/memory.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "Efficient transformer implementations often rely on specialized CUDA kernels, complicating computational efficiency across hardware platforms.",
+  "On CUDA kernels ... making it difficult to implement or use on TPU pods. ... Sparse Transformer and Longformer are implemented with equivalent implementations to emulate for performance.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  false,
+  "Pretraining efficient Transformers is computationally expensive, limiting their practicality.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "The Long-Range Arena benchmark provides empirical comparisons of ten efficient Transformer models on long‑context tasks.",
+  "We propose a new benchmark, Long-Range Arena (LRA), for the purpose of benchmarking sequence models under the long-context scenario... we also conduct extensive efficiency and memory usage analysis of these models.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "FLASH‑Quad consistently halves training latency and yields the lowest perplexity across context lengths up to 8192 tokens.",
+  "FLASH-Quad is 2 × as fast as Transformer++ when the context length increases to 8192... for all sequence lengths ranging from 512 to 8192, our models always achieve the best quality (i.e., lowest perplexity) under the same computational resource.",
+  "Transformer Quality in Linear Time"
+ ],
+ [
+  false,
+  "Full fine‑tuning adapts a pre‑trained model A₀ by learning the full weight difference Δ* that maps A₀ to the target task.",
+  "Given an initial (pre-trained) model A0 ∈ R^{dy×dx}, we define the ground‑truth adaptation as where Δ* ∈ R^{dy×dx} captures the difference between the given pre‑trained model A0 and the underlying ground‑truth map A*.",
+  "LoRA vs. Full Fine-Tuning: A Theoretical Perspective"
+ ],
+ [
+  true,
+  "Full fine‑tuning enables models to align with human intents.",
+  "fine‑tuning ... enable them to align with human intents.",
+  "LoRA-FA: Efficient and Effective Low Rank Representation Fine-tuning"
+ ],
+ [
+  true,
+  "Performance is measured using the MT‑Bench benchmark, where GPT‑4 assigns a numerical score out of 10 to model responses.",
+  "The performance of the fine‑tuned models is then evaluated on the MT‑Bench benchmark ... and assigns a numerical score out of 10.",
+  "DoRA: Weight-Decomposed Low-Rank Adaptation"
+ ],
+ [
+  true,
+  "Accuracy on benchmarks such as GSM8K, commonsense reasoning, math, and code is used to evaluate LoRA performance.",
+  "presented around a 10% accuracy improvement on GSM8K ... DoRA reported substantial gains of 37.2% on commonsense reasoning tasks ... LoFT reported a further 40.0% improvement over DoRA ...",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  false,
+  "A context window can be described by the number of pre‑context and post‑context lines it contains.",
+  "x / y denotes x lines of pre-context and y lines of post-context.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Code repair (bug fixing) is a task that benefits from larger context windows to provide sufficient surrounding code.",
+  "We fine-tune the 60M pre-trained CodeT5 model on the configurations... We then generate five fix candidates for each bug in the corresponding test set.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Existing transformer variants are empirically limited to under 33 k tokens, demonstrating difficulty handling longer contexts.",
+  "The longest Longformer, Big Bird, and Long T5 ... have a maximum length of less than 33,000 tokens.",
+  "Scaling Transformer to 1M tokens and beyond with RMT"
+ ],
+ [
+  true,
+  "Extending context from 256 to 768 tokens lowers perplexity by about 4%, yet many disruptive changes to that context remove virtually no usable information.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  false,
+  "Pretraining large Transformers remains computationally expensive, limiting accessibility of long‑range research.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  false,
+  "On the long‑document PG‑19 benchmark, FLASH reaches Transformer+ perplexity in half the steps, giving >5× speedup and showing advantage for book‑length tasks.",
+  "With a context length of 8K, FLASH-Quad and FLASH are able to reach the final perplexity (at 125K-step) of Transformer+ in only 55K steps, yielding 5.23 × and 12.12 × of speedup, respectively.",
+  "Transformer Quality in Linear Time"
+ ],
+ [
+  true,
+  "LLMs are categorized as encoder‑only, decoder‑only, or encoder‑decoder architectures.",
+  "Auto-encoding : Primarily encoder-based... Auto-regressive : Decoder-centric... Encoder-Decoder : Amalgamating both encoder and decoder structures.",
+  "Survey of Different Large Language Model Architectures: Trends, Benchmarks, and Challenges"
+ ],
+ [
+  true,
+  "A RAG pipeline combines a differentiable dense-vector retriever with an autoregressive generator such as BART or T5.",
+  "Retrieval-Augmented Generation (RAG) systems ... incorporate external retrieval as a primary inductive bias. Canonical RAG pipelines establish a closely integrated interaction between a differentiable retriever ... and an autoregressive generator, such as BART or T5.",
+  "Engineering the RAG Stack: A Comprehensive Review of the Architecture and Trust Frameworks for Retrieval-Augmented Generation Systems"
+ ],
+ [
+  true,
+  "Retrieval-augmented generation can suffer from knowledge-query misalignment, but a human-in-the-loop framework like MixAlign aligns queries with retrieved knowledge, reducing hallucinations and enhancing the quality of the generated output.",
+  "a phenomenon that is particularly prevalent in the context of retrieval-augmented generation (RAG). To address this issue, they introduce MixAlign... reduces hallucinations but also enhances the quality of the generated content.",
+  "🧜Siren’s Song in the AI Ocean: A Survey on Hallucination in Large Language Models"
+ ],
+ [
+  true,
+  "RAG grounds LLM responses in external documents, which reduces hallucinations and improves factual consistency.",
+  "Retrieval-Augmented Generation (RAG) is a hybrid approach that incorporates external document retrieval into the generation process, aiming to ground responses in factual information ... offers a mechanism to reduce hallucinations and enhance factual consistency.",
+  "Retrieval-Augmented Generation and Hallucination in Large Language Models: A Scholarly Overview"
+ ],
+ [
+  true,
+  "LoRA fine‑tuning works by adding a trainable low‑rank adapter matrix to frozen pretrained weights, reducing the number of parameters that need to be updated.",
+  "In LoRA finetuning, only a low rank matrix, called an adapter, that is added to the pretrained weights is trainable. ... this effectively reduces the number of trainable parameters in the fine‑tuning process, significantly decreasing the training cost.",
+  "LoRA+: Efficient Low Rank Adaptation of Large Models"
+ ],
+ [
+  true,
+  "The main components of LoRA are the low‑rank adapter matrices together with the rank and learning‑rate hyperparameters that control their size and training.",
+  "In LoRA finetuning, only a low rank matrix, called an adapter, that is added to the pretrained weights is trainable... Efficient use of LoRA requires a careful choice of hyperparameters: the rank and the learning rate.",
+  "LoRA+: Efficient Low Rank Adaptation of Large Models"
+ ],
+ [
+  true,
+  "LoRA fine‑tuning can be less effective than full fine‑tuning on certain tasks, showing underperformance on coding and math benchmarks.",
+  "LoRA often underperforms FFT on tasks such as coding, math, and [...] show that even one update can align LoRA with some singular subspaces of the corresponding full fine-tuning solution.",
+  "LoRA vs. Full Fine-Tuning: A Theoretical Perspective"
+ ],
+ [
+  true,
+  "A wide range of architectural and training tricks have been created to improve transformer performance, highlighting their practical advantages.",
+  "a variety of 'tricks' have been developed over the years to improve the performance of deep neural networks in general and transformers in particular: Data preprocessing..., Architecture..., Training..., Regularization..., Inference...",
+  "Formal Algorithms for Transformers"
+ ],
+ [
+  true,
+  "Transformers first convert data into a token matrix X of size D × N, where each token is represented by a vector.",
+  "In order to apply a transformer, data must be converted into a set or sequence of N tokens ... The tokens can be collected into a matrix X which is D × N.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "When inputs exceed the context window, positional encodings become out‑of‑distribution, leading to a sharp increase in perplexity and degraded performance.",
+  "Beyond the context window, the positional encodings at larger position indices are out-of-distribution (OOD)... there would often be a significant degradation in model performances, as evidenced by a surge in perplexity (PPL) score.",
+  "Exploring Context Window of Large Language Models via Decomposed Positional Vectors"
+ ],
+ [
+  false,
+  "A context window is composed of a specified number of pre‑context lines before and post‑context lines after the target location.",
+  "x / y denotes x lines of pre‑context and y lines of post‑context.",
+  "Out of Context: How Important is Local Context in Neural Program Repair?"
+ ],
+ [
+  true,
+  "Extending context from 256 to 768 tokens lowers perplexity by ~4%, yet many aggressive context alterations remove virtually no usable information, showing limited benefit from raw length.",
+  "While increasing context length from 256 to 768 tokens is beneficial (decreasing perplexity by roughly 4%), many destructive transformations of this context ... remove essentially no usable information.",
+  "What Context Features Can Transformer Language Models Use?"
+ ],
+ [
+  false,
+  "Pretraining is computationally expensive, so decoupling inductive‑bias research from pretraining is needed to make long‑context techniques more accessible.",
+  "Pretraining itself is a computationally expensive endeavour and de-coupling inductive bias research from pretraining would make xformer research more accessible.",
+  "Long Range Arena: A Benchmark for Efficient Transformers"
+ ],
+ [
+  true,
+  "FLASH achieves faster training and lower perplexity than strong baselines across long context lengths, demonstrating superior performance.",
+  "FLASH-Quad is 2 × as fast as Transformer++ when the context length increases to 8192. ... our models always achieve the best quality (i.e., lowest perplexity) under the same computational resource.",
+  "Transformer Quality in Linear Time"
+ ],
+ [
+  true,
+  "Deploying large language models introduces technical debt, testing difficulties, and maintenance issues such as data drift.",
+  "As models grow in size and capability, managing system complexity becomes increasingly challenging... significant challenges in maintaining model performance over time, particularly in handling data drift...",
+  "DEMYSTIFYING LARGE LANGUAGE MODELS: A TECHNICAL DEEP DIVE"
+ ],
+ [
+  true,
+  "Retrieval‑augmented generation has been shown to mitigate hallucinations in large language models.",
+  "The introduction of the Retrieval Augmented Generation (RAG) method ... has also shown effectiveness in mitigating hallucinations (Shuster et al., 2021).",
+  "RAG-HAT: A Hallucination-Aware Tuning Pipeline for LLM in Retrieval-Augmented Generation"
+ ],
+ [
+  true,
+  "Studies measure LoRA performance using accuracy on benchmark tasks such as GSM8K and commonsense reasoning datasets.",
+  "presented around a 10% accuracy improvement on GSM8K ... DoRA ... 37.2% on commonsense reasoning tasks",
+  "Learning Rate Matters: Vanilla LoRA May Suffice for LLM Fine-tuning"
+ ],
+ [
+  true,
+  "Low‑rank LoRA underperforms full finetuning, but higher ranks with proper hyperparameters can surpass it.",
+  "QLoRA did not perform as well as full finetuning ... LoRA at rank r = 8 performed worse than full finetuning on 8 datasets ... with higher ranks and proper hyperparameter choices, LoRA can perform much better.",
+  "LoRA Learns Less and Forgets Less"
+ ],
+ [
+  true,
+  "State-space models consist of a state model describing latent dynamics and an observation model linking data to those states.",
+  "State-­ space models (SSMs) ... separate these into (a) a state model ... and (b) an observation model that describes how observed data are stochastic functions of the true underlying state.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "Their flexible and intuitive structure with multiple component processes makes SSMs advantageous for ecological time‑series modeling.",
+  "State-­ space models ... due to their flexible and intuitive structure that includes multiple component processes.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "Complex, realistic SSMs can produce intractable likelihoods, requiring sophisticated fitting algorithms and creating trade‑offs between accuracy and efficiency.",
+  "more biologically realistic models ... lead to a more complex and analytically intractable likelihood expression that require more sophisticated model-­ fitting algorithms, often with trade-­ offs between accuracy and efficiency.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "The primary components of a state‑space model are the state matrix A, input matrix B, output matrix C, and feed‑through matrix D.",
+  "is the matrix (n×n) of the system or state matrix, ... is the input matrix (n×m) of the system, ... is the weight matrix (r×n) of the system, ... is the weight matrix (r×m) of the input.",
+  "State Space Representation of Dynamical Systems"
+ ],
+ [
+  true,
+  "Mamba is a linear‑time sequence model that matches transformer quality while generating up to five times faster than similarly sized transformers.",
+  "Mamba is the first linear-time sequence model that truly achieves Transformer-quality performance ... Mamba has 5 × generation throughput compared to Transformers of similar size.",
+  "Mamba: Linear-Time Sequence Modeling with Selective State Spaces"
+ ],
+ [
+  true,
+  "Mamba’s efficient SSM scan makes inference 4–5× faster than transformers because it avoids the KV cache and can use larger batch sizes.",
+  "Our efficient SSM scan is faster than the best attention implementation ... Mamba achieves 4-5 × higher inference throughput than a Transformer of similar size, since without the KV cache it can use much higher batch sizes.",
+  "Mamba: Linear-Time Sequence Modeling with Selective State Spaces"
+ ],
+ [
+  true,
+  "Long‑sequence performance is measured using the Long Range Arena (LRA) benchmark, reporting an average score across six tasks with lengths up to 16 000.",
+  "The long range arena (LRA) benchmark ... suite of six sequence modeling tasks, with sequence lengths from 1,024 to over 16,000 ... S5 achieves the highest average score among methods.",
+  "Simplified State Space Layers for Sequence Modeling"
+ ],
+ [
+  true,
+  "Accuracy on the 35‑way Speech Commands task (16 k timesteps) serves as a performance metric for very long audio sequences.",
+  "Test accuracy on 35-way Speech Commands classification task ... 16kHz (16,000).",
+  "Simplified State Space Layers for Sequence Modeling"
+ ],
+ [
+  true,
+  "SSMs like Mamba process long sequences efficiently but may hit an information bottleneck, whereas Transformers keep exact token interactions at higher cost.",
+  "SSMs preserve long-range information by repeatedly updating a latent state... the finite‑dimensional state may become an information bottleneck when exact historical tokens must be recovered.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  true,
+  "Mamba’s memory usage does not grow with context length, enabling efficient processing of very long sequences.",
+  "Mamba mitigates the impact of the sequential nature of recurrence, whereas fusing GPU operations removes the requirement to materialize the expanded state... the memory usage is not dependent on the context length.",
+  "MoE-Mamba: Efficient Selective State Space Models with Mixture of Experts"
+ ],
+ [
+  true,
+  "State‑space models are valued for their flexible, intuitive structure that can incorporate multiple component processes.",
+  "State‑space models have become increasingly popular ... due to their flexible and intuitive structure that includes multiple component processes.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "Realistic, nonlinear or non‑Gaussian state‑space models often have intractable likelihoods, requiring sophisticated fitting algorithms and sacrificing accuracy or efficiency.",
+  "more biologically realistic models ... lead to a more complex and analytically intractable likelihood expression that require more sophisticated model‑fitting algorithms, often with trade‑offs between accuracy and efficiency.",
+  "State‐space models for ecological time‐series data: Practical model‐fitting"
+ ],
+ [
+  true,
+  "State space models consist of an observation equation linking observed data to an unobserved state vector and a transition equation describing the state’s evolution, with system matrices that may depend on unknown parameters.",
+  "The general linear Gaussian state space model ... where αt is the state vector, εt and ηt are disturbance vectors and the system matrices Zt, Tt, Rt, Ht and Qt are fixed and known but a selection of elements may depend on an unknown parameter vector.",
+  "Statistical Software for State Space Methods"
+ ],
+ [
+  false,
+  "Mamba’s main innovation is a selective state‑space model that dynamically computes SSM parameters from the input, enabling context‑aware representations.",
+  "Mamba improves S4 by incorporating a selective mechanism that enables adaptive parameter adjustment based on input characteristics, presenting the selective state space model.",
+  "Mamba in Speech: Towards an Alternative to Self-Attention"
+ ],
+ [
+  true,
+  "Directly swapping Transformers for Mamba in dual‑path speech systems can eliminate Mamba’s low time‑complexity advantage.",
+  "In [20], each Mamba is directly employed as a substitute for a Transformer within a dual‑path framework for speech separation. ... these methods negate the low time complexity of Mamba.",
+  "Mamba in Speech: Towards an Alternative to Self-Attention"
+ ],
+ [
+  true,
+  "Mamba‑2‑Hybrid attains an MFU of 29.9%, only slightly below the 30.7% MFU of an equivalent Transformer, showing comparable training efficiency.",
+  "our Mamba-2-Hybrid achieves an MFU of 29.9% ... compared to the 30.7% MFU of a corresponding 8B parameter Transformer implemented in Megatron-LM",
+  "An Empirical Study of Mamba-based Language Models"
+ ],
+ [
+  false,
+  "Mamba’s O(N) scaling gives it lower training‑time complexity than the Transformer's O(N²) scaling.",
+  "These findings empirically validate the theoretical O(N) versus O(N²) scaling predictions.",
+  "Benchmarking the Computational and Representational Efficiency of State Space Models against Transformers on Long-Context Dyadic Sessions"
+ ],
+ [
+  true,
+  "Long‑sequence performance is measured by accuracy on the synthetic RULER long‑context benchmark suite.",
+  "Table 10: Evaluation results of 8B-parameter Mamba-2-Hybrid and Transformer models ... Mamba-2-Hybrid models achieve higher accuracy than Transformers on these tasks, highlighting their improved ability to recall, trace, and aggregate information across long",
+  "An Empirical Study of Mamba-based Language Models"
+ ],
+ [
+  true,
+  "Mamba‑based SSMs are competitive with transformers and even surpass them on the sparse parity learning task.",
+  "SSMs, especially exemplified by models like Mamba, demonstrate competitive performance with transformers... Notably, SSMs outshine transformers in tasks such as sparse parity learning.",
+  "Mamba-360: Survey of state space models as transformer alternative for long sequence modelling: Methods, Applications, and Challenges"
+ ],
+ [
+  true,
+  "A state space model uses a latent state variable that captures past information and is defined by unknown parameters governing its dynamics.",
+  "An SSM is obtained if the computations are performed via a latent variable h that incorporates past information: ... where θ are unknown parameters.",
+  "Deep State Space Models for Nonlinear System Identification"
+ ],
+ [
+  false,
+  "A state space model maps a one‑dimensional input to an N‑dimensional latent state and then projects it to a one‑dimensional output.",
+  "The State Space Model is defined by the following mathematical equations, which map a one-dimensional input signal x(k) to an N‑dimensional latent state h(t), and then project it to a one-dimensional output signal y(k).",
+  "State space model: a magical tool for state prediction in Nonlinear systems"
+ ],
+ [
+  false,
+  "A companion‑matrix state‑space model can represent classic time‑series models such as ARIMA, exponential smoothing, and controllable LTI systems, giving it high expressivity.",
+  "A companion state matrix SSM can represent ARIMA, exponential smoothing, and controllable linear time-invariant systems.",
+  "Effectively Modeling Time Series with Simple Discrete State Spaces"
+ ],
+ [
+  true,
+  "Standard transformers face limitations such as redundant multi‑head attention representations and high computational cost for long input sequences.",
+  "They show that increasing the number of transformer heads can lead to redundant representations (Voita et al., 2019a; Michel et al., 2019) and using fixed attention heads with predefined patterns ... improves performance.",
+  "DeLighT: Deep and Light-weight Transformer"
+ ],
+ [
+  true,
+  "Mamba‑2 can replace Transformers by offering an attention‑like mode that substitutes softmax with cumulative gating and outperforms Transformers in speed and perplexity.",
+  "Mamba-2 achieves Pareto dominance over Transformers and Mamba-1, attaining 6.09 perplexity ... with 3ˆ faster training than FlashAttention-2.",
+  "Vision Mamba in Remote Sensing: A Comprehensive Survey of Techniques, Applications and Outlook"
+ ],
+ [
+  true,
+  "SSMs avoid the quadratic cost of self‑attention, enabling more efficient training on long sequences compared to Transformers.",
+  "Self‑attention ... cost of maintaining all pairwise interactions increases rapidly with sequence length. SSMs ... enable efficient long‑sequence processing.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  true,
+  "Mamba’s linear‑complexity sequence modeling makes its training more efficient than conventional Transformers.",
+  "TransMamba ... combines the contextual modeling ability of attention with the linear‑complexity sequence modeling of Mamba.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  false,
+  "VL‑Mamba reduces the computational cost of multimodal language modeling, indicating higher training efficiency than standard Transformer‑based models.",
+  "VL‑Mamba reduces the cost of multimodal language modeling.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  true,
+  "A limitation of state‑space models is the need to carefully choose parameterizations that keep the number of learnable parameters low and ensure stability.",
+  "A diagonal SSL parametrized in continuous‑time has n λ … learnable parameters, compared to the n x … learnable parameters of an LSTM layer.",
+  "Structured state-space models are deep Wiener models"
+ ],
+ [
+  false,
+  "Mamba’s core innovation is dynamic, input‑selective updates to its state‑space parameters, making the model content‑aware at each timestep.",
+  "The Mamba model enhances this framework by incorporating dynamic updates to the parameters Δt, At, Bt, and Ct based on the input xt at each timestep t. This makes the model input‑selective and content‑aware, allowing it to adjust to the specific characteristics of the input sequence dynamically.",
+  "SSAMBA: Self-Supervised Audio Representation Learning With Mamba State Space Model"
+ ],
+ [
+  true,
+  "The study measures long‑sequence forecasting performance with MAE and spread metrics like range and standard deviation.",
+  "For all time series models, the lowest MAE and lowest or near‑lowest range [...] Spread metrics (range and standard deviation)",
+  "Measuring deep learning performance - an empirical study of performance distributions across architectures and tasks"
+ ],
+ [
+  false,
+  "Earlier SSM representations cannot capture fundamental autoregressive processes, limiting their applicability.",
+  "we prove that these prior SSM representations cannot capture autoregressive processes fundamental for time series.",
+  "EFFECTIVELY MODELING TIME SERIES WITH SIMPLE DISCRETE STATE SPACES"
+ ],
+ [
+  true,
+  "Transformers can copy extremely long sequences, whereas any SSM fails to copy long random strings, showing superior long‑sequence performance.",
+  "We show that a small Transformer can be used to copy extremely long sequences. ... any language model with fixed-size memory (i.e., any SSM) fails to copy long random strings.",
+  "Repeat After Me: Transformers are Better than State Space Models at Copying - Kempner Institute"
+ ],
+ [
+  true,
+  "LSSLs incur high space overhead, using O(NL) memory instead of O(L), making them space‑inefficient for long 1‑D sequences.",
+  "Both the LSSL and LSSL-fixed suffer from a large amount of space overhead ... using O(NL) instead of O(L) space when working on a 1D sequence of length L ... Consequently, the LSSL can be space inefficient.",
+  "Combining Recurrent, Convolutional, and Continuous-time Models with Linear State-Space Layers"
+ ],
+ [
+  true,
+  "Deep‑learning approaches enable flexible sequence modeling with SSMs, extending beyond the classical fixed‑interval assumptions.",
+  "model formulation being increasingly flexible (e.g., states are assumed [...] and employs deep learning-based approaches to handle the learning task",
+  "Deep Learning-based Approaches for State Space Models:A Selective Review"
+ ],
+ [
+  true,
+  "The core components of a transformer are multi‑head attention, position‑wise feed‑forward networks, layer normalization, residual connections, and a final fully‑connected output layer.",
+  "Each encoder layer extracts features ... using the multi‑head attention mechanism, position‑wise feed‑forward networks, normalization layer and residual structure. ... the predicted data ... processed by the fully‑connected layer and output.",
+  "Deep learning model-transformer based wind power forecasting approach"
+ ],
+ [
+  true,
+  "Each transformer layer includes a position‑wise MLP that applies the same parameters to every token to refine its features.",
+  "We simply apply a multi‑layer perceptron (MLP) to the vector of features at each location n in the sequence, ... the parameters of the MLP, θ, are the same for each location n.",
+  "An Introduction to Transformers"
+ ],
+ [
+  true,
+  "A naive SSM matrix computation scales quadratically with sequence length, but can be faster than linear methods for short sequences due to constant‑factor and hardware advantages.",
+  "A naive computation of the matrix SSM representation ... will scale quadratically in sequence length. However, when the sequence length T is short, this can actually be more efficient than the linear algorithm due to constant factors and the hardware‑friendliness of the computation pattern.",
+  "Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality"
+ ],
+ [
+  true,
+  "Current post‑training weight pruning methods cannot be efficiently deployed on MoE LLMs without specialized hardware.",
+  "Existing posttraining weight pruning methods for LLMs ... do not support efficient deployment of MoE LLMs without specialized hardware implementations.",
+  "Not All Experts are Equal: Efficient Expert Pruning and Skipping for Mixture-of-Experts Large Language Models"
+ ],
+ [
+  true,
+  "SiMBA is trained and evaluated on standard vision benchmarks such as ImageNet‑1K and transfer‑learning datasets like CIFAR‑10/100, Stanford Cars, and Flowers‑102.",
+  "a) Training and evaluating ImageNet1K [5] from scratch for the image recognition task. ... d) Transfer learning on CIFAR-10 [24], CIFAR-100 [24], Stanford Cars [23], and Flowers-102 [42] for image recognition.",
+  "SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time series"
+ ],
+ [
+  true,
+  "SiMBA‑L attains 83.9% top‑1 accuracy with comparable computational complexity and parameters, while the EinFFT variant improves efficiency in FLOPS and parameter count versus other SSMs.",
+  "SiMBA-L achieves an 83.9% top-1 accuracy, surpassing ... with comparable computational complexity and parameters. ... SiMBA(EinFFT) mitigates stability concerns at large network sizes and demonstrates greater efficiency in terms of FLOPS and parameters, outperforming all other SSMs.",
+  "SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time series"
+ ],
+ [
+  true,
+  "Transformers use self‑attention to compute pairwise token interactions, whereas SSMs compress past inputs into a latent state, leading to different trade‑offs in long‑range dependency capture and computational complexity.",
+  "Transformers rely on self‑attention, which explicitly computes content dependent interactions between tokens... In contrast, an SSM summarizes previous inputs through a latent state.",
+  "State space model for new generation network alternative to transformers: a survey"
+ ],
+ [
+  true,
+  "Mamba SSMs suffer from instability and gradient issues when scaled to large networks.",
+  "The current instantiation of Mamba has stability issues i.e. the training loss is not converging while scaling to large-sized networks ... leads to vanishing/exploding gradients commonly observed in Mamba.",
+  "SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time series"
+ ],
+ [
+  true,
+  "SSMs enable efficient GPU training via parallel scan and constant‑memory inference, avoiding the quadratic cost of attention.",
+  "This parallel mode ensures efficient training on GPU hardware, while the recurrent mode ... inference time ... not quadratic in the context length, and does not require a linearly growing KV cache, rendering SSM architectures constant in memory during",
+  "Zamba: A Compact 7B SSM Hybrid Model"
+ ],
+ [
+  true,
+  "The restricted sequence‑mixing form and fixed‑size memory of SSMs limit their expressive power compared with transformers.",
+  "The key limitation of SSMs is the restricted form that the sequence mixing can take ... and the compression of all information into a fixed size memory. This renders the expressive power of SSMs less than transformers in theory",
+  "Zamba: A Compact 7B SSM Hybrid Model"
+ ],
+ [
+  true,
+  "Hybrid models that combine SSMs with a single attention layer can match or surpass pure transformer performance.",
+  "hybridizing SSMs with attention gives performance on par or exceeding transformers ... we pose and show evidence for an interesting hypothesis - that one attention layer is all you need.",
+  "Zamba: A Compact 7B SSM Hybrid Model"
+ ],
+ [
+  false,
+  "LLMs are opaque, making explainability a major challenge.",
+  "LLMs are opaque in the way that they generalise from data, which poses serious problems of explainability.",
+  "Assessing the Strengths and Weaknesses of Large Language Models"
+ ],
+ [
+  true,
+  "Traditional MoE models can suffer from training instability and uneven expert utilization.",
+  "traditional MoE models often employ discrete matching between experts and tokens ... associated with training instability and uneven expert utilization.",
+  "A Survey on Mixture of Experts in Large Language Models"
+ ],
+ [
+  true,
+  "Unlike standard neural networks that run the whole network for every input, a MoE activates only a small portion of the network per input.",
+  "the entire network must be executed for all inputs. This computational burden imposes limits network size. ... use only a small portion of the network for each given input.",
+  "Learning Factored Representations in a Deep Mixture of Experts"
+ ],
+ [
+  true,
+  "MoE models like L‑MoE improve parameter efficiency by dynamically composing low‑rank expert adapters.",
+  "L‑MoE ... improves parameter efficiency and dynamic skill composition",
+  "Mixture of Experts in Large Language Models"
+ ],
+ [
+  true,
+  "MoE models employ several routing strategies, such as dense sample‑wise, sparse sample‑wise, position/patch‑wise, and expert‑choice routing.",
+  "Dense sample-wise routing... Sparse sample-wise routing... Position/patch-wise MoE (i.e., pMoE)... expert-choice routing in pMoE.",
+  "Patch-level Routing in Mixture-of-Experts is Provably Sample-efficient for Convolutional Neural Networks"
+ ],
+ [
+  true,
+  "Expert routing uses a sparse gating function that selects the top‑K experts for each input, limiting computation to those experts and enabling fast inference.",
+  "an MoE layer contains many experts ... with a gating (or routing) function that routes individual inputs to a few experts ... Through the sparse gating function, the router ... can route each input to the topK (K ≥ 2) best experts ... This routing scheme only costs the computation of K experts for a new input, which enjoys fast inference time.",
+  "Towards Understanding Mixture of Experts in Deep Learning"
+ ],
+ [
+  true,
+  "A typical MoE layer computes routing logits from the post‑attention token vector, selects top‑K experts via softmax, and combines their outputs weighted by the logits.",
+  "the router computes expert selection logits ... Topk experts are selected after applying a softmax over g_i, and the token is processed by a weighted combination of the selected experts' outputs.",
+  "Attention-aware routing in mixture of experts language models"
+ ],
+ [
+  true,
+  "Expert routing decisions in MoE models are not yet fully understood, making their interpretability a critical open problem and future research direction.",
+  "Improving the interpretability of MoE models remains a critical area for future work. ... the theoretical underpinnings of their behavior—such as expert routing decisions and clustering mechanisms—are not yet fully understood.",
+  "A Comprehensive Survey of Mixture-of-Experts: Algorithms, Theory, and Applications"
+ ]
+]

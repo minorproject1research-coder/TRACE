@@ -263,3 +263,32 @@ def flatten_aspects(
     merged_aspects, merged_mapping, _ = _merge_near_duplicate_aspects(all_aspects, aspect_to_detail, mode=merge_mode)
 
     return merged_aspects, merged_mapping
+
+
+# ----------------------------------------------------------------------------------------------------- the sub-question's own question
+def topic_aspect_enabled() -> bool:
+    """TOPIC_ASPECT (default true): the sub-question itself is judged as one more aspect.
+
+    The aspects come from the planner's detail questions, which are generic ("advantages and disadvantages", "benefits", "challenges"). The
+    sub-question's own question ("What is a mixture of experts model?") was never judged, so a sub-question could be "sufficient" without
+    being answered (Q2, 2026-11-05: 4 of 5 sufficient; "What is a MoE model?" had no definition aspect). Experiment on 10 stored sub-questions
+    (tests/topic_aspect_experiment.py): no judge errors, 17 of 21 "yes" claims directly answered the topic (81%, the rest partial), and two
+    sub-questions changed from sufficient to not sufficient. The stored digests had been written without this aspect, so the experiment
+    understates coverage."""
+    return os.getenv("TOPIC_ASPECT", "true").strip().lower() not in ("0", "false", "no", "off")
+
+
+def run_topic_aspect(coverage_row: Optional[Dict]) -> bool:
+    """Whether a stored run judged the topic as an aspect (marker written into judge_stats); runs from before the marker did not."""
+    return bool(((coverage_row or {}).get("judge_stats") or {}).get("topic_aspect"))
+
+
+def with_topic_aspect(aspects: List[str], aspect_to_detail: List[int], detail_questions: List[str], main_topic: str,
+                      enabled: Optional[bool] = None) -> tuple[List[str], List[int], List[str]]:
+    """The aspects with the sub-question's own question appended as the LAST aspect (indexes of the other aspects stay the same), its
+    own pseudo detail question appended to the details. Unchanged when disabled, when the topic is empty, or when an aspect already asks it."""
+    enabled = topic_aspect_enabled() if enabled is None else enabled
+    topic = " ".join((main_topic or "").split())
+    if not enabled or not topic or any(_normalized(topic) == _normalized(a) for a in aspects):
+        return list(aspects), list(aspect_to_detail), list(detail_questions)
+    return list(aspects) + [topic], list(aspect_to_detail) + [len(detail_questions)], list(detail_questions) + [topic]

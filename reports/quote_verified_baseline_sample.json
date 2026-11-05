@@ -1,0 +1,82 @@
+[
+ [
+  "Transformers operate on any data that can be tokenized into a sequence of vectors, allowing a single model to handle text, images, and other modalities.",
+  "A sequence of tokens is a generic representation to use as an input - many different types of data can be 'tokenised' and transformers are then immediately applicable rather than requiring a bespoke architectures for each modality."
+ ],
+ [
+  "Vision transformers often outperform CNNs on image segmentation, object detection, and related tasks.",
+  "For instance, vision transformers (ViTs) often exceed the performance of convolutional neural networks (CNNs) on image segmentation, object detection and related tasks."
+ ],
+ [
+  "LoRA keeps original weights largely static, enabling efficient inference compared to full fine‑tuning.",
+  "LoRA, employing a strategy of incrementally updating pre-trained weights using the product of two low-rank matrices, maintains the original weights largely static during the fine-tuning process, which allows for efficient inference."
+ ],
+ [
+  "LLMs are built on transformer neural networks that excel at handling word sequences and capturing text patterns.",
+  "LLMs are built on a type of neural network architecture called a transformer which excels at handling sequences of words and capturing patterns in text."
+ ],
+ [
+  "VL‑Mamba’s architecture comprises a Vision Encoder, a MultiModal Connector, and the Mamba LLM, integrating vision and language via state‑space models.",
+  "we describe the details of our proposed VL-Mamba (Sec. 3.2), which mainly includes the Vision Encoder, MultiModal Connector, and the Mamba LLM."
+ ],
+ [
+  "The MEGA-RAG retrieval-augmented generation system reduces hallucination rates by more than 40% compared to standard RAG and other baseline models.",
+  "Experimental evaluation demonstrates that MEGA-RAG outperforms four baseline models [PubMedBERT, PubMedGPT, standalone LLM, and LLM with standard retrieval-augmented generation (RAG)], achieving a reduction in hallucination rates by over 40%."
+ ],
+ [
+  "A transformer processes the token matrix through M stacked layers, producing a new representation matrix of the same dimensions.",
+  "The transformer will ingest the input data X and return a representation of the sequence in terms of another matrix X^(M) which is also of size D × N. The slice x_n = X^(M)[:,n] will be a vector of features representing the sequence at the location of token n."
+ ],
+ [
+  "Transformer language models become more accurate when they can attend to up to a thousand previous tokens.",
+  "the predictive accuracy of transformer LMs appears to improve when conditioning on as many as a thousand previous tokens (Beltagy et al., 2020)."
+ ],
+ [
+  "LLMs can approximate human‑level performance on a wide range of language tasks.",
+  "These developments have brought about a revolutionary transformation by enabling the creation of LLMs that can approximate human-level performance on various tasks [2, 3]."
+ ],
+ [
+  "Attention and MLP blocks are major bottlenecks, accounting for most I/O during token generation.",
+  "attention and MLP are both bottlenecks in LLMs, e.g., in 175B models, loading MLP parameters takes around 2 3 of the total I/O and attention heads take the other 1 3 ."
+ ],
+ [
+  "The motivation is to retrieve only when the model lacks knowledge, avoiding unnecessary or inappropriate retrieval.",
+  "LMs should retrieve information only when they lack the required knowledge to avoid unnecessary or inappropriate retrieval that occurs in passive retrieval augmented LMs"
+ ],
+ [
+  "Verifying a batch of γ tokens at once increases effective throughput, which translates to lower per‑token inference latency.",
+  "Processing a window of γ tokens at once raises effective throughput by roughly ( γ +1) per target evaluation (14; 3)."
+ ],
+ [
+  "Performance drops when processing tokens beyond the context window because those positions were not seen during training.",
+  "Beyond the context window, LLM's performance declines due to the additional positions that the model has not been trained on."
+ ],
+ [
+  "Code‑repair (bug‑fixing) applications require larger context windows to capture sufficient surrounding code for accurate fixes.",
+  "we train and evaluate repair success for different context sizes (using symmetric context windows)"
+ ],
+ [
+  "Long‑context transformers are evaluated on diverse tasks such as text, mathematics, and visual data ranging from 1 K to 16 K tokens.",
+  "Our benchmark is challenging and probes at model capabilities in dealing with diverse data types and structures such as text, mathematics, and visual data."
+ ],
+ [
+  "The computational cost of long contexts limits their use in latency‑sensitive applications.",
+  "And the computational cost of long contexts limits their use in latency-sensitive applications."
+ ],
+ [
+  "The H3 SSM layer nearly matches Transformers, within 0.4 perplexity, and hybrid H3‑attention surpasses Transformers by 1.0 perplexity on OpenWebText.",
+  "H3 matches attention on the synthetic languages and almost closes the gap with Transformers on language modeling—coming within 0.4 perplexity of Transformers on OpenWebText (compared to 3.4 ppl for existing SSMs)."
+ ],
+ [
+  "It enables efficient parallel calculation of a token and subsequent tokens while keeping the same probability distribution.",
+  "Speculative decoding thus allows us to efficiently calculate a token and the tokens following it, in parallel, while maintaining an identical distribution"
+ ],
+ [
+  "A state space model is defined by four matrices A, B, C, and D that govern its dynamics.",
+  "The primary representation of SSMs is the continuous time representation, as illustrated in Fig. 1, which is defined by four parameters ( A , B , C , D )."
+ ],
+ [
+  "Recent research emphasizes making very long contexts computationally feasible, highlighting cost as a key limitation.",
+  "A significant amount of recent work has focused on making use of even longer contexts computationally feasible (Rae et al., 2019; Wang et al., 2020; Child et al., 2019; Dai et al., 2019; Kitaev et al., 2020)."
+ ]
+]

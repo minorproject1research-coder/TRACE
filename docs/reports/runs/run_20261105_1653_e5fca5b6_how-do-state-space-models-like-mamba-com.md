@@ -1,6 +1,6 @@
 # Pipeline run report - How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?
 
-Generated 2026-11-05 17:12 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (last run in the file) and the database. Query id `e5fca5b6-ab05-4707-a4b2-33069bed228e`.
+Generated 2026-11-05 20:44 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 4 in the file) and the database. Query id `e5fca5b6-ab05-4707-a4b2-33069bed228e`.
 
 ## 1. Summary
 
@@ -11,6 +11,7 @@ Generated 2026-11-05 17:12 by `scripts/pipeline_run_report.py` from `logs/pipeli
 | Started / finished | 2026-11-05 16:53:20 / 17:07:19 |
 | **Total execution time** | **13m 59s** (839 s) |
 | Sub-questions / search queries | 5 / 15 (per sub-question [3, 3, 3, 3, 3]) |
+| Plan source | planner |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 374 candidates -> 374 cleared the similarity floor -> 100 shortlisted |
 | **Papers kept after the relevance judge** | **28** (log: 28); 72 shortlisted papers rejected |
 | **Web sources** | **59** (per sub-question [10, 11, 13, 14, 11]) |

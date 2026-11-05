@@ -16,6 +16,13 @@ MAX_QUERIES_PER_SUBQUESTION = int(os.getenv("MAX_QUERIES_PER_SUBQUESTION", "3"))
 #   embedding        sub-questions whose topics have bge cosine >= SUBQUESTION_MERGE_SIMILARITY (opt-in, see _merge_similar)
 #   off              never
 MERGE_SIMILARITY = float(os.getenv("SUBQUESTION_MERGE_SIMILARITY", "0.97"))     # only used in "embedding" mode
+# A query whose similarity to the sub-question it was handed to is below this is dropped (0 = keep every query). The even-share hand-out
+# below can force a query onto a sub-question it does not fit: in the Q2 run (MoE) "large language model training and usage" and "mixture of
+# experts in large language models benefits and challenges" went to "How is MoE applied to LLMs?" at similarity 0.54 (the full sub-question
+# "What is a large language model?" fitted them at 0.76 and 0.70), and that sub-question's web results were three generic LLM pages with no
+# findings. Over all 447 queries stored in the database 11 were below 0.55 (2%) and 9 of those fitted another sub-question >= 0.10 better.
+# A sub-question left without queries is expanded by planner_node (query_expansion). 0.55 is a judgement from that distribution.
+MIN_ASSIGN_SIMILARITY = float(os.getenv("QUERY_MIN_SIMILARITY", "0.55"))
 MAX_DETAIL_QUESTIONS = int(os.getenv("MAX_DETAIL_QUESTIONS", "5"))      # detail questions kept after a merge
 DETAIL_DUPLICATE_SIMILARITY = 0.9                                       # a merged-in detail this close to one we have is dropped
 # groq: if the model server is unreachable, decompose with the Groq model instead; none: raise the error
@@ -146,7 +153,7 @@ def _assign_queries(sub_questions: list[SubQuestion], queries: list[str]) -> Non
     similarity (query against the sub-question's topic and detail questions), and a sub-question stops accepting queries at
     an even share (queries // sub-questions, then the remainder one each, never more than MAX_QUERIES_PER_SUBQUESTION). Every query is used at most once (no
     duplicate searches); with at least as many queries as sub-questions each sub-question gets at least one. Queries beyond
-    the total capacity (the least similar ones) are dropped."""
+    the total capacity (the least similar ones) are dropped, and so is any query that fits its sub-question worse than MIN_ASSIGN_SIMILARITY."""
     queries = list(dict.fromkeys(queries))              # drop exact duplicates, keep order
     if not queries or not sub_questions:
         return
@@ -161,16 +168,24 @@ def _assign_queries(sub_questions: list[SubQuestion], queries: list[str]) -> Non
     base, extra = divmod(len(queries), len(sub_questions))
     pairs = sorted(((float(sims[i, j]), i, j) for i in range(len(queries)) for j in range(len(sub_questions))), reverse=True)
     taken: set[int] = set()
-    buckets: list[list[tuple[float, str]]] = [[] for _ in sub_questions]
+    buckets: list[list[tuple[float, str, int]]] = [[] for _ in sub_questions]
     # phase 1: every sub-question up to the even share; phase 2: the remainder, one extra query per sub-question at most
     for capacity in (min(MAX_QUERIES_PER_SUBQUESTION, base), min(MAX_QUERIES_PER_SUBQUESTION, base + 1)):
         for sim, i, j in pairs:
             if i in taken or len(buckets[j]) >= capacity:
                 continue
             taken.add(i)
-            buckets[j].append((sim, queries[i]))
-    for sq, bucket in zip(sub_questions, buckets):
-        sq.queries = [q for _, q in sorted(bucket, reverse=True)]
+            buckets[j].append((sim, queries[i], i))
+    for j, (sq, bucket) in enumerate(zip(sub_questions, buckets)):
+        kept = []
+        for sim, query, i in sorted(bucket, reverse=True):
+            if sim < MIN_ASSIGN_SIMILARITY:
+                better = int(sims[i].argmax())
+                logger.warning("Dropped query '%s' for sub-question '%s' (similarity %.2f < %.2f); it fits '%s' better (%.2f)",
+                               query[:60], sq.main_topic[:50], sim, MIN_ASSIGN_SIMILARITY, sub_questions[better].main_topic[:50], float(sims[i, better]))
+                continue
+            kept.append(query)
+        sq.queries = kept
 
 
 GROQ_DECOMPOSE_PROMPT = """You are a research planner. Break the research question into 2-5 sub-questions that together cover it

@@ -68,6 +68,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
         aspects, aspect_to_detail = detail_aspects.flatten_aspects(
             original_details, sq.id, cleaned_topic
         )
+        aspects, aspect_to_detail, original_details = detail_aspects.with_topic_aspect(
+            aspects, aspect_to_detail, original_details, sq.main_topic)     # the sub-question itself is judged too (TOPIC_ASPECT)
         logger.info(
             "Sub-question '%s': %d original details -> %d aspects",
             sq.main_topic[:50], len(original_details), len(aspects)
@@ -139,6 +141,10 @@ def summarizer_node(state: SharedResearchState) -> dict:
         aspects, aspect_to_detail = detail_aspects.flatten_aspects(
             sq.detail_questions, sq.id, cleaned_topic
         )
+        n_before = len(aspects)
+        aspects, aspect_to_detail, details_for_coverage = detail_aspects.with_topic_aspect(
+            aspects, aspect_to_detail, sq.detail_questions, sq.main_topic)     # same aspects as in step 1
+        topic_aspect_used = len(aspects) > n_before
         
         # Build chunk_lookup for judge context
         chunk_lookup = {}
@@ -159,10 +165,11 @@ def summarizer_node(state: SharedResearchState) -> dict:
         
         # Judge-based coverage with fallback
         cov = coverage_check.check_coverage_judged(
-            aspects, aspect_to_detail, sq.detail_questions, rows, judge_verdicts, candidates=candidates
+            aspects, aspect_to_detail, details_for_coverage, rows, judge_verdicts, candidates=candidates
         )
         if isinstance(cov.get("judge_stats"), dict):
             cov["judge_stats"]["aspect_merge"] = detail_aspects.merge_mode()      # tools that rebuild this run's aspects need to know
+            cov["judge_stats"]["topic_aspect"] = topic_aspect_used                # ... both markers
         # Add digest failures count
         sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
         cov["digest_failures"] = sq_failures

@@ -3,6 +3,9 @@
 Build a Markdown status report for ONE pipeline run from logs/pipeline.log (the last run in the file) and the database.
 
   python scripts/pipeline_run_report.py                         # last run in logs/pipeline.log
+  python scripts/pipeline_run_report.py --list                  # every run in the log: number, start time, question
+  python scripts/pipeline_run_report.py --run 7                 # the run with that number (--run -2: the one before the last)
+  python scripts/pipeline_run_report.py --last 5                # one report for each of the last 5 runs (incomplete runs are skipped)
   python scripts/pipeline_run_report.py --log logs/pipeline.log --query-id <id> --out docs/reports/runs/my_run.md
 
 Everything in the tables comes from the log or the database (nothing is estimated). The "Checks" section is rule based: it only lists
@@ -32,18 +35,37 @@ def dur(seconds: float) -> str:
     return f"{seconds // 60}m {seconds % 60:02d}s" if seconds >= 60 else f"{seconds}s"
 
 
-def read_run(path: str):
-    """Lines of the LAST run: from the last 'Starting planner for query' on."""
+def run_starts(path: str):
     raw = Path(path).read_bytes().decode("utf-8", errors="replace").splitlines()
-    starts = [i for i, l in enumerate(raw) if "stage1_planner: Starting planner for query:" in l]
+    return raw, [i for i, l in enumerate(raw) if "stage1_planner: Starting planner for query:" in l]
+
+
+def read_run(path: str, which: int = -1):
+    """Lines of one run: from its 'Starting planner for query' line up to the next run's. `which` is a 1-based run number
+    (see --list) or negative to count from the end (-1 = the last run)."""
+    raw, starts = run_starts(path)
     if not starts:
         raise SystemExit("no 'Starting planner for query' line in the log")
+    k = which - 1 if which > 0 else len(starts) + which
+    if not 0 <= k < len(starts):
+        raise SystemExit(f"run {which} does not exist: the log has {len(starts)} runs (--list shows them)")
+    end = starts[k + 1] if k + 1 < len(starts) else len(raw)
     out = []
-    for l in raw[starts[-1]:]:
+    for l in raw[starts[k]:end]:
         m = LINE.match(l)
         if m:
             out.append((ts(m.group(1)), m.group(2), m.group(3), m.group(4)))
     return out
+
+
+def list_runs(path: str) -> None:
+    raw, starts = run_starts(path)
+    for n, i in enumerate(starts, 1):
+        end = starts[n] if n < len(starts) else len(raw)
+        done = any("Stage 3:" in l and "digests" in l for l in raw[i:end])
+        m = LINE.match(raw[i])
+        question = raw[i].split("Starting planner for query:", 1)[1].strip()
+        print(f"{n:3d}  {m.group(1)[:19] if m else '?'}  {'complete' if done else 'INCOMPLETE'}  {question[:90]}")
 
 
 def first(lines, pred):
@@ -59,11 +81,25 @@ def main() -> int:
     ap.add_argument("--log", default="logs/pipeline.log")
     ap.add_argument("--query-id")
     ap.add_argument("--out")
+    ap.add_argument("--list", action="store_true", help="list the runs in the log and stop")
+    ap.add_argument("--run", type=int, default=-1, help="run number from --list (negative: from the end; default -1 = last)")
+    ap.add_argument("--last", type=int, help="write a report for each of the last N runs (skips incomplete runs)")
     args = ap.parse_args()
+    if args.list:
+        list_runs(args.log)
+        return 0
+    if args.last:
+        import subprocess
+        total = len(run_starts(args.log)[1])
+        for n in range(max(1, total - args.last + 1), total + 1):
+            r = subprocess.run([sys.executable, __file__, "--log", args.log, "--run", str(n)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+            last_line = (r.stdout.strip().splitlines() or [""])[-1]
+            print(f"run {n}: " + (last_line if r.returncode == 0 else "skipped (incomplete run or error: " + (r.stderr.strip().splitlines() or ["?"])[-1][:120] + ")"))
+        return 0
 
     from dotenv import load_dotenv
     load_dotenv()
-    lines = read_run(args.log)
+    lines = read_run(args.log, args.run)
     t_start, t_end = lines[0][0], lines[-1][0]
     msgs = [(t, lvl, name, msg) for t, lvl, name, msg in lines if not name.startswith(("httpx", "sentence_transformers", "urllib3", "filelock"))]
 
@@ -156,7 +192,7 @@ def main() -> int:
     # ---------------------------------------------------------------- stage 3 per sub-question
     from audit_tag_precision import covered_indices
     from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic
-    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode
+    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode, run_topic_aspect, with_topic_aspect
     cov_by_sq = {}
     for c in sorted(covs, key=lambda c: c["created_at"]):
         cov_by_sq[c["sub_question_id"]] = c
@@ -178,7 +214,7 @@ def main() -> int:
     w = out.append
     title = f"Pipeline run report - {query['raw_query']}"
     w(f"# {title}\n")
-    w(f"Generated {datetime.now():%Y-%m-%d %H:%M} by `scripts/pipeline_run_report.py` from `{args.log}` (last run in the file) and the database. Query id `{qid}`.\n")
+    w(f"Generated {datetime.now():%Y-%m-%d %H:%M} by `scripts/pipeline_run_report.py` from `{args.log}` (run {args.run if args.run > 0 else 'last'} in the file) and the database. Query id `{qid}`.\n")
 
     w("## 1. Summary\n")
     n_pass = sum(p for _, p in j_by_sq.values())
@@ -258,7 +294,8 @@ def main() -> int:
         if not c:
             w(f"### {i}. {sq['main_topic']}\n\nNo coverage row found.\n")
             continue
-        aspects, _ = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=run_merge_mode(c))
+        aspects, a2d_ = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=run_merge_mode(c))
+        aspects, _, _ = with_topic_aspect(aspects, a2d_, sq["detail_questions"], sq["main_topic"], enabled=run_topic_aspect(c))
         cov_idx = covered_indices(c, len(aspects))
         ev = c.get("aspect_evidence") or {}
         reasons = c.get("uncovered_reasons") or {}

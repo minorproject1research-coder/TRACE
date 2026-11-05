@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path
 
 log_dir = Path("logs")
@@ -29,7 +30,10 @@ from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState
 
 app = build_graph()
-result = app.invoke(SharedResearchState(raw_query="Why do transformer models struggle with long context windows and what techniques address this?"))
+# python test_pipeline.py "your question"  runs that question; without an argument it runs the default below
+DEFAULT_QUERY = "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?"
+raw_query = " ".join(sys.argv[1:]).strip() or DEFAULT_QUERY
+result = app.invoke(SharedResearchState(raw_query=raw_query))
 
 print("\n=== TASK PLAN ===")
 # print(result["task_plan"])

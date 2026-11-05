@@ -1,0 +1,27 @@
+# Problems found in the Q2 run (mixture of experts), and what was done (2026-11-05)
+
+Run report: `docs/reports/runs/run_20261105_2053_cc81e9cc_*.md`. All checks below are offline: stored digests, stored findings, the host judge, and the arXiv / OpenAlex / Zenodo APIs. No Groq call was made. Every label is assigned by me (an LLM), not by a human; samples are small. Rules were written before looking at the results.
+
+## 1. Query hand-out (built)
+The even-share assignment pushed two LLM queries onto "How is MoE applied to LLMs?" at similarity 0.54 although the full sub-question fit them at 0.76 and 0.70. Over all 447 stored queries, 11 sit below 0.55 (2%) and 9 of those fit another sub-question at least 0.10 better. `QUERY_MIN_SIMILARITY` (default 0.55) now drops such queries; an empty sub-question is expanded by the LLM as before. The two Q2 cases are caught narrowly (0.54), a milder misfit at 0.68 still passes. Tests: `tests/test_query_assignment.py`.
+
+## 2. Quote editing (built)
+440 of 3,205 stored findings (13.7%) are unverified, and unverified findings never reach the judge or the coverage count. The prompt already says "WORD FOR WORD", and the digest model still edits quotes.
+- **Snapping to the nearest real passage** (`tests/quote_snap_experiment.py`), rule: adopt a similarity band only if at least 90% of 12 sampled snapped passages directly support their claim. Result: band 90-100: 12 of 12; band 80-90: 10 of 12 (83%); 70-80: 8 of 12; 60-70: 5 of 10 with one passage not supporting the claim. Only the top band qualifies and it holds 50 findings, so snapping was **not** adopted.
+- **Verifier tolerance** (adopted): the verifier now ignores citation markers (`[4]`, `[28, 4]`), HTML entities (`&lt;`), typographic hyphens and the spaces Docling puts inside parentheses, and accepts an elided quote ("... ", "[...]") when every piece of at least 20 characters is real text. Threshold stays 92. Quotes that join sentences without an elision, or paraphrase, still fail. On the stored data (windows of 1,500 characters, an approximation of the real chunks) it accepts 171 of 439 unverified findings (146 of them elisions), so verified findings would go from 86.3% to about 91.6%.
+- **Quality check of the rescued findings**, rule: adopt if the share of directly supporting quotes is within 10 points of already-verified findings. 20 elision-rescued: 15 direct, 5 partial, 0 wrong (75%); 20 already-verified: 16 direct, 3 partial, 1 wrong (80%). Within the margin, adopted. The judge still decides whether the quote supports the claim.
+- Not changed: the digest prompt (it would invalidate every cached digest and I did not test it).
+Tests: `tests/test_quote_verifier.py`.
+
+## 3. Generic aspects (built, on by default)
+The generic aspects ("advantages and disadvantages", "benefits", "challenges") come from the planner's detail questions, not from the aspect splitter. The sub-question's own question was never judged. `TOPIC_ASPECT` (default true) now appends the sub-question as the last aspect (earlier aspect indexes unchanged); runs record `judge_stats.topic_aspect`, and the report and audit tools rebuild old runs without it.
+Experiment on 10 stored sub-questions (`tests/topic_aspect_experiment.py`), rule: no judge errors, at least 80% of "yes" claims directly answer the topic, and at least one visible change. Result: 60 judge pairs, 0 errors; 17 of 21 "yes" claims direct (81%), 4 partial, 0 wrong; two sub-questions change from sufficient to not sufficient ("How is MoE applied to LLMs?" with 1 yes; "What are SSMs and how do they work?" with 1 yes). **Caveat:** the stored digests were written without this aspect, so the experiment understates coverage; the real effect appears in the next run. The digest prompt tells the model to give definitions an empty tag list, but candidates are chosen by similarity as well, so the judge still sees them. Tests: `tests/test_topic_aspect.py`.
+
+## 4. Background sub-questions (measured, not built)
+Rule for "background": the subject appears in the user's question only as the setting, not as the thing asked about or compared. Of 49 distinct (question, sub-question) pairs from 7 stored questions, 3 qualify (6%): two "What are LLMs?" variants and "What is a large language model?" in the MoE question. Similarity to the user's question cannot find them: the lowest-similarity sub-question was a core one in 2 of the 7 questions ("How is MoE applied to LLMs?" 0.55, "What is Mamba...?" 0.57). A classifier for a 6% case is not worth its Groq calls, so nothing was built. Cost when it happens: about 20% of a run's retrieval and Stage 3 budget.
+
+## 5. The five papers that failed to parse (investigated, not fixable cheaply)
+- "Scaling Laws for Mixture-of-Experts": both Zenodo records return 410 (withdrawn).
+- "From Large Language Models to Large Multimodal Models" (MDPI) and "The Evolution of Mixture of Experts" (Preprints.org): 403 bot protection on the PDF and the landing page; the headless browser failed too.
+- "Exploring the frontiers of deep learning and NLP" (Elsevier, open access): the DOI redirects to a JavaScript page.
+- "Towards Understanding the Mixture-of-Experts Layer in Deep Learning" (from Scopus): the same paper as arXiv 2208.02813, whose title differs ("Towards Understanding Mixture of Experts in Deep Learning"), so the exact-title twin route misses it; it was already parsed in this run under the arXiv title. Relaxing the title match risks fetching a different paper, so I left it.

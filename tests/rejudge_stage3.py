@@ -32,7 +32,7 @@ import audit_tag_precision as at  # noqa: E402
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder  # noqa: E402
 from apps.api.agents.stage3_summarizer import chunk_selector, coverage_check as cc, evidence_judge as ej  # noqa: E402
 from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic  # noqa: E402
-from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode  # noqa: E402
+from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode, run_topic_aspect, with_topic_aspect  # noqa: E402
 from apps.api.services import db_service  # noqa: E402
 from apps.api.services.db_service import supabase  # noqa: E402
 
@@ -98,6 +98,7 @@ def main() -> int:
             stored_cov = sorted(at.latest_generation(supabase.table("coverage_results").select("*").eq("sub_question_id", sq["id"]).execute().data),
                                 key=lambda c: c["created_at"])[-1]
             aspects, a2d = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=run_merge_mode(stored_cov))
+            aspects, a2d, _ = with_topic_aspect(aspects, a2d, sq["detail_questions"], sq["main_topic"], enabled=run_topic_aspect(stored_cov))
             at.check_split_matches_run(sq["id"], aspects, digests)
             sources = {str(p["id"]): ("paper", p) for p in db_service.get_papers_for_stage3(qid, sq["id"])}
             sources.update({str(w["id"]): ("web", w) for w in db_service.get_web_sources_for_stage3(sq["id"])})
