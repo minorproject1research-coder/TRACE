@@ -308,14 +308,14 @@ If V2 is not enough, the next step is a two-field output that forces the reasoni
 
 Real judge, `JUDGE_MODEL_ID=judge-v2`, 204 labeled rows (194 unique), no surrounding passage, labels LLM-assigned. Script: `tests/eval_judge_prompt.py`.
 
-| Rows | V1 | V2 |
-|---|---|---|
+| Rows                                                         | V1                                                                               | V2                                                                   |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | Targeted audit, 18 rows (10 label 0, 7 label 0.5, 1 label 1) | 18 of 18 "yes" (pipeline, wrong passage; fresh V1 without passage: 12, see 14.5) | **8 "yes"**: 3 of 10 label-0, 4 of 7 label-0.5, 1 of 1 label-1 |
-| Dropped-by-rule rows, 16 (5 label 0, 8 label 0.5, 3 label 1) | 16 of 16 "yes" (pipeline; fresh V1: 11, see 14.5) | **7 "yes"**: 0 of 5 label-0, 4 of 8 label-0.5, 3 of 3 label-1 |
-| Round 1-3, 125 rows | strict 0.703, lenient 0.865, recall 0.634 (earlier run, not re-verified) | strict 0.660 (31/47), lenient 0.936 (44/47), recall 0.756 (31/41) |
-| Export B, 45 rows | strict 19/23, lenient 22/23, recall 19/21 (section 13.2) | strict 17/22, lenient 20/22, recall 17/21 |
-| All four regression files, 170 rows | not available | strict 0.696, lenient 0.928, recall 0.774 |
-| Pooled, 194 unique rows | not available | strict 0.622, lenient 0.902, recall 0.785 (gate FAIL) |
+| Dropped-by-rule rows, 16 (5 label 0, 8 label 0.5, 3 label 1) | 16 of 16 "yes" (pipeline; fresh V1: 11, see 14.5)                                | **7 "yes"**: 0 of 5 label-0, 4 of 8 label-0.5, 3 of 3 label-1  |
+| Round 1-3, 125 rows                                          | strict 0.703, lenient 0.865, recall 0.634 (earlier run, not re-verified)         | strict 0.660 (31/47), lenient 0.936 (44/47), recall 0.756 (31/41)    |
+| Export B, 45 rows                                            | strict 19/23, lenient 22/23, recall 19/21 (section 13.2)                         | strict 17/22, lenient 20/22, recall 17/21                            |
+| All four regression files, 170 rows                          | not available                                                                    | strict 0.696, lenient 0.928, recall 0.774                            |
+| Pooled, 194 unique rows                                      | not available                                                                    | strict 0.622, lenient 0.902, recall 0.785 (gate FAIL)                |
 
 Reading: the two goals of V2 are met on the rows it was written for (at most 3 of the 10 false "yes" remain: 3; the label-1 rows stay "yes": 4 of 4; no label-0 "yes" survives on the dropped-by-rule rows). On the older rows it is mixed and does not pass the gate: strict precision is about the same as V1's reported numbers or slightly lower, lenient is higher on round 1-3 and slightly lower on export B, recall is higher. The V1 numbers for the older rows come from earlier logs, not from a re-run, and differences of 1-2 rows (export B) are noise.
 
@@ -327,18 +327,19 @@ Not yet done: a paired V1 versus V2 comparison on rows neither prompt was writte
 
 V1 was redeployed on the host, `JUDGE_MODEL_ID=judge-v1`, and the same 204 rows were judged under the same conditions as V2 (no surrounding passage, `tests/eval_judge_prompt.py`). Table 14.4 compared V2 with V1 verdicts from the pipeline (which had the wrong-paper passage, see below) and with figures from earlier logs; use this table instead.
 
-| Rows | V1 (fresh) | V2 |
-|---|---|---|
-| Targeted audit, 18 | 12 yes: strict 1/12, lenient 6/12, recall 1/1 | 8 yes: strict 1/8, lenient 5/8, recall 1/1 |
-| Dropped-by-rule, 16 | 11 yes: strict 3/11, lenient 8/11, recall 3/3 | 7 yes: strict 3/7, lenient 7/7, recall 3/3 |
-| Round 1-3, 125 | strict 0.703, lenient 0.892, recall 0.634 | strict 0.660, lenient 0.936, recall 0.756 |
-| Export B, 45 | strict 18/22 = 0.818, lenient 0.955, recall 0.857 | strict 17/22 = 0.773, lenient 0.909, recall 0.810 |
-| Regression files, 170 | strict 0.746, lenient 0.915, recall 0.710 | strict 0.696, lenient 0.928, recall 0.774 |
+| Rows                         | V1 (fresh)                                                           | V2                                                                   |
+| ---------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Targeted audit, 18           | 12 yes: strict 1/12, lenient 6/12, recall 1/1                        | 8 yes: strict 1/8, lenient 5/8, recall 1/1                           |
+| Dropped-by-rule, 16          | 11 yes: strict 3/11, lenient 8/11, recall 3/3                        | 7 yes: strict 3/7, lenient 7/7, recall 3/3                           |
+| Round 1-3, 125               | strict 0.703, lenient 0.892, recall 0.634                            | strict 0.660, lenient 0.936, recall 0.756                            |
+| Export B, 45                 | strict 18/22 = 0.818, lenient 0.955, recall 0.857                    | strict 17/22 = 0.773, lenient 0.909, recall 0.810                    |
+| Regression files, 170        | strict 0.746, lenient 0.915, recall 0.710                            | strict 0.696, lenient 0.928, recall 0.774                            |
 | **Pooled, 194 unique** | **strict 0.610, lenient 0.844, recall 0.723, agreement 0.603** | **strict 0.622, lenient 0.902, recall 0.785, agreement 0.619** |
 
 Paired, on the 194 unique rows: V1 "yes" -> V2 not "yes": 5 label-0, 2 label-0.5, 3 label-1. V1 not "yes" -> V2 "yes": 1 label-0, 7 label-0.5, 7 label-1. False "yes" on label-0 rows: V1 12, V2 8.
 
 Corrections:
+
 1. The fresh V1 numbers on round 1-3 reproduce the earlier logged figures (strict 0.703, recall 0.634; lenient 0.892 vs 0.865), so those logged V1 numbers were reliable. Export B differs by one row (18/22 vs 19/23).
 2. "V1 said yes to all 18 targeted rows" (report 8, section 14.4) was the pipeline run, where the judge was shown a passage from the wrong paper (chunk ids repeat in every source; fixed 2026-11-04). With no passage, V1 says "yes" to 12 of the 18. So V2's improvement on those rows is 12 -> 8 "yes", not 18 -> 8, and part of the pipeline's V1 behaviour came from the wrong passage. How much is not measured; it needs a re-judge of the stored runs with the correct passage.
 3. The V2 rules were written while looking at the targeted rows, so the targeted and dropped rows overstate V2's benefit.
@@ -349,14 +350,14 @@ Reading: V2 is modestly better on every pooled number (strict +0.012, lenient +0
 
 Rows: `reports/tag_audit_labeled_heldout.csv` (the 50-row audit export of `reports/tag_audit_export_11_20261104_2153.csv`: 19 label 1, 15 label 0.5, 16 label 0). Labels assigned by an LLM from the CSV alone, before any judge verdict was seen; neither prompt was written or tuned on these rows. Same conditions for both prompts (no surrounding passage). Results: `reports/judge_eval_judge-v1_20261104_2306.json`, `reports/judge_eval_judge-v2_20261104_2326.json`.
 
-| 50 held-out rows | V1 | V2 |
-|---|---|---|
-| Judge "yes" | 24 | 25 |
-| Strict precision | 17/24 = 0.708 | 18/25 = 0.720 |
-| Lenient precision | 21/24 = 0.875 | 23/25 = 0.920 |
-| Recall of label 1 | 17/19 = 0.895 | 18/19 = 0.947 |
-| False "yes" on label-0 rows | 3 (rows 8, 15, 44) | 2 (rows 15, 44) |
-| Exact agreement with the labels | 0.58 | 0.64 |
+| 50 held-out rows                | V1                 | V2              |
+| ------------------------------- | ------------------ | --------------- |
+| Judge "yes"                     | 24                 | 25              |
+| Strict precision                | 17/24 = 0.708      | 18/25 = 0.720   |
+| Lenient precision               | 21/24 = 0.875      | 23/25 = 0.920   |
+| Recall of label 1               | 17/19 = 0.895      | 18/19 = 0.947   |
+| False "yes" on label-0 rows     | 3 (rows 8, 15, 44) | 2 (rows 15, 44) |
+| Exact agreement with the labels | 0.58               | 0.64            |
 
 Nine verdicts changed: six moved closer to the label, three further away (a sign test on 6 against 3 is nowhere near significant). The only "yes" V2 removed was a label-0 row (8, the 40% memory result offered for "how memory cost is measured"). The two it added were one label-1 row and one label-0.5 row. The two remaining label-0 "yes" rows are the same two that survived V2 earlier: the FLARE query-design principle for "motivation of RAG" (15) and a vision-hallucination definition for "defined in large language models" (44).
 

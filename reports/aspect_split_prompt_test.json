@@ -1,0 +1,1472 @@
+{
+ "cases": [
+  {
+   "detail": "Does RAG reduce factual errors compared to standalone LLMs?",
+   "topic": "Effect of RAG on hallucination rates",
+   "old": [
+    "Does RAG reduce factual errors compared to standalone LLMs?"
+   ],
+   "new": [
+    "Does RAG reduce factual errors compared to standalone LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the benefits and challenges of RAG in LLMs?",
+   "topic": "RAG (retrieval-augmented generation)",
+   "old": [
+    "benefits of RAG in LLMs",
+    "challenges of RAG in LLMs"
+   ],
+   "new": [
+    "benefits of RAG in LLMs",
+    "challenges of RAG in LLMs"
+   ]
+  },
+  {
+   "detail": "How is hallucination defined and measured in LLMs?",
+   "topic": "hallucination in LLMs",
+   "old": [
+    "how hallucination is defined in LLMs",
+    "how hallucination is measured in LLMs"
+   ],
+   "new": [
+    "how hallucination is defined in LLMs",
+    "how hallucination is measured in LLMs"
+   ]
+  },
+  {
+   "detail": "What are the causes and consequences of hallucination in LLMs?",
+   "topic": "hallucination in LLMs",
+   "old": [
+    "causes of hallucination in LLMs",
+    "consequences of hallucination in LLMs"
+   ],
+   "new": [
+    "causes of hallucination in LLMs",
+    "consequences of hallucination in LLMs"
+   ]
+  },
+  {
+   "detail": "What is the evidence for RAG reducing or increasing hallucination rates in LLMs?",
+   "topic": "How does RAG affect hallucination rates in LLMs",
+   "old": [
+    "What is the evidence for RAG reducing or increasing hallucination rates in LLMs?"
+   ],
+   "new": [
+    "evidence that RAG reduces hallucination rates in LLMs",
+    "evidence that RAG increases hallucination rates in LLMs"
+   ]
+  },
+  {
+   "detail": "What are the mechanisms or factors that explain the impact of RAG on hallucination rates in LLMs?",
+   "topic": "How does RAG affect hallucination rates in LLMs",
+   "old": [
+    "What are the mechanisms or factors that explain the impact of RAG on hallucination rates in LLMs?"
+   ],
+   "new": [
+    "mechanisms that explain the impact of RAG on hallucination rates in LLMs",
+    "factors that explain the impact of RAG on hallucination rates in LLMs"
+   ]
+  },
+  {
+   "detail": "How does the impact of RAG on hallucination rates vary depending on the type, quality, and relevance of the retrieved documents, the prompt, and the model architecture?",
+   "topic": "How does RAG affect hallucination rates in LLMs",
+   "old": [
+    "How does the impact of RAG on hallucination rates vary depending on the type, quality, and relevance of the retrieved documents, the prompt, and the model architecture?"
+   ],
+   "new": [
+    "how the impact of RAG on hallucination rates varies with the type, quality, and relevance of retrieved documents",
+    "how the impact of RAG on hallucination rates varies with the prompt",
+    "how the impact of RAG on hallucination rates varies with the model architecture"
+   ]
+  },
+  {
+   "detail": "How does the impact of RAG on hallucination rates vary by different types of LLMs, tasks, and domains?",
+   "topic": "How does RAG affect hallucination rates in LLMs",
+   "old": [
+    "How does the impact of RAG on hallucination rates vary by different types of LLMs?",
+    "How does the impact of RAG on hallucination rates vary by different tasks?",
+    "How does the impact of RAG on hallucination rates vary by different domains?"
+   ],
+   "new": [
+    "How does the impact of RAG on hallucination rates vary across different types of LLMs?",
+    "How does the impact of RAG on hallucination rates vary across different tasks?",
+    "How does the impact of RAG on hallucination rates vary across different domains?"
+   ]
+  },
+  {
+   "detail": "What are the benefits and challenges of speculative decoding?",
+   "topic": "speculative decoding",
+   "old": [
+    "benefits of speculative decoding",
+    "challenges of speculative decoding"
+   ],
+   "new": [
+    "benefits of speculative decoding",
+    "challenges of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical results on the latency reduction of speculative decoding?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "theoretical results on the latency reduction of speculative decoding",
+    "empirical results on the latency reduction of speculative decoding"
+   ],
+   "new": [
+    "theoretical results on the latency reduction of speculative decoding",
+    "empirical results on the latency reduction of speculative decoding"
+   ]
+  },
+  {
+   "detail": "Under what conditions or scenarios does speculative decoding reduce or increase latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "conditions or scenarios where speculative decoding reduces latency",
+    "conditions or scenarios where speculative decoding increases latency"
+   ],
+   "new": [
+    "conditions or scenarios where speculative decoding reduces latency",
+    "conditions or scenarios where speculative decoding increases latency"
+   ]
+  },
+  {
+   "detail": "How does speculative decoding compare to other methods of reducing LLM inference latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "How does speculative decoding compare to other methods of reducing LLM inference latency?"
+   ],
+   "new": [
+    "how speculative decoding reduces LLM inference latency",
+    "how other methods of reducing LLM inference latency affect LLM inference latency"
+   ]
+  },
+  {
+   "detail": "What are the main components or steps of speculative decoding?",
+   "topic": "speculative decoding",
+   "old": [
+    "What are the main components or steps of speculative decoding?"
+   ],
+   "new": [
+    "What are the main components or steps of speculative decoding?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or challenges of speculative decoding for LLM inference latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "What are the trade-offs or challenges of speculative decoding for LLM inference latency?"
+   ],
+   "new": [
+    "trade-offs of speculative decoding for LLM inference latency",
+    "challenges of speculative decoding for LLM inference latency"
+   ]
+  },
+  {
+   "detail": "What are the existing methods or baselines for LLM inference latency reduction?",
+   "topic": "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines",
+   "old": [
+    "What are the existing methods or baselines for LLM inference latency reduction?",
+    "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines?"
+   ],
+   "new": [
+    "What are the existing methods or baselines for reducing LLM inference latency?",
+    "How does speculative decoding compare to other latency‑reduction methods or baselines in reducing LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the empirical results or benchmarks of speculative decoding vs. other methods or baselines?",
+   "topic": "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines",
+   "old": [
+    "What are the empirical results or benchmarks of speculative decoding compared to other methods or baselines?"
+   ],
+   "new": [
+    "empirical results or benchmarks of speculative decoding",
+    "empirical results or benchmarks of other methods or baselines"
+   ]
+  },
+  {
+   "detail": "What are the theoretical or analytical explanations or predictions of speculative decoding vs. other methods or baselines?",
+   "topic": "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines",
+   "old": [
+    "What are the theoretical or analytical explanations or predictions of speculative decoding compared to other methods or baselines?"
+   ],
+   "new": [
+    "theoretical or analytical explanations or predictions of speculative decoding",
+    "theoretical or analytical explanations or predictions of other methods or baselines"
+   ]
+  },
+  {
+   "detail": "What are the main components and parameters of speculative decoding?",
+   "topic": "speculative decoding",
+   "old": [
+    "main components of speculative decoding",
+    "main parameters of speculative decoding"
+   ],
+   "new": [
+    "main components of speculative decoding",
+    "parameters of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical benefits of speculative decoding for LLM inference latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "What are the theoretical benefits of speculative decoding for LLM inference latency?",
+    "What are the empirical benefits of speculative decoding for LLM inference latency?"
+   ],
+   "new": [
+    "What are the theoretical benefits of speculative decoding for LLM inference latency?",
+    "What are the empirical benefits of speculative decoding for LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs and limitations of speculative decoding for LLM inference latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "trade-offs of speculative decoding for LLM inference latency",
+    "limitations of speculative decoding for LLM inference latency"
+   ],
+   "new": [
+    "trade-offs of speculative decoding for LLM inference latency",
+    "limitations of speculative decoding for LLM inference latency"
+   ]
+  },
+  {
+   "detail": "How does speculative decoding compare to other methods for reducing LLM inference latency?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "How does speculative decoding compare to other methods for reducing LLM inference latency?"
+   ],
+   "new": [
+    "how speculative decoding affects LLM inference latency",
+    "how other methods for reducing LLM inference latency affect LLM inference latency"
+   ]
+  },
+  {
+   "detail": "What are the advantages and disadvantages of speculative decoding?",
+   "topic": "speculative decoding",
+   "old": [
+    "advantages of speculative decoding",
+    "disadvantages of speculative decoding"
+   ],
+   "new": [
+    "advantages of speculative decoding",
+    "disadvantages of speculative decoding"
+   ]
+  },
+  {
+   "detail": "Under what conditions or scenarios is speculative decoding more or less effective?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "Under what conditions or scenarios is speculative decoding more effective?",
+    "Under what conditions or scenarios is speculative decoding less effective?"
+   ],
+   "new": [
+    "Conditions or scenarios where speculative decoding is more effective for LLM inference latency",
+    "Conditions or scenarios where speculative decoding is less effective for LLM inference latency"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or challenges of using speculative decoding?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "trade-offs or challenges of using speculative decoding"
+   ],
+   "new": [
+    "trade-offs of using speculative decoding",
+    "challenges of using speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical benefits of speculative decoding?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "theoretical benefits of speculative decoding",
+    "empirical benefits of speculative decoding"
+   ],
+   "new": [
+    "theoretical benefits of speculative decoding",
+    "empirical benefits of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs and limitations of speculative decoding?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "trade-offs of speculative decoding",
+    "limitations of speculative decoding"
+   ],
+   "new": [
+    "trade-offs of speculative decoding",
+    "limitations of speculative decoding"
+   ]
+  },
+  {
+   "detail": "How does it handle the error cases or mismatches?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "How does speculative decoding handle error cases or mismatches?"
+   ],
+   "new": [
+    "how speculative decoding handles error cases",
+    "how speculative decoding handles mismatches"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or overheads involved in speculative decoding?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "What are the trade-offs and overheads involved in speculative decoding?"
+   ],
+   "new": [
+    "trade-offs of speculative decoding",
+    "overheads of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the benchmarks or experiments that compare speculative decoding with other methods or baselines?",
+   "topic": "How does speculative decoding affect LLM inference latency",
+   "old": [
+    "What benchmarks or experiments compare speculative decoding with other methods or baselines?"
+   ],
+   "new": [
+    "benchmarks or experiments that compare speculative decoding with other methods or baselines"
+   ]
+  },
+  {
+   "detail": "How do hallucinations affect the performance and reliability of LLMs?",
+   "topic": "What are hallucinations in large language models (LLMs)",
+   "old": [
+    "How do hallucinations affect the performance of LLMs?",
+    "How do hallucinations affect the reliability of LLMs?"
+   ],
+   "new": [
+    "how hallucinations affect the performance of LLMs",
+    "how hallucinations affect the reliability of LLMs"
+   ]
+  },
+  {
+   "detail": "How does RAG limit the scope and uncertainty of LLMs?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "How does RAG limit the scope of LLMs?",
+    "How does RAG limit the uncertainty of LLMs?"
+   ],
+   "new": [
+    "how RAG limits the scope of LLMs",
+    "how RAG limits the uncertainty of LLMs"
+   ]
+  },
+  {
+   "detail": "How does RAG improve the quality and accuracy of LLMs?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "How does RAG improve the quality of LLMs?",
+    "How does RAG improve the accuracy of LLMs?"
+   ],
+   "new": [
+    "How does RAG improve the quality of LLMs?",
+    "How does RAG improve the accuracy of LLMs?"
+   ]
+  },
+  {
+   "detail": "How are hallucinations defined and measured?",
+   "topic": "What are hallucinations in LLMs",
+   "old": [
+    "How are hallucinations defined?",
+    "How are hallucinations measured?"
+   ],
+   "new": [
+    "how hallucinations in LLMs are defined",
+    "how hallucinations in LLMs are measured"
+   ]
+  },
+  {
+   "detail": "What are the causes and consequences of hallucinations in LLMs?",
+   "topic": "What are hallucinations in LLMs",
+   "old": [
+    "causes of hallucinations in LLMs",
+    "consequences of hallucinations in LLMs"
+   ],
+   "new": [
+    "causes of hallucinations in LLMs",
+    "consequences of hallucinations in LLMs"
+   ]
+  },
+  {
+   "detail": "How does RAG improve the quality and relevance of the input data for LLMs?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "How does RAG improve the quality and relevance of the input data for LLMs?"
+   ],
+   "new": [
+    "how RAG improves the quality of the input data for LLMs",
+    "how RAG improves the relevance of the input data for LLMs"
+   ]
+  },
+  {
+   "detail": "How does RAG enable fact-checking and verification of LLMs?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "How does RAG enable fact-checking of LLMs?",
+    "How does RAG enable verification of LLMs?"
+   ],
+   "new": [
+    "How does RAG enable fact-checking of LLMs?",
+    "How does RAG enable verification of LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the basic components and architectures of large language models?",
+   "topic": "What are large language models and how do they generate text",
+   "old": [
+    "basic components of large language models",
+    "architectures of large language models"
+   ],
+   "new": [
+    "basic components of large language models",
+    "architectures of large language models"
+   ]
+  },
+  {
+   "detail": "What are the training and inference processes of large language models?",
+   "topic": "What are large language models and how do they generate text",
+   "old": [
+    "What are the training processes of large language models?",
+    "What are the inference processes of large language models?"
+   ],
+   "new": [
+    "training processes of large language models",
+    "inference processes of large language models"
+   ]
+  },
+  {
+   "detail": "What are some common applications and challenges of large language models?",
+   "topic": "What are large language models and how do they generate text",
+   "old": [
+    "What are common applications of large language models?",
+    "What are challenges of large language models?"
+   ],
+   "new": [
+    "common applications of large language models",
+    "common challenges of large language models"
+   ]
+  },
+  {
+   "detail": "How are hallucinations defined and measured in large language models?",
+   "topic": "What are hallucinations in large language models and why do they occur",
+   "old": [
+    "How are hallucinations defined in large language models?",
+    "How are hallucinations measured in large language models?"
+   ],
+   "new": [
+    "definition of hallucinations in large language models",
+    "measurement of hallucinations in large language models"
+   ]
+  },
+  {
+   "detail": "What are some examples and sources of hallucinations in large language models?",
+   "topic": "What are hallucinations in large language models and why do they occur",
+   "old": [
+    "examples of hallucinations in large language models",
+    "sources of hallucinations in large language models"
+   ],
+   "new": [
+    "examples of hallucinations in large language models",
+    "sources of hallucinations in large language models"
+   ]
+  },
+  {
+   "detail": "What are the impacts and risks of hallucinations in large language models?",
+   "topic": "What are hallucinations in large language models and why do they occur",
+   "old": [
+    "impacts of hallucinations in large language models",
+    "risks of hallucinations in large language models"
+   ],
+   "new": [
+    "impacts of hallucinations in large language models",
+    "risks of hallucinations in large language models"
+   ]
+  },
+  {
+   "detail": "What is the motivation and goal of retrieval-augmented generation?",
+   "topic": "retrieval-augmented generation and how does it work",
+   "old": [
+    "motivation of retrieval-augmented generation",
+    "goal of retrieval-augmented generation"
+   ],
+   "new": [
+    "motivation of retrieval-augmented generation",
+    "goal of retrieval-augmented generation"
+   ]
+  },
+  {
+   "detail": "What are the main components and steps of retrieval-augmented generation?",
+   "topic": "retrieval-augmented generation and how does it work",
+   "old": [
+    "main components of retrieval-augmented generation",
+    "steps of retrieval-augmented generation"
+   ],
+   "new": [
+    "main components of retrieval-augmented generation",
+    "steps of retrieval-augmented generation"
+   ]
+  },
+  {
+   "detail": "What are some examples and benefits of retrieval-augmented generation?",
+   "topic": "retrieval-augmented generation and how does it work",
+   "old": [
+    "examples of retrieval-augmented generation",
+    "benefits of retrieval-augmented generation"
+   ],
+   "new": [
+    "examples of retrieval-augmented generation",
+    "benefits of retrieval-augmented generation"
+   ]
+  },
+  {
+   "detail": "How does retrieval-augmented generation improve the quality and accuracy of the input and output of large language models?",
+   "topic": "How does retrieval-augmented generation reduce hallucinations in large language models",
+   "old": [
+    "How does retrieval-augmented generation improve the quality of the input and output of large language models?",
+    "How does retrieval-augmented generation improve the accuracy of the input and output of large language models?"
+   ],
+   "new": [
+    "how retrieval-augmented generation improves the quality of the input and output of large language models",
+    "how retrieval-augmented generation improves the accuracy of the input and output of large language models"
+   ]
+  },
+  {
+   "detail": "How does retrieval-augmented generation constrain the creativity and diversity of large language models?",
+   "topic": "How does retrieval-augmented generation reduce hallucinations in large language models",
+   "old": [
+    "How does retrieval-augmented generation constrain the creativity of large language models?",
+    "How does retrieval-augmented generation constrain the diversity of large language models?"
+   ],
+   "new": [
+    "How does retrieval-augmented generation constrain the creativity of large language models?",
+    "How does retrieval-augmented generation constrain the diversity of large language models?"
+   ]
+  },
+  {
+   "detail": "How does retrieval-augmented generation balance the trade-offs between relevance and generalization of large language models?",
+   "topic": "How does retrieval-augmented generation reduce hallucinations in large language models",
+   "old": [
+    "How does retrieval-augmented generation balance the trade-offs between relevance and generalization of large language models?"
+   ],
+   "new": [
+    "how retrieval-augmented generation influences relevance of large language models",
+    "how retrieval-augmented generation influences generalization of large language models"
+   ]
+  },
+  {
+   "detail": "How does it work and what are its main components?",
+   "topic": "LoRA (Low-Rank Adaptation) fine-tuning",
+   "old": [
+    "How does LoRA fine-tuning work?",
+    "What are the main components of LoRA fine-tuning?"
+   ],
+   "new": [
+    "How does LoRA work?",
+    "What are the main components of LoRA?"
+   ]
+  },
+  {
+   "detail": "What are the advantages and disadvantages of LoRA fine-tuning?",
+   "topic": "LoRA (Low-Rank Adaptation) fine-tuning",
+   "old": [
+    "advantages of LoRA fine-tuning",
+    "disadvantages of LoRA fine-tuning"
+   ],
+   "new": [
+    "advantages of LoRA fine-tuning",
+    "disadvantages of LoRA fine-tuning"
+   ]
+  },
+  {
+   "detail": "What are the advantages and disadvantages of full fine-tuning?",
+   "topic": "full fine-tuning",
+   "old": [
+    "advantages of full fine-tuning",
+    "disadvantages of full fine-tuning"
+   ],
+   "new": [
+    "advantages of full fine-tuning",
+    "disadvantages of full fine-tuning"
+   ]
+  },
+  {
+   "detail": "What are the metrics or benchmarks used to measure performance?",
+   "topic": "How do LoRA and full fine-tuning compare in terms of performance",
+   "old": [
+    "What metrics or benchmarks are used to measure performance when comparing LoRA and full fine-tuning?"
+   ],
+   "new": [
+    "metrics used to measure performance of LoRA and full fine-tuning",
+    "benchmarks used to measure performance of LoRA and full fine-tuning"
+   ]
+  },
+  {
+   "detail": "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?",
+   "topic": "How do LoRA and full fine-tuning compare in terms of performance",
+   "old": [
+    "What are the results of empirical studies or experiments comparing LoRA and full fine-tuning on various tasks and models?"
+   ],
+   "new": [
+    "results of empirical studies comparing LoRA and full fine-tuning on various tasks and models"
+   ]
+  },
+  {
+   "detail": "How is memory cost defined and measured?",
+   "topic": "How do LoRA and full fine-tuning compare in terms of performance",
+   "old": [
+    "How is memory cost defined?",
+    "How is memory cost measured?"
+   ],
+   "new": [
+    "how memory cost is defined",
+    "how memory cost is measured"
+   ]
+  },
+  {
+   "detail": "What are the factors that affect memory cost for LoRA and full fine-tuning?",
+   "topic": "How do LoRA and full fine-tuning compare in terms of performance",
+   "old": [
+    "What are the factors that affect memory cost for LoRA and full fine-tuning?"
+   ],
+   "new": [
+    "factors that affect memory cost for LoRA",
+    "factors that affect memory cost for full fine-tuning"
+   ]
+  },
+  {
+   "detail": "What are the main components of a transformer model, e.g. attention mechanism, encoder-decoder architecture, etc.?",
+   "topic": "What are transformer models and how do they work",
+   "old": [
+    "What are the main components of a transformer model?"
+   ],
+   "new": [
+    "What are the main components of a transformer model?"
+   ]
+  },
+  {
+   "detail": "What are the advantages and limitations of transformer models compared to other models?",
+   "topic": "What are transformer models and how do they work",
+   "old": [
+    "advantages of transformer models compared to other models",
+    "limitations of transformer models compared to other models"
+   ],
+   "new": [
+    "advantages of transformer models compared to other models",
+    "limitations of transformer models compared to other models"
+   ]
+  },
+  {
+   "detail": "How is a context window defined and measured?",
+   "topic": "a context window and why is it important for transformer models",
+   "old": [
+    "how a context window is defined",
+    "how a context window is measured"
+   ],
+   "new": [
+    "how a context window is defined",
+    "how a context window is measured"
+   ]
+  },
+  {
+   "detail": "How does a context window affect the performance and capabilities of a transformer model?",
+   "topic": "a context window and why is it important for transformer models",
+   "old": [
+    "How does a context window affect the performance of a transformer model?",
+    "How does a context window affect the capabilities of a transformer model?"
+   ],
+   "new": [
+    "how a context window affects the performance of a transformer model",
+    "how a context window affects the capabilities of a transformer model"
+   ]
+  },
+  {
+   "detail": "What are some examples of tasks or applications that require a large context window?",
+   "topic": "a context window and why is it important for transformer models",
+   "old": [
+    "What are some examples of tasks or applications that require a large context window?"
+   ],
+   "new": [
+    "examples of tasks or applications that require a large context window"
+   ]
+  },
+  {
+   "detail": "How does the attention mechanism degrade or fail with long context windows?",
+   "topic": "What are the challenges or problems that transformer models face with long context windows",
+   "old": [
+    "How does the attention mechanism degrade or fail with long context windows?"
+   ],
+   "new": [
+    "How does the attention mechanism degrade with long context windows?",
+    "How does the attention mechanism fail with long context windows?"
+   ]
+  },
+  {
+   "detail": "How does the computational complexity and memory usage increase with long context windows?",
+   "topic": "What are the challenges or problems that transformer models face with long context windows",
+   "old": [
+    "How does the computational complexity of transformer models increase with long context windows?",
+    "How does the memory usage of transformer models increase with long context windows?"
+   ],
+   "new": [
+    "how computational complexity increases with long context windows",
+    "how memory usage increases with long context windows"
+   ]
+  },
+  {
+   "detail": "How does the quality and diversity of training data affect the ability of transformer models to learn long-range dependencies?",
+   "topic": "What are the challenges or problems that transformer models face with long context windows",
+   "old": [
+    "How does the quality and diversity of training data affect the ability of transformer models to learn long-range dependencies?"
+   ],
+   "new": [
+    "How does the quality of training data affect the ability of transformer models to learn long-range dependencies?",
+    "How does the diversity of training data affect the ability of transformer models to learn long-range dependencies?"
+   ]
+  },
+  {
+   "detail": "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?",
+   "topic": "What are the challenges or problems that transformer models face with long context windows",
+   "old": [
+    "What are some empirical evidence or benchmarks that show the struggles of transformer models with long context windows?"
+   ],
+   "new": [
+    "empirical evidence that shows the struggles of transformer models with long context windows",
+    "benchmarks that show the struggles of transformer models with long context windows"
+   ]
+  },
+  {
+   "detail": "How do these techniques modify or improve the transformer model architecture, e.g. adding new layers, heads, or mechanisms?",
+   "topic": "What are the challenges or problems that transformer models face with long context windows",
+   "old": [
+    "How do these techniques modify or improve the transformer model architecture (e.g., adding new layers, heads, or mechanisms) to address the challenges transformer models face with long context windows?"
+   ],
+   "new": [
+    "How do techniques for addressing long context windows modify or improve the transformer model architecture (e.g., by adding new layers, heads, or mechanisms)?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or limitations of these techniques, e.g. computational cost, accuracy, or generalization?",
+   "topic": "How effective are these techniques in improving the performance and capabilities of transformer models with long context windows",
+   "old": [
+    "What are the trade‑offs or limitations of these techniques for improving the performance and capabilities of transformer models with long context windows, e.g., computational cost, accuracy, or generalization?"
+   ],
+   "new": [
+    "What are the trade-offs or limitations of these techniques in terms of computational cost?",
+    "What are the trade-offs or limitations of these techniques in terms of accuracy?",
+    "What are the trade-offs or limitations of these techniques in terms of generalization?"
+   ]
+  },
+  {
+   "detail": "What are some empirical evidence or benchmarks that show the improvement of transformer models with long context windows using these techniques?",
+   "topic": "How effective are these techniques in improving the performance and capabilities of transformer models with long context windows",
+   "old": [
+    "What empirical evidence or benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?"
+   ],
+   "new": [
+    "What empirical evidence demonstrates the improvement of transformer models with long context windows using these techniques?",
+    "What benchmarks demonstrate the improvement of transformer models with long context windows using these techniques?"
+   ]
+  },
+  {
+   "detail": "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?",
+   "topic": "How effective are these techniques in improving the performance and capabilities of transformer models with long context windows",
+   "old": [
+    "What are some examples of tasks or applications that benefit from using transformer models with long context windows and these techniques, illustrating the effectiveness of these techniques in improving performance and capabilities?"
+   ],
+   "new": [
+    "What are examples of tasks or applications that benefit from using transformer models with long context windows and these techniques?"
+   ]
+  },
+  {
+   "detail": "How does RAG enable fact-checking and verification of LLM outputs?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "How does RAG enable fact-checking and verification of LLM outputs?"
+   ],
+   "new": [
+    "how RAG enables fact-checking of LLM outputs",
+    "how RAG enables verification of LLM outputs"
+   ]
+  },
+  {
+   "detail": "What are the limitations and challenges of RAG?",
+   "topic": "How does RAG reduce hallucinations in LLMs",
+   "old": [
+    "What are the limitations of RAG?",
+    "What are the challenges of RAG?"
+   ],
+   "new": [
+    "limitations of RAG",
+    "challenges of RAG"
+   ]
+  },
+  {
+   "detail": "What are the results or findings from existing studies or experiments comparing LoRA and full fine-tuning?",
+   "topic": "How do LoRA and full fine-tuning compare in terms of performance",
+   "old": [
+    "What are the results or findings from existing studies or experiments comparing LoRA and full fine-tuning?"
+   ],
+   "new": [
+    "results or findings from existing studies or experiments comparing LoRA and full fine-tuning"
+   ]
+  },
+  {
+   "detail": "How does the attention mechanism enable transformer models to capture dependencies and relationships between different parts of the input sequence?",
+   "topic": "What are transformer models and how do they process input sequences",
+   "old": [
+    "How does the attention mechanism enable transformer models to capture dependencies and relationships between different parts of the input sequence?"
+   ],
+   "new": [
+    "how the attention mechanism enables transformer models to capture dependencies between different parts of the input sequence",
+    "how the attention mechanism enables transformer models to capture relationships between different parts of the input sequence"
+   ]
+  },
+  {
+   "detail": "What are the limitations of the attention mechanism in terms of computational complexity and memory usage as the input sequence length increases?",
+   "topic": "What are transformer models and how do they process input sequences",
+   "old": [
+    "What are the limitations of the attention mechanism's computational complexity as the input sequence length increases?",
+    "What are the limitations of the attention mechanism's memory usage as the input sequence length increases?"
+   ],
+   "new": [
+    "limitations of the attention mechanism in terms of computational complexity as the input sequence length increases",
+    "limitations of the attention mechanism in terms of memory usage as the input sequence length increases"
+   ]
+  },
+  {
+   "detail": "What are some examples of natural language tasks that require or benefit from long context windows, e.g. summarization, translation, dialogue, etc.?",
+   "topic": "What are long context windows and why are they useful or challenging for natural language tasks",
+   "old": [
+    "What are some examples of natural language tasks that require or benefit from long context windows?"
+   ],
+   "new": [
+    "Examples of natural language tasks that require long context windows",
+    "Examples of natural language tasks that benefit from long context windows"
+   ]
+  },
+  {
+   "detail": "What are some of the difficulties or problems that arise when dealing with long context windows, e.g. information overload, loss of coherence, hallucination, etc.?",
+   "topic": "What are long context windows and why are they useful or challenging for natural language tasks",
+   "old": [
+    "What are the difficulties or problems that arise when dealing with long context windows?"
+   ],
+   "new": [
+    "difficulties or problems that arise when dealing with long context windows"
+   ]
+  },
+  {
+   "detail": "What are the main categories of techniques, e.g. architectural modifications, training strategies, external memory, etc.?",
+   "topic": "What are the techniques that address the challenge of long context windows for transformer models",
+   "old": [
+    "What are the main categories of techniques that address the challenge of long context windows for transformer models?"
+   ],
+   "new": [
+    "What are the main categories of techniques that address the challenge of long context windows for transformer models?"
+   ]
+  },
+  {
+   "detail": "How do each of these techniques work and what are their advantages and disadvantages?",
+   "topic": "What are the techniques that address the challenge of long context windows for transformer models",
+   "old": [
+    "How does each technique that addresses the challenge of long context windows for transformer models work?",
+    "What are the advantages of each technique that addresses the challenge of long context windows for transformer models?",
+    "What are the disadvantages of each technique that addresses the challenge of long context windows for transformer models?"
+   ],
+   "new": [
+    "how each technique works",
+    "advantages of each technique",
+    "disadvantages of each technique"
+   ]
+  },
+  {
+   "detail": "How do these techniques compare in terms of performance, scalability, and interpretability?",
+   "topic": "What are the techniques that address the challenge of long context windows for transformer models",
+   "old": [
+    "How do the techniques that address long context windows for transformer models compare in terms of performance?",
+    "How do the techniques that address long context windows for transformer models compare in terms of scalability?",
+    "How do the techniques that address long context windows for transformer models compare in terms of interpretability?"
+   ],
+   "new": [
+    "How do the techniques that address the challenge of long context windows for transformer models compare in terms of performance?",
+    "How do the techniques that address the challenge of long context windows for transformer models compare in terms of scalability?",
+    "How do the techniques that address the challenge of long context windows for transformer models compare in terms of interpretability?"
+   ]
+  },
+  {
+   "detail": "What are the main components and parameters of state space models?",
+   "topic": "What are state space models and how do they work",
+   "old": [
+    "What are the main components of state space models?",
+    "What are the parameters of state space models?"
+   ],
+   "new": [
+    "main components of state space models",
+    "parameters of state space models"
+   ]
+  },
+  {
+   "detail": "What are the advantages and limitations of state space models?",
+   "topic": "What are state space models and how do they work",
+   "old": [
+    "advantages of state space models",
+    "limitations of state space models"
+   ],
+   "new": [
+    "advantages of state space models",
+    "limitations of state space models"
+   ]
+  },
+  {
+   "detail": "What are the main components and parameters of transformers?",
+   "topic": "What are transformers and how do they work",
+   "old": [
+    "What are the main components of transformers?",
+    "What are the parameters of transformers?"
+   ],
+   "new": [
+    "main components of transformers",
+    "parameters of transformers"
+   ]
+  },
+  {
+   "detail": "What are the advantages and limitations of transformers?",
+   "topic": "What are transformers and how do they work",
+   "old": [
+    "advantages of transformers",
+    "limitations of transformers"
+   ],
+   "new": [
+    "advantages of transformers",
+    "limitations of transformers"
+   ]
+  },
+  {
+   "detail": "What is the motivation and design of Mamba?",
+   "topic": "Mamba and how does it relate to state space models and transformers",
+   "old": [
+    "motivation of Mamba",
+    "design of Mamba"
+   ],
+   "new": [
+    "motivation of Mamba",
+    "design of Mamba"
+   ]
+  },
+  {
+   "detail": "How does Mamba use state space models to achieve linear complexity and selective attention?",
+   "topic": "Mamba and how does it relate to state space models and transformers",
+   "old": [
+    "How does Mamba use state space models to achieve linear complexity?",
+    "How does Mamba use state space models to achieve selective attention?"
+   ],
+   "new": [
+    "how Mamba uses state space models to achieve linear complexity",
+    "how Mamba uses state space models to achieve selective attention"
+   ]
+  },
+  {
+   "detail": "How does Mamba compare to transformers in terms of architecture and performance?",
+   "topic": "Mamba and how does it relate to state space models and transformers",
+   "old": [
+    "How does Mamba compare to transformers in terms of architecture?",
+    "How does Mamba compare to transformers in terms of performance?"
+   ],
+   "new": [
+    "how Mamba compares to transformers in architecture",
+    "how Mamba compares to transformers in performance"
+   ]
+  },
+  {
+   "detail": "What are the common training objectives and losses for sequence modeling tasks?",
+   "topic": "What are the metrics and methods for measuring training efficiency and long-sequence performance",
+   "old": [
+    "What are the common training objectives for sequence modeling tasks?",
+    "What are the common losses for sequence modeling tasks?"
+   ],
+   "new": [
+    "common training objectives for sequence modeling tasks",
+    "common losses for sequence modeling tasks"
+   ]
+  },
+  {
+   "detail": "What are the common evaluation tasks and datasets for sequence modeling tasks?",
+   "topic": "What are the metrics and methods for measuring training efficiency and long-sequence performance",
+   "old": [
+    "What are the common evaluation tasks for sequence modeling tasks when measuring training efficiency and long-sequence performance?",
+    "What are the common datasets for sequence modeling tasks when measuring training efficiency and long-sequence performance?"
+   ],
+   "new": [
+    "common evaluation tasks for sequence modeling tasks",
+    "common datasets for sequence modeling tasks"
+   ]
+  },
+  {
+   "detail": "How are training efficiency and long-sequence performance defined and measured?",
+   "topic": "What are the metrics and methods for measuring training efficiency and long-sequence performance",
+   "old": [
+    "how training efficiency is defined and measured",
+    "how long-sequence performance is defined and measured"
+   ],
+   "new": [
+    "how training efficiency is defined and measured",
+    "how long-sequence performance is defined and measured"
+   ]
+  },
+  {
+   "detail": "What are the empirical results and findings from existing studies or benchmarks?",
+   "topic": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance",
+   "old": [
+    "What are the empirical results and findings from existing studies or benchmarks regarding how state space models like Mamba compare with transformers in training efficiency and long‑sequence performance?"
+   ],
+   "new": [
+    "What empirical results from existing studies or benchmarks show how state‑space models such as Mamba compare with transformers in training efficiency?",
+    "What empirical results from existing studies or benchmarks show how state‑space models such as Mamba compare with transformers in long‑sequence performance?"
+   ]
+  },
+  {
+   "detail": "What are the theoretical explanations and insights from existing literature or analysis?",
+   "topic": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance",
+   "old": [
+    "What are the theoretical explanations from existing literature or analysis regarding how state space models like Mamba compare with transformers in training efficiency and long‑sequence performance?",
+    "What are the insights from existing literature or analysis regarding how state space models like Mamba compare with transformers in training efficiency and long‑sequence performance?"
+   ],
+   "new": [
+    "theoretical explanations and insights from existing literature or analysis",
+    "how state space models like Mamba compare with transformers in training efficiency",
+    "how state space models like Mamba compare with transformers in long-sequence performance"
+   ]
+  },
+  {
+   "detail": "What are the open challenges and future directions for state space models and transformers?",
+   "topic": "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance",
+   "old": [
+    "What are the open challenges for state space models and transformers?",
+    "What are the future directions for state space models and transformers?"
+   ],
+   "new": [
+    "open challenges for state space models and transformers",
+    "future directions for state space models and transformers"
+   ]
+  }
+ ],
+ "noise": [
+  {
+   "detail": "Does RAG reduce factual errors compared to standalone LLMs?",
+   "old": [
+    "Does RAG reduce factual errors compared to standalone LLMs?"
+   ],
+   "old2": [
+    "Does RAG reduce factual errors compared to standalone LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the benefits and challenges of RAG in LLMs?",
+   "old": [
+    "benefits of RAG in LLMs",
+    "challenges of RAG in LLMs"
+   ],
+   "old2": [
+    "benefits of RAG in LLMs",
+    "challenges of RAG in LLMs"
+   ]
+  },
+  {
+   "detail": "How is hallucination defined and measured in LLMs?",
+   "old": [
+    "how hallucination is defined in LLMs",
+    "how hallucination is measured in LLMs"
+   ],
+   "old2": [
+    "How is hallucination defined in LLMs?",
+    "How is hallucination measured in LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the causes and consequences of hallucination in LLMs?",
+   "old": [
+    "causes of hallucination in LLMs",
+    "consequences of hallucination in LLMs"
+   ],
+   "old2": [
+    "causes of hallucination in LLMs",
+    "consequences of hallucination in LLMs"
+   ]
+  },
+  {
+   "detail": "What is the evidence for RAG reducing or increasing hallucination rates in LLMs?",
+   "old": [
+    "What is the evidence for RAG reducing or increasing hallucination rates in LLMs?"
+   ],
+   "old2": [
+    "What is the evidence for RAG reducing or increasing hallucination rates in LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the mechanisms or factors that explain the impact of RAG on hallucination rates in LLMs?",
+   "old": [
+    "What are the mechanisms or factors that explain the impact of RAG on hallucination rates in LLMs?"
+   ],
+   "old2": [
+    "What are the mechanisms or factors that explain the impact of RAG on hallucination rates in LLMs?"
+   ]
+  },
+  {
+   "detail": "How does the impact of RAG on hallucination rates vary depending on the type, quality, and relevance of the retrieved documents, the prompt, and the model architecture?",
+   "old": [
+    "How does the impact of RAG on hallucination rates vary depending on the type, quality, and relevance of the retrieved documents, the prompt, and the model architecture?"
+   ],
+   "old2": [
+    "How does the impact of RAG on hallucination rates vary depending on the type, quality, and relevance of the retrieved documents, the prompt, and the model architecture?"
+   ]
+  },
+  {
+   "detail": "How does the impact of RAG on hallucination rates vary by different types of LLMs, tasks, and domains?",
+   "old": [
+    "How does the impact of RAG on hallucination rates vary by different types of LLMs?",
+    "How does the impact of RAG on hallucination rates vary by different tasks?",
+    "How does the impact of RAG on hallucination rates vary by different domains?"
+   ],
+   "old2": [
+    "How does the impact of RAG on hallucination rates vary by different types of LLMs?",
+    "How does the impact of RAG on hallucination rates vary by different tasks?",
+    "How does the impact of RAG on hallucination rates vary by different domains?"
+   ]
+  },
+  {
+   "detail": "What are the benefits and challenges of speculative decoding?",
+   "old": [
+    "benefits of speculative decoding",
+    "challenges of speculative decoding"
+   ],
+   "old2": [
+    "benefits of speculative decoding",
+    "challenges of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical results on the latency reduction of speculative decoding?",
+   "old": [
+    "theoretical results on the latency reduction of speculative decoding",
+    "empirical results on the latency reduction of speculative decoding"
+   ],
+   "old2": [
+    "theoretical results on the latency reduction of speculative decoding",
+    "empirical results on the latency reduction of speculative decoding"
+   ]
+  },
+  {
+   "detail": "Under what conditions or scenarios does speculative decoding reduce or increase latency?",
+   "old": [
+    "conditions or scenarios where speculative decoding reduces latency",
+    "conditions or scenarios where speculative decoding increases latency"
+   ],
+   "old2": [
+    "conditions or scenarios where speculative decoding reduces latency",
+    "conditions or scenarios where speculative decoding increases latency"
+   ]
+  },
+  {
+   "detail": "How does speculative decoding compare to other methods of reducing LLM inference latency?",
+   "old": [
+    "How does speculative decoding compare to other methods of reducing LLM inference latency?"
+   ],
+   "old2": [
+    "How does speculative decoding compare to other methods of reducing LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the main components or steps of speculative decoding?",
+   "old": [
+    "What are the main components or steps of speculative decoding?"
+   ],
+   "old2": [
+    "What are the main components or steps of speculative decoding?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or challenges of speculative decoding for LLM inference latency?",
+   "old": [
+    "What are the trade-offs or challenges of speculative decoding for LLM inference latency?"
+   ],
+   "old2": [
+    "What are the trade-offs or challenges of speculative decoding for LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the existing methods or baselines for LLM inference latency reduction?",
+   "old": [
+    "What are the existing methods or baselines for LLM inference latency reduction?",
+    "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines?"
+   ],
+   "old2": [
+    "What are the existing methods or baselines for LLM inference latency reduction?",
+    "How effective is speculative decoding at reducing LLM inference latency compared to other methods or baselines?"
+   ]
+  },
+  {
+   "detail": "What are the empirical results or benchmarks of speculative decoding vs. other methods or baselines?",
+   "old": [
+    "What are the empirical results or benchmarks of speculative decoding compared to other methods or baselines?"
+   ],
+   "old2": [
+    "What are the empirical results or benchmarks of speculative decoding compared to other methods or baselines?"
+   ]
+  },
+  {
+   "detail": "What are the theoretical or analytical explanations or predictions of speculative decoding vs. other methods or baselines?",
+   "old": [
+    "What are the theoretical or analytical explanations or predictions of speculative decoding compared to other methods or baselines?"
+   ],
+   "old2": [
+    "What are the theoretical or analytical explanations or predictions of speculative decoding compared to other methods or baselines?"
+   ]
+  },
+  {
+   "detail": "What are the main components and parameters of speculative decoding?",
+   "old": [
+    "main components of speculative decoding",
+    "main parameters of speculative decoding"
+   ],
+   "old2": [
+    "main components of speculative decoding",
+    "parameters of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical benefits of speculative decoding for LLM inference latency?",
+   "old": [
+    "What are the theoretical benefits of speculative decoding for LLM inference latency?",
+    "What are the empirical benefits of speculative decoding for LLM inference latency?"
+   ],
+   "old2": [
+    "What are the theoretical benefits of speculative decoding for LLM inference latency?",
+    "What are the empirical benefits of speculative decoding for LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs and limitations of speculative decoding for LLM inference latency?",
+   "old": [
+    "trade-offs of speculative decoding for LLM inference latency",
+    "limitations of speculative decoding for LLM inference latency"
+   ],
+   "old2": [
+    "trade-offs of speculative decoding for LLM inference latency",
+    "limitations of speculative decoding for LLM inference latency"
+   ]
+  },
+  {
+   "detail": "How does speculative decoding compare to other methods for reducing LLM inference latency?",
+   "old": [
+    "How does speculative decoding compare to other methods for reducing LLM inference latency?"
+   ],
+   "old2": [
+    "How does speculative decoding compare to other methods for reducing LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the advantages and disadvantages of speculative decoding?",
+   "old": [
+    "advantages of speculative decoding",
+    "disadvantages of speculative decoding"
+   ],
+   "old2": [
+    "advantages of speculative decoding",
+    "disadvantages of speculative decoding"
+   ]
+  },
+  {
+   "detail": "Under what conditions or scenarios is speculative decoding more or less effective?",
+   "old": [
+    "Under what conditions or scenarios is speculative decoding more effective?",
+    "Under what conditions or scenarios is speculative decoding less effective?"
+   ],
+   "old2": [
+    "Under what conditions or scenarios is speculative decoding more effective?",
+    "Under what conditions or scenarios is speculative decoding less effective?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or challenges of using speculative decoding?",
+   "old": [
+    "trade-offs or challenges of using speculative decoding"
+   ],
+   "old2": [
+    "What are the trade-offs or challenges of using speculative decoding?"
+   ]
+  },
+  {
+   "detail": "What are the theoretical and empirical benefits of speculative decoding?",
+   "old": [
+    "theoretical benefits of speculative decoding",
+    "empirical benefits of speculative decoding"
+   ],
+   "old2": [
+    "theoretical benefits of speculative decoding",
+    "empirical benefits of speculative decoding"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs and limitations of speculative decoding?",
+   "old": [
+    "trade-offs of speculative decoding",
+    "limitations of speculative decoding"
+   ],
+   "old2": [
+    "trade-offs of speculative decoding",
+    "limitations of speculative decoding"
+   ]
+  },
+  {
+   "detail": "How does it handle the error cases or mismatches?",
+   "old": [
+    "How does speculative decoding handle error cases or mismatches?"
+   ],
+   "old2": [
+    "How does speculative decoding handle error cases or mismatches affecting LLM inference latency?"
+   ]
+  },
+  {
+   "detail": "What are the trade-offs or overheads involved in speculative decoding?",
+   "old": [
+    "What are the trade-offs and overheads involved in speculative decoding?"
+   ],
+   "old2": [
+    "What are the trade-offs or overheads involved in speculative decoding?"
+   ]
+  },
+  {
+   "detail": "What are the benchmarks or experiments that compare speculative decoding with other methods or baselines?",
+   "old": [
+    "What benchmarks or experiments compare speculative decoding with other methods or baselines?"
+   ],
+   "old2": [
+    "What benchmarks or experiments compare speculative decoding with other methods or baselines?"
+   ]
+  },
+  {
+   "detail": "How do hallucinations affect the performance and reliability of LLMs?",
+   "old": [
+    "How do hallucinations affect the performance of LLMs?",
+    "How do hallucinations affect the reliability of LLMs?"
+   ],
+   "old2": [
+    "How do hallucinations affect the performance of LLMs?",
+    "How do hallucinations affect the reliability of LLMs?"
+   ]
+  },
+  {
+   "detail": "How does RAG limit the scope and uncertainty of LLMs?",
+   "old": [
+    "How does RAG limit the scope of LLMs?",
+    "How does RAG limit the uncertainty of LLMs?"
+   ],
+   "old2": [
+    "How does RAG limit the scope of LLMs?",
+    "How does RAG limit the uncertainty of LLMs?"
+   ]
+  },
+  {
+   "detail": "How does RAG improve the quality and accuracy of LLMs?",
+   "old": [
+    "How does RAG improve the quality of LLMs?",
+    "How does RAG improve the accuracy of LLMs?"
+   ],
+   "old2": [
+    "How does RAG improve the quality and accuracy of LLMs?"
+   ]
+  },
+  {
+   "detail": "How are hallucinations defined and measured?",
+   "old": [
+    "How are hallucinations defined?",
+    "How are hallucinations measured?"
+   ],
+   "old2": [
+    "How are hallucinations defined?",
+    "How are hallucinations measured?"
+   ]
+  },
+  {
+   "detail": "What are the causes and consequences of hallucinations in LLMs?",
+   "old": [
+    "causes of hallucinations in LLMs",
+    "consequences of hallucinations in LLMs"
+   ],
+   "old2": [
+    "causes of hallucinations in LLMs",
+    "consequences of hallucinations in LLMs"
+   ]
+  },
+  {
+   "detail": "How does RAG improve the quality and relevance of the input data for LLMs?",
+   "old": [
+    "How does RAG improve the quality and relevance of the input data for LLMs?"
+   ],
+   "old2": [
+    "How does RAG improve the quality of the input data for LLMs?",
+    "How does RAG improve the relevance of the input data for LLMs?"
+   ]
+  },
+  {
+   "detail": "How does RAG enable fact-checking and verification of LLMs?",
+   "old": [
+    "How does RAG enable fact-checking of LLMs?",
+    "How does RAG enable verification of LLMs?"
+   ],
+   "old2": [
+    "How does RAG enable fact-checking and verification of LLMs?"
+   ]
+  },
+  {
+   "detail": "What are the basic components and architectures of large language models?",
+   "old": [
+    "basic components of large language models",
+    "architectures of large language models"
+   ],
+   "old2": [
+    "basic components of large language models",
+    "architectures of large language models"
+   ]
+  },
+  {
+   "detail": "What are the training and inference processes of large language models?",
+   "old": [
+    "What are the training processes of large language models?",
+    "What are the inference processes of large language models?"
+   ],
+   "old2": [
+    "What are the training processes of large language models?",
+    "What are the inference processes of large language models?"
+   ]
+  },
+  {
+   "detail": "What are some common applications and challenges of large language models?",
+   "old": [
+    "What are common applications of large language models?",
+    "What are challenges of large language models?"
+   ],
+   "old2": [
+    "common applications of large language models",
+    "challenges of large language models"
+   ]
+  },
+  {
+   "detail": "How are hallucinations defined and measured in large language models?",
+   "old": [
+    "How are hallucinations defined in large language models?",
+    "How are hallucinations measured in large language models?"
+   ],
+   "old2": [
+    "how hallucinations are defined in large language models",
+    "how hallucinations are measured in large language models"
+   ]
+  }
+ ]
+}
