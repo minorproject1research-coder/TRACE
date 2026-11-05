@@ -129,8 +129,13 @@ def llm_judge_relevance(sub_question: str, paper: dict) -> dict | None:
 
 def filter_relevant(sub_question: str, papers: list[dict],
                      prefilter_top_k: int = 20, min_similarity: float = 0.56,
-                     confidence_threshold: float = 0.6) -> list[dict]:
-    shortlist = embedding_prefilter(sub_question, papers, top_k=prefilter_top_k, min_similarity=min_similarity)
+                     confidence_threshold: float = 0.6, anchor: str = "", context: str = "") -> list[dict]:
+    """anchor / context: the domain anchor of the original question (stage1_planner.domain_anchor); both empty = unchanged behaviour.
+    The anchor goes into the text the abstracts are compared with, the context into the question text the judge sees."""
+    from apps.api.agents.stage1_planner import domain_anchor
+    shortlist = embedding_prefilter(domain_anchor.similarity_text(sub_question, anchor), papers,
+                                    top_k=prefilter_top_k, min_similarity=min_similarity)
+    judge_question = domain_anchor.judge_text(sub_question, context)
 
     if not USE_LLM_JUDGMENT:
         logger.info("LLM judgment disabled — using embedding-only shortlist of %d papers", len(shortlist))
@@ -138,7 +143,7 @@ def filter_relevant(sub_question: str, papers: list[dict],
 
     # judge the shortlist in parallel; results keep the shortlist order
     with ThreadPoolExecutor(max_workers=JUDGE_WORKERS) as pool:
-        verdicts = list(pool.map(lambda p: llm_judge_relevance(sub_question, p), shortlist))
+        verdicts = list(pool.map(lambda p: llm_judge_relevance(judge_question, p), shortlist))
 
     passed, no_opinion = [], 0
     for paper, verdict in zip(shortlist, verdicts):

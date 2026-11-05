@@ -14,6 +14,8 @@ class TaskPlan(BaseModel):
     query_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     raw_query: str
     sub_questions: list[SubQuestion]
+    domain_anchor: str = ""       # field words added to search queries (not stored in the database; see stage1_planner.domain_anchor)
+    domain_context: str = ""      # one sentence about the field, shown to the relevance judge
 
     def to_supabase_rows(self) -> tuple[list[dict], list[dict]]:
         sub_q_rows = []

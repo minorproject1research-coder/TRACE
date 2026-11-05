@@ -94,6 +94,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", nargs="+", required=True)
     ap.add_argument("--compare", help="saved judge_eval_*.json of another prompt version")
+    ap.add_argument("--split", help="json with {\"dev\": [row keys], \"test\": [row keys]}: also print metrics for each part, with the policy labels and with multi-system aspects capped at 0.5")
     ap.add_argument("--out-dir", default="reports")
     args = ap.parse_args()
 
@@ -142,6 +143,15 @@ def main() -> int:
     print("false yes with label 0:", pm["false_yes_label0"])
     print("label-1 rows the judge did not call yes:", pm["missed_label1"])
 
+    if args.split:
+        sp = json.loads(Path(args.split).read_text(encoding="utf-8"))
+        by_key = {r["key"]: r for r in results}
+        print("\nSPLIT (policy labels | strict labels: aspects listing several systems capped at 0.5)")
+        for part in ("dev", "test"):
+            rs = [by_key[k] for k in sp[part] if k in by_key]
+            capped = [dict(r, label=min(r["label"], 0.5)) if "transformers, and Mamba" in r["aspect"] else r for r in rs]
+            show(f"{part} (policy)", metrics(rs))
+            show(f"{part} (strict)", metrics(capped))
     if args.compare:
         old = {r["key"]: r for r in json.loads(Path(args.compare).read_text(encoding="utf-8"))["rows"]}
         print(f"\nCOMPARISON with {Path(args.compare).name} ({json.loads(Path(args.compare).read_text(encoding='utf-8')).get('judge_model_id')})")

@@ -189,6 +189,8 @@ def main() -> int:
     n_cov_ok = sum(1 for c in cov_by_sq.values() if c.get("sufficient"))
     w("| | |\n|---|---|")
     w(f"| Question | {query['raw_query']} |")
+    anchor_line = first(msgs, lambda l: l[3].startswith("Domain anchor"))
+    w(f"| Domain anchor | {anchor_line[3].replace('Domain anchor', '').strip(' :') if anchor_line else 'not used (switch off, or no line in the log)'} |")
     w(f"| Started / finished | {t_start:%Y-%m-%d %H:%M:%S} / {t_end:%H:%M:%S} |")
     w(f"| **Total execution time** | **{dur(total)}** ({total:.0f} s) |")
     planner = M(r"^Planner \(")

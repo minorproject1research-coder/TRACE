@@ -16,4 +16,6 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setattr(detail_aspects, "ASPECT_CACHE_PATH", tmp_path / "aspect_cache.json")
     monkeypatch.setattr(evidence_judge, "JUDGE_CACHE_PATH", tmp_path / "judge_cache.json")
     monkeypatch.setenv("DIGEST_CACHE_DIR", str(tmp_path / "digest_cache"))
+    monkeypatch.setenv("DOMAIN_ANCHOR_CACHE_DIR", str(tmp_path / "domain_anchor_cache"))
+    monkeypatch.delenv("DOMAIN_ANCHOR", raising=False)        # tests choose the switch themselves
     yield

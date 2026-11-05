@@ -43,7 +43,8 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
             paper["sub_question_id"] = sq.id
 
         # relevance filter — only keeps papers relevant to this sub-question
-        relevant_papers = relevance_filter.filter_relevant(sq.main_topic, result)
+        relevant_papers = relevance_filter.filter_relevant(sq.main_topic, result, anchor=state.task_plan.domain_anchor,
+                                                           context=state.task_plan.domain_context)
 
         sq.papers = relevant_papers
         all_papers.extend(relevant_papers)
