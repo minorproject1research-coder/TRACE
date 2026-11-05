@@ -216,6 +216,9 @@ class PaperRetrievalAgent:
         )
         openalex_keys = list(dict.fromkeys(k.strip() for k in raw_keys.split(",") if k.strip()))
         self._openalex_pool: Optional[KeyPool] = KeyPool(openalex_keys) if openalex_keys else None
+        if self._openalex_pool is None:
+            # OpenAlex is the main source of papers (36 of 47 kept papers in run 1) and is skipped without a key, so say so: a run once lost it silently
+            logger.warning("OpenAlex is NOT searched: no OPENALEX_API_KEYS (or OPENALEX_API_KEY) in the environment/.env")
         self.openalex_max_attempts = max(1, int(os.getenv("OPENALEX_MAX_ATTEMPTS", "4")))
         self.openalex_backoff_base = float(os.getenv("OPENALEX_BACKOFF_BASE_SECONDS", "2"))
         self.openalex_backoff_cap = float(os.getenv("OPENALEX_BACKOFF_CAP_SECONDS", "30"))

@@ -18,4 +18,7 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setenv("DIGEST_CACHE_DIR", str(tmp_path / "digest_cache"))
     monkeypatch.setenv("DOMAIN_ANCHOR_CACHE_DIR", str(tmp_path / "domain_anchor_cache"))
     monkeypatch.delenv("DOMAIN_ANCHOR", raising=False)        # tests choose the switch themselves
+    monkeypatch.setenv("PLAN_CACHE_DIR", str(tmp_path / "plan_cache"))
+    for name in ("PLAN_CACHE", "PLAN_CACHE_TAG"):
+        monkeypatch.delenv(name, raising=False)               # off unless the test switches it on
     yield

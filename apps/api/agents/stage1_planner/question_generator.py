@@ -1,6 +1,7 @@
 import logging
 import os
 
+from apps.api.agents.stage1_planner import plan_cache
 from apps.api.models.task_plan import SubQuestion
 from apps.api.services import trace_llm_service
 from apps.api.services.trace_llm_service import TraceLLMError
@@ -27,15 +28,20 @@ def generate(raw_query: str) -> list[SubQuestion]:
     The planner also returns search queries, as one flat list for the whole question. They are split across the
     sub-questions here (sq.queries); any sub-question left without a query is filled by query_expansion afterwards."""
     logger.info("Generating sub-questions for query: %s", raw_query[:100])
-    try:
-        plan = trace_llm_service.decompose(raw_query)
-        source = "planner"
-    except TraceLLMError as e:
-        if LLM_FALLBACK != "groq":
-            raise
-        logger.warning("Planner server unavailable (%s); falling back to Groq decomposition", e)
-        plan = _groq_decompose(raw_query)
-        source = "groq-fallback"
+    plan = plan_cache.load(raw_query)                   # opt-in (PLAN_CACHE=true): the planner is not reproducible, see plan_cache
+    if plan is not None:
+        source = "plan-cache"
+    else:
+        try:
+            plan = trace_llm_service.decompose(raw_query)
+            source = "planner"
+            plan_cache.store(raw_query, plan)
+        except TraceLLMError as e:
+            if LLM_FALLBACK != "groq":
+                raise
+            logger.warning("Planner server unavailable (%s); falling back to Groq decomposition", e)
+            plan = _groq_decompose(raw_query)
+            source = "groq-fallback"
 
     sub_questions = _build_sub_questions(plan)
     _assign_queries(sub_questions, plan["search_queries"])

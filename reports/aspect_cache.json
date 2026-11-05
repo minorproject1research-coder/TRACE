@@ -77,3 +77,38 @@
 {"key": "ce328dab75ef3489", "aspects": ["How do state space models and transformers perform on different types of tasks and datasets (e.g., natural language processing, computer vision)?"]}
 {"key": "316514af2d17edaa", "aspects": ["How does Mamba compare to state space models in training efficiency?", "How does Mamba compare to transformers in training efficiency?"]}
 {"key": "748e657af1535671", "aspects": ["What are the challenges for measuring long-sequence performance when comparing state space models and transformers in training efficiency?", "What are the metrics for measuring long-sequence performance when comparing state space models and transformers in training efficiency?"]}
+{"key": "e56fde9b76a578b4", "aspects": ["What are the key components of a state space model?", "What are the parameters of a state space model?"]}
+{"key": "ee638e4c4366a8ec", "aspects": ["advantages of state space models", "limitations of state space models"]}
+{"key": "7682771d5f7d078d", "aspects": ["key components of a transformer model", "key parameters of a transformer model"]}
+{"key": "7cdb02230aafde1e", "aspects": ["advantages of transformers", "limitations of transformers"]}
+{"key": "355d8160dc559996", "aspects": ["What is the main innovation or contribution of Mamba?"]}
+{"key": "c37e31e3abe5336c", "aspects": ["How does Mamba integrate state space models and transformers?"]}
+{"key": "b821449b87ff19c7", "aspects": ["What are the metrics or indicators of training efficiency?", "What are the metrics or indicators of long-sequence performance?"]}
+{"key": "b78579d16eb411d7", "aspects": ["What benchmarks or datasets are used to evaluate training efficiency?", "What benchmarks or datasets are used to evaluate long-sequence performance?"]}
+{"key": "3be299de459bd284", "aspects": ["What are the results or findings of existing studies or papers that compare state space models (e.g., Mamba) with transformers in terms of training efficiency and long\u2011sequence performance?"]}
+{"key": "11b1b4c6737554d6", "aspects": ["What are the possible explanations or interpretations of the results or findings regarding how state space models like Mamba compare with transformers in training efficiency and long-sequence performance?"]}
+{"key": "9b8f7b94ae0a028b", "aspects": ["What are the implications of the results or findings for comparing state space models like Mamba with transformers in training efficiency and long-sequence performance?", "What are the limitations of the results or findings for comparing state space models like Mamba with transformers in training efficiency and long-sequence performance?"]}
+{"key": "1e9ac498df29a8a1", "aspects": ["key components of a state space model", "parameters of a state space model"]}
+{"key": "cb94b61ce93c7e76", "aspects": ["advantages of state space models", "limitations of state space models"]}
+{"key": "34900b7896f65e5d", "aspects": ["What are the key components of a transformer model?", "What are the parameters of a transformer model?"]}
+{"key": "dd3940c0965fb361", "aspects": ["advantages of transformers", "limitations of transformers"]}
+{"key": "e1973c92eefd8ad9", "aspects": ["What is the main innovation or contribution of Mamba?"]}
+{"key": "b5d10d390392f320", "aspects": ["How does Mamba incorporate state space models?", "How does Mamba incorporate transformers?"]}
+{"key": "90c2b6fc240a6de1", "aspects": ["benefits of Mamba", "challenges of Mamba"]}
+{"key": "bf5921354d304152", "aspects": ["What are the factors that affect the training efficiency of state space models and transformers?"]}
+{"key": "4edfa81f5a62945c", "aspects": ["How do state space models and transformers perform in terms of convergence speed, memory usage, and computational complexity?"]}
+{"key": "49cbfb0a8cd0ed20", "aspects": ["How do state space models scale with different data sizes and modalities?", "How do transformers scale with different data sizes and modalities?"]}
+{"key": "aeea2284d22a976e", "aspects": ["challenges for evaluating long-sequence performance of state space models and transformers", "metrics for evaluating long-sequence performance of state space models and transformers"]}
+{"key": "384e40d39ecd9bd0", "aspects": ["How do state space models and transformers perform in terms of accuracy, robustness, and generalization on long-sequence tasks and datasets?"]}
+{"key": "35cb6729ef3ae3e7", "aspects": ["How do state space models handle long-range dependencies and context windows?", "How do transformers handle long-range dependencies and context windows?"]}
+{"key": "59a29d753184ebe2", "aspects": ["key components of an SSM", "parameters of an SSM"]}
+{"key": "60900fcdb3ba8464", "aspects": ["advantages of an SSM", "limitations of an SSM"]}
+{"key": "5c1c0f313b086174", "aspects": ["What are the key components of a transformer?", "What are the parameters of a transformer?"]}
+{"key": "f949b09bfd7a87d6", "aspects": ["What are the advantages of transformers?", "What are the limitations of transformers?"]}
+{"key": "0a4afcbd04520f2f", "aspects": ["How does Mamba improve upon previous SSMs?"]}
+{"key": "04a2e7e1ca9b9e86", "aspects": ["What are the main features of Mamba?", "What are the innovations of Mamba?"]}
+{"key": "0796249457635565", "aspects": ["What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?", "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?"]}
+{"key": "927aadf05e85b614", "aspects": ["What are the computational and memory requirements for training and inference of SSMs and transformers?"]}
+{"key": "3c16d88ef0e8cea7", "aspects": ["What are the empirical results and findings from existing studies or papers that compare SSMs and transformers?"]}
+{"key": "027e679c183cf5f9", "aspects": ["What are the theoretical explanations or hypotheses for the observed differences or similarities between SSMs and transformers?"]}
+{"key": "1ae9454f4f16ef69", "aspects": ["open challenges or limitations for SSMs", "open challenges or limitations for transformers"]}

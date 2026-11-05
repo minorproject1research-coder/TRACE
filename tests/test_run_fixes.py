@@ -43,3 +43,19 @@ def test_embedder_downloads_when_the_local_copy_is_missing(monkeypatch):
     monkeypatch.setattr(rf, "_embedder", None)
     rf.get_embedder()
     assert calls == [{"local_files_only": True}, {}]
+
+
+def test_missing_openalex_key_is_announced(caplog):
+    from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
+    with caplog.at_level("WARNING"):
+        agent = PaperRetrievalAgent(openalex_api_key="")
+    assert agent._openalex_pool is None
+    assert "OpenAlex is NOT searched" in " ".join(r.getMessage() for r in caplog.records)
+
+
+def test_present_openalex_key_gives_no_warning(caplog):
+    from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
+    with caplog.at_level("WARNING"):
+        agent = PaperRetrievalAgent(openalex_api_key="k1,k2")
+    assert agent._openalex_pool is not None
+    assert "OpenAlex is NOT searched" not in " ".join(r.getMessage() for r in caplog.records)

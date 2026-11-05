@@ -206,6 +206,8 @@ def main() -> int:
     per_sq = re.search(r"-> (\[.*?\])", planner[3]).group(1) if planner else "?"
     n_queries = re.search(r"(\d+) search queries", planner[3]).group(1) if planner else "?"
     w(f"| Sub-questions / search queries | {len(sqs)} / {n_queries} (per sub-question {per_sq}) |")
+    plan_source = re.match(r"Planner \(([^)]*)\)", planner[3]).group(1) if planner else "?"
+    w(f"| Plan source | {plan_source}" + (" (stored plan reused, PLAN_CACHE=true)" if plan_source == "plan-cache" else "") + " |")
     w(f"| Paper candidates retrieved (all sources), after the similarity floor, shortlisted | {sum(c for c, _, _ in prefilter)} candidates -> {sum(c for _, c, _ in prefilter)} cleared the similarity floor -> {n_short} shortlisted |")
     w(f"| **Papers kept after the relevance judge** | **{len(papers)}** (log: {n_pass}); {n_short - n_pass} shortlisted papers rejected |")
     w(f"| **Web sources** | **{len(webs)}** (per sub-question {web_variant}) |")
@@ -281,6 +283,9 @@ def main() -> int:
     w("## 5. Retrieval details\n")
     w(f"- Web search variants: {web_variant} unique sources after de-duplication per sub-question (Tavily, 3 queries each, 5 results per query).")
     w(f"- Pre-filter lines: " + "; ".join(pf_text_i[len("Embedding pre-filter: "):] for pf_text_i in pf_text))
+    kept_by_source = Counter(p.get("source") for p in papers)
+    openalex_requests = sum(1 for l in lines if "api.openalex.org" in l[3])
+    w(f"- Kept papers by source: {dict(kept_by_source)}; requests to api.openalex.org in the log: {openalex_requests}")
     w(f"- Scopus: {'UNAVAILABLE - ' + scopus_down[3] if scopus_down else 'used'}")
     w(f"- Semantic Scholar: {'search skipped, probe failed - ' + s2_down[3] if s2_down else 'used'}; citation-enrichment batch calls answered 429: {s2_batch_429}")
     if t_enr0:
@@ -332,6 +337,10 @@ def main() -> int:
 
     w("## 9. Checks (rule based, from the log)\n")
     flags = []
+    if openalex_requests == 0:
+        flags.append("OpenAlex was not queried at all (0 requests in the log): the agent skips it silently when no OPENALEX_API_KEYS is set; kept papers by source: " + str(dict(kept_by_source)))
+    elif kept_by_source and kept_by_source.get("openalex", 0) + kept_by_source.get("both", 0) == 0:
+        flags.append("OpenAlex was queried but none of the kept papers came from it.")
     if scopus_down:
         flags.append("Scopus was unavailable (host returned 404 for /scopus/search): no Scopus papers in this run.")
     if s2_down:

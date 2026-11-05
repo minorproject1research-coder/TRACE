@@ -170,6 +170,31 @@ def decompose(question: str, max_new_tokens: int = 768) -> dict:
     raise TraceLLMError("planner output was not valid JSON")
 
 
+MAX_PLANS_PER_CALL = 4          # the server caps n at 4 as well
+
+
+def decompose_many(question: str, n: int = 3, temperature: float = 0.8, max_new_tokens: int = 768) -> list[dict]:
+    """Up to `n` alternative plans for one question from ONE /decompose call (the server prefills the prompt once, so n=3 costs
+    about as much as n=1: ~25 s). Used by Loop 2 to get varied search queries. Replies that are not valid plans are skipped, so the list
+    may be shorter than n or empty; it never raises for a bad reply (only for an unreachable server or a rejected key).
+
+    A server that has not been updated ignores `temperature` and `n` and returns one reply in `raw_output`; that single plan is returned."""
+    n = min(max(int(n), 1), MAX_PLANS_PER_CALL)
+    data = _request("POST", "/decompose", {"question": question, "max_new_tokens": max_new_tokens,
+                                           "temperature": temperature, "n": n})
+    replies = data.get("raw_outputs")
+    if not isinstance(replies, list) or not replies:
+        replies = [data.get("raw_output", "")]
+    plans = []
+    for reply in replies:
+        obj = extract_json_from_output(reply if isinstance(reply, str) else "")
+        try:
+            plans.append(_normalize_plan(obj))
+        except TraceLLMError:
+            logger.warning("One of %d alternative plans was not usable and was skipped", len(replies))
+    return plans
+
+
 def scopus_search(query: str, count: int = 25, start: int = 0) -> dict:
     """Scopus search through the host (POST /scopus/search; the host's network is entitled to abstracts, the key stays there).
 
