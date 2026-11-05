@@ -364,3 +364,102 @@ Nine verdicts changed: six moved closer to the label, three further away (a sign
 All 233 unique rows tested so far (the 194 of section 14.5 plus these 50, duplicates removed): V1 strict 0.646, lenient 0.865, recall 0.756; V2 strict 0.650, lenient 0.913, recall 0.817.
 
 Reading: V2 is equal or slightly better than V1 on every measure on fresh rows and on all rows together, with no sign of the recall loss that the first test suggested. The size of the gain is small (strict precision is unchanged at about 0.65; the gain is in lenient precision, +0.05, and recall, +0.06), it rests on a few rows, and neither prompt passes the gate (strict >= 0.85). About half of the strict shortfall is half answers (label 0.5) that the judge accepts, which depends on how strictly my labels read "source of a cost is not a definition" and similar; a human review of the 0.5 labels would show how much of the gap is real. Recommendation: keep V2 deployed (`JUDGE_MODEL_ID=judge-v2`), do not expect it to fix over-coverage by itself, and measure its effect on real coverage by re-running the judge on the stored runs with the correct passages. A V2.1 aimed at the two remaining subject-confusion cases should wait for fresh rows to test it on.
+
+## 15. Judge prompt V2.1 (draft, to be deployed and tested)
+
+Written 2026-11-05 after the second Mamba run. It changes V2 in four places and adds one precision guard; everything else (output format, placeholders, temperature, `max_new_tokens`) is unchanged. The host wrapper needs the same brace escaping as for V2 (section 14.2a): double the braces of the JSON line if the template is built with `str.format()`.
+
+### 15.1 Why
+
+On run 2 the central comparison sub-questions were almost uncoverable under V2 (sub-question "long-sequence performance": 1 "yes", 8 "partial" out of 18). To check that this was not specific to those rows, 66 judged pairs of run 2 were exported (41 from the two comparison sub-questions, 25 from the others), labeled blind from the CSV by an LLM (me; `reports/tag_audit_labeled_run2.csv`), and V2 was run on them: strict precision 0.478 (11 of 23), lenient 0.870, **recall of label 1 only 0.524 (11 of 21)**, 3 false "yes" on label-0 rows. Labeling policy for aspects that list several systems ("state space models, transformers, and Mamba"), fixed before labeling: a claim that states a difference or relationship between at least two of the listed systems is a direct answer (1); a claim about one system alone is partial (0.5). This policy matches the intent of V2.1, so the results are also reported under the stricter reading (multi-system aspects capped at 0.5).
+
+The rows were split at random into 32 development and 34 test rows (`reports/v21_split.json`, seed 21, stratified by multi-system aspect). V2.1 was drafted after reading V2's verdicts and reasons on the development rows only (plus the run 1 reasons and the held-out misses already seen). The 34 test rows' verdicts and reasons have not been looked at.
+
+Patterns found on the development rows (V2 disagreeing with the label):
+
+1. V2 misapplies its own exception: "LRA benchmark scores are used to measure long-sequence performance" and "accuracy is used as the metric" were judged "a result, not the metric", although V2 says a claim that names the measure counts.
+2. A concrete comparison from one task ("Mamba trains slower than optimized Transformers on document ranking") was judged partial as "only a specific example, not a general comparison".
+3. A claim that reverses the quote (Mamba "has ten times fewer parameters" where the quote says more) got `quote_supports_claim = yes`.
+
+### 15.2 V2.1 prompt text (changes against V2 are marked with `<<` at the end of the line; remove the marks when you paste it)
+
+```
+You are an evidence checker for a research assistant. You are given a research aspect (a question to answer), a claim extracted from a paper, the exact quote it was based on, and optionally the passage around the quote.
+
+Aspect: {aspect}
+Claim: {claim}
+Quote: {quote}
+Surrounding passage (may be empty): {context}
+
+Answer two questions.
+
+1. quote_supports_claim. Does the quote itself state what the claim says? Use the passage only to work out what words such as "it", "our method" or table columns refer to.
+   yes = the claim is a faithful restatement of the quote.
+   partial = the quote supports only part of the claim, or the claim generalizes (for example "generally", "always"), adds details, names a subject the quote does not mention, or draws an inference the quote does not state.
+   no = the quote does not say this. This includes quotes that are only table fragments, headers or captions that do not state the claimed meaning, and claims that reverse the quote or give different numbers or a different direction (for example "fewer" where the quote says "more"). <<
+
+2. answers_aspect. Would the claim, on its own, be an acceptable one-sentence answer to the aspect?
+   First decide what KIND of answer the aspect asks for, for example: a definition, a way of measuring, the factors or causes of something, the components or parts, the motivation or goal, how something works, results or evidence, advantages or disadvantages, examples, challenges or limitations. Then decide what KIND of statement the claim is. The claim answers the aspect only if it is that kind of statement, about the same subject.
+   yes = the claim is the kind of answer the aspect asks for, about the same subject, and states a concrete answer. When the aspect asks for examples, items, advantages, metrics, results and similar lists, one concrete valid item counts as yes. << ("complete enough to stand alone" removed)
+   partial = related but incomplete, vague, or only touches the topic; or it gives one half of a two-part aspect; or it is the right kind of answer but about a variant, a specific system or a special case when the aspect asks about the topic in general.
+   no = it is about a different subject, a different kind of thing than the aspect asks for, or only shares vocabulary with the aspect.
+
+   These ARE answers, even though they are specific: <<
+   - A concrete finding from one task, dataset or setting answers an aspect about results, differences or comparisons. The aspect does not require a result for every task. <<
+   - For an aspect that asks for metrics, indicators or benchmarks, a claim that names the metric or benchmark that is used (for example "accuracy is the metric", "scores on benchmark X measure it") answers it, even when the claim also reports a result. <<
+   - For an aspect that lists several systems (for example A, B and C), a claim that states a difference or a relationship between at least two of them is a direct answer. A claim about only one of them is partial. <<
+
+   These are NOT answers, even when they are true and on topic:
+   - A cause, reason or source of something is not its definition and not a way of measuring it. A result or number is not a way of measuring, a definition, or a factor, unless the claim says that this is the factor or the measure.
+   - A description of how a method works is not the motivation for it, and a motivation is not a description of how it works.
+   - A list of things or a process is not "the components" unless the claim names the parts the thing is made of. A training procedure, a list of properties used to compare models, or the parts of a different system are not the components of the subject.
+   - A fix, mitigation or improvement is not an account of the problem it addresses, and a statement of a problem is not an account of its fix.
+   - A claim about a different system or modality than the one the aspect asks about is "no" unless the aspect is general. A claim about a named variant of the subject is at most "partial" when the aspect is about the subject in general.
+   Examples on an unrelated topic, to show the rules: for the aspect "how the size of a database index is measured", the claim "indexes slow down writes because every insert must update them" is "no" (a consequence, not a measurement); for "components of a database index", the claim "an index is built with a sorted copy of one column plus row pointers" is "yes", and "indexes are created by running a CREATE INDEX statement" is "no" (a procedure, not components); for "motivation of caching", the claim "a cache stores results in a hash table" is "no" (how it works), and "caches avoid recomputing results that are requested again, which saves time" is "yes". <<(unchanged)
+   More examples: for the aspect "metrics used to evaluate cache performance", the claim "hit rate is the main metric, and an LRU policy reached 92%" is "yes" (it names the metric); for "how Redis, Memcached and a local dictionary differ in latency", the claim "Redis answers in about 1 ms while Memcached needs 0.6 ms" is "yes" (it relates two of them) and "Redis answers in about 1 ms" is "partial" (one of them only). <<
+
+Be strict. Sharing words with the aspect is not an answer. Return ONLY a JSON object, nothing else, in this exact format:
+{{"quote_supports_claim": "yes" or "partial" or "no", "answers_aspect": "yes" or "partial" or "no", "reason": "one short sentence"}}
+```
+
+Differences from V2: (1) `no` in question 1 also covers a claim that reverses the quote or changes its numbers or direction; (2) "complete enough to stand alone" is removed from the `yes` line and "metrics, results" are added to the one-item rule; (3) a new list of three kinds of specific answers that count (a concrete finding from one setting, a claim naming the metric used, a claim relating at least two listed systems); (4) two more examples on an unrelated topic. Deliberately NOT changed: the "NOT answers" rules, the variant rule, and the rule that a claim about one of several listed systems is only partial, because the false "yes" rows (a technique overview taken as "parameters", Mamba versus Mamba-2, an accuracy gain taken as training efficiency) show where loosening would hurt.
+
+### 15.3 Deployment and test (decision rule fixed before V2.1 is run)
+
+1. Put the V2.1 text on the host (with the brace escaping), set `JUDGE_MODEL_ID=judge-v2-1` in `.env`.
+2. Run `tests/eval_judge_prompt.py` on: the run 2 rows (`reports/tag_audit_labeled_run2.csv`), the older labeled files (round 1-3, export B, targeted, dropped, held-out), and compare each with the saved V2 results (`reports/judge_eval_judge-v2_*.json`).
+3. Adopt V2.1 over V2 only if ALL of these hold:
+   - On the 34 TEST rows: at least 2 more label-1 rows are called "yes" than under V2, and at most 1 more label-0 row is called "yes".
+   - On the 254 older labeled rows (a regression check, not independent: V2 was shaped by them): pooled strict precision is not more than 0.03 below V2, recall is not below V2, and label-0 "yes" rows do not increase by more than 2.
+   - Reported under both labelings (policy and strict multi-system); the decision uses the policy labels, the strict reading is shown next to it.
+4. The test set is small (34 rows: 12 label 1, 15 label 0.5, 7 label 0): it can show a clear gain or a clear harm, not a small difference. If the results are within a few rows, V2.1 is not adopted on this evidence.
+
+V2 baseline on the split (run 2 rows, `reports/judge_eval_judge-v2_20261105_1433.json`, no surrounding passage):
+
+|                                                            | Judge "yes" | Strict precision | Lenient | Recall of label 1         | Label-0 rows called "yes" |
+| ---------------------------------------------------------- | ----------- | ---------------- | ------- | ------------------------- | ------------------------- |
+| Development (32 rows)                                      | 10          | 0.400            | 0.800   | 0.444                     | 2                         |
+| **Test (34 rows)**                                   | 13          | 0.538 (7 of 13)  | 0.923   | **0.583 (7 of 12)** | **1**               |
+| Test, strict labeling (multi-system aspects capped at 0.5) | 13          | 0.385            | 0.923   | 0.500                     | 1                         |
+
+So the rule above, in numbers: V2.1 must call at least **9 of the 12** label-1 test rows "yes" (V2: 7) and at most **2** label-0 test rows "yes" (V2: 1). Command: `python tests/eval_judge_prompt.py --csv reports/tag_audit_labeled_run2.csv --split reports/v21_split.json --compare reports/judge_eval_judge-v2_20261105_1433.json`.
+
+### 15.4 Result (2026-11-05): V2.1 is NOT adopted
+
+Run with `JUDGE_MODEL_ID=judge-v2-1` on the same rows and under the same conditions as the V2 baseline (no surrounding passage); results `reports/judge_eval_judge-v2-1_20261105_1448.json` (run 2 rows) and `..._1451.json` (the 254 older rows). No errors.
+
+| | V2 | V2.1 |
+|---|---|---|
+| **Run 2, TEST (34 rows)**: "yes" / label-1 found / label-0 called "yes" | 13 / 7 of 12 / 1 | 17 / **7 of 12** / **3** |
+| Run 2, DEV (32 rows) | 10 / 4 of 9 / 2 | 15 / 6 of 9 / 4 |
+| Run 2, all 66: strict / lenient / recall | 0.478 / 0.870 / 0.524 | 0.406 / 0.781 / 0.619 |
+| Older 254 rows (233 unique): strict / lenient / recall | 0.650 / 0.913 / 0.817 | 0.585 / 0.911 / 0.878 |
+| Older rows: label-0 rows called "yes" | 9 | 11 |
+
+Decision rule (fixed beforehand): on the test rows at least 9 of 12 label-1 rows and at most 2 label-0 "yes"; on the older rows strict precision not more than 0.03 lower, recall not lower, label-0 "yes" at most 2 more. Outcome: test recall 7 of 12 (needed 9) **FAIL**; test label-0 "yes" 3 (limit 2) **FAIL**; older rows strict -0.065 (limit -0.03) **FAIL**; recall +0.061 pass; label-0 "yes" +2 pass.
+
+What happened: V2.1 never removed a "yes" that V2 gave; it only added 29 (across all 320 rows): 7 were label-1 rows, 16 label 0.5 and 6 label 0, so 76% of what it added is not a direct answer. The development rows improved (recall 4 to 6 of 9) and the test rows did not (7 to 7): the changes fitted the rows they were written from. The precision guard did not work either: the claim that reversed its quote ("ten times fewer" parameters) went from "no" to "yes", and "results are reported" or "experiments are presented" claims became "yes" (rows 41, 44, 56). The 9B judge applies a loosened rule to claims it should still reject.
+
+**What this says about the original problem.** On the aspects that list several systems, my own labels (policy: a claim relating at least two of the systems is an answer) mark only 4 of the 23 judged claims as direct answers; 14 are about one system alone and 5 are not answers. V2 found 2 of those 4 with no false "yes" on those rows; V2.1 found 3 of 4 with none either, so the aspect type is not where V2.1's extra errors come from (they come from the other aspects: label-0 "yes" 3 to 7). So the low coverage of the three-system sub-questions in run 2 is mostly a property of the evidence and of the aspect wording, not of a too strict judge: few retrieved claims directly compare two of the three systems.
+
+**Decision.** Keep V2. Put the host back to the V2 text and `JUDGE_MODEL_ID=judge-v2`. Do not iterate on V2.1 with this model: each loosening adds mostly wrong "yes" verdicts. The levers left are upstream: aspects that name one comparison (A versus B on one dimension) instead of listing three systems, queries that look for comparisons, and Loop 2 to search for the missing comparisons.

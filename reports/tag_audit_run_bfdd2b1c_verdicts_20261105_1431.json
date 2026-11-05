@@ -1,0 +1,794 @@
+{
+ "1": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 0,
+  "source_id": "556612da-4664-498b-bab4-1ad615de0d08",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim but the claim describes an input mechanism rather than listing the structural components of the state space model."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "2": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 2,
+  "source_id": "f9646069-7bf8-4ebf-a680-34fab76e79e5",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly affirms the claim's statement about the advantages of state space models, and the claim serves as a complete, standalone answer to the aspect."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "3": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 0,
+  "source_id": "f9646069-7bf8-4ebf-a680-34fab76e79e5",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly lists the matrices A, B, C, and D as the key parameters, which directly answers the aspect asking for the key components of a state space model."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "4": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 2,
+  "source_id": "4d8b92cb-6753-40cc-aa8f-48ff557ef308",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly states that Mamba is more efficient than Transformers, directly supporting the claim and answering the aspect regarding training speed differences."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "5": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 0,
+  "source_id": "556612da-4664-498b-bab4-1ad615de0d08",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly defines the state transition matrix Φ as a component that governs state dynamics, directly answering the aspect about key components."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "6": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 3,
+  "source_id": "53734ac0-69d9-4e90-9876-d5cfe94964a5",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly confirms the claim that Kalman filters require extensions for non-linear or non-Gaussian cases, which accurately answers the aspect regarding the limitations of state space models."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "7": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 0,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim but the claim provides a specific performance result rather than listing the relevant metrics or indicators of training efficiency requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "8": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 4,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly provides the specific empirical benchmark (3x longer sequences) requested by the aspect, and the claim faithfully restates this finding."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "9": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 2,
+  "source_id": "c823db8e-fa4e-4fbd-93bf-76d553f92a31",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim about hybrid model performance, but the claim describes a result/outcome rather than explaining the mechanism of how Mamba incorporates transformers."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "10": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 1,
+  "source_id": "bf97b42a-2f50-4796-9d3e-041dbf986961",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "partial",
+   "answers_aspect": "no",
+   "reason": "The quote only mentions the existence of three evaluation domains without detailing the specific tasks, metrics, or comparative results regarding long-range dependencies and attention mechanisms required by the claim and the aspect."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "11": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 3,
+  "source_id": "a41dc737-8268-44c9-b247-933312e69f30",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote describes the capabilities of state-space models (enabling analysis of non-exponential distributions) rather than listing their limitations, which is what the aspect asks for."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "12": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote supports the claim, but the claim only addresses memory constraints rather than the full scope of training resources (which includes compute time, data requirements, etc.) asked in the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "13": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 5,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote supports the claim by describing the memory efficiency issue, but the claim is only a partial answer to the aspect because it describes a qualitative advantage rather than providing specific empirical results or benchmarks."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "14": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 6,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly states the specific empirical result regarding training speed, which directly answers the aspect asking for empirical results or benchmarks."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "15": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 2,
+  "source_id": "e97209ff-2108-45e8-9355-002573dfba1e",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim, but the claim only partially answers the aspect by discussing general performance comparisons rather than providing specific empirical results or benchmarks."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "16": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 6,
+  "source_id": "ca634c88-6227-4d8f-87b1-dc8721ebb801",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly provides the empirical benchmark (10x parameter difference) and the result (Transformer outperformance) requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "17": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim but only provides a specific example (document ranking) rather than a general comparison of training resources across all tasks."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "18": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 2,
+  "source_id": "bf97b42a-2f50-4796-9d3e-041dbf986961",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "partial",
+   "reason": "The quote does not mention the specific benchmarks or tasks listed in the claim, and the claim only partially answers the aspect by listing domains rather than providing specific empirical results or benchmarks."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "19": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 2,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the specific claim about document ranking, but the claim is limited to a specific task rather than answering the general aspect about how the models differ in training speed across all contexts."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "20": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 1,
+  "source_id": "0617b460-2cee-4208-b067-cc9eb368ac00",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote faithfully restates the claim, but the claim is a definition rather than a list of specific parameters requested by the aspect."
+  },
+  "_topic": "What are transformers and how do they work?"
+ },
+ "21": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 1,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote supports the claim by providing a specific example, but the claim generalizes this finding to all training scenarios, making it an incomplete answer to the general aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "22": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 0,
+  "source_id": "bf97b42a-2f50-4796-9d3e-041dbf986961",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "yes",
+   "reason": "The quote does not mention the specific metrics or tasks listed in the claim, but the claim itself correctly identifies the relevant performance indicators for long-sequence models."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "23": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote supports the claim by confirming Mamba avoids memory walls while Transformers face them, but the claim is only a partial answer to the aspect because it describes a specific architectural consequence (memory scaling) rather than providing a comprehensive comparison of training resources (e.g., compute, time, data) across all three models."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "24": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 1,
+  "source_id": "a41dc737-8268-44c9-b247-933312e69f30",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The claim accurately restates the quote regarding the overview of techniques, but it does not answer the aspect 'parameters of a state space model' because it describes the paper's content rather than listing the specific parameters of the models."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "25": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "25032ddd-d085-4a1c-a9ff-4ad0aff4b38b",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim but the claim describes implementation strategies rather than the comparative training resources requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "26": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 6,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim, but the claim only addresses one specific aspect (energy/cost) of the broader question regarding empirical results and benchmarks, which also includes training speed and other metrics mentioned in the passage."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "27": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 0,
+  "source_id": "39014ed8-11c6-4bf5-bd70-586e9735199e",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim but fails to answer the aspect because it describes the benchmark's results rather than listing the specific metrics or indicators used for evaluation."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "28": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 1,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote supports the claim by confirming the memory limitations of Transformers and the efficiency of Mamba, but the claim itself only partially answers the aspect because it describes a specific architectural advantage (memory scaling) rather than comprehensively explaining the differences in training complexity (which also includes time complexity and computational overhead)."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "29": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 5,
+  "source_id": "ca634c88-6227-4d8f-87b1-dc8721ebb801",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly provides empirical evidence comparing training efficiency (parameter counts) between Transformers and Mamba, which answers the aspect's request for results or benchmarks."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "30": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 2,
+  "source_id": "5941cd62-bb38-4b6c-9412-1541dd83c536",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly confirms the specific training speed comparison between Mamba and Mamba-2 on the specified dataset, which fully answers the aspect's question about their differences in training speed."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "31": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 0,
+  "source_id": "f9646069-7bf8-4ebf-a680-34fab76e79e5",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote accurately supports the claim, but the claim describes the function of matrix elements rather than listing the specific components (A, B, C, D) of the state space model requested by the aspect."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "32": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 1,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim but the claim describes a performance result rather than the training complexity requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "33": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 2,
+  "source_id": "6c5934b9-5c8e-48c2-bef0-83d541f5feaf",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote faithfully restates the claim regarding the advantage of feed-forward networks, and the claim directly answers the aspect by listing a specific advantage."
+  },
+  "_topic": "What are transformers and how do they work?"
+ },
+ "34": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 4,
+  "source_id": "2e7d9a5c-5cfb-4b21-aaae-6efab2604ace",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly provides the specific empirical accuracy improvement metrics requested by the aspect, and the claim faithfully restates these results."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "35": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 2,
+  "source_id": "824ab5a6-d44e-4308-b373-b8f3e4fdcfbb",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly describes the mechanism of combining Transformer features with Mamba hidden states, which directly answers how Mamba incorporates transformers."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "36": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 4,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly confirms the claim that Mamba achieves superior training efficiency compared to Transformer-based CodeGPT, directly addressing the aspect's request for empirical results on training efficiency."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "37": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 0,
+  "source_id": "e97209ff-2108-45e8-9355-002573dfba1e",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim but fails to answer the aspect because it describes performance results rather than identifying the specific metrics or indicators used to measure long-sequence performance."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "38": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 3,
+  "source_id": "2d4c8a07-33b6-495d-a9cf-717fb651363f",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly states that transformer models are analyzed to acquire their advantages and limitations, which directly supports the claim and answers the aspect regarding the limitations of transformers."
+  },
+  "_topic": "What are transformers and how do they work?"
+ },
+ "39": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 2,
+  "source_id": "20cb633d-40f5-49d0-9913-f20e706b8b15",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim that Mamba performs comparably to transformers, but the claim does not explain how Mamba incorporates transformers, which is what the aspect asks for."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "40": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 4,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim, but the claim only addresses energy consumption and costs rather than providing a comprehensive overview of all empirical results or benchmarks for training efficiency."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "41": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 5,
+  "source_id": "25032ddd-d085-4a1c-a9ff-4ad0aff4b38b",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim, but the claim only provides a specific example of training efficiency results rather than a comprehensive answer to the general question about empirical results or benchmarks."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "42": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "ca634c88-6227-4d8f-87b1-dc8721ebb801",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly confirms the claim's specific metrics on training time and data requirements, which fully answers the aspect's question about differences in training resources."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "43": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 0,
+  "source_id": "0617b460-2cee-4208-b067-cc9eb368ac00",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim as a faithful restatement, but the claim is a definition rather than a list of specific components, which the aspect requires."
+  },
+  "_topic": "What are transformers and how do they work?"
+ },
+ "44": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 5,
+  "source_id": "25032ddd-d085-4a1c-a9ff-4ad0aff4b38b",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the metrics reported but does not provide the actual empirical results or benchmark values requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "45": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 0,
+  "source_id": "6c5934b9-5c8e-48c2-bef0-83d541f5feaf",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote faithfully supports the claim, but the claim describes the function of a specific component rather than listing the key components of a transformer model as requested by the aspect."
+  },
+  "_topic": "What are transformers and how do they work?"
+ },
+ "46": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 1,
+  "source_id": "c823db8e-fa4e-4fbd-93bf-76d553f92a31",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "no",
+   "reason": "The quote only cites the paper title and authors without explaining the mechanism of selective state spaces, failing to support the claim or answer how Mamba incorporates SSMs."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "47": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 2,
+  "source_id": "cb728ea2-839d-4105-9f95-cea9eb5d5589",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim is supported, but the claim describes Mamba's relationship to Transformers rather than explaining the specific mechanism of how Mamba incorporates them."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "48": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 0,
+  "source_id": "c823db8e-fa4e-4fbd-93bf-76d553f92a31",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "yes",
+   "reason": "The quote only provides the title of the paper which contains the claim, but does not explicitly state the contribution itself, though the claim is a valid answer to the aspect."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "49": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 1,
+  "source_id": "cb728ea2-839d-4105-9f95-cea9eb5d5589",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly describes the mechanism by which Mamba incorporates state space models via semi-separable matrix decomposition, directly answering the 'how' aspect."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "50": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 1,
+  "source_id": "556612da-4664-498b-bab4-1ad615de0d08",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly details the dimensions and parameter counts of the symmetric Q and R matrices, directly answering the aspect regarding the model's parameters."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "51": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 2,
+  "source_id": "2e7d9a5c-5cfb-4b21-aaae-6efab2604ace",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly confirms the claim that Mamba uses a hardware-aware parallel algorithm to accelerate training, which directly answers the aspect regarding training speed differences."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "52": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 0,
+  "source_id": "39014ed8-11c6-4bf5-bd70-586e9735199e",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "no",
+   "reason": "The quote consists only of table headers listing specific metric names, which does not state that these are the relevant metrics for comparison, nor does the claim itself define or identify the metrics as indicators of performance."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "53": {
+  "sub_question_id": "0c460d36",
+  "aspect_idx": 1,
+  "source_id": "53734ac0-69d9-4e90-9876-d5cfe94964a5",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly defines the model's parameters as the state vector and known matrices with dimensions determined by regressors, which directly answers the aspect asking for the parameters of a state space model."
+  },
+  "_topic": "What are state space models and how do they work?"
+ },
+ "54": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 1,
+  "source_id": "88f73ae3-fdf0-41d1-8407-a1b66ab19010",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "partial",
+   "answers_aspect": "yes",
+   "reason": "The quote only mentions discretization but omits the claim's specific details about convolution kernels and output computation, yet the claim effectively answers the aspect by describing the mechanism."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "55": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 1,
+  "source_id": "25032ddd-d085-4a1c-a9ff-4ad0aff4b38b",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The claim accurately restates the quote regarding parameter scaling, but it does not address the aspect's question about differences in training complexity between the models."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "56": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 4,
+  "source_id": "25032ddd-d085-4a1c-a9ff-4ad0aff4b38b",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim's statement about reported metrics but fails to answer the aspect because it does not provide the actual empirical results or benchmark values."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "57": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 0,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote confirms the claim but the claim describes a performance result rather than listing the specific metrics or indicators of training efficiency requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "58": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 0,
+  "source_id": "5941cd62-bb38-4b6c-9412-1541dd83c536",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote explicitly defines MFU as the metric for training efficiency, which directly answers the aspect's request for relevant metrics."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "59": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 0,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The claim states a negative consequence (high energy/cost) rather than listing the specific metrics or indicators requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "60": {
+  "sub_question_id": "31c378e1",
+  "aspect_idx": 1,
+  "source_id": "c823db8e-fa4e-4fbd-93bf-76d553f92a31",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "no",
+   "answers_aspect": "no",
+   "reason": "The quote only cites the paper title and authors, failing to state the claim's specific contribution or explain how Mamba incorporates state space models."
+  },
+  "_topic": "What is Mamba and how does it relate to state space models a"
+ },
+ "61": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 3,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "partial",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "partial",
+   "reason": "The quote faithfully supports the claim, but the claim only addresses energy/cost limitations rather than fully explaining the differences in training resources across all three models mentioned in the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "62": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 2,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim but the claim describes a memory capacity result rather than the training speed comparison requested by the aspect."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "63": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 5,
+  "source_id": "5e3944de-4bbe-4d24-8926-0b6d29d84ee7",
+  "_stored": {
+   "final": "yes",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "yes",
+   "reason": "The quote directly states the specific empirical benchmark regarding training data efficiency, which is exactly what the aspect asks for."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "64": {
+  "sub_question_id": "234ff99c",
+  "aspect_idx": 0,
+  "source_id": "d0fc5a99-059c-44be-909d-9b08d16834a2",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The claim accurately restates the quote's finding on efficiency but fails to answer the aspect because it provides a specific comparative result rather than listing the relevant metrics or indicators requested."
+  },
+  "_topic": "How is training efficiency measured and compared for state s"
+ },
+ "65": {
+  "sub_question_id": "6d8dedc4",
+  "aspect_idx": 0,
+  "source_id": "06a8b99f-c8da-4b6d-b11b-636523d9ed54",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "partial",
+   "answers_aspect": "no",
+   "reason": "The quote only provides an example of accuracy being used for one specific model (Transformer) rather than defining the general metrics for long-sequence performance, and the claim itself is an observation of a result rather than a definition of a metric."
+  },
+  "_topic": "How is long-sequence performance measured and compared for s"
+ },
+ "66": {
+  "sub_question_id": "f0469af2",
+  "aspect_idx": 0,
+  "source_id": "2d4c8a07-33b6-495d-a9cf-717fb651363f",
+  "_stored": {
+   "final": "no",
+   "quote_supports_claim": "yes",
+   "answers_aspect": "no",
+   "reason": "The quote supports the claim by stating that advantages and limitations are analyzed, but the claim does not answer the aspect because it fails to list the specific key components of a transformer model."
+  },
+  "_topic": "What are transformers and how do they work?"
+ }
+}
