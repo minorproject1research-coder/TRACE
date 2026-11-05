@@ -190,7 +190,16 @@ def main() -> int:
     w("| | |\n|---|---|")
     w(f"| Question | {query['raw_query']} |")
     anchor_line = first(msgs, lambda l: l[3].startswith("Domain anchor"))
-    w(f"| Domain anchor | {anchor_line[3].replace('Domain anchor', '').strip(' :') if anchor_line else 'not used (switch off, or no line in the log)'} |")
+    if anchor_line:
+        anchor_shown = anchor_line[3].replace("Domain anchor", "").strip(" :")
+    else:
+        # no log line (it can be lost, e.g. by a log-file encoding error): look at the stored queries instead
+        qtexts = [q["query_text"] for q in supabase.table("queries").select("query_text").in_("sub_question_id", [s["id"] for s in sqs]).execute().data]
+        ends = Counter(" ".join(t.split()[-k:]) for t in qtexts for k in (1, 2, 3) if len(t.split()) > k)
+        best = max(ends.items(), key=lambda kv: (kv[1], len(kv[0]))) if ends else None
+        anchor_shown = (f"'{best[0]}' ends {best[1]} of {len(qtexts)} stored queries (the log line is missing)"
+                        if best and best[1] >= 0.6 * len(qtexts) else "not used (switch off, or no trace in the log or in the queries)")
+    w(f"| Domain anchor | {anchor_shown} |")
     w(f"| Started / finished | {t_start:%Y-%m-%d %H:%M:%S} / {t_end:%H:%M:%S} |")
     w(f"| **Total execution time** | **{dur(total)}** ({total:.0f} s) |")
     planner = M(r"^Planner \(")

@@ -104,6 +104,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
                     detail_aspects=aspects,
                     main_topic=_clean_topic(sub_questions[si].main_topic),
                     cache_scope=(str(sub_questions[si].id), str(src["id"])),
+                    strict=True,
                 )
                 return findings, digest_failures
             except json.JSONDecodeError as e:
@@ -114,6 +115,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
                 logger.error(f"Digest generation failed after 2 attempts for sub-question {sub_questions[si].id}")
                 return [], digest_failures
             except Exception as e:
+                digest_failures += 1                      # e.g. Groq rate-limit exhaustion or a connection error
                 logger.error(f"Digest generation failed: {e}")
                 return [], digest_failures
         return [], digest_failures

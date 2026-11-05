@@ -8,7 +8,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
-        logging.FileHandler(log_dir / "pipeline.log"),
+        logging.FileHandler(log_dir / "pipeline.log", encoding="utf-8"),
         logging.StreamHandler(),
     ],
 )
@@ -23,7 +23,7 @@ stage_files = {
 
 for logger_name, filename in stage_files.items():
     logger = logging.getLogger(logger_name)
-    logger.addHandler(logging.FileHandler(log_dir / filename))
+    logger.addHandler(logging.FileHandler(log_dir / filename, encoding="utf-8"))
 
 from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState

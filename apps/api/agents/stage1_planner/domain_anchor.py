@@ -81,9 +81,16 @@ def _cache_key(question: str, model: str) -> str:
     return hashlib.sha256(f"{model}|{hashlib.sha256(PROMPT.encode()).hexdigest()}|{question.strip()}".encode()).hexdigest()
 
 
+_PUNCTUATION = {ord(c): "-" for c in "‐‑‒–—―−"}
+_PUNCTUATION.update({ord(c): "'" for c in "‘’‛"})
+_PUNCTUATION.update({ord(c): '"' for c in "“”"})
+
+
 def _clean(value, max_chars: int) -> str:
     if not isinstance(value, str):
         return ""
+    # typographic hyphens and quotes become plain ASCII: a non-breaking hyphen made the Windows log file (cp1252) drop the whole line
+    value = value.translate(_PUNCTUATION)
     value = re.sub(r"\s+", " ", value).strip().strip('"').strip()
     return value if len(value) <= max_chars else ""
 

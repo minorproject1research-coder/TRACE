@@ -39,7 +39,11 @@ def get_embedder():
     global _embedder
     if _embedder is None:
         logger.info("Loading embedding model BAAI/bge-base-en-v1.5")
-        _embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
+        try:
+            # the model is on disk after the first run; asking the Hub about it anyway cost 13 s normally and 2 minutes on a slow network
+            _embedder = SentenceTransformer("BAAI/bge-base-en-v1.5", local_files_only=True)
+        except Exception:                                   # not downloaded yet (first run) or an old library: the normal path
+            _embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
     return _embedder
 
 

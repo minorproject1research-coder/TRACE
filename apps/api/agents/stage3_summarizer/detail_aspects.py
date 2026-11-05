@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Tuple
 
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 from apps.api.services.llm_service import squeezer_json
+from apps.api.services.text_norm import normalized_words
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.detail_aspects")
 
@@ -166,13 +167,7 @@ def run_merge_mode(coverage_row: Optional[Dict]) -> str:
     return stats.get("aspect_merge") if stats.get("aspect_merge") in MERGE_MODES else LEGACY_MERGE_MODE
 
 
-_STOP = {"the", "a", "an", "of", "and", "or", "for", "in", "on", "to", "is", "are", "what", "how", "do", "does", "with", "from", "by", "as", "at", "be",
-         "this", "that", "these", "those", "their", "its", "which", "can", "some", "common"}
-
-
-def _normalized(aspect: str) -> frozenset:
-    words = re.findall(r"[a-z0-9]+", aspect.lower())
-    return frozenset(w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w for w in words if w not in _STOP)
+_normalized = normalized_words      # the shared helper (apps/api/services/text_norm.py)
 
 
 def _merge_near_duplicate_aspects(

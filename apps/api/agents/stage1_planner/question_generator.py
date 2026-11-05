@@ -10,8 +10,11 @@ logger = logging.getLogger(__name__)
 # Caps keep retrieval time bounded: every search query fans out to arXiv, Semantic Scholar, IEEE, OpenAlex and the web.
 MAX_SUBQUESTIONS = int(os.getenv("MAX_SUBQUESTIONS", "5"))
 MAX_QUERIES_PER_SUBQUESTION = int(os.getenv("MAX_QUERIES_PER_SUBQUESTION", "3"))
-# Sub-questions whose topics are at least this similar (bge cosine) are merged into one; 1.0 turns merging off.
-MERGE_SIMILARITY = float(os.getenv("SUBQUESTION_MERGE_SIMILARITY", "0.92"))
+# SUBQUESTION_MERGE: how near-duplicate sub-questions are merged.
+#   exact (default)  only sub-questions with the same content words (stop words, case and a plural "s" ignored)
+#   embedding        sub-questions whose topics have bge cosine >= SUBQUESTION_MERGE_SIMILARITY (opt-in, see _merge_similar)
+#   off              never
+MERGE_SIMILARITY = float(os.getenv("SUBQUESTION_MERGE_SIMILARITY", "0.97"))     # only used in "embedding" mode
 MAX_DETAIL_QUESTIONS = int(os.getenv("MAX_DETAIL_QUESTIONS", "5"))      # detail questions kept after a merge
 DETAIL_DUPLICATE_SIMILARITY = 0.9                                       # a merged-in detail this close to one we have is dropped
 # groq: if the model server is unreachable, decompose with the Groq model instead; none: raise the error
@@ -41,16 +44,59 @@ def generate(raw_query: str) -> list[SubQuestion]:
     return sub_questions
 
 
-def _merge_similar(sub_questions: list[SubQuestion]) -> list[SubQuestion]:
-    """Merge sub-questions that ask the same thing in different words.
+def _merge_mode() -> str:
+    mode = os.getenv("SUBQUESTION_MERGE", "exact").strip().lower()
+    return mode if mode in ("exact", "embedding", "off") else "exact"
 
-    The planner sometimes emits a core question twice ("How does X affect Y?" and "How effective is X at reducing Y?",
-    topic similarity 0.97). Each copy would be searched, judged, parsed and summarised separately, with mostly the same
-    papers. The measured gap is wide: the most similar pair of genuinely different sub-questions seen so far scores
-    0.84, so the default threshold is 0.92. The first sub-question is kept; the later one's detail questions are
-    added to it (near-identical ones dropped), up to MAX_DETAIL_QUESTIONS."""
-    if len(sub_questions) < 2 or MERGE_SIMILARITY >= 1.0:
+
+def _absorb_details(host: SubQuestion, other: SubQuestion, model) -> None:
+    """Add the detail questions of `other` to `host` (up to MAX_DETAIL_QUESTIONS); one that is almost identical to a known detail is dropped."""
+    known = host.detail_questions
+    known_vecs = model.encode(known, normalize_embeddings=True)
+    for detail in other.detail_questions:
+        if len(known) >= MAX_DETAIL_QUESTIONS:
+            break
+        vec = model.encode([detail], normalize_embeddings=True)[0]
+        if float((known_vecs @ vec).max()) < DETAIL_DUPLICATE_SIMILARITY:
+            known.append(detail)
+            known_vecs = model.encode(known, normalize_embeddings=True)
+
+
+def _merge_similar(sub_questions: list[SubQuestion]) -> list[SubQuestion]:
+    """Merge sub-questions that ask the same thing.
+
+    Default mode "exact": only sub-questions with the same content words are merged. The earlier rule (embedding similarity >= 0.92) merged
+    DIFFERENT questions: in the logs 4 of the 5 merges ever made were wrong ("compare in memory cost" into "compare in performance" 0.95,
+    twice; "techniques that address the challenges" into "challenges transformers face" 0.95; "compare in long-sequence performance" into
+    "compare in training efficiency" 0.93) and each one silently removed part of what the user asked. Only one was a true duplicate ("How
+    effective is X at reducing Y?" into "How does X affect Y?", 0.97). A missed duplicate costs extra search time; a wrong merge costs part of
+    the answer, so the default errs on the side of keeping sub-questions apart.
+
+    Mode "embedding" keeps the old rule with SUBQUESTION_MERGE_SIMILARITY (default 0.97, which would have merged only the true duplicate
+    above; one example, so treat it as a guess). The first sub-question is kept; the later one's detail questions are added to it."""
+    mode = _merge_mode()
+    if len(sub_questions) < 2 or mode == "off" or (mode == "embedding" and MERGE_SIMILARITY >= 1.0):
         return sub_questions
+
+    if mode == "exact":
+        from apps.api.services.text_norm import normalized_words
+        first_with: dict = {}
+        kept_list: list[SubQuestion] = []
+        for sq in sub_questions:
+            key = normalized_words(sq.main_topic)
+            host = first_with.get(key)
+            if host is None:
+                first_with[key] = sq
+                kept_list.append(sq)
+                continue
+            logger.info("Merged identical sub-question '%s' into '%s'", sq.main_topic[:70], host.main_topic[:70])
+            try:
+                from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
+                _absorb_details(host, sq, get_embedder())
+            except Exception as e:                      # never let a merge problem break planning
+                logger.warning("Detail questions of the merged sub-question were not added (%s: %s)", type(e).__name__, e)
+        return kept_list
+
     try:
         from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder   # shared bge model, loaded once
         model = get_embedder()
@@ -65,18 +111,9 @@ def _merge_similar(sub_questions: list[SubQuestion]) -> list[SubQuestion]:
         if target is None:
             kept.append(i)
             continue
-        host = sub_questions[target]
         logger.info("Merged near-duplicate sub-question '%s' into '%s' (similarity %.2f)",
-                    sq.main_topic[:70], host.main_topic[:70], float(topics[i] @ topics[target]))
-        known = host.detail_questions
-        known_vecs = model.encode(known, normalize_embeddings=True)
-        for detail in sq.detail_questions:
-            if len(known) >= MAX_DETAIL_QUESTIONS:
-                break
-            vec = model.encode([detail], normalize_embeddings=True)[0]
-            if float((known_vecs @ vec).max()) < DETAIL_DUPLICATE_SIMILARITY:
-                known.append(detail)
-                known_vecs = model.encode(known, normalize_embeddings=True)
+                    sq.main_topic[:70], sub_questions[target].main_topic[:70], float(topics[i] @ topics[target]))
+        _absorb_details(sub_questions[target], sq, model)
     return [sub_questions[i] for i in kept]
 
 

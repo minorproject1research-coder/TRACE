@@ -108,11 +108,14 @@ def generate_digest(
     detail_aspects: list[str] | None = None,
     main_topic: str | None = None,
     cache_scope: tuple[str, str] | None = None,
+    strict: bool = False,
 ) -> list[dict]:
     """
     selected = [(chunk_id, chunk_text)].
     detail_aspects = flattened list of aspects (already split from detail questions).
     cache_scope = (sub_question_id, source_id): when given (and DIGEST_CACHE is on) the model's reply is cached and reused.
+    strict = raise the model/JSON error instead of returning [] (the summarizer needs it to retry and to count digest_failures; an
+    empty list from a failed call used to look like "the source has nothing relevant").
     Returns findings with answers_details tags.
     """
     n_details = len(detail_aspects) if detail_aspects else 0
@@ -143,6 +146,8 @@ def generate_digest(
             data = squeezer_json(prompt, temperature=DIGEST_TEMPERATURE, seed=DIGEST_SEED)
         except Exception as e:
             logger.error("Digest generation failed: %s", e)
+            if strict:
+                raise
             return []                                   # a failed call is never cached
         if key is not None:
             digest_cache.put(key, data)

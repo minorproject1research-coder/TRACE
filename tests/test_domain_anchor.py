@@ -117,6 +117,16 @@ def test_unusable_model_output_becomes_empty(fake_llm, bad):
     assert not da.generate(QUESTION)
 
 
+def test_typographic_characters_become_plain_ascii(fake_llm):
+    """A non-breaking hyphen in the context made the Windows log file (cp1252) drop the whole log line."""
+    fake, _ = fake_llm
+    fake.reply = {"anchor": "deep‑learning", "context": "control‑theory state‑space “models”—not ‘this’"}
+    a = da.generate(QUESTION)
+    assert a.anchor == "deep-learning"
+    assert a.context == "control-theory state-space \"models\"-not 'this'"
+    assert a.anchor.isascii() and a.context.isascii()
+
+
 def test_overlong_context_is_dropped_but_the_anchor_is_kept(fake_llm):
     fake, _ = fake_llm
     fake.reply = {"anchor": "deep learning", "context": "x" * 400}
