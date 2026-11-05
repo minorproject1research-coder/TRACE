@@ -159,6 +159,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
         cov = coverage_check.check_coverage_judged(
             aspects, aspect_to_detail, sq.detail_questions, rows, judge_verdicts, candidates=candidates
         )
+        if isinstance(cov.get("judge_stats"), dict):
+            cov["judge_stats"]["aspect_merge"] = detail_aspects.merge_mode()      # tools that rebuild this run's aspects need to know
         # Add digest failures count
         sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
         cov["digest_failures"] = sq_failures

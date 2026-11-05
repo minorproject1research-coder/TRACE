@@ -24,7 +24,7 @@ import audit_tag_precision as at  # noqa: E402
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder  # noqa: E402
 from apps.api.agents.stage3_summarizer import coverage_check as cc  # noqa: E402
 from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic  # noqa: E402
-from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects  # noqa: E402
+from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode  # noqa: E402
 from apps.api.services.db_service import supabase  # noqa: E402
 
 
@@ -33,8 +33,8 @@ def covered_set(result, n):
     return uncovered
 
 
-def rebuild(sq, digests, embedder):
-    aspects, a2d = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]))
+def rebuild(sq, digests, embedder, merge_mode=None):
+    aspects, a2d = flatten_aspects(sq["detail_questions"], sq["id"], _clean_topic(sq["main_topic"]), merge_mode=merge_mode)
     at.check_split_matches_run(sq["id"], aspects, digests)
     rows, verdicts, candidates = [], {}, []
     claims = [f["claim"] for d in digests for f in d["findings"] if f.get("judge")]
@@ -72,7 +72,7 @@ def main() -> int:
             digests = at.latest_generation(supabase.table("digests").select("*").eq("sub_question_id", sq["id"]).execute().data)
             stored = sorted(at.latest_generation(supabase.table("coverage_results").select("*").eq("sub_question_id", sq["id"]).execute().data),
                             key=lambda c: c["created_at"])[-1]
-            aspects, a2d, rows, verdicts, candidates = rebuild(sq, digests, embedder)
+            aspects, a2d, rows, verdicts, candidates = rebuild(sq, digests, embedder, merge_mode=run_merge_mode(stored))
             results = {}
             for flag in ("false", "true"):
                 os.environ["ONE_FINDING_ONE_ASPECT"] = flag

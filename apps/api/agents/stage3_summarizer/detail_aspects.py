@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -140,37 +141,87 @@ def split_detail_aspects(
         return [detail_text]
 
 
+MERGE_MODES = ("exact", "embedding", "off")
+LEGACY_MERGE_MODE = "embedding"      # what every run before 2026-11-05 used; tools that rebuild the aspects of a stored run need it
+
+
+def merge_mode() -> str:
+    """ASPECT_MERGE: how aspects of one sub-question are de-duplicated.
+
+    exact (default)  merge only identical aspects (same words once stop words and plurals are ignored) that came from the SAME detail question.
+    embedding        the old rule: merge any two aspects whose bge cosine is >= NEAR_DUP_ASPECT_SIM. Lossy, see below.
+    off              never merge.
+
+    Why embedding is not the default: aspects of one sub-question share the topic words, so unrelated aspects score 0.85-0.99 and the merge
+    removed questions the user asked ("defined" vs "measured" 0.96, "sources" vs "impacts" 0.97, "empirical results" vs "theoretical
+    explanations" 0.98). It also made a whole detail question vanish from coverage when all its aspects were merged into another detail's.
+    The word that differs does not help: "advantages"/"disadvantages" score higher than "motivation"/"goal" as embeddings."""
+    mode = os.getenv("ASPECT_MERGE", "exact").strip().lower()
+    return mode if mode in MERGE_MODES else "exact"
+
+
+def run_merge_mode(coverage_row: Optional[Dict]) -> str:
+    """The merge mode a stored run used (written into judge_stats by the summarizer); runs without the marker used the old embedding rule."""
+    stats = (coverage_row or {}).get("judge_stats") or {}
+    return stats.get("aspect_merge") if stats.get("aspect_merge") in MERGE_MODES else LEGACY_MERGE_MODE
+
+
+_STOP = {"the", "a", "an", "of", "and", "or", "for", "in", "on", "to", "is", "are", "what", "how", "do", "does", "with", "from", "by", "as", "at", "be",
+         "this", "that", "these", "those", "their", "its", "which", "can", "some", "common"}
+
+
+def _normalized(aspect: str) -> frozenset:
+    words = re.findall(r"[a-z0-9]+", aspect.lower())
+    return frozenset(w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w for w in words if w not in _STOP)
+
+
 def _merge_near_duplicate_aspects(
     aspects: List[str],
     aspect_to_detail: List[int],
     embedder=None,
+    mode: Optional[str] = None,
 ) -> Tuple[List[str], List[int], List[List[int]]]:
     """
-    Merge aspects with cosine similarity >= NEAR_DUP_ASPECT_SIM.
-    
+    De-duplicate aspects according to the merge mode (see merge_mode()).
+
     Returns:
         (merged_aspects, merged_aspect_to_detail, parent_mapping)
-        - merged_aspects: deduplicated aspect texts (keeps first occurrence)
+        - merged_aspects: aspect texts after the merge (keeps the first occurrence)
         - merged_aspect_to_detail: detail index for each merged aspect
         - parent_mapping: for each merged aspect, list of original aspect indices it represents
     """
-    if not aspects or len(aspects) <= 1:
-        return aspects, aspect_to_detail, [[i] for i in range(len(aspects))]
-    
+    mode = mode or merge_mode()
+    n = len(aspects)
+    if n <= 1 or mode == "off":
+        return aspects, aspect_to_detail, [[i] for i in range(n)]
+
+    if mode == "exact":
+        seen: Dict[Tuple[int, frozenset], int] = {}
+        merged_aspects, merged_to_detail, parent_mapping = [], [], []
+        for i, text in enumerate(aspects):
+            key = (aspect_to_detail[i], _normalized(text))
+            if key in seen:
+                parent_mapping[seen[key]].append(i)
+                logger.info("Merging identical aspects of one detail question: '%s' | '%s'", aspects[parent_mapping[seen[key]][0]][:80], text[:80])
+                continue
+            seen[key] = len(merged_aspects)
+            merged_aspects.append(text)
+            merged_to_detail.append(aspect_to_detail[i])
+            parent_mapping.append([i])
+        return merged_aspects, merged_to_detail, parent_mapping
+
+    # mode == "embedding": the old rule, kept unchanged so that stored runs can be rebuilt exactly
     if embedder is None:
         embedder = get_embedder()
-    
     embeddings = embedder.encode(aspects, normalize_embeddings=True)
-    n = len(aspects)
     merged = [False] * n
     parent_mapping = []
     merged_aspects = []
     merged_aspect_to_detail = []
-    
+
     for i in range(n):
         if merged[i]:
             continue
-        # Start a new group with aspect i
         group = [i]
         merged[i] = True
         for j in range(i + 1, n):
@@ -187,7 +238,7 @@ def _merge_near_duplicate_aspects(
         parent_mapping.append(group)
         merged_aspects.append(aspects[i])
         merged_aspect_to_detail.append(aspect_to_detail[i])
-    
+
     return merged_aspects, merged_aspect_to_detail, parent_mapping
 
 
@@ -195,25 +246,25 @@ def flatten_aspects(
     detail_questions: List[str],
     sub_question_id: str,
     main_topic: str,
+    merge_mode: Optional[str] = None,
 ) -> tuple[List[str], List[int]]:
     """
-    Flatten all detail questions into a single list of aspects, then merge near-duplicates.
-    
+    Flatten all detail questions into a single list of aspects, then de-duplicate them (merge_mode, default from ASPECT_MERGE).
+
     Returns:
         (aspects_list, aspect_to_detail_map)
-        - aspects_list: flattened list of all aspects (after near-duplicate merge)
+        - aspects_list: flattened list of all aspects (after the merge)
         - aspect_to_detail_map: for each aspect index, the original detail index (0-based)
     """
     all_aspects = []
     aspect_to_detail = []
-    
+
     for detail_idx, detail in enumerate(detail_questions):
         aspects = split_detail_aspects(detail, sub_question_id, main_topic)
         for _ in aspects:
             aspect_to_detail.append(detail_idx)
         all_aspects.extend(aspects)
-    
-    # Merge near-duplicate aspects
-    merged_aspects, merged_mapping, _ = _merge_near_duplicate_aspects(all_aspects, aspect_to_detail)
-    
+
+    merged_aspects, merged_mapping, _ = _merge_near_duplicate_aspects(all_aspects, aspect_to_detail, mode=merge_mode)
+
     return merged_aspects, merged_mapping

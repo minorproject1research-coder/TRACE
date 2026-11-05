@@ -22,6 +22,20 @@ def _now_ist() -> str:
     return datetime.now(IST).isoformat()
 
 
+def strip_nul(value):
+    """Remove U+0000 from every string inside value (str, list, dict, nested).
+
+    Postgres cannot store the NUL character in text or jsonb columns (error 22P05, "unsupported Unicode escape sequence"); text
+    extracted from PDFs sometimes contains it, and one such paper was lost from a run. Other values are returned unchanged."""
+    if isinstance(value, str):
+        return value.replace(chr(0), "") if chr(0) in value else value
+    if isinstance(value, list):
+        return [strip_nul(v) for v in value]
+    if isinstance(value, dict):
+        return {k: strip_nul(v) for k, v in value.items()}
+    return value
+
+
 def write_task_plan(plan) -> None:
     sub_q_rows, query_rows = plan.to_supabase_rows()
 
@@ -77,7 +91,7 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
             "query_variants_matched": paper.get("query_variant_matched", []),
         })
 
-    supabase.table("retrieved_papers").insert(rows).execute()
+    supabase.table("retrieved_papers").insert(strip_nul(rows)).execute()
 
 
 def write_web_sources(sources: list) -> None:
@@ -101,7 +115,7 @@ def write_web_sources(sources: list) -> None:
         for s in sources
     ]
 
-    supabase.table("web_sources").insert(rows).execute()
+    supabase.table("web_sources").insert(strip_nul(rows)).execute()
 
 
 def get_retrieved_paper(paper_id: str) -> dict | None:
@@ -139,6 +153,11 @@ def write_parsed_paper(
     if parser_version is not None:
         fields["parser_version"] = parser_version
 
+    n_nul = (full_text or "").count(chr(0))
+    if n_nul:
+        logger.warning("Removed %d NUL character(s) from the parsed text of paper %s before storing it", n_nul, retrieved_paper_id)
+    fields = strip_nul(fields)
+
     try:
         _upsert_parsed(retrieved_paper_id, fields)
     except Exception as e:
@@ -150,6 +169,7 @@ def write_parsed_paper(
 
 
 def _upsert_parsed(retrieved_paper_id: str, fields: dict) -> None:
+    fields = strip_nul(fields)            # also for callers that do not go through write_parsed_paper
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
     if existing.data:
         supabase.table("parsed_papers").update({**fields, "updated_at": _now_ist()})             .eq("retrieved_paper_id", retrieved_paper_id).execute()
@@ -258,6 +278,7 @@ OPTIONAL_COVERAGE_COLUMNS = (
 
 def _insert_with_optional_columns(table: str, rows: list[dict], optional: tuple) -> None:
     """Insert rows; if the table lacks an optional column (migration not run yet), store them without it."""
+    rows = strip_nul(rows)
     try:
         supabase.table(table).insert(rows).execute()
     except Exception as e:

@@ -246,7 +246,7 @@ def check_alignment(sq_id: str, aspects: List[str], cov: Dict, embedder, min_sim
 def collect_pool(query_ids: List[str]) -> List[Dict]:
     from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
     from apps.api.agents.stage3_summarizer.chunk_selector import _clean_topic
-    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects
+    from apps.api.agents.stage3_summarizer.detail_aspects import flatten_aspects, run_merge_mode
     from apps.api.services.db_service import supabase
 
     embedder = get_embedder()
@@ -259,8 +259,8 @@ def collect_pool(query_ids: List[str]) -> List[Dict]:
         print(f"query {qid[:8]}: {len(sqs)} sub-questions, {len(digests)} digests in the latest run(s)")
         for sq in sqs:
             topic = _clean_topic(sq.get("main_topic", ""))
-            aspects, _ = flatten_aspects(sq.get("detail_questions", []), sq["id"], topic)
             cov = covs.get(sq["id"], {})
+            aspects, _ = flatten_aspects(sq.get("detail_questions", []), sq["id"], topic, merge_mode=run_merge_mode(cov))
             sq_digests_all = [d for d in digests if d["sub_question_id"] == sq["id"]]
             check_split_matches_run(sq["id"], aspects, sq_digests_all)
             covered_idx = covered_indices(cov, len(aspects))

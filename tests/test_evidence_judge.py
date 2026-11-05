@@ -567,9 +567,10 @@ class TestJudgeCache:
 class TestAspectMerging:
     """Test near-duplicate aspect merging in detail_aspects."""
 
-    def test_merges_near_duplicates_at_092(self, mock_embedder_high_sim):
-        """Test aspects with similarity >= 0.92 are merged."""
+    def test_merges_near_duplicates_at_092(self, mock_embedder_high_sim, monkeypatch):
+        """Legacy mode ASPECT_MERGE=embedding: aspects with similarity >= 0.92 are merged."""
         from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.setenv("ASPECT_MERGE", "embedding")
         
         aspects = [
             "quality of input data",
@@ -589,9 +590,10 @@ class TestAspectMerging:
         assert len(parent_mapping[0]) == 2  # first merged aspect represents 2 originals
         assert len(parent_mapping[1]) == 1
 
-    def test_keeps_distinct_aspects_alone(self, mock_embedder_high_sim):
-        """Test distinct aspects (sim < 0.92) are not merged."""
+    def test_keeps_distinct_aspects_alone(self, mock_embedder_high_sim, monkeypatch):
+        """Legacy mode: distinct aspects (sim < 0.92) are not merged."""
         from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.setenv("ASPECT_MERGE", "embedding")
         
         aspects = [
             "advantages of X",
@@ -1135,3 +1137,118 @@ class TestJudgeConfigAndChunkContext:
         from apps.api.agents.stage3_summarizer.evidence_judge import build_judge_items
         cands = [{"aspect_idx": 0, "aspect_text": "a", "source_id": "s", "claim": "c", "quote": "alpha", "chunk_id": 1, "item_id": "x"}]
         assert build_judge_items(cands, {"1": "alpha old style"})[0]["context"] == "alpha old style"
+
+
+class TestJudgeItemErrorLogging:
+    """A failed judge verdict must be logged per item, with a non-empty reason, and a short server answer must not drop items."""
+
+    @pytest.fixture
+    def mock_httpx_client(self):
+        with patch("apps.api.agents.stage3_summarizer.evidence_judge.httpx.Client") as mock_client:
+            yield mock_client
+
+    def _run(self, mock_httpx_client, results, items):
+        from apps.api.agents.stage3_summarizer.evidence_judge import judge_candidates
+        os.environ["JUDGE_URL"] = "http://test-judge"
+        os.environ["JUDGE_RETRIES"] = "0"
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json.return_value = {"results": results}
+        client = MagicMock()
+        client.post.return_value = resp
+        mock_httpx_client.return_value.__enter__.return_value = client
+        return judge_candidates(items)
+
+    def _item(self, i, claim):
+        return {"id": f"i{i}", "aspect_idx": i, "source_id": f"src{i}", "aspect": "a", "claim": claim, "quote": "q", "context": ""}
+
+    def test_empty_error_still_gives_a_reason_and_a_warning(self, mock_httpx_client, caplog):
+        items = [self._item(0, "claim zero")]
+        with caplog.at_level("WARNING"):
+            verdicts = self._run(mock_httpx_client, [{"id": "i0", "verdict": None, "raw_output": "", "error": None}], items)
+        v = list(verdicts.values())[0]["verdict"]
+        assert v["final"] == "error" and v["reason"].strip() != ""
+        text = " ".join(r.getMessage() for r in caplog.records)
+        assert "Judge verdict failed" in text and "claim zero" in text and "1 of 1 item(s)" in text
+
+    def test_raw_output_is_kept_in_the_reason(self, mock_httpx_client):
+        items = [self._item(0, "c")]
+        verdicts = self._run(mock_httpx_client, [{"id": "i0", "verdict": None, "raw_output": "not json at all", "error": ""}], items)
+        assert "not json at all" in list(verdicts.values())[0]["verdict"]["reason"]
+
+    def test_short_answer_from_server_does_not_drop_items(self, mock_httpx_client, caplog):
+        ok = {"final": "yes", "quote_supports_claim": "yes", "answers_aspect": "yes", "reason": "ok"}
+        items = [self._item(0, "c0"), self._item(1, "c1")]
+        with caplog.at_level("WARNING"):
+            verdicts = self._run(mock_httpx_client, [{"id": "i0", "verdict": ok, "raw_output": "", "error": None}], items)
+        finals = sorted(v["verdict"]["final"] for v in verdicts.values())
+        assert finals == ["error", "yes"]
+        assert "returned 1 result(s) for 2 item(s)" in " ".join(r.getMessage() for r in caplog.records)
+
+    def test_successful_batch_logs_no_failure_warning(self, mock_httpx_client, caplog):
+        ok = {"final": "yes", "quote_supports_claim": "yes", "answers_aspect": "yes", "reason": "ok"}
+        with caplog.at_level("WARNING"):
+            self._run(mock_httpx_client, [{"id": "i0", "verdict": ok, "raw_output": "", "error": None}], [self._item(0, "c0")])
+        assert not any("Judge verdict failed" in r.getMessage() for r in caplog.records)
+
+
+
+class TestAspectMergeModes:
+    """ASPECT_MERGE=exact (default) must not merge aspects that only look alike; the aspects below come from the 2026-11-05 Mamba run,
+    where the embedding rule merged all of these pairs (similarity 0.92-0.99) and a whole detail question disappeared from coverage."""
+
+    PAIRS_THAT_MUST_STAY_SEPARATE = [
+        ("What are the main components of state space models?", "What are the parameters of state space models?", 0, 0),                       # 0.924, same detail
+        ("How does Mamba compare to transformers in terms of architecture?", "How does Mamba compare to transformers in terms of performance?", 0, 0),   # 0.948
+        ("What are the open challenges for state space models and transformers?", "What are the future directions for state space models and transformers?", 0, 0),
+        ("What are the empirical results and findings from existing studies regarding how SSMs compare with transformers?",
+         "What are the theoretical explanations from existing literature regarding how SSMs compare with transformers?", 0, 1),         # 0.977, cross-detail
+        ("how hallucinations are defined in large language models", "how hallucinations are measured in large language models", 0, 0),
+        ("sources of hallucinations in large language models", "impacts of hallucinations in large language models", 0, 1),
+    ]
+
+    @pytest.mark.parametrize("a,b,da,db", PAIRS_THAT_MUST_STAY_SEPARATE)
+    def test_default_mode_keeps_lookalike_aspects_apart(self, a, b, da, db, monkeypatch):
+        from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.delenv("ASPECT_MERGE", raising=False)
+        merged, to_detail, _ = _merge_near_duplicate_aspects([a, b], [da, db])         # no embedder needed: default mode does not use one
+        assert merged == [a, b] and to_detail == [da, db]
+
+    def test_exact_duplicates_of_one_detail_are_merged(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.delenv("ASPECT_MERGE", raising=False)
+        merged, to_detail, parents = _merge_near_duplicate_aspects(
+            ["Advantages of X", "the advantages of X?", "limitations of X"], [0, 0, 0])
+        assert merged == ["Advantages of X", "limitations of X"] and parents == [[0, 1], [2]]
+
+    def test_identical_aspects_of_two_details_are_both_kept(self, monkeypatch):
+        """Merging them would make the second detail question vanish from coverage."""
+        from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.delenv("ASPECT_MERGE", raising=False)
+        merged, to_detail, _ = _merge_near_duplicate_aspects(["advantages of X", "advantages of X"], [0, 1])
+        assert merged == ["advantages of X", "advantages of X"] and to_detail == [0, 1]
+
+    def test_off_mode_never_merges(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer.detail_aspects import _merge_near_duplicate_aspects
+        monkeypatch.setenv("ASPECT_MERGE", "off")
+        assert _merge_near_duplicate_aspects(["a b", "a b"], [0, 0])[0] == ["a b", "a b"]
+
+    def test_unknown_mode_falls_back_to_exact(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer.detail_aspects import merge_mode
+        monkeypatch.setenv("ASPECT_MERGE", "whatever")
+        assert merge_mode() == "exact"
+
+    def test_stored_run_mode_defaults_to_the_legacy_rule(self):
+        from apps.api.agents.stage3_summarizer.detail_aspects import run_merge_mode
+        assert run_merge_mode({}) == "embedding" and run_merge_mode(None) == "embedding"
+        assert run_merge_mode({"judge_stats": {"yes": 1}}) == "embedding"          # a run from before the marker existed
+        assert run_merge_mode({"judge_stats": {"aspect_merge": "exact"}}) == "exact"
+        assert run_merge_mode({"judge_stats": {"aspect_merge": "bogus"}}) == "embedding"
+
+    def test_flatten_with_explicit_mode_overrides_the_environment(self, monkeypatch):
+        """Tools that rebuild a stored run pass its mode; the environment must not change that."""
+        from apps.api.agents.stage3_summarizer import detail_aspects as da
+        monkeypatch.setenv("ASPECT_MERGE", "exact")
+        monkeypatch.setattr(da, "split_detail_aspects", lambda detail, sid, topic: {"d0": ["x one", "y two"], "d1": ["x one"]}[detail])
+        aspects, to_detail = da.flatten_aspects(["d0", "d1"], "sq", "topic", merge_mode="off")
+        assert aspects == ["x one", "y two", "x one"] and to_detail == [0, 0, 1]
