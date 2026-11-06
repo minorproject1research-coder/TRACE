@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, Check, Search } from 'lucide-react'
 import { PaperCard, WebCard } from '@/components/trace/paper-card'
-import { ActivityLog } from '@/components/trace/activity-log'
+import { Timeline } from '@/components/trace/timeline'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
-import { formatDuration, num } from '@/lib/format'
+import { num } from '@/lib/format'
 import { radioGroupKeys } from '@/lib/radio-keys'
 import type { PapersOverview, PaperSummary, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
 import type { Async } from '@/lib/use-research'
@@ -41,15 +41,22 @@ export function ActivityTab(props: {
 
   const pick = (v: View, f?: PaperFilter) => { touched.current = true; setView(v); if (f) { setFilter(f); setShown(PAGE) } }
 
-  // The first time papers exist, show them (unless the reader already chose a view).
-  useEffect(() => { if (!touched.current && ov && ov.counts.papersKept > 0) setView('papers') }, [ov])
+  // Opening a run that has already finished lands on its papers; a run that is still going stays on the Timeline (it is the live view).
+  const decided = useRef(false)
+  useEffect(() => {
+    if (decided.current || !ov) return
+    decided.current = true
+    if (!touched.current && !running && ov.counts.papersKept > 0) setView('papers')
+  }, [ov, running])
 
   // A new view or filter starts at the top of its list.
   useEffect(() => { scroller.current?.scrollTo({ top: 0 }) }, [view, filter, subQ, sort, query])
 
   // What the events already say, before (or without) the database list.
   const paperEv = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'papers')?.data, 'papers')
+    ?? num(events.find(e => e.event === 'step' && e.data.lane === 'papers' && e.data.step === 'store' && e.data.state === 'completed')?.data, 'stored')
   const webEv = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'web')?.data, 'webSources')
+    ?? num(events.find(e => e.event === 'step' && e.data.lane === 'web' && e.data.step === 'search' && e.data.state === 'completed')?.data, 'found')
   const c = ov?.counts
   const kept = c?.papersKept ?? paperEv
   const web = c?.webFound ?? webEv
@@ -72,17 +79,6 @@ export function ActivityTab(props: {
 
   const planner = events.find(e => e.stage === 'planner' && e.event === 'stage_completed')
   const topics = (planner?.data.topics as string[] | undefined) ?? []
-
-  const took = useMemo(() => {
-    const m = new Map<number, string>()
-    for (const e of events) {
-      if (e.event !== 'stage_completed' || !e.stage) continue
-      const start = events.find(s => s.event === 'stage_started' && s.stage === e.stage)
-      const d = start ? formatDuration(start.timestamp, e.timestamp) : null
-      if (d) m.set(e.seq, d)
-    }
-    return m
-  }, [events])
 
   const loadingNote = ov === null && papers.loading ? <Skeleton rows={3} label="Loading papers" /> : null
   const hasPapers = !papers.error && !!ov && ov.papers.length > 0
@@ -135,7 +131,7 @@ export function ActivityTab(props: {
       </TabFixed>
 
       <TabScroll label={`${VIEW_LABEL[view]} list`} scrollRef={scroller}>
-          {view === 'timeline' && <><h2 className="sr-only">Timeline</h2><ActivityLog events={events} status={streamStatus} detail={streamDetail} running={running} took={took} /></>}
+          {view === 'timeline' && <Timeline events={events} overview={ov} streamStatus={streamStatus} streamDetail={streamDetail} running={running} />}
 
           {view === 'plan' && (
             <div className="view-body">

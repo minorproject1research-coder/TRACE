@@ -17,7 +17,10 @@ export type Session = {
 
 export type RunSummary = Pick<Session, 'id' | 'question' | 'status' | 'createdAt'>
 
-export type EventName = 'run_queued' | 'run_started' | 'stage_started' | 'branch_completed' | 'stage_completed' | 'run_completed' | 'run_failed'
+export type EventName = 'run_queued' | 'run_started' | 'stage_started' | 'branch_started' | 'step' | 'branch_completed' | 'stage_completed' | 'run_completed' | 'run_failed'
+
+/** State of one step a node reports from inside a stage (event 'step': data = { lane, step, state, ...counts }). */
+export type StepState = 'running' | 'completed' | 'skipped' | 'failed'
 
 export type WorkflowEvent = {
   seq: number
@@ -146,10 +149,24 @@ export type WebSummary = {
   evidence: PaperEvidence | null
 }
 
+/** When parts of the run were written to the database (UTC ISO). A run without step events is reconstructed from these. */
+export type Timing = {
+  plannedAt: string | null
+  papersStoredAt: string | null
+  parsingFirstAt: string | null
+  parsingLastAt: string | null
+  webStoredAt: string | null
+  digestsFirstAt: string | null
+  digestsLastAt: string | null
+  coverageAt: string | null
+}
+
 export type PapersOverview = {
   id: string
+  timing: Timing
   counts: {
     papersKept: number
+    papersJudged: number
     papersParsed: number
     papersUsedAsEvidence: number
     papersUsedFullText: number

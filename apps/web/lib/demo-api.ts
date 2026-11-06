@@ -13,6 +13,16 @@ type Beat = { at: number; event: EventName; stage: StageId | null; status: strin
 
 type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed' }
 
+const REL = { candidates: 24, shortlisted: 12, judged: 12, passed: 5, backend: 'server' }
+
+function branch(at: number, lane: 'papers' | 'web'): Beat {
+  return { at, event: 'branch_started', stage: 'retrieval', status: 'running', message: lane === 'papers' ? 'Paper retrieval started' : 'Web search started', data: { branch: lane } }
+}
+function step(at: number, lane: 'papers' | 'web' | 'summarizer', stepId: string, state: 'running' | 'completed', message: string, data: Record<string, unknown> = {}): Beat {
+  return { at, event: 'step', stage: lane === 'summarizer' ? 'summarizer' : 'retrieval', status: state, message, data: { lane, step: stepId, state, ...data } }
+}
+
+/** The retrieval branches run AT THE SAME TIME (like the real graph); each reports its steps. */
 function timeline(fails: boolean): Beat[] {
   const beats: Beat[] = [
     { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
@@ -20,17 +30,69 @@ function timeline(fails: boolean): Beat[] {
     { at: 900, event: 'stage_started', stage: 'planner', status: 'running', message: 'Planner started', data: {} },
     { at: 3200, event: 'stage_completed', stage: 'planner', status: 'completed', message: 'Planned 3 sub-questions and 9 search queries', data: { subQuestions: 3, queries: 9, domainAnchor: 'sample research field', topics: ['What is the sample method and how does it work?', 'How does the sample method scale to long inputs?', 'What are the open problems of the sample method?'] } },
     { at: 3500, event: 'stage_started', stage: 'retrieval', status: 'running', message: 'Retrieval started', data: {} },
-    { at: 6500, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Kept 3 papers', data: { branch: 'papers', papers: 3 } },
-    { at: 7800, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Found 2 web sources', data: { branch: 'web', webSources: 2 } },
-    { at: 8200, event: 'stage_completed', stage: 'retrieval', status: 'completed', message: 'Retrieval finished', data: {} },
-    { at: 8500, event: 'stage_started', stage: 'summarizer', status: 'running', message: 'Summarizer started', data: {} },
+
+    // ---- paper lane
+    branch(3600, 'papers'),
+    step(3650, 'papers', 'search', 'running', 'Searching OpenAlex, Scopus and arXiv', { subQuestions: 3, queries: 9 }),
+    step(4600, 'papers', 'search', 'completed', 'Found 24 candidate papers', { candidates: 24 }),
+    step(4650, 'papers', 'relevance_filter', 'running', 'Judging relevance (embedding shortlist, then the LLM judge)', { candidates: 24, done: 0, total: 3 }),
+    step(5100, 'papers', 'relevance_filter', 'running', 'Judged sub-question 1 of 3', { done: 1, total: 3, candidates: 8, shortlisted: 4, judged: 4, passed: 2, backend: 'server' }),
+    step(5600, 'papers', 'relevance_filter', 'running', 'Judged sub-question 2 of 3', { done: 2, total: 3, candidates: 16, shortlisted: 8, judged: 8, passed: 3, backend: 'server' }),
+    step(6100, 'papers', 'relevance_filter', 'running', 'Judged sub-question 3 of 3', { done: 3, total: 3, ...REL }),
+    step(6150, 'papers', 'relevance_filter', 'completed', '5 of 24 candidates passed (12 judge calls)', REL),
+    step(6200, 'papers', 'citations', 'running', 'Fetching citation counts for the papers that passed', { papers: 5 }),
+    step(6350, 'papers', 'citations', 'completed', '5 papers kept', { kept: 5 }),
+    step(6400, 'papers', 'scoring', 'running', 'Scoring reliability and ranking', { papers: 5 }),
+    step(6500, 'papers', 'scoring', 'completed', 'Scored 5 papers', { scored: 5 }),
+    step(6550, 'papers', 'store', 'running', 'Saving the papers', { papers: 5 }),
+    step(6650, 'papers', 'store', 'completed', 'Saved 5 papers', { stored: 5 }),
+    step(6700, 'papers', 'parsing', 'running', 'Parsing the best 3 papers (PDF to text)', { target: 3, attempted: 0, usable: 0, papers: 5 }),
+    step(7300, 'papers', 'parsing', 'running', 'Parsed 1 of 3 papers', { target: 3, attempted: 1, usable: 1 }),
+    step(8000, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 2, usable: 2 }),
+    step(8700, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 3, usable: 2 }),
+    step(9000, 'papers', 'parsing', 'completed', '2 of 3 papers parsed', { target: 3, attempted: 3, usable: 2 }),
+    { at: 9100, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Kept 5 papers', data: { branch: 'papers', papers: 5 } },
+
+    // ---- web lane (same time as the paper lane)
+    branch(3600, 'web'),
+    step(3650, 'web', 'search', 'running', 'Searching the web', { subQuestions: 3, queries: 9, done: 0, total: 3 }),
+    step(4200, 'web', 'search', 'running', 'Searched sub-question 1 of 3', { done: 1, total: 3, found: 1 }),
+    step(4800, 'web', 'search', 'running', 'Searched sub-question 2 of 3', { done: 2, total: 3, found: 2 }),
+    step(5400, 'web', 'search', 'running', 'Searched sub-question 3 of 3', { done: 3, total: 3, found: 3 }),
+    step(5500, 'web', 'search', 'completed', 'Found 3 web sources', { found: 3 }),
+    step(5550, 'web', 'scoring', 'running', 'Scoring source reliability', { sources: 3 }),
+    step(5650, 'web', 'scoring', 'completed', 'Scored 3 sources', { scored: 3 }),
+    step(5700, 'web', 'store', 'running', 'Saving the web sources', { sources: 3 }),
+    step(5800, 'web', 'store', 'completed', 'Saved 3 web sources', { stored: 3 }),
+    { at: 5900, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Found 3 web sources', data: { branch: 'web', webSources: 3 } },
+
+    { at: 9200, event: 'stage_completed', stage: 'retrieval', status: 'completed', message: 'Retrieval finished', data: {} },
+    { at: 9400, event: 'stage_started', stage: 'summarizer', status: 'running', message: 'Reading sources and checking evidence', data: {} },
+    step(9450, 'summarizer', 'prepare', 'running', 'Selecting the passages to read (chunking, embeddings)', { subQuestions: 3 }),
+    step(9700, 'summarizer', 'prepare', 'completed', '3 sources to read', { jobs: 3, papers: 2, web: 1 }),
+    step(9800, 'summarizer', 'digest', 'running', 'Reading 3 sources with the LLM', { done: 0, total: 3, failures: 0 }),
+    step(10500, 'summarizer', 'digest', 'running', 'Read 1 of 3 sources', { done: 1, total: 3, failures: 0 }),
+    step(11200, 'summarizer', 'digest', 'running', 'Read 2 of 3 sources', { done: 2, total: 3, failures: 0 }),
+    step(11900, 'summarizer', 'digest', 'running', 'Read 3 of 3 sources', { done: 3, total: 3, failures: 0 }),
+    step(11950, 'summarizer', 'digest', 'completed', 'Read 3 sources', { done: 3, total: 3, failures: 0 }),
+    step(12000, 'summarizer', 'judge', 'running', 'Judging the evidence for sub-question 1 of 3', { done: 0, total: 3 }),
+    step(12250, 'summarizer', 'judge', 'running', 'Judged sub-question 1 of 3', { done: 1, total: 3, sufficient: true, judgeUsed: true, sufficientSoFar: 1 }),
+    step(12500, 'summarizer', 'judge', 'running', 'Judged sub-question 2 of 3', { done: 2, total: 3, sufficient: false, judgeUsed: true, sufficientSoFar: 1 }),
+    step(12700, 'summarizer', 'judge', 'running', 'Judged sub-question 3 of 3', { done: 3, total: 3, sufficient: false, judgeUsed: null, sufficientSoFar: 1 }),
+    step(12750, 'summarizer', 'judge', 'completed', '1 of 3 sub-questions have enough evidence', { done: 3, total: 3, sufficientSubQuestions: 1 }),
+    step(12800, 'summarizer', 'store', 'running', 'Saving the digests and coverage', { digests: 3 }),
+    step(12900, 'summarizer', 'store', 'completed', 'Saved 3 digests', { stored: 3 }),
   ]
-  if (fails) beats.push({ at: 12500, event: 'run_failed', stage: 'summarizer', status: 'failed', message: 'DemoError: simulated failure in the summarizer', data: {} })
-  else beats.push(
-    { at: 12500, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 8 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 8, subQuestions: 3, sufficientSubQuestions: 1 } },
-    { at: 13000, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } },
+  if (fails) {
+    // the summarizer stops while it is reading sources
+    const failure: Beat = { at: 12500, event: 'run_failed', stage: 'summarizer', status: 'failed', message: 'DemoError: simulated failure in the summarizer', data: {} }
+    return [...beats.filter(b => b.at < 11000), failure].sort((x, y) => x.at - y.at)
+  }
+  beats.push(
+    { at: 13000, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 3 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 3, subQuestions: 3, sufficientSubQuestions: 1 } },
+    { at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } },
   )
-  return beats
+  return beats.sort((x, y) => x.at - y.at)
 }
 
 function load(): Stored[] {
@@ -80,9 +142,9 @@ function view(s: Stored): Session {
 function stageOf(s: Stored): DemoStage | null {
   const t = elapsed(s)
   if (s.seed) return s.seed === 'completed' ? 'evidence' : 'parsed'
-  if (t < 6500) return null
-  if (t < 8200) return 'kept'
-  if (t < 12500 || s.fails) return 'parsed'
+  if (t < 6650) return null                     // the papers are saved at 6.65 s (see timeline())
+  if (t < 7300) return 'kept'
+  if (t < 12900 || s.fails) return 'parsed'
   return 'evidence'
 }
 
@@ -117,10 +179,10 @@ export const demoApi: TraceApi = {
     if (!s) throw new ApiError('Research session not found', 404)
     const stage = stageOf(s)
     if (!stage) {
-      const empty = demoOverview(id, 'kept')
+      const empty = demoOverview(id, 'kept', s.createdAt)
       return { ...empty, counts: Object.fromEntries(Object.keys(empty.counts).map(k => [k, 0])) as typeof empty.counts, papers: [], web: [], subQuestions: [] }
     }
-    return demoOverview(id, stage)
+    return demoOverview(id, stage, s.createdAt)
   },
   async paper(id, paperId) {
     await wait(300)

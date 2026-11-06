@@ -158,7 +158,9 @@ const WEB: WebSummary[] = [
     snippet: 'Opinions differ. This is invented sample text.', subQuestionId: SQ3.id, subQuestion: SQ3.topic, evidence: null },
 ]
 
-export function demoOverview(id: string, stage: DemoStage): PapersOverview {
+export function demoOverview(id: string, stage: DemoStage, createdAt?: string): PapersOverview {
+  const base = createdAt ? new Date(createdAt).getTime() : Date.now()
+  const at = (offsetMs: number) => new Date(base + offsetMs).toISOString()
   const papers = FIXTURES.map(f => ({
     ...f.summary,
     abstractPreview: f.abstract.slice(0, 320),
@@ -170,10 +172,12 @@ export function demoOverview(id: string, stage: DemoStage): PapersOverview {
   return {
     id,
     counts: {
-      papersKept: papers.length, papersParsed: papers.filter(p => p.parse.status === 'parsed').length, papersUsedAsEvidence: used.length,
+      papersKept: papers.length, papersJudged: papers.length, papersParsed: papers.filter(p => p.parse.status === 'parsed').length, papersUsedAsEvidence: used.length,
       papersUsedFullText: used.filter(p => p.evidence?.level === 'full_text').length, papersUsedAbstractOnly: used.filter(p => p.evidence?.level !== 'full_text').length,
       papersWithPdfLink: papers.filter(p => p.pdfUrl).length, webFound: web.length, webUsedAsEvidence: web.filter(w => w.evidence).length, subQuestions: 3,
     },
+    // what a run without step events is reconstructed from; the demo's own live runs have step events and do not use it
+    timing: { plannedAt: at(3200), papersStoredAt: at(6650), parsingFirstAt: at(7300), parsingLastAt: at(9000), webStoredAt: at(5800), digestsFirstAt: at(12900), digestsLastAt: at(12900), coverageAt: at(12900) },
     subQuestions: [SQ1, SQ2, SQ3], papers, web,
   }
 }

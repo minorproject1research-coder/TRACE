@@ -33,8 +33,9 @@ export default function RunPage() {
   const finished = status === 'completed' || status === 'failed'
   const report = useReport(id, finished)
   // Papers are in the database once the retrieval branch has finished; the list is read again whenever a stage or branch finishes.
-  const papersReady = finished || stream.events.some(e => e.event === 'branch_completed' && e.data.branch === 'papers')
-  const papersVersion = stream.events.filter(e => e.event === 'stage_completed' || e.event === 'branch_completed').length + (finished ? 1000 : 0)
+  // The pipeline reports when the papers are saved and after every parsing round, so the list fills in while the run goes.
+  const papersReady = finished || stream.events.some(e => (e.event === 'branch_completed' && e.data.branch === 'papers') || (e.event === 'step' && e.data.lane === 'papers' && e.data.step === 'store' && e.data.state === 'completed'))
+  const papersVersion = stream.events.filter(e => e.event === 'stage_completed' || e.event === 'branch_completed' || (e.event === 'step' && e.data.state === 'completed') || (e.event === 'step' && e.data.step === 'parsing')).length + (finished ? 1000 : 0)
   const papers = usePapers(id, papersReady, papersVersion)
   const [tab, setTab] = useState<Tab>('Activity')
 
