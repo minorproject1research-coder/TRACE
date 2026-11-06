@@ -267,15 +267,20 @@ def flatten_aspects(
 
 # ----------------------------------------------------------------------------------------------------- the sub-question's own question
 def topic_aspect_enabled() -> bool:
-    """TOPIC_ASPECT (default true): the sub-question itself is judged as one more aspect.
+    """TOPIC_ASPECT (default FALSE since 2026-11-06): the sub-question itself is judged as one more aspect.
 
     The aspects come from the planner's detail questions, which are generic ("advantages and disadvantages", "benefits", "challenges"). The
     sub-question's own question ("What is a mixture of experts model?") was never judged, so a sub-question could be "sufficient" without
     being answered (Q2, 2026-11-05: 4 of 5 sufficient; "What is a MoE model?" had no definition aspect). Experiment on 10 stored sub-questions
     (tests/topic_aspect_experiment.py): no judge errors, 17 of 21 "yes" claims directly answered the topic (81%, the rest partial), and two
     sub-questions changed from sufficient to not sufficient. The stored digests had been written without this aspect, so the experiment
-    understates coverage."""
-    return os.getenv("TOPIC_ASPECT", "true").strip().lower() not in ("0", "false", "no", "off")
+    understates coverage.
+
+    OFF BY DEFAULT because the aspect list is also what the digest prompt and the chunk selection receive: with the topic in it the digest
+    model returned 1.50 findings per digest instead of 4.25 (-65%, same 6 sources, same chunks, each condition run twice; repeat spread 0.5;
+    tests/topic_aspect_digest_experiment.py), and the first run through the API had 0 of 5 sub-questions sufficient against 4 of 5. The idea
+    (judge the topic) is kept; the way it is wired is not: it should reach the judge and the coverage rule only, not the digest prompt."""
+    return os.getenv("TOPIC_ASPECT", "false").strip().lower() in ("1", "true", "yes", "on")
 
 
 def run_topic_aspect(coverage_row: Optional[Dict]) -> bool:

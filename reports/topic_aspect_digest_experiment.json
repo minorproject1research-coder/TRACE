@@ -1,0 +1,170 @@
+[
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "paper": "A Comprehensive Overview of Large Language Models",
+  "no_topic_1": {
+   "chunks": 5,
+   "chars": 7109,
+   "findings": 4,
+   "verified": 4
+  },
+  "topic_1": {
+   "chunks": 5,
+   "chars": 7109,
+   "findings": 1,
+   "verified": 1
+  },
+  "no_topic_2": {
+   "chunks": 5,
+   "chars": 7109,
+   "findings": 5,
+   "verified": 5
+  },
+  "topic_2": {
+   "chunks": 5,
+   "chars": 7109,
+   "findings": 1,
+   "verified": 1
+  }
+ },
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "paper": "Natural language processing in the era of large language mod",
+  "no_topic_1": {
+   "chunks": 5,
+   "chars": 6102,
+   "findings": 5,
+   "verified": 4
+  },
+  "topic_1": {
+   "chunks": 5,
+   "chars": 6102,
+   "findings": 2,
+   "verified": 2
+  },
+  "no_topic_2": {
+   "chunks": 5,
+   "chars": 6102,
+   "findings": 5,
+   "verified": 4
+  },
+  "topic_2": {
+   "chunks": 5,
+   "chars": 6102,
+   "findings": 2,
+   "verified": 2
+  }
+ },
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "paper": "Assessing the Strengths and Weaknesses of Large Language Mod",
+  "no_topic_1": {
+   "chunks": 6,
+   "chars": 10152,
+   "findings": 5,
+   "verified": 4
+  },
+  "topic_1": {
+   "chunks": 6,
+   "chars": 10152,
+   "findings": 3,
+   "verified": 3
+  },
+  "no_topic_2": {
+   "chunks": 6,
+   "chars": 10152,
+   "findings": 5,
+   "verified": 4
+  },
+  "topic_2": {
+   "chunks": 6,
+   "chars": 10152,
+   "findings": 1,
+   "verified": 1
+  }
+ },
+ {
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "paper": "A Survey on Mixture of Experts in Large Language Models",
+  "no_topic_1": {
+   "chunks": 5,
+   "chars": 8130,
+   "findings": 3,
+   "verified": 3
+  },
+  "topic_1": {
+   "chunks": 5,
+   "chars": 8130,
+   "findings": 1,
+   "verified": 1
+  },
+  "no_topic_2": {
+   "chunks": 5,
+   "chars": 8130,
+   "findings": 3,
+   "verified": 3
+  },
+  "topic_2": {
+   "chunks": 5,
+   "chars": 8130,
+   "findings": 1,
+   "verified": 1
+  }
+ },
+ {
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "paper": "Learning Factored Representations in a Deep Mixture of Exper",
+  "no_topic_1": {
+   "chunks": 5,
+   "chars": 5902,
+   "findings": 5,
+   "verified": 5
+  },
+  "topic_1": {
+   "chunks": 5,
+   "chars": 5902,
+   "findings": 2,
+   "verified": 2
+  },
+  "no_topic_2": {
+   "chunks": 5,
+   "chars": 5902,
+   "findings": 4,
+   "verified": 4
+  },
+  "topic_2": {
+   "chunks": 5,
+   "chars": 5902,
+   "findings": 2,
+   "verified": 2
+  }
+ },
+ {
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "paper": "Specialization through Collaboration: Understanding Expert I",
+  "no_topic_1": {
+   "chunks": 6,
+   "chars": 5330,
+   "findings": 2,
+   "verified": 2
+  },
+  "topic_1": {
+   "chunks": 6,
+   "chars": 5330,
+   "findings": 1,
+   "verified": 1
+  },
+  "no_topic_2": {
+   "chunks": 6,
+   "chars": 5330,
+   "findings": 5,
+   "verified": 5
+  },
+  "topic_2": {
+   "chunks": 6,
+   "chars": 5330,
+   "findings": 1,
+   "verified": 1
+  }
+ }
+]

@@ -11,8 +11,15 @@ A2D = [0, 1, 1]
 DETAILS = ["How does a MoE model differ from a standard model?", "What are the advantages and disadvantages of a MoE model?"]
 
 
-def test_the_topic_is_appended_as_the_last_aspect_with_its_own_detail(monkeypatch):
+def test_off_unless_switched_on(monkeypatch):
+    """Default off (2026-11-06): with the topic in the aspect list the digest model returned 65% fewer findings."""
     monkeypatch.delenv("TOPIC_ASPECT", raising=False)
+    assert da.topic_aspect_enabled() is False
+    assert da.with_topic_aspect(ASPECTS, A2D, DETAILS, TOPIC) == (ASPECTS, A2D, DETAILS)
+
+
+def test_the_topic_is_appended_as_the_last_aspect_with_its_own_detail(monkeypatch):
+    monkeypatch.setenv("TOPIC_ASPECT", "true")
     aspects, a2d, details = da.with_topic_aspect(ASPECTS, A2D, DETAILS, TOPIC)
     assert aspects == ASPECTS + [TOPIC]                  # the other aspects keep their indexes
     assert a2d == A2D + [len(DETAILS)] and details == DETAILS + [TOPIC]
@@ -20,7 +27,7 @@ def test_the_topic_is_appended_as_the_last_aspect_with_its_own_detail(monkeypatc
 
 
 def test_switched_off_nothing_changes(monkeypatch):
-    for value in ("false", "0", "off", "no"):
+    for value in ("false", "0", "off", "no", ""):
         monkeypatch.setenv("TOPIC_ASPECT", value)
         assert da.with_topic_aspect(ASPECTS, A2D, DETAILS, TOPIC) == (ASPECTS, A2D, DETAILS)
     assert da.with_topic_aspect(ASPECTS, A2D, DETAILS, TOPIC, enabled=False) == (ASPECTS, A2D, DETAILS)
