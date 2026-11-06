@@ -133,8 +133,9 @@ def llm_judge_relevance(sub_question: str, paper: dict) -> dict | None:
 
 def filter_relevant(sub_question: str, papers: list[dict],
                      prefilter_top_k: int = 20, min_similarity: float = 0.56,
-                     confidence_threshold: float = 0.6, anchor: str = "", context: str = "") -> list[dict]:
-    """anchor / context: the domain anchor of the original question (stage1_planner.domain_anchor); both empty = unchanged behaviour.
+                     confidence_threshold: float = 0.6, anchor: str = "", context: str = "", stats: dict | None = None) -> list[dict]:
+    """stats: if given, filled with what happened (candidates, shortlisted, judged, passed, judgeUnavailable, backend) for progress reports.
+    anchor / context: the domain anchor of the original question (stage1_planner.domain_anchor); both empty = unchanged behaviour.
     The anchor goes into the text the abstracts are compared with, the context into the question text the judge sees."""
     from apps.api.agents.stage1_planner import domain_anchor
     shortlist = embedding_prefilter(domain_anchor.similarity_text(sub_question, anchor), papers,
@@ -143,6 +144,8 @@ def filter_relevant(sub_question: str, papers: list[dict],
 
     if not USE_LLM_JUDGMENT:
         logger.info("LLM judgment disabled — using embedding-only shortlist of %d papers", len(shortlist))
+        if stats is not None:
+            stats.update(candidates=len(papers), shortlisted=len(shortlist), judged=0, passed=len(shortlist), judgeUnavailable=0, backend="none")
         return shortlist
 
     # judge the shortlist in parallel; results keep the shortlist order
@@ -170,6 +173,8 @@ def filter_relevant(sub_question: str, papers: list[dict],
 
     logger.info("Relevance filter [%s judge] for [%s]: %d shortlisted -> %d passed (%d kept without a judgment)",
                 JUDGE_BACKEND, sub_question[:40], len(shortlist), len(passed), no_opinion)
+    if stats is not None:
+        stats.update(candidates=len(papers), shortlisted=len(shortlist), judged=len(shortlist) - no_opinion, passed=len(passed), judgeUnavailable=no_opinion, backend=JUDGE_BACKEND)
     return passed
 
 

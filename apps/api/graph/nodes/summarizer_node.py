@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import json
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from apps.api.graph.state import SharedResearchState
@@ -12,7 +13,7 @@ from apps.api.agents.stage3_summarizer import (
     detail_aspects,
     evidence_judge,
 )
-from apps.api.services import db_service, groq_pool, llm_service
+from apps.api.services import db_service, groq_pool, llm_service, progress
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 
@@ -57,6 +58,7 @@ def _row(query_id, sq_id, source_type, src, findings, weight, evidence_level):
 def summarizer_node(state: SharedResearchState) -> dict:
     qid = state.task_plan.query_id
     sub_questions = state.task_plan.sub_questions
+    progress.report(qid, "summarizer", "prepare", "running", "Selecting the passages to read (chunking, embeddings)", subQuestions=len(sub_questions))
 
     # 1. Prepare every digest job locally (chunking and embedding are fast); no model call yet.
     jobs = []           # (sub_question index, source_type, source, selected chunks, weight, evidence level)
@@ -89,6 +91,9 @@ def summarizer_node(state: SharedResearchState) -> dict:
             if len(snippet) < 200:
                 continue
             jobs.append((si, "web", w, [(0, snippet)], w.get("reliability_score"), "web_snippet", aspects, original_details, aspect_to_detail))
+
+    progress.report(qid, "summarizer", "prepare", "completed", f"{len(jobs)} sources to read", jobs=len(jobs),
+                    papers=sum(1 for j in jobs if j[1] == "paper"), web=sum(1 for j in jobs if j[1] == "web"))
 
     # 2. Run the digests in parallel (Groq calls; the pool spreads them over the keys and waits out 429s).
     def run(job):
@@ -125,14 +130,30 @@ def summarizer_node(state: SharedResearchState) -> dict:
     workers = _workers()
     logger.info("Stage 3: %d digests for %d sub-questions, %d worker(s), %d Groq key(s)",
                 len(jobs), len(sub_questions), workers, groq_pool.key_count() if llm_service.BACKEND == "groq" else 0)
+    progress.report(qid, "summarizer", "digest", "running", f"Reading {len(jobs)} sources with the LLM", done=0, total=len(jobs), failures=0)
+    counter, counter_lock = {"done": 0, "failures": 0}, threading.Lock()
+
+    def tracked(job):
+        result = run(job)
+        with counter_lock:
+            counter["done"] += 1
+            counter["failures"] += 1 if result[1] else 0
+            done, failures = counter["done"], counter["failures"]
+            # reported inside the lock so the events arrive in counting order (a quick call: it only appends to the run's event list)
+            progress.report(qid, "summarizer", "digest", "running", f"Read {done} of {len(jobs)} sources", done=done, total=len(jobs), failures=failures)
+        return result
+
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(run, jobs))
+        results = list(pool.map(tracked, jobs))
+    progress.report(qid, "summarizer", "digest", "completed", f"Read {len(jobs)} sources", done=len(jobs), total=len(jobs), failures=counter["failures"])
     findings_per_job = [r[0] for r in results]
     digest_failures_per_job = [r[1] for r in results]
 
     # 3. Assemble rows and coverage per sub-question, in the original order.
     all_rows, cov_rows, coverage = [], [], {}
     for si, sq in enumerate(sub_questions):
+        progress.report(qid, "summarizer", "judge", "running", f"Judging the evidence for sub-question {si + 1} of {len(sub_questions)}",
+                        done=si, total=len(sub_questions), subQuestion=sq.main_topic[:90])
         rows = [_row(qid, sq.id, st, src, findings, weight, level)
                 for (j_si, st, src, _, weight, level, _, _, _), findings in zip(jobs, findings_per_job) if j_si == si]
         
@@ -175,6 +196,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
         cov["digest_failures"] = sq_failures
         
         coverage[sq.id] = cov
+        progress.report(qid, "summarizer", "judge", "running", f"Judged sub-question {si + 1} of {len(sub_questions)}", done=si + 1, total=len(sub_questions),
+                        sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=sum(1 for c in coverage.values() if c.get("sufficient")))
         cov_rows.append({"query_id": qid, "sub_question_id": sq.id, **cov})
         all_rows.extend(rows)
 
@@ -189,6 +212,10 @@ def summarizer_node(state: SharedResearchState) -> dict:
         if cov.get("fallback_reason"):
             logger.warning("  Judge fallback: %s", cov.get("fallback_reason"))
 
+    progress.report(qid, "summarizer", "judge", "completed", f"{sum(1 for c in coverage.values() if c.get('sufficient'))} of {len(sub_questions)} sub-questions have enough evidence",
+                    done=len(sub_questions), total=len(sub_questions), sufficientSubQuestions=sum(1 for c in coverage.values() if c.get("sufficient")))
+    progress.report(qid, "summarizer", "store", "running", "Saving the digests and coverage", digests=len(all_rows))
     db_service.write_digests(all_rows)
     db_service.write_coverage(cov_rows)
+    progress.report(qid, "summarizer", "store", "completed", f"Saved {len(all_rows)} digests", stored=len(all_rows))
     return {"digests": all_rows, "coverage": coverage}

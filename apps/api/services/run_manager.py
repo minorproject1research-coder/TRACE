@@ -4,7 +4,10 @@ A run is the whole graph (planner -> paper retrieval + web search in parallel ->
 takes 15-25 minutes. The run id IS the research query id (SharedResearchState.query_id), so a finished run can be read from the database
 after a server restart. Progress is the stream of node updates of the graph (stream_mode="updates"), turned into events:
 
-  run_queued, run_started, stage_started, branch_completed, stage_completed, run_completed, run_failed
+  run_queued, run_started, stage_started, branch_started, step, branch_completed, stage_completed, run_completed, run_failed
+
+branch_started and step come from INSIDE the nodes (services/progress.py): the paper and web branches run at the same time, and each reports its
+steps (search, relevance judge, scoring, store, parsing; digest and evidence judge in the summarizer) with small counts.
 
 Stages the UI should show: planner, retrieval (papers + web), summarizer; factcheck and report are not built / not wired yet and are
 reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
@@ -19,6 +22,7 @@ from datetime import datetime, timezone
 from typing import Callable, Optional
 
 from apps.api import config
+from apps.api.services import progress
 
 logger = logging.getLogger("apps.api.run_manager")
 
@@ -26,6 +30,7 @@ STAGES = ("planner", "retrieval", "summarizer", "factcheck", "report")
 NOT_BUILT = ("factcheck", "report")
 NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer"}
 BRANCH = {"paper_retrieval": "papers", "web_search": "web"}
+LANE_STAGE = {"papers": "retrieval", "web": "retrieval", "summarizer": "summarizer"}
 TERMINAL = ("run_completed", "run_failed")
 
 
@@ -166,6 +171,17 @@ class RunManager:
         rec.emit("run_started", status="running", message="Run started")
         self._stage(rec, "planner", "running", "Planning sub-questions")
         branches_done: set[str] = set()
+
+        def on_progress(report: dict) -> None:
+            """A node of this run reported a step: it becomes an event (called from the node's thread; emit() is thread-safe)."""
+            lane, step, state = report["lane"], report["step"], report["state"]
+            stage = LANE_STAGE.get(lane)
+            if step == "branch":
+                rec.emit("branch_started", stage=stage, status=state, message=report["message"], data={"branch": lane, **report["data"]})
+            else:
+                rec.emit("step", stage=stage, status=state, message=report["message"], data={"lane": lane, "step": step, "state": state, **report["data"]})
+
+        progress.register(rec.id, on_progress)
         try:
             for chunk in self.graph().stream(SharedResearchState(raw_query=rec.question, query_id=rec.id), stream_mode="updates"):
                 for node, update in (chunk or {}).items():
@@ -194,3 +210,5 @@ class RunManager:
             for s in running:
                 rec.stages[s] = "failed"
             rec.emit("run_failed", stage=running[0] if running else None, status="failed", message=rec.error)
+        finally:
+            progress.unregister(rec.id)

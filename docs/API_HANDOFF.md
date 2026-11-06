@@ -59,7 +59,7 @@ type Session = {
 
 type WorkflowEvent = {
   seq: number                       // 0, 1, 2, ... also the SSE id
-  event: 'run_queued' | 'run_started' | 'stage_started' | 'branch_completed' | 'stage_completed' | 'run_completed' | 'run_failed'
+  event: 'run_queued' | 'run_started' | 'stage_started' | 'branch_started' | 'step' | 'branch_completed' | 'stage_completed' | 'run_completed' | 'run_failed'
   stage: StageId | null
   status: string | null
   message: string                   // short, human readable
@@ -70,18 +70,41 @@ type WorkflowEvent = {
 A session read from the database after a restart has `status` `completed` (all sub-questions have Stage 3 results) or `failed` ("The run did not finish (the server restarted or the run was stopped)"), and `startedAt/finishedAt: null`.
 
 ### Events (what the stream looks like)
-Typical order for one run (11 events):
+Typical order for one run (the 11 stage-level events; `branch_started` and `step` events, below, appear between them):
 `run_queued` -> `run_started` -> `stage_started` planner -> `stage_completed` planner -> `stage_started` retrieval -> `branch_completed` x2 (papers and web, any order) -> `stage_completed` retrieval -> `stage_started` summarizer -> `stage_completed` summarizer -> `run_completed`.
 
 | event | stage | `data` |
 |---|---|---|
 | `stage_completed` | planner | `{subQuestions, queries, domainAnchor, topics: string[]}` |
+| `branch_started` | retrieval | `{branch: 'papers'}` or `{branch: 'web'}`: the two branches start together and run **at the same time** |
+| `step` | retrieval or summarizer | `{lane, step, state, ...counts}`: see "Steps" below |
 | `branch_completed` | retrieval | `{branch: 'papers', papers}` or `{branch: 'web', webSources}` |
 | `stage_completed` | summarizer | `{digests, subQuestions, sufficientSubQuestions}` |
 | `run_completed` | null | `{reportUrl, stagesNotRun: ['factcheck','report']}` |
 | `run_failed` | the stage that was running, or null | `message` is `"ErrorType: text"` (also `session.error`) |
 
-Timing hint for the progress UI: planner about 30 s, retrieval and parsing 2-9 min (longer for a new topic), summarizer 8-11 min. There are no events between `stage_started` and `stage_completed`, so show an indeterminate state per stage.
+Timing hint for the progress UI: planner about 30 s, retrieval and parsing 2-9 min (longer for a new topic), summarizer 8-11 min.
+
+### Steps (`step` events, added 2026-11-07, `services/progress.py`)
+The nodes report what they are doing between a stage's start and its end. `data = { lane, step, state, ...counts }`, `state` is `running | completed | skipped | failed`, `stage` is `retrieval` for the two retrieval lanes and `summarizer` for the third, and `message` is a short sentence. A step sends `running` (more than once for steps with progress) and then `completed`. Counts are small numbers only. The paper and web lanes interleave in the stream because they run in parallel threads.
+
+| lane | step | what it is | counts in `data` |
+|---|---|---|---|
+| `papers` | `search` | OpenAlex, Scopus, arXiv | running `{subQuestions, queries}`; completed `{candidates}` |
+| `papers` | `relevance_filter` | embedding shortlist, then the LLM relevance judge, per sub-question | `{done, total, candidates, shortlisted, judged, passed, judgeUnavailable, backend}` (running after each sub-question; `judged` = real LLM judge calls) |
+| `papers` | `citations` | citation counts of the papers that passed | completed `{kept}` |
+| `papers` | `scoring` | reliability score and combined rank | completed `{scored}` |
+| `papers` | `store` | saved to `retrieved_papers` (the papers list can be read from here on) | completed `{stored}` |
+| `papers` | `parsing` | best PDFs to text, in rounds | `{target, attempted, usable}` after every round; `usable` never decreases |
+| `web` | `search` | web search per sub-question | `{done, total, found}`; completed `{found}` |
+| `web` | `scoring`, `store` | reliability score, saved to `web_sources` | `{scored}`, `{stored}` |
+| `summarizer` | `prepare` | choose the passages to read | completed `{jobs, papers, web}` |
+| `summarizer` | `digest` | LLM digest per source, in parallel | `{done, total, failures}`, reported in counting order |
+| `summarizer` | `judge` | independent evidence judge and coverage, per sub-question | `{done, total, sufficient, judgeUsed, sufficientSoFar}`; completed `{sufficientSubQuestions}` |
+| `summarizer` | `store` | digests and coverage saved | completed `{stored}` |
+
+- Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
+- Reports are best effort: a node that cannot report (no sink, an error) is never affected, and a lane may skip a step (`skipped`).
 
 ### Consuming the stream
 - Use `EventSource` on `.../events`. Events arrive as default `message` events with the JSON in `data`; the SSE `id` is `seq`.
@@ -180,8 +203,9 @@ Read-only views for the web app's Activity tab and paper page. They work **while
 ```ts
 type PapersOverview = {
   id: string
-  counts: { papersKept: number; papersParsed: number; papersUsedAsEvidence: number; papersUsedFullText: number; papersUsedAbstractOnly: number
+  counts: { papersKept: number; papersJudged: number; papersParsed: number; papersUsedAsEvidence: number; papersUsedFullText: number; papersUsedAbstractOnly: number
             papersWithPdfLink: number; webFound: number; webUsedAsEvidence: number; subQuestions: number }
+  timing: { plannedAt; papersStoredAt; parsingFirstAt; parsingLastAt; webStoredAt; digestsFirstAt; digestsLastAt; coverageAt }   // UTC ISO or null: when rows were written (see below)
   subQuestions: { id: string; topic: string }[]
   papers: PaperSummary[]          // best combined score first
   web: WebSummary[]               // best reliability first
@@ -202,6 +226,7 @@ type PaperDetail = {
   findings: (Finding & { subQuestion: string|null; spans: {start: number; end: number}[] })[]
 }
 ```
+- **`timing`** is when each part of the run was *written* to the database, normalised to UTC (checked against the live events of a real run: within about 1 s). A client without step events reconstructs an approximate timeline from it (search and judge calls cannot be recovered; `papersJudged` counts the kept papers that carry a judge verdict).
 - **Funnel honesty:** candidates removed by the relevance filter are not stored, so the funnel starts at `papersKept`. "Used as evidence" means a digest exists for the paper in the newest Stage 3 run.
 - **`spans`** locate a finding's quote in `parsed.text`, in **UTF-16 code units** (JavaScript string indexes). They are computed with Stage 3's own quote normalization (`quote_verifier._norm`: hyphenation, citation markers, typographic hyphens, whitespace) plus its fuzzy threshold, so a quote has a span exactly when the verifier could have found it (verified on 74 of 74 findings of a real run: no disagreement either way). A quote with an elision (`[...]`) has one span per piece. If a quote cannot be placed, `spans` is `[]`: show no highlight rather than a guess.
 - The web app only shows what is returned: it never fetches papers itself.

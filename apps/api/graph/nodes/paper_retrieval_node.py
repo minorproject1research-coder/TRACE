@@ -5,7 +5,7 @@ import os
 from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import DOWNLOADER_VERSION, PDF_FAILURE_TTL_DAYS, PaperRetrievalAgent
 from apps.api.agents.stage2_retrieval import relevance_filter, reliability_scorer
-from apps.api.services import db_service
+from apps.api.services import db_service, progress
 
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
@@ -22,18 +22,29 @@ MIN_USABLE_TEXT_CHARS = 3000
 
 
 def paper_retrieval_node(state: SharedResearchState) -> dict:
+    qid = state.task_plan.query_id
+    sub_questions = state.task_plan.sub_questions
+    progress.report(qid, "papers", "branch", "running", "Paper retrieval started")
     agent = PaperRetrievalAgent(max_results_per_query=10)
 
     async def _retrieve_all():
         tasks = []
-        for sq in state.task_plan.sub_questions:
+        for sq in sub_questions:
             tasks.append(_retrieve_for_subquestion(agent, sq))
         return await asyncio.gather(*tasks, return_exceptions=True)
 
+    progress.report(qid, "papers", "search", "running", "Searching OpenAlex, Scopus and arXiv",
+                    subQuestions=len(sub_questions), queries=sum(len(sq.queries or []) for sq in sub_questions))
     results = asyncio.run(_retrieve_all())
+    candidates = sum(len(r) for r in results if not isinstance(r, Exception))
+    progress.report(qid, "papers", "search", "completed", f"Found {candidates} candidate papers", candidates=candidates)
 
+    progress.report(qid, "papers", "relevance_filter", "running", "Judging relevance (embedding shortlist, then the LLM judge)",
+                    candidates=candidates, done=0, total=len(sub_questions))
+    totals = {"candidates": 0, "shortlisted": 0, "judged": 0, "passed": 0, "judgeUnavailable": 0}
+    judge_backend = None
     all_papers: list[dict] = []
-    for sq, result in zip(state.task_plan.sub_questions, results):
+    for done, (sq, result) in enumerate(zip(sub_questions, results), start=1):
         if isinstance(result, Exception):
             logger.error("Retrieval failed for sub-question '%s': %s", sq.main_topic, result)
             sq.papers = []
@@ -43,32 +54,46 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
             paper["sub_question_id"] = sq.id
 
         # relevance filter — only keeps papers relevant to this sub-question
+        stats: dict = {}
         relevant_papers = relevance_filter.filter_relevant(sq.main_topic, result, anchor=state.task_plan.domain_anchor,
-                                                           context=state.task_plan.domain_context)
+                                                           context=state.task_plan.domain_context, stats=stats)
+        for k in totals:
+            totals[k] += stats.get(k, 0)
+        judge_backend = stats.get("backend", judge_backend)
+        progress.report(qid, "papers", "relevance_filter", "running", f"Judged sub-question {done} of {len(sub_questions)}",
+                        done=done, total=len(sub_questions), backend=judge_backend, **totals)
 
         sq.papers = relevant_papers
         all_papers.extend(relevant_papers)
+    progress.report(qid, "papers", "relevance_filter", "completed",
+                    f"{totals['passed']} of {candidates} candidates passed ({totals['judged']} judge calls)", backend=judge_backend, **totals)
 
     # citation counts only for the papers that survived the filter (they feed the reliability score)
+    progress.report(qid, "papers", "citations", "running", "Fetching citation counts for the papers that passed", papers=len(all_papers))
     kept = asyncio.run(agent.enrich_papers(all_papers))
     if len(kept) != len(all_papers):
         kept_ids = {id(p) for p in kept}
-        for sq in state.task_plan.sub_questions:
+        for sq in sub_questions:
             sq.papers = [p for p in sq.papers if id(p) in kept_ids]
         all_papers = kept
+    progress.report(qid, "papers", "citations", "completed", f"{len(all_papers)} papers kept", kept=len(all_papers))
 
     # reliability scoring
+    progress.report(qid, "papers", "scoring", "running", "Scoring reliability and ranking", papers=len(all_papers))
     all_papers = reliability_scorer.score_all(all_papers)
 
     # combine relevance + reliability into one ranking score
     all_papers = [relevance_filter.compute_combined_score(p) for p in all_papers]
+    progress.report(qid, "papers", "scoring", "completed", f"Scored {len(all_papers)} papers", scored=len(all_papers))
 
     logger.info("Retrieved %d relevant papers across %d sub-questions",
-                len(all_papers), len(state.task_plan.sub_questions))
+                len(all_papers), len(sub_questions))
 
+    progress.report(qid, "papers", "store", "running", "Saving the papers", papers=len(all_papers))
     db_service.write_retrieved_papers(state.task_plan.query_id, all_papers)
     logger.info("Stored %d papers in database for query %s",
                 len(all_papers), state.task_plan.query_id)
+    progress.report(qid, "papers", "store", "completed", f"Saved {len(all_papers)} papers", stored=len(all_papers))
 
     # NEW: parse full text/sections/figures — only for the relevance-filtered papers just saved
     asyncio.run(_parse_relevant_papers(agent, state.task_plan.query_id, all_papers))
@@ -89,6 +114,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
     parsing everything wasted most of the run. A paper that yields no usable text is replaced by the next one in
     rank, up to PARSE_MAX_ATTEMPTS_FACTOR x N attempts per sub-question. 0 for N = parse everything."""
     if not papers:
+        progress.report(query_id, "papers", "parsing", "skipped", "No papers to parse")
         return
 
     rows = db_service.supabase.table("retrieved_papers") \
@@ -98,6 +124,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
 
     if not rows:
         logger.warning("No saved paper IDs found to parse for query %s", query_id)
+        progress.report(query_id, "papers", "parsing", "skipped", "No saved papers to parse")
         return
 
     by_sq: dict[str, list[dict]] = {}
@@ -117,6 +144,9 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
 
     logger.info("Parsing the top %s papers per sub-question by combined_score (%d saved across %d sub-questions)...",
                 PARSE_TOP_N or "all", len(rows), len(by_sq))
+    total_target = sum(target.values())
+    progress.report(query_id, "papers", "parsing", "running", f"Parsing the best {total_target} papers (PDF to text)",
+                    target=total_target, attempted=0, usable=0, papers=len(rows))
     while True:
         batch: list[tuple[str, dict]] = []
         for sq, queue in queues.items():
@@ -139,9 +169,13 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
             else:
                 logger.info("No usable full text for '%s' — trying the next paper of that sub-question if any",
                             row["title"][:60])
+        progress.report(query_id, "papers", "parsing", "running", f"Parsed {total_usable} of {total_target} papers",
+                        target=total_target, attempted=total_attempted, usable=total_usable)
 
     logger.info("Parsing done: %d usable full texts out of %d papers attempted (%d saved in total)",
                 total_usable, total_attempted, len(rows))
+    progress.report(query_id, "papers", "parsing", "completed", f"{total_usable} of {total_target} papers parsed",
+                    target=total_target, attempted=total_attempted, usable=total_usable)
 
 
 async def _retrieve_for_subquestion(agent: PaperRetrievalAgent, sq) -> list[dict]:

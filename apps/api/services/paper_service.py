@@ -13,7 +13,8 @@ Offsets are in UTF-16 code units, i.e. JavaScript string indexes, because the te
 import logging
 import re
 import uuid
-from typing import Any, Optional
+from datetime import timezone
+from typing import Any, Iterable, Optional
 
 from rapidfuzz import fuzz
 
@@ -138,16 +139,46 @@ def _topics_and_digests(query_id: str) -> tuple[dict, list[dict], list[str]]:
     return topics, digests, sq_ids
 
 
+# ------------------------------------------------------------------------------------------------------------ timing
+def _utc(value: Any) -> Optional[str]:
+    """An ISO timestamp from the database (any offset) as UTC ISO, or None."""
+    if not value:
+        return None
+    try:
+        return rs._ts(str(value)).astimezone(timezone.utc).isoformat(timespec="seconds")
+    except (ValueError, TypeError):
+        return None
+
+
+def _span(values: Iterable[Any]) -> tuple[Optional[str], Optional[str]]:
+    times = sorted(t for t in (_utc(v) for v in values) if t)
+    return (times[0], times[-1]) if times else (None, None)
+
+
+def build_timing(plan_at: Any, papers: list[dict], parsed: list[dict], webs: list[dict], digests: list[dict], coverage_rows: list[dict]) -> dict:
+    """When each part of the run was written to the database. A run that finished before the pipeline reported steps has no step events;
+    these timestamps are what its timeline is reconstructed from (approximate: a row is stamped when it is written, not when work began)."""
+    papers_first, _ = _span(p.get("created_at") for p in papers)
+    parse_first, _ = _span(r.get("created_at") for r in parsed)
+    _, parse_last = _span(r.get("updated_at") or r.get("created_at") for r in parsed)
+    web_first, _ = _span(w.get("created_at") for w in webs)
+    dig_first, dig_last = _span(d.get("created_at") for d in digests)
+    cov_first, _ = _span(c.get("created_at") for c in coverage_rows)
+    return {"plannedAt": _utc(plan_at), "papersStoredAt": papers_first, "parsingFirstAt": parse_first, "parsingLastAt": parse_last,
+            "webStoredAt": web_first, "digestsFirstAt": dig_first, "digestsLastAt": dig_last, "coverageAt": cov_first}
+
+
 # ------------------------------------------------------------------------------------------------------------ overview
 def build_papers_overview(query_id: str) -> Optional[dict]:
     """The retrieval funnel of a run and every paper / web source it kept. Works while the run is going (what has been written so far)."""
-    if not supabase.table("research_queries").select("id").eq("id", query_id).execute().data:
+    rq = supabase.table("research_queries").select("id,created_at").eq("id", query_id).execute().data
+    if not rq:
         return None
     topics, digests, sq_ids = _topics_and_digests(query_id)
     papers = supabase.table("retrieved_papers").select("*").eq("query_id", query_id).execute().data
-    parsed = {str(r["retrieved_paper_id"]): r for r in _select_light("parsed_papers", "id,retrieved_paper_id,parser_version", "retrieved_paper_id",
+    parsed = {str(r["retrieved_paper_id"]): r for r in _select_light("parsed_papers", "id,retrieved_paper_id,parser_version,created_at,updated_at", "retrieved_paper_id",
                                                                       [str(p["id"]) for p in papers])}
-    webs = _select_light("web_sources", "id,sub_question_id,url,title,snippet,provider,published_date,reliability_score", "sub_question_id", sq_ids) if sq_ids else []
+    webs = _select_light("web_sources", "id,sub_question_id,url,title,snippet,provider,published_date,reliability_score,created_at", "sub_question_id", sq_ids) if sq_ids else []
 
     by_source: dict[str, dict] = {}
     for d in digests:                       # newest digest per source wins
@@ -161,6 +192,7 @@ def build_papers_overview(query_id: str) -> Optional[dict]:
     used_papers = [r for r in paper_rows if r["evidence"]]
     counts = {
         "papersKept": len(paper_rows),
+        "papersJudged": sum(1 for r in paper_rows if r["judge"]["confidence"] is not None),
         "papersParsed": sum(1 for r in paper_rows if r["parse"]["status"] == "parsed"),
         "papersUsedAsEvidence": len(used_papers),
         "papersUsedFullText": sum(1 for r in used_papers if r["evidence"]["level"] == "full_text"),
@@ -170,7 +202,9 @@ def build_papers_overview(query_id: str) -> Optional[dict]:
         "webUsedAsEvidence": sum(1 for r in web_rows if r["evidence"]),
         "subQuestions": len(topics),
     }
-    return {"id": query_id, "counts": counts, "subQuestions": [{"id": k, "topic": v} for k, v in topics.items()], "papers": paper_rows, "web": web_rows}
+    coverage_rows = _select_light("coverage_results", "created_at", "sub_question_id", sq_ids) if sq_ids else []
+    timing = build_timing(rq[0].get("created_at"), papers, list(parsed.values()), webs, digests, coverage_rows)
+    return {"id": query_id, "counts": counts, "timing": timing, "subQuestions": [{"id": k, "topic": v} for k, v in topics.items()], "papers": paper_rows, "web": web_rows}
 
 
 # ------------------------------------------------------------------------------------------------------------ one paper
