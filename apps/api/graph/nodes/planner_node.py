@@ -26,8 +26,9 @@ def planner_node(state: SharedResearchState) -> dict:
         for sq in sub_questions:
             sq.queries = domain_anchor.apply_to_queries(sq.queries, anchor.anchor)
 
+    plan_ids = {"query_id": state.query_id} if state.query_id else {}       # an id chosen by the API; otherwise TaskPlan generates one
     task_plan = TaskPlan(raw_query=state.raw_query, sub_questions=sub_questions,
-                         domain_anchor=anchor.anchor, domain_context=anchor.context)
+                         domain_anchor=anchor.anchor, domain_context=anchor.context, **plan_ids)
     db_service.write_task_plan(task_plan)
     logger.info("Saved task plan with ID: %s", task_plan.query_id)
 

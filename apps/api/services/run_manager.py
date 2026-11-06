@@ -1,0 +1,196 @@
+"""Runs of the research graph for the API: a queue, a worker thread per concurrent run, and an event log per run.
+
+A run is the whole graph (planner -> paper retrieval + web search in parallel -> summarizer), started in a background thread because it
+takes 15-25 minutes. The run id IS the research query id (SharedResearchState.query_id), so a finished run can be read from the database
+after a server restart. Progress is the stream of node updates of the graph (stream_mode="updates"), turned into events:
+
+  run_queued, run_started, stage_started, branch_completed, stage_completed, run_completed, run_failed
+
+Stages the UI should show: planner, retrieval (papers + web), summarizer; factcheck and report are not built / not wired yet and are
+reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
+"""
+import logging
+import threading
+import traceback
+import uuid
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from typing import Callable, Optional
+
+from apps.api import config
+
+logger = logging.getLogger("apps.api.run_manager")
+
+STAGES = ("planner", "retrieval", "summarizer", "factcheck", "report")
+NOT_BUILT = ("factcheck", "report")
+NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer"}
+BRANCH = {"paper_retrieval": "papers", "web_search": "web"}
+TERMINAL = ("run_completed", "run_failed")
+
+
+class QueueFull(Exception):
+    """Too many runs are waiting."""
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+class RunRecord:
+    def __init__(self, run_id: str, question: str):
+        self.id, self.question = run_id, question
+        self.status = "pending"
+        self.created_at, self.started_at, self.finished_at = _now(), None, None
+        self.error: Optional[str] = None
+        self.stages = {s: ("not_built" if s in NOT_BUILT else "pending") for s in STAGES}
+        self.events: list[dict] = []
+        self._lock = threading.Lock()
+
+    @property
+    def finished(self) -> bool:
+        return self.status in ("completed", "failed")
+
+    def emit(self, event: str, stage: Optional[str] = None, status: Optional[str] = None, message: str = "", data: Optional[dict] = None) -> dict:
+        with self._lock:
+            ev = {"seq": len(self.events), "event": event, "stage": stage, "status": status, "message": message,
+                  "data": data or {}, "timestamp": _now()}
+            self.events.append(ev)
+            return ev
+
+    def events_from(self, index: int) -> list[dict]:
+        with self._lock:
+            return self.events[index:]
+
+    def session(self) -> dict:
+        return {"id": self.id, "question": self.question, "status": self.status, "createdAt": self.created_at,
+                "startedAt": self.started_at, "finishedAt": self.finished_at, "error": self.error,
+                "stages": dict(self.stages)}
+
+
+# ------------------------------------------------------------------------------------------------ what the graph updates mean
+def _count(x) -> int:
+    try:
+        return len(x)
+    except TypeError:
+        return 0
+
+
+def summarize_update(node: str, update: dict) -> tuple[str, dict]:
+    """A short message and a few numbers for one node's finished update. Never raises: a surprise in the update shape gives an empty summary."""
+    try:
+        if node == "planner":
+            plan = update.get("task_plan")
+            subs = getattr(plan, "sub_questions", []) or []
+            data = {"subQuestions": len(subs), "queries": sum(len(s.queries) for s in subs), "domainAnchor": getattr(plan, "domain_anchor", "") or None,
+                    "topics": [s.main_topic for s in subs]}
+            return f"Planned {data['subQuestions']} sub-questions and {data['queries']} search queries", data
+        if node == "paper_retrieval":
+            return f"Kept {_count(update.get('paper_results'))} papers", {"papers": _count(update.get("paper_results"))}
+        if node == "web_search":
+            return f"Found {_count(update.get('web_sources'))} web sources", {"webSources": _count(update.get("web_sources"))}
+        if node == "summarizer":
+            cov = update.get("coverage") or {}
+            sufficient = sum(1 for c in cov.values() if isinstance(c, dict) and c.get("sufficient"))
+            data = {"digests": _count(update.get("digests")), "subQuestions": len(cov), "sufficientSubQuestions": sufficient}
+            return f"Digested {data['digests']} sources; {sufficient} of {len(cov)} sub-questions have sufficient evidence", data
+    except Exception:                                   # a summary must never break a run
+        logger.exception("could not summarize the update of node %s", node)
+    return "", {}
+
+
+class RunManager:
+    def __init__(self, graph_factory: Optional[Callable] = None, max_workers: Optional[int] = None, max_pending: Optional[int] = None):
+        self._graph_factory = graph_factory or self._default_graph
+        self._graph = None
+        self._graph_lock = threading.Lock()
+        self._workers = max_workers or config.MAX_CONCURRENT_RUNS
+        self._max_pending = config.MAX_PENDING_RUNS if max_pending is None else max_pending
+        self._executor = ThreadPoolExecutor(max_workers=self._workers, thread_name_prefix="trace-run")
+        self._runs: "OrderedDict[str, RunRecord]" = OrderedDict()
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _default_graph():
+        from apps.api.graph.build_graph import build_graph          # imported here: it loads langgraph and every stage
+        return build_graph()
+
+    def graph(self):
+        with self._graph_lock:
+            if self._graph is None:
+                self._graph = self._graph_factory()
+            return self._graph
+
+    # -------------------------------------------------------------------------------------------------------- queries
+    def get(self, run_id: str) -> Optional[RunRecord]:
+        with self._lock:
+            return self._runs.get(run_id)
+
+    def active_count(self) -> int:
+        with self._lock:
+            return sum(1 for r in self._runs.values() if not r.finished)
+
+    def recent(self, limit: int = 20) -> list[RunRecord]:
+        with self._lock:
+            return list(reversed(list(self._runs.values())))[:limit]
+
+    # ------------------------------------------------------------------------------------------------------- submitting
+    def submit(self, question: str) -> RunRecord:
+        with self._lock:
+            waiting = sum(1 for r in self._runs.values() if not r.finished)
+            if waiting >= self._workers + self._max_pending:
+                raise QueueFull(f"{waiting} runs are already running or queued; try again later")
+            rec = RunRecord(str(uuid.uuid4()), question)
+            self._runs[rec.id] = rec
+            self._evict()
+        rec.emit("run_queued", status="pending", message="Queued")
+        self._executor.submit(self._run, rec)
+        return rec
+
+    def _evict(self) -> None:
+        """Forget the oldest FINISHED runs beyond MAX_RUNS_IN_MEMORY (called with the lock held)."""
+        for run_id in [i for i, r in self._runs.items() if r.finished][: max(0, len(self._runs) - config.MAX_RUNS_IN_MEMORY)]:
+            del self._runs[run_id]
+
+    def shutdown(self) -> None:
+        self._executor.shutdown(wait=False, cancel_futures=True)
+
+    # ----------------------------------------------------------------------------------------------------------- the run
+    def _stage(self, rec: RunRecord, stage: str, state: str, message: str = "", data: Optional[dict] = None) -> None:
+        rec.stages[stage] = state
+        rec.emit("stage_started" if state == "running" else "stage_completed", stage=stage, status=state, message=message, data=data)
+
+    def _run(self, rec: RunRecord) -> None:
+        from apps.api.graph.state import SharedResearchState        # lazy: keeps importing this module light
+        rec.status, rec.started_at = "running", _now()
+        rec.emit("run_started", status="running", message="Run started")
+        self._stage(rec, "planner", "running", "Planning sub-questions")
+        branches_done: set[str] = set()
+        try:
+            for chunk in self.graph().stream(SharedResearchState(raw_query=rec.question, query_id=rec.id), stream_mode="updates"):
+                for node, update in (chunk or {}).items():
+                    stage = NODE_STAGE.get(node)
+                    if stage is None:
+                        continue
+                    message, data = summarize_update(node, update or {})
+                    if node == "planner":
+                        self._stage(rec, "planner", "completed", message, data)
+                        self._stage(rec, "retrieval", "running", "Searching papers and the web")
+                    elif node in BRANCH:
+                        branches_done.add(node)
+                        rec.emit("branch_completed", stage="retrieval", status="completed", message=message, data={"branch": BRANCH[node], **data})
+                        if branches_done == set(BRANCH):
+                            self._stage(rec, "retrieval", "completed", "Retrieval finished")
+                            self._stage(rec, "summarizer", "running", "Reading sources and checking evidence")
+                    elif node == "summarizer":
+                        self._stage(rec, "summarizer", "completed", message, data)
+            rec.status, rec.finished_at = "completed", _now()
+            rec.emit("run_completed", status="completed", message="Run finished", data={"reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": list(NOT_BUILT)})
+        except Exception as e:
+            logger.error("run %s failed:\n%s", rec.id, traceback.format_exc())
+            rec.status, rec.finished_at = "failed", _now()
+            rec.error = f"{type(e).__name__}: {str(e)[:300]}"
+            running = [s for s, v in rec.stages.items() if v == "running"]
+            for s in running:
+                rec.stages[s] = "failed"
+            rec.emit("run_failed", stage=running[0] if running else None, status="failed", message=rec.error)
