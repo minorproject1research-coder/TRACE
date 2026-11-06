@@ -18,7 +18,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -27,6 +28,7 @@ load_dotenv()
 from apps.api import config  # noqa: E402  (after load_dotenv, so the settings see the .env)
 from apps.api.dependencies import get_run_manager, shutdown_run_manager  # noqa: E402
 from apps.api.routers import paper_router, query_router, report_router  # noqa: E402
+from apps.api.services.db_errors import DatabaseUnavailable  # noqa: E402
 
 STAGE_LOG_FILES = {
     "apps.api.agents.stage1_planner": "stage1_planner.log",
@@ -72,6 +74,13 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)       # a parsed paper is 
 app.include_router(query_router.router)
 app.include_router(report_router.router)
 app.include_router(paper_router.router)
+
+
+@app.exception_handler(DatabaseUnavailable)
+async def database_unavailable(_: Request, __: DatabaseUnavailable):
+    """A read that failed twice on a connection error: say so (503), do not pretend the run does not exist (404)."""
+    return JSONResponse(status_code=503, content={"detail": "The database is temporarily unavailable. Try again in a moment."},
+                        headers={"Retry-After": "2"})
 
 
 @app.get("/health", tags=["meta"])

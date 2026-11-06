@@ -82,12 +82,15 @@ def test_a_queued_run_without_database_rows_has_an_empty_funnel(client, monkeypa
     assert r.status_code == 200 and r.json()["counts"]["papersKept"] == 0 and r.json()["papers"] == []
 
 
+RUN = "aaaaaaaa-0000-0000-0000-00000000000a"        # run ids are uuids; the route answers 404 for anything else without asking the database
+
+
 def test_overview_and_detail_are_passed_through(client, monkeypatch):
     monkeypatch.setattr(ps, "build_papers_overview", lambda qid: {"id": qid, "counts": {"papersKept": 2}, "papers": [], "web": [], "subQuestions": []})
     monkeypatch.setattr(ps, "build_paper_detail", lambda qid, pid: {"paper": {"id": pid}} if pid == "p1" else None)
-    assert client.get("/api/research/q/papers").json()["counts"]["papersKept"] == 2
-    assert client.get("/api/research/q/papers/p1").json()["paper"]["id"] == "p1"
-    assert client.get("/api/research/q/papers/zzz").status_code == 404
+    assert client.get(f"/api/research/{RUN}/papers").json()["counts"]["papersKept"] == 2
+    assert client.get(f"/api/research/{RUN}/papers/p1").json()["paper"]["id"] == "p1"
+    assert client.get(f"/api/research/{RUN}/papers/zzz").status_code == 404
 
 
 def test_a_malformed_paper_id_is_not_sent_to_the_database(monkeypatch):

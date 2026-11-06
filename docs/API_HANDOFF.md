@@ -23,6 +23,8 @@ A run executes the whole graph in a background thread: **planner -> (paper retri
 
 ## Endpoints
 Errors are `{"detail": "text"}` (validation errors: FastAPI's list under `detail`, status 422).
+- **503** `{"detail": "The database is temporarily unavailable. Try again in a moment."}` with `Retry-After: 2`: a database read failed twice on a connection error (the server already retried once). It means "ask again", not "this run does not exist". Added 2026-11-06 after the production readiness audit; before it, a hiccup could come back as 404 on `/report` or 500 on the session.
+- **404** is also returned, without asking the database, for any id that is not a UUID.
 
 | Method and path | Purpose | Success | Errors |
 |---|---|---|---|

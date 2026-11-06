@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 from apps.api import config
 from apps.api.dependencies import get_run_manager
 from apps.api.services import report_service
+from apps.api.services.db_errors import read_with_retry, valid_uuid
 from apps.api.services.run_manager import QueueFull, RunManager, TERMINAL
 
 router = APIRouter(prefix="/api/research", tags=["research"])
@@ -54,7 +55,7 @@ def create_research(body: ResearchRequest, response: Response, manager: RunManag
 def list_research(limit: int = Query(20, ge=1, le=100), manager: RunManager = Depends(get_run_manager)):
     """Runs from the database, newest first; a run that is live in this process shows its live status."""
     live = {r.id: r.session() for r in manager.recent(limit)}
-    stored = [s for s in report_service.list_sessions(limit) if s["id"] not in live]
+    stored = [s for s in read_with_retry(report_service.list_sessions, limit) if s["id"] not in live]
     items = sorted([*live.values(), *stored], key=lambda s: s.get("createdAt") or "", reverse=True)[:limit]
     return {"items": [{k: s.get(k) for k in ("id", "question", "status", "createdAt")} for s in items]}
 
@@ -64,7 +65,7 @@ def get_research(research_id: str, manager: RunManager = Depends(get_run_manager
     rec = manager.get(research_id)
     if rec is not None:
         return rec.session()
-    session = report_service.session_from_db(research_id)
+    session = read_with_retry(report_service.session_from_db, research_id) if valid_uuid(research_id) else None
     if session is None:
         raise HTTPException(status_code=404, detail="Research session not found")
     return session
@@ -78,7 +79,7 @@ async def research_events(research_id: str, request: Request, after: Optional[in
     the client must close its EventSource when it sees one of them, or it will reconnect."""
     rec = manager.get(research_id)
     if rec is None:
-        session = await asyncio.to_thread(report_service.session_from_db, research_id)
+        session = await asyncio.to_thread(read_with_retry, report_service.session_from_db, research_id) if valid_uuid(research_id) else None
         if session is None:
             raise HTTPException(status_code=404, detail="Research session not found")
         event = {"seq": 0, "event": "run_completed" if session["status"] == "completed" else "run_failed", "stage": None, "status": session["status"],
