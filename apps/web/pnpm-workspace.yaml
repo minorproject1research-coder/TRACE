@@ -1,0 +1,12 @@
+pmOnFail: ignore
+
+minimumReleaseAgeExclude:
+  - '@next/*'
+  - next
+
+# Patched versions of build-time tooling pulled in by next (see `pnpm audit`); remove when next ships them itself.
+overrides:
+  nanoid: '>=3.3.18'
+  browserslist: '>=4.28.7'
+  source-map-js: '>=1.2.2'
+  baseline-browser-mapping: '>=2.11.0'
