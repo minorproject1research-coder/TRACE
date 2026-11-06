@@ -170,7 +170,7 @@ function reconstruct(ov: PapersOverview, planner: TimelineModel['planner']): Tim
     step('citations', DEFS.papers[2].label, { status: 'unreported', message: 'Not recorded for this run.' }),
     step('scoring', DEFS.papers[3].label, { chips: [`${c.papersKept} scored`], endedAt: t.papersStoredAt ?? null, message: 'Saved together with the papers.' }),
     step('store', DEFS.papers[4].label, { chips: [`${c.papersKept} saved`], endedAt: t.papersStoredAt ?? null }),
-    step('parsing', DEFS.papers[5].label, c.papersParsed > 0 ? { chips: [`${c.papersParsed} parsed`], startedAt: t.parsingFirstAt ?? null, endedAt: t.parsingLastAt ?? null } : { status: 'skipped', message: 'No paper was parsed.' }),
+    step('parsing', DEFS.papers[5].label, c.papersParsed > 0 ? { chips: [`${c.papersParsed} PDFs processed`], startedAt: t.papersStoredAt ?? t.parsingFirstAt ?? null, endedAt: t.parsingLastAt ?? null, message: 'Parsing starts as soon as the papers are saved; the end is when the last parsed paper was written.' } : { status: 'skipped', message: 'No paper was parsed.' }),
   ]
   const webSteps: StepView[] = [
     step('search', DEFS.web[0].label, { chips: [`${c.webFound} sources found`], endedAt: t.webStoredAt ?? null }),

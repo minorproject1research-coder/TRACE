@@ -10,7 +10,7 @@ export function demoReport(id: string, question: string, createdAt: string | nul
     question,
     createdAt,
     stages: { planner: 'completed', retrieval: 'completed', summarizer: 'completed', factcheck: 'not_built', report: 'not_built' },
-    totals: { subQuestions: 3, subQuestionsSufficient: 1, sources: 5, findings: 8, findingsQuoteFound: 7 },
+    totals: { subQuestions: 3, subQuestionsSufficient: 1, sources: 5, findings: 9, findingsQuoteFound: 8 },
     limitations: [
       'DEMO DATA: this is a fictional sample report, not the result of a real run.',
       'Stage 4 (fact checking) is not part of the pipeline yet: findings are verified only in the sense that their quote was found in the source, and judged by an independent model against the aspect they should answer. Nothing checks that a claim is true.',
@@ -107,13 +107,20 @@ export function demoReport(id: string, question: string, createdAt: string | nul
           },
           {
             id: 'demo-src-4', type: 'web', title: '[Sample] Blog: What Happens When Inputs Get Long', evidenceLevel: 'web_snippet', weight: 0.22,
-            findingsTotal: 1, findingsQuoteFound: 1, url: 'https://example.org/sample-blog', provider: 'sample-search', publishedDate: null,
+            findingsTotal: 2, findingsQuoteFound: 2, url: 'https://example.org/sample-blog', provider: 'sample-search', publishedDate: null,
             findings: [
               {
                 claim: 'Long inputs make the method noticeably slower.',
                 quote: 'Once inputs get long, everything gets slower.',
                 stance: 'neutral', quoteFound: true,
                 judgements: [{ aspect: 'How does cost grow with length?', verdict: 'partial', quoteSupportsClaim: 'yes', answersAspect: 'partial', reason: 'Too vague to say how cost grows.' }],
+              },
+              {
+                // a real run produced the stance "challenges": the UI must cope with words outside supports / contradicts / neutral
+                claim: 'Short inputs are not affected at all.',
+                quote: 'For short inputs nothing changes.',
+                stance: 'challenges', quoteFound: true,
+                judgements: [{ aspect: 'How does cost grow with length?', verdict: 'partial', quoteSupportsClaim: 'yes', answersAspect: 'partial', reason: 'Qualifies the claim for short inputs.' }],
               },
             ],
           },

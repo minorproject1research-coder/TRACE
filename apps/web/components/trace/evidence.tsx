@@ -1,5 +1,5 @@
 import { AlertTriangle, BookOpen, Check, ExternalLink, Globe, HelpCircle, Quote } from 'lucide-react'
-import { aspectStateLabel, evidenceLevelLabel } from '@/lib/format'
+import { aspectStateLabel, evidenceLevelLabel, stanceInfo } from '@/lib/format'
 import type { Coverage, Finding, Report, SourceReport, SubQuestionReport } from '@/lib/trace-types'
 import { StatusPill } from './status-pill'
 
@@ -10,8 +10,8 @@ function safeUrl(url: string | null | undefined): string | null {
 }
 
 export function StanceChip({ stance }: { stance: Finding['stance'] }) {
-  const map = { supports: { t: 'mint', l: 'Supports' }, contradicts: { t: 'coral', l: 'Contradicts' }, neutral: { t: 'neutral', l: 'Neutral' } } as const
-  return <StatusPill tone={map[stance].t}>{map[stance].l}</StatusPill>
+  const info = stanceInfo(stance)
+  return <StatusPill tone={info.tone}>{info.label}</StatusPill>
 }
 
 export function FindingCard({ finding, children }: { finding: Finding; children?: React.ReactNode }) {
@@ -100,7 +100,7 @@ export function CoverageBlock({ sq }: { sq: SubQuestionReport }) {
         {c.aspects.map(a => (
           <li key={a.index}>
             <span className="aspect-text">{a.text ?? `Aspect ${a.index + 1} (text unavailable)`}</span>
-            <StatusPill tone={aspectStateLabel[a.state].tone}>{aspectStateLabel[a.state].label}</StatusPill>
+            <StatusPill tone={aspectStateLabel(a.state).tone}>{aspectStateLabel(a.state).label}</StatusPill>
             <span className="tag">{a.yesVerdicts} yes · {a.sources} source{a.sources === 1 ? '' : 's'}</span>
           </li>
         ))}
@@ -121,7 +121,7 @@ export function verificationStats(report: Report) {
   return {
     findings,
     verdicts,
-    contradicting: findings.filter(x => x.f.stance === 'contradicts'),
+    contradicting: findings.filter(x => stanceInfo(x.f.stance).group === 'opposes'),     // contradicts, and the model's other words for it (challenges)
     unverified: findings.filter(x => !x.f.quoteFound),
     partialSources: report.subQuestions.flatMap(sq => sq.sources).filter(s => s.evidenceLevel !== 'full_text').length,
   }

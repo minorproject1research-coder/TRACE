@@ -47,7 +47,18 @@ export const evidenceLevelLabel: Record<EvidenceLevel, { label: string; partial:
   web_snippet: { label: 'Web snippet only', partial: true },
 }
 
-export const aspectStateLabel: Record<AspectState, { label: string; tone: PillTone }> = {
+export type StanceGroup = 'supports' | 'opposes' | 'neutral' | 'other'
+
+/** How to show a finding's stance. The value is free model output: unknown words get a neutral chip with their own label, never a crash. */
+export function stanceInfo(stance: string | null | undefined): { group: StanceGroup; label: string; tone: PillTone } {
+  const s = (stance ?? '').trim().toLowerCase()
+  if (s === 'supports' || s === 'support' || s === 'supported') return { group: 'supports', label: 'Supports', tone: 'mint' }
+  if (['contradicts', 'contradict', 'challenges', 'challenge', 'opposes', 'refutes', 'disputes'].includes(s)) return { group: 'opposes', label: s === 'contradicts' || s === 'contradict' ? 'Contradicts' : s[0].toUpperCase() + s.slice(1), tone: 'coral' }
+  if (s === 'neutral') return { group: 'neutral', label: 'Neutral', tone: 'neutral' }
+  return { group: 'other', label: s ? s[0].toUpperCase() + s.slice(1) : 'Unclassified', tone: 'neutral' }
+}
+
+const ASPECT_STATES: Record<AspectState, { label: string; tone: PillTone }> = {
   covered: { label: 'Covered', tone: 'mint' },
   judged_insufficient: { label: 'Not enough sources', tone: 'amber' },
   no_candidates: { label: 'No candidate evidence', tone: 'coral' },
@@ -55,6 +66,8 @@ export const aspectStateLabel: Record<AspectState, { label: string; tone: PillTo
   uncovered: { label: 'Uncovered', tone: 'coral' },
   unknown: { label: 'Unknown', tone: 'neutral' },
 }
+
+export const aspectStateLabel = (state: string): { label: string; tone: PillTone } => ASPECT_STATES[state as AspectState] ?? { label: state || 'Unknown', tone: 'neutral' }
 
 /** Pull numbers out of an event's free-form data without trusting its shape. */
 export function num(data: Record<string, unknown> | undefined, key: string): number | null {

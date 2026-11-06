@@ -6,11 +6,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ArrowLeft, FileText, Hourglass, ShieldAlert } from 'lucide-react'
 import { ActivityTab } from '@/components/trace/activity-tab'
 import { CoverageBlock, FindingCard, SourceCard, verificationStats } from '@/components/trace/evidence'
+import { Boundary } from '@/components/trace/boundary'
 import { Pipeline } from '@/components/trace/pipeline'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { StatusPill } from '@/components/trace/status-pill'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
-import { formatDateTime, formatDuration, num, statusLabel, statusTone } from '@/lib/format'
+import { formatDateTime, formatDuration, num, stanceInfo, statusLabel, statusTone, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
 import type { Report, WorkflowEvent } from '@/lib/trace-types'
@@ -119,10 +120,12 @@ export default function RunPage() {
               ))}
             </div>
             <div className="intel-body" id="intel-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+              <Boundary label={tab} resetKey={tab}>
               {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} />}
               {tab === 'Sources' && <SourcesTab events={stream.events} active={active} report={report} finished={finished} />}
               {tab === 'Evidence' && <EvidenceTab active={active} report={report} finished={finished} />}
               {tab === 'Verification' && <VerificationTab active={active} report={report} finished={finished} />}
+              </Boundary>
             </div>
           </div>
         </div>
@@ -183,23 +186,24 @@ function SourcesTab({ events, active, report, finished }: { events: WorkflowEven
 }
 
 function EvidenceTab({ active, report, finished }: { active: boolean; report: Async<Report>; finished: boolean }) {
-  const [stance, setStance] = useState<'all' | 'supports' | 'contradicts' | 'neutral'>('all')
+  const [stance, setStance] = useState<'all' | StanceGroup>('all')
   const [unverified, setUnverified] = useState(false)
   const gate = Gate({ active, finished, report, what: 'Evidence' })
   if (gate) return <TabScroll label="Evidence">{gate}</TabScroll>
   const r = report.data!
+  const hasOther = r.subQuestions.some(sq => sq.sources.some(src => src.findings.some(f => stanceInfo(f.stance).group === 'other')))
   return (
     <>
       <TabFixed>
       <div className="callout-box lav" role="note"><ShieldAlert size={18} aria-hidden="true" /><div><b>Findings, not facts</b><p>Each finding is a claim a source makes, with the quote behind it. Nothing has checked that the claim is true.</p></div></div>
       <div className="filter-row">
-        <div className="segmented" role="radiogroup" aria-label="Stance" onKeyDown={radioGroupKeys}>{(['all', 'supports', 'contradicts', 'neutral'] as const).map(t => <button key={t} type="button" role="radio" aria-checked={stance === t} tabIndex={stance === t ? 0 : -1} className={stance === t ? 'gborder' : ''} onClick={() => setStance(t)}>{t === 'all' ? 'All' : t[0].toUpperCase() + t.slice(1)}</button>)}</div>
+        <div className="segmented" role="radiogroup" aria-label="Stance" onKeyDown={radioGroupKeys}>{(['all', 'supports', 'opposes', 'neutral', ...(hasOther ? ['other' as const] : [])] as const).map(t => <button key={t} type="button" role="radio" aria-checked={stance === t} tabIndex={stance === t ? 0 : -1} className={stance === t ? 'gborder' : ''} onClick={() => setStance(t)} title={t === 'opposes' ? 'Findings the model marked as contradicting or challenging' : undefined}>{t === 'all' ? 'All' : t === 'opposes' ? 'Contradicts / challenges' : t[0].toUpperCase() + t.slice(1)}</button>)}</div>
         <label className="check"><input type="checkbox" checked={unverified} onChange={e => setUnverified(e.target.checked)} /> Unverified quotes only</label>
       </div>
       </TabFixed>
       <TabScroll label="Evidence list"><div className="intel-content">
       {r.subQuestions.map(sq => {
-        const items = sq.sources.flatMap(src => src.findings.map(f => ({ f, src }))).filter(x => (stance === 'all' || x.f.stance === stance) && (!unverified || !x.f.quoteFound))
+        const items = sq.sources.flatMap(src => src.findings.map(f => ({ f, src }))).filter(x => (stance === 'all' || stanceInfo(x.f.stance).group === stance) && (!unverified || !x.f.quoteFound))
         return (
           <details key={sq.id} className="sq-group" open={items.length > 0 && r.subQuestions.length <= 3}>
             <summary><span>{sq.topic}</span><span className="tag">{items.length} finding{items.length === 1 ? '' : 's'}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}</summary>
@@ -226,7 +230,7 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
       <div className="metrics">
         <div><strong>{found}/{total}</strong><span>quotes found in source</span></div>
         <div><strong>{r.totals.subQuestionsSufficient}/{r.totals.subQuestions}</strong><span>sub-questions sufficient</span></div>
-        <div><strong>{stats.contradicting.length}</strong><span>contradicting findings</span></div>
+        <div><strong>{stats.contradicting.length}</strong><span>contradicting or challenging findings</span></div>
         <div><strong>{stats.partialSources}</strong><span>sources only partly read</span></div>
       </div>
       <div className="tile"><div className="parallel-head"><b>Independent judge verdicts</b><span>{stats.verdicts.yes + stats.verdicts.partial + stats.verdicts.no} checks</span></div>
@@ -237,8 +241,8 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
 
       {r.subQuestions.map(sq => <details key={sq.id} className="sq-group"><summary><span>{sq.topic}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}</summary><CoverageBlock sq={sq} /></details>)}
 
-      <h2 className="sub-h">Contradicting findings ({stats.contradicting.length})</h2>
-      {stats.contradicting.length === 0 ? <p className="meta">No finding contradicts the others.</p> : stats.contradicting.map(({ f, s }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {s.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}
+      <h2 className="sub-h">Contradicting or challenging findings ({stats.contradicting.length})</h2>
+      {stats.contradicting.length === 0 ? <p className="meta">No finding is marked as contradicting or challenging.</p> : stats.contradicting.map(({ f, s }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {s.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}
       <h2 className="sub-h">Quotes that could not be located ({stats.unverified.length})</h2>
       {stats.unverified.length === 0 ? <p className="meta">Every quote was found in its source.</p> : stats.unverified.map(({ f, s }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {s.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}
     </div></TabScroll>

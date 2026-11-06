@@ -49,7 +49,9 @@ export type Judgement = {
 export type Finding = {
   claim: string
   quote: string
-  stance: 'supports' | 'contradicts' | 'neutral'
+  /** The digest model's word for how the finding relates to the sub-question. Usually supports | contradicts | neutral, but it is free model output
+   *  (a real run produced "challenges"): never index a table with it without a fallback, see stanceInfo() in lib/format.ts. */
+  stance: string | null
   quoteFound: boolean
   judgements: Judgement[]
 }
