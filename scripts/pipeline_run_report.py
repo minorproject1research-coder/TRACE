@@ -136,7 +136,7 @@ def main() -> int:
     t_judge0 = first(msgs, lambda l: l[0] > t_st3 and "detail_aspects: Aspect cache hit" in (l[2] + ": " + l[3]) or (l[0] > t_st3 and l[2].endswith("detail_aspects") and l[3].startswith("Aspect cache hit")))
     t_judge0 = t_judge0[0] if t_judge0 else t_st3
     t_last_sq = ML(r"Judge used:")[0]
-    phases = [("Planner (decompose, 5 sub-questions)", t_start, t_plan), ("Web search (Tavily)", t_web0, t_web1),
+    phases = [(f"Planner (decompose, {len(sqs)} sub-questions)", t_start, t_plan), ("Web search (Tavily)", t_web0, t_web1),
               ("Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus)", t_web1, t_pf0), ("Embedding pre-filter + relevance judge", t_pf0, t_pf1)]
     if t_enr0:
         phases.append(("Citation enrichment (Semantic Scholar)", t_enr0[0], t_ret))

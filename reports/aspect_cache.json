@@ -124,3 +124,36 @@
 {"key": "db69651f14a1e106", "aspects": ["What are the existing methods for expert routing in LLMs?", "What are the existing architectures for expert routing in LLMs?"]}
 {"key": "9fcc6bea1bfdc652", "aspects": ["accuracy comparison of expert routing implementations in LLMs", "speed comparison of expert routing implementations in LLMs", "scalability comparison of expert routing implementations in LLMs"]}
 {"key": "75aacbaea0faaca0", "aspects": ["What are the open problems for expert routing in LLMs?", "What are the future directions for expert routing in LLMs?"]}
+{"key": "c640f68177a685d9", "aspects": ["How are LLMs trained?", "How are LLMs used?"]}
+{"key": "031d0c56d496ed76", "aspects": ["main challenges of LLMs", "main limitations of LLMs"]}
+{"key": "8d9d1406b8141abb", "aspects": ["How does a MoE model differ from a standard neural network model?"]}
+{"key": "b210bbc2cfd2aeb7", "aspects": ["advantages of using a MoE model", "disadvantages of using a MoE model"]}
+{"key": "73b0f69767ed3b29", "aspects": ["What are the benefits of using MoE in LLMs?"]}
+{"key": "3fedbefcd757bee5", "aspects": ["challenges of using MoE in LLMs"]}
+{"key": "220c9029a65e73d7", "aspects": ["How does expert routing work in MoE models?"]}
+{"key": "069fe6560df82cf1", "aspects": ["What are the different types of expert routing strategies?"]}
+{"key": "16529b66279987ca", "aspects": ["How does expert routing affect the performance of MoE models?", "How does expert routing affect the efficiency of MoE models?"]}
+{"key": "6b0c175d93ff07cc", "aspects": ["What are the existing methods for expert routing in LLMs?", "What are the existing architectures for expert routing in LLMs?"]}
+{"key": "40b3059a0cc4823f", "aspects": ["How do expert routing implementations in LLMs compare in terms of accuracy, speed, and scalability?"]}
+{"key": "fe5134d04851cb05", "aspects": ["open problems for expert routing in LLMs", "future directions for expert routing in LLMs"]}
+{"key": "7f82f56f416c767e", "aspects": ["How are LLMs trained?", "How are LLMs used?"]}
+{"key": "7c7069e52b96db1f", "aspects": ["main challenges of LLMs", "main limitations of LLMs"]}
+{"key": "4f92dfa1273a81e1", "aspects": ["How does a MoE model differ from a standard neural network model?"]}
+{"key": "ee1eea62e7951a8e", "aspects": ["advantages of using a MoE model", "disadvantages of using a MoE model"]}
+{"key": "3abe00e03eef5809", "aspects": ["benefits of using MoE in LLMs"]}
+{"key": "752ee1c050cf1e52", "aspects": ["What are the challenges of using MoE in LLMs?"]}
+{"key": "6210dd48e8950b4b", "aspects": ["How does expert routing work in MoE models?"]}
+{"key": "394f25c5b614a70a", "aspects": ["What are the different types of expert routing strategies in MoE models?"]}
+{"key": "1e59f7dd935fa9b8", "aspects": ["How does expert routing affect the performance and efficiency of MoE models?"]}
+{"key": "1953f8e0593ec51b", "aspects": ["existing methods for expert routing in LLMs", "existing architectures for expert routing in LLMs"]}
+{"key": "9b416b01effbae7e", "aspects": ["How does expert routing implementation in LLMs compare in terms of accuracy?", "How does expert routing implementation in LLMs compare in terms of speed?", "How does expert routing implementation in LLMs compare in terms of scalability?"]}
+{"key": "f9d9abb918fd1d07", "aspects": ["open problems for expert routing in LLMs", "future directions for expert routing in LLMs"]}
+{"key": "12469ca762bed16c", "aspects": ["benefits of quantization for LLMs"]}
+{"key": "2c486a130237094d", "aspects": ["What are the challenges of quantization for LLMs?"]}
+{"key": "0c1bf5d017a425a0", "aspects": ["How does 4-bit precision affect the representation of LLMs?", "How does 4-bit precision affect the computation of LLMs?"]}
+{"key": "d7d6d68bec2d3e2b", "aspects": ["How does 4-bit precision affect the accuracy of LLMs?", "How does 4-bit precision affect the performance of LLMs?"]}
+{"key": "9323ce6cc95122e5", "aspects": ["How does quantizing LLMs to 4-bit precision affect the model size and memory usage?"]}
+{"key": "b2af3b0a21561784", "aspects": ["How does quantizing LLMs to 4-bit precision affect inference speed and latency?"]}
+{"key": "4960a084c93564ee", "aspects": ["How does quantizing LLMs to 4-bit precision affect the quality of generated text?", "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?"]}
+{"key": "2a850cb927e860d5", "aspects": ["How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?", "How does quantizing LLMs to 4-bit precision affect the security of LLMs?"]}
+{"key": "656819bb8d1243db", "aspects": ["How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?", "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?"]}

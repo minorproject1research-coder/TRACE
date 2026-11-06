@@ -271,4 +271,4 @@ Warnings in the log: 18; errors: 3.
 - Judge and Groq: 99 parking events, digest generation 1m 38s (many digests had few findings to write).
 - Citation enrichment still spent 1m 09s on Semantic Scholar 429s.
 
-**To do:** repeat with `TOPIC_ASPECT=false`; make the pipeline's database reads retry on connection errors; end API runs correctly in `pipeline_run_report.py`.
+**Done afterwards:** the repeat with `TOPIC_ASPECT=false` is `run_20261106_2329_156ebc90_*` (157 findings, 3 of 5 sufficient: the diagnosis is confirmed). **To do:** make the pipeline's database reads retry on connection errors; end API runs correctly in `pipeline_run_report.py`.
