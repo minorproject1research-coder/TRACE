@@ -1,6 +1,25 @@
 # apps/api/agents/stage3_summarizer/chunk_selector.py
+"""Picks the passages of a paper that a digest reads.
+
+Embedding the chunks is the whole cost of Stage 3 preparation (about 6 chunks per second on the CPU: 3 to 9 minutes per run), and the same
+paper is embedded again for every sub-question that keeps it and again in every rerun. The embeddings of a paper are therefore stored on
+disk, keyed by the embedding model, the chunking version and the exact chunk texts, so a changed paper or chunking never reuses an old
+vector (planned item B5).
+  CHUNK_EMBED_CACHE=true|false      default true
+  CHUNK_EMBED_CACHE_DIR=...         default .cache/chunk_embeddings
+"""
+import hashlib
+import logging
+import os
 import re
+import tempfile
+from pathlib import Path
+
+import numpy as np
+
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
+
+logger = logging.getLogger(__name__)
 
 SKIP = re.compile(r"reference|bibliograph|acknowledg|appendix|funding|conflict of interest", re.I)
 
@@ -9,6 +28,8 @@ DETAIL_CHUNKS_PER_DETAIL = 2          # top chunks per detail question
 MAX_CHUNKS_TOTAL = 9                  # cap on total chunks per source after union
 NON_PROSE_ALPHA_RATIO = 0.60          # min alphabetic char ratio for prose
 NON_PROSE_PIPE_THRESHOLD = 5          # max "|" chars before treating as table/figure caption
+EMBED_MODEL_ID = "BAAI/bge-base-en-v1.5"
+CHUNKING_VERSION = 1                  # raise when _split / build_chunks change what a chunk is
 
 
 def _split(text: str, size: int = 300) -> list[str]:
@@ -52,6 +73,43 @@ def build_chunks(paper: dict) -> list[str]:
     return [c for c in chunks if len(c.split()) >= 30]
 
 
+def _cache_enabled() -> bool:
+    return os.getenv("CHUNK_EMBED_CACHE", "true").strip().lower() not in ("0", "false", "no", "off")
+
+
+def _cache_path(chunks: list[str]) -> Path:
+    h = hashlib.sha256(f"{EMBED_MODEL_ID}|chunking-v{CHUNKING_VERSION}|{len(chunks)}|".encode())
+    for c in chunks:
+        h.update(c.encode("utf-8", "replace"))
+        h.update(b"\x1f")                                           # separator, so ["ab", "c"] and ["a", "bc"] differ
+    return Path(os.getenv("CHUNK_EMBED_CACHE_DIR", ".cache/chunk_embeddings")) / f"{h.hexdigest()}.npy"
+
+
+def embed_chunks(model, chunks: list[str]) -> np.ndarray:
+    """Normalised embeddings of the chunks, from the disk cache when this exact list was embedded before."""
+    if not _cache_enabled():
+        return model.encode(chunks, normalize_embeddings=True)
+    path = _cache_path(chunks)
+    try:
+        cached = np.load(path)
+        if cached.shape[0] == len(chunks):
+            return cached
+    except FileNotFoundError:
+        pass
+    except Exception as e:                                          # a damaged file must cost a recomputation, never the run
+        logger.warning("chunk embedding cache file %s is not usable (%s); embedding again", path.name, type(e).__name__)
+    d = np.asarray(model.encode(chunks, normalize_embeddings=True))
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+        with os.fdopen(fd, "wb") as f:
+            np.save(f, d)
+        os.replace(tmp, path)                                       # atomic: a reader never sees half a file
+    except OSError as e:
+        logger.warning("chunk embedding cache write failed: %s", e)
+    return d
+
+
 def select_chunks(
     sub_question: str,
     chunks: list[str],
@@ -77,7 +135,7 @@ def select_chunks(
     
     # 1. Sub-question based selection (always done)
     q = model.encode([sub_question], normalize_embeddings=True)[0]
-    d = model.encode(chunks, normalize_embeddings=True)
+    d = embed_chunks(model, chunks)
     sq_sims = d @ q
     sq_top = sorted(range(len(chunks)), key=lambda i: sq_sims[i], reverse=True)[:top_k]
     
