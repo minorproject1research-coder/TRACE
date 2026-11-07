@@ -56,3 +56,39 @@ def test_the_topic_aspect_counts_in_the_coverage_decision():
     result = cc.check_coverage_judged(aspects, a2d, details, digests, {}, candidates=[])
     assert result["sufficient"] is False                                  # nothing was judged for any aspect, the topic included
     assert any(TOPIC in str(x) for x in result.get("uncovered_aspects", []) + result.get("uncovered_details", [])), result.keys()
+
+
+# ---- TOPIC_ASPECT=judge (planned item B2): the judge and the coverage rule see the topic, the digests do not -------------------------
+class TestJudgeOnlyMode:
+    def test_modes(self, monkeypatch):
+        from apps.api.agents.stage3_summarizer import detail_aspects as da
+        for value, mode, digest, judge in [("false", "off", False, False), ("", "off", False, False), ("true", "all", True, True),
+                                           ("1", "all", True, True), ("judge", "judge", False, True), ("JUDGE", "judge", False, True)]:
+            monkeypatch.setenv("TOPIC_ASPECT", value)
+            assert da.topic_aspect_mode() == mode, value
+            assert da.topic_aspect_enabled() is digest, value           # what the digest prompt and the chunk selection get
+            assert da.topic_aspect_for_judge() is judge, value          # what the judge and the coverage rule get
+
+    def test_topic_gets_the_most_similar_findings_as_candidates(self, monkeypatch):
+        import numpy as np
+        from unittest.mock import MagicMock
+        from apps.api.agents.stage3_summarizer import evidence_judge as ej
+        monkeypatch.setenv("JUDGE_EXTRA_BY_SIM", "1")
+        monkeypatch.setenv("JUDGE_CANDIDATES_PER_ASPECT", "4")
+
+        def encode(texts, normalize_embeddings=True):
+            out = []
+            for t in texts:
+                v = np.zeros(4, dtype=np.float32)
+                v[0 if t.startswith(("a0", "c0")) else 1] = 1.0           # aspect a0 / claims c0*, aspect a1 = topic / claims c1*
+                if t.startswith("c1"):
+                    v[0] = 0.3 * (int(t[2:]) + 1) / 6                     # claims c1x lean towards aspect 0 by a small, rising amount
+                out.append(v / np.linalg.norm(v))
+            return np.array(out)
+        emb = MagicMock(); emb.encode = encode
+        findings = [{"claim": f"c1{k}", "quote": f"q{k}", "chunk_id": 0, "verified": True, "answers_details": []} for k in range(6)]
+        digests = [{"source_id": f"s{k}", "evidence_level": "full_text", "findings": [findings[k]]} for k in range(6)]
+        with_topic = ej.select_candidates(["a0", "the topic"], digests, {}, emb, topic_aspect_idx=1)
+        without = ej.select_candidates(["a0", "the topic"], digests, {}, emb)
+        assert sum(1 for c in with_topic if c["aspect_idx"] == 1) == 4        # JUDGE_CANDIDATES_PER_ASPECT
+        assert sum(1 for c in without if c["aspect_idx"] == 1) == 1           # only the extras

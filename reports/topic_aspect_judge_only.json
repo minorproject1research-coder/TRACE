@@ -1,0 +1,982 @@
+[
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What are state space models (SSMs) and how do they work?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 2,
+   "no": 3,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "A linear continuous-time state space model is defined by a state matrix A, an input matrix B, an output matrix C, and a feedthrough matrix D that relate the input, latent state, and output."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "8baadec2-3bb9-4091-8fa6-66e30dd23325",
+     "claim_prefix": "A linear continuous-time state space model is defined by a state matrix A, an in",
+     "quote_prefix": "a state matrix A ∈ R P × P , an input matrix B ∈ R P × U , an output matrix C ∈ ",
+     "item_id": "664a58745fcc4240",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the four matrices that define the model, faithfully restating the claim and providing a complete definition of the components as requested by the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What are transformers and how do they work?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 3,
+   "no": 3,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "What is Mamba and how does it relate to SSMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 4,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Mamba is a discrete version of a continuous state‑space system, making it an SSM.",
+   "Mamba adds a selective state‑space model with input‑dependent matrices, improving adaptability over prior SSMs."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "26f3a710-b8e6-416e-a608-54af21baea9d",
+     "claim_prefix": "Mamba is a discrete version of a continuous state‑space system, making it an SSM",
+     "quote_prefix": "The S4 and Mamba are the discrete versions of the continuous system.",
+     "item_id": "91ccb756632038b2",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines Mamba as a discrete version of a continuous system, which directly answers what Mamba is and confirms its relationship to SSMs."
+    },
+    {
+     "source_id": "5995b04b-a575-450a-a16c-d21dc19eb9dc",
+     "claim_prefix": "Mamba adds a selective state‑space model with input‑dependent matrices, improvin",
+     "quote_prefix": "Mamba introduces a selective SSM, incorporating input-dependent matrices to enha",
+     "item_id": "a6bce1041b38a3da",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim that Mamba is a selective SSM with input-dependent matrices, and the claim effectively defines Mamba and explains its relationship to SSMs as requested by the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "How are SSMs and transformers trained and evaluated?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 2,
+   "no": 4,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "2397750f-41eb-4693-a21e-fd5a7045e9d7",
+  "sub_question": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 6,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "156ebc90-6250-4178-9d80-94b9ecdf50df",
+  "sub_question": "What is a large language model (LLM)?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 3,
+   "partial": 2,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "An LLM is an AI model trained on massive text data that learns statistical language patterns to understand word and idea relationships.",
+   "LLMs are deep learning models trained on massive data that can understand and generate natural language and other content for many tasks.",
+   "LLMs are capable of understanding and generating human‑like text."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "9c56ae63-7e27-4b9a-b36c-dfb236048cf3",
+     "claim_prefix": "LLMs are deep learning models trained on massive data that can understand and ge",
+     "quote_prefix": "Large language models (LLMs) are a category of deep learning models trained on i",
+     "item_id": "a8afa2672826aba0",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote provides a complete definition of LLMs that directly answers the aspect asking 'What is a large language model?'"
+    },
+    {
+     "source_id": "b4a9e827-a714-4e36-84d0-3df6ae4f2681",
+     "claim_prefix": "An LLM is an AI model trained on massive text data that learns statistical langu",
+     "quote_prefix": "A large language model (LLM) is an AI model trained on enormous amounts of text ",
+     "item_id": "5f845386c07621f6",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote provides a complete definition of an LLM that directly answers the aspect asking 'What is a large language model?'"
+    },
+    {
+     "source_id": "fbb361a8-f13d-4a0a-99fb-77458092470e",
+     "claim_prefix": "LLMs are capable of understanding and generating human‑like text.",
+     "quote_prefix": "LLMs, which are capable of understanding and generating human-like text, have fo",
+     "item_id": "3fb3a9272b4c0dbf",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines LLMs by their capability to understand and generate human-like text, which directly answers the aspect asking for a definition."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "156ebc90-6250-4178-9d80-94b9ecdf50df",
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 2,
+   "no": 1,
+   "error": 1
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "A MoE model consists of multiple expert networks and a gating network that combines their outputs.",
+   "A MoE model consists of multiple expert sub‑networks that specialize on different data aspects, and only the relevant experts are activated for each input, limiting compute while retaining large capacity."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "2b275829-dd3f-4e0b-bfdd-2c70b0380301",
+     "claim_prefix": "A MoE model consists of multiple expert networks and a gating network that combi",
+     "quote_prefix": "A standard Mixture of Experts (MoE) learns a set of expert networks f i along wi",
+     "item_id": "92618499b4225522",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines the MoE model by listing its two core components (expert networks and a gating network), which directly answers the definition question."
+    },
+    {
+     "source_id": "ffd5e8dc-28f0-4ae9-8305-8b65cefd2b96",
+     "claim_prefix": "A MoE model consists of multiple expert sub‑networks that specialize on differen",
+     "quote_prefix": "different parts of a model, known as experts, specialize in different tasks or a",
+     "item_id": "2767a0b342b7bf5d",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim's definition of MoE, and the claim provides a complete, standalone definition answering the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "156ebc90-6250-4178-9d80-94b9ecdf50df",
+  "sub_question": "How is MoE applied to LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 5,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "MoE applies to LLMs by selectively activating only the specific experts required for each input."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "26803252-58d1-4e54-871d-e7c880388ace",
+     "claim_prefix": "MoE applies to LLMs by selectively activating only the specific experts required",
+     "quote_prefix": "selectively activating only the specific experts needed for a given task, rather",
+     "item_id": "bc89d297411338e6",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly describes the mechanism of MoE in LLMs by selectively activating specific experts, which directly answers how it is applied."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "156ebc90-6250-4178-9d80-94b9ecdf50df",
+  "sub_question": "What is expert routing in MoE models?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 1,
+   "no": 3,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Expert routing in MoE models selects which parts of the network are activated for each example.",
+   "A learnable router directs each input sample to only a subset of the experts in a MoE model."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "5582baed-e983-453c-aafc-2c0932ca86bb",
+     "claim_prefix": "Expert routing in MoE models selects which parts of the network are activated fo",
+     "quote_prefix": "Mixture-of-experts (MoE), a type of conditional computation where parts of the n",
+     "item_id": "23a3f83917a898eb",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines expert routing as the mechanism that activates specific network parts per example, which directly answers the definition question."
+    },
+    {
+     "source_id": "d4f44fd6-209b-4d86-beb4-2847d98b462b",
+     "claim_prefix": "A learnable router directs each input sample to only a subset of the experts in ",
+     "quote_prefix": "a conventional MoE model contains multiple experts (subnetworks of the backbone ",
+     "item_id": "f274f078d07d3745",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines expert routing as the process where a learnable router directs inputs to a subset of experts, which directly answers the aspect asking for a definition."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "156ebc90-6250-4178-9d80-94b9ecdf50df",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 3,
+   "partial": 3,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "LLM expert routing computes logits from each token's hidden state and selects the top‑K experts, with variants such as Switch Transformer (K=1), GShard/Mixtral/OLMoE (top‑K ≥ 2), and expert‑choice routing where experts pick tokens.",
+   "Current post‑hoc expert routing methods rely on prompt embeddings, handcrafted confidence measures, or multi‑model inference.",
+   "Expert routing uses a learned router that computes a probability distribution over experts and selects the top‑k experts per token."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "19e1e158-fbff-4e12-b8eb-e9e27aee9c65",
+     "claim_prefix": "LLM expert routing computes logits from each token's hidden state and selects th",
+     "quote_prefix": "The router maps each token's hidden state to a distribution over experts and sel",
+     "item_id": "0fa8b1bfa14633af",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote fully supports the claim by detailing the specific mechanisms (logits, top-K selection, expert-choice) and variants that explain how expert routing is implemented."
+    },
+    {
+     "source_id": "8393804f-8c89-4dd5-a8e6-9a5ab968ff24",
+     "claim_prefix": "Current post‑hoc expert routing methods rely on prompt embeddings, handcrafted c",
+     "quote_prefix": "Existing post-hoc routing methods instead rely on prompt embeddings, handcrafted",
+     "item_id": "4694d20066ea475d",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the three specific mechanisms (prompt embeddings, handcrafted confidence measures, multi-model inference) used in post-hoc expert routing, directly answering how it is implemented."
+    },
+    {
+     "source_id": "e31d9b08-9dd6-40a8-82f4-553c0940ebe7",
+     "claim_prefix": "Expert routing uses a learned router that computes a probability distribution ov",
+     "quote_prefix": "The router computes expert selection probabilities as ... In topk routing, the k",
+     "item_id": "e3a864a3efb79be2",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly describes the mechanism of expert routing (a learned router selecting top-k experts), which directly answers how it is implemented."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "bf7055b3-a202-4ef6-b47c-9e99c7f7a118",
+  "sub_question": "What is quantization and how does it affect large language models (LLMs)?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 6,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": true,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "bf7055b3-a202-4ef6-b47c-9e99c7f7a118",
+  "sub_question": "What is 4-bit precision and how does it differ from other precisions?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 1,
+   "no": 5,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "bf7055b3-a202-4ef6-b47c-9e99c7f7a118",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 5,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "8d6b666a-d90d-4b31-9a39-239df3a33751",
+     "claim_prefix": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+     "quote_prefix": "they frequently lead to significant accuracy degradation",
+     "item_id": "61f288c64aecfd71",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim that aggressive quantization leads to accuracy degradation, which directly answers the aspect regarding the trade-offs of 4-bit quantization."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "d76170ee-fc49-4d07-9c4f-a1446bf6ff0c",
+  "sub_question": "What is a large language model (LLM)?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 6,
+   "partial": 0,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "LLMs are large‑scale pretrained models that can perform a wide range of NLP tasks with high performance.",
+   "LLMs are large-scale, pre‑trained statistical language models built on neural networks.",
+   "LLMs are transformer‑based models that are pretrained on massive web‑scale text corpora.",
+   "LLMs are foundation models trained on massive data to understand and generate text.",
+   "LLMs are deep learning models that understand and generate human‑like text from vast amounts of textual data.",
+   "LLMs are transformer‑style deep‑learning models trained on massive internet text."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "16ee2a20-2f4c-488b-878c-b6707b0592f5",
+     "claim_prefix": "LLMs are large‑scale pretrained models that can perform a wide range of NLP task",
+     "quote_prefix": "The fourth stage of LM development involved the creation of large-scale pretrain",
+     "item_id": "241d67e026ab15a1",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines LLMs as large-scale pretraining models capable of performing various NLP tasks, which fully answers the aspect asking for a definition."
+    },
+    {
+     "source_id": "8972528b-916d-4bdc-997b-e1e6cf8bf770",
+     "claim_prefix": "LLMs are transformer‑style deep‑learning models trained on massive internet text",
+     "quote_prefix": "LLMs, also called 'transformers,' are built using deep-learning algorithms. They",
+     "item_id": "685946d9b7fb1da4",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines LLMs as transformer-based deep learning models trained on large internet text, which fully answers the aspect asking for a definition."
+    },
+    {
+     "source_id": "9e31e176-82f7-4a96-9378-f56198030cfd",
+     "claim_prefix": "LLMs are large-scale, pre‑trained statistical language models built on neural ne",
+     "quote_prefix": "LLMs are large-scale, pre-trained, statistical language models based on neural n",
+     "item_id": "6062ffcdb4763eea",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote provides a direct definition of LLMs that fully answers the aspect asking 'What is a large language model?'"
+    },
+    {
+     "source_id": "9e31e176-82f7-4a96-9378-f56198030cfd",
+     "claim_prefix": "LLMs are transformer‑based models that are pretrained on massive web‑scale text ",
+     "quote_prefix": "transformer-based large language models (LMs), pretrained on Web-scale text corp",
+     "item_id": "d5f1ce6a78de9ef3",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines LLMs as transformer-based models pretrained on massive text corpora, which directly answers the aspect asking for a definition."
+    },
+    {
+     "source_id": "adf02ef5-5fd2-486c-b4ff-b858c25bdcdb",
+     "claim_prefix": "LLMs are foundation models trained on massive data to understand and generate te",
+     "quote_prefix": "Large language models (LLMs) are foundation models that are trained on immense a",
+     "item_id": "3011805d47d424ff",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote fully supports the claim, which serves as a complete and accurate definition answering the aspect."
+    },
+    {
+     "source_id": "bc7fbbcc-b320-4b07-b518-943d283ac12c",
+     "claim_prefix": "LLMs are deep learning models that understand and generate human‑like text from ",
+     "quote_prefix": "At their core, LLMs are deep learning models designed to understand and generate",
+     "item_id": "257bcae87bb77230",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines LLMs as deep learning models for text generation, which fully answers the aspect asking for a definition."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "d76170ee-fc49-4d07-9c4f-a1446bf6ff0c",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 1,
+   "no": 3,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Logical reasoning for LLMs is defined as comprising deductive, inductive, and abductive reasoning.",
+   "Logical reasoning in LLMs is defined as integrating inference structuring to enable multistep deduction and abstraction, distinct from heuristic strategies."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "387100f7-88e5-4482-aae0-28ad4d6478c0",
+     "claim_prefix": "Logical reasoning for LLMs is defined as comprising deductive, inductive, and ab",
+     "quote_prefix": "According to the classical definition [18], logical reasoning can be mainly cate",
+     "item_id": "40789f16f9dfe920",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines logical reasoning by listing its three fundamental types, which directly answers the aspect asking for the definition of reasoning ability in LLMs."
+    },
+    {
+     "source_id": "9befc957-6586-4680-b673-b09cd115ee62",
+     "claim_prefix": "Logical reasoning in LLMs is defined as integrating inference structuring to ena",
+     "quote_prefix": "Logical reasoning integrates LLMs with inference structuring, enabling multistep",
+     "item_id": "b4c3b7c3aed2b491",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines logical reasoning in LLMs by describing its mechanism (integrating inference structuring) and capabilities (multistep deduction and abstraction), which fully answers the aspect asking for a definition."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "d76170ee-fc49-4d07-9c4f-a1446bf6ff0c",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 3,
+   "no": 2,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Four metrics—answer correctness, explanation correctness, explanation completeness, and explanation redundancy—are proposed to assess the intermediate reasoning process of LLMs."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "18febfa4-8de6-4da0-af06-41afcf5f6784",
+     "claim_prefix": "Four metrics—answer correctness, explanation correctness, explanation completene",
+     "quote_prefix": "Specifically, we introduce four evaluation metrics to reflect the intermediate r",
+     "item_id": "5420c8721b117ac7",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the four specific metrics mentioned in the claim, and the claim directly answers the aspect by providing the requested benchmarks."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "d76170ee-fc49-4d07-9c4f-a1446bf6ff0c",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 0,
+   "partial": 2,
+   "no": 4,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [],
+  "aspect_states": {
+   "0": []
+  }
+ },
+ {
+  "query_id": "7d7d1b7e-3c59-4ec6-a076-39c815d4f298",
+  "sub_question": "What are diffusion models and GANs?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 1,
+   "no": 4,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Both GANs and diffusion models are generative models used for image creation."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "54495062-2e95-4899-9961-fd9271813629",
+     "claim_prefix": "Both GANs and diffusion models are generative models used for image creation.",
+     "quote_prefix": "In the field of image generation, GANs, and Diffusion Models are two generative ",
+     "item_id": "47edbe9bc6bd62e7",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines both GANs and diffusion models as generative models used for image generation, which directly answers the aspect asking for their definitions."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "7d7d1b7e-3c59-4ec6-a076-39c815d4f298",
+  "sub_question": "What are the metrics or criteria for evaluating image generation quality and training stability?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 2,
+   "partial": 4,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Inception Score and Fréchet Inception Distance are the most commonly used objective metrics for evaluating image generation quality.",
+   "Precision measures fidelity (image quality) while recall measures diversity in generative models."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "6da40dd6-c9b7-42c8-9d49-97b35340d843",
+     "claim_prefix": "Inception Score and Fréchet Inception Distance are the most commonly used object",
+     "quote_prefix": "Among the most commonly used ones are Inception Score (IS) and Fréchet inception",
+     "item_id": "a85b02cfb1624411",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly identifies IS and FID as the most commonly used metrics, which directly answers the aspect asking for evaluation metrics."
+    },
+    {
+     "source_id": "7059fa4d-5603-457f-b26b-28608e71647a",
+     "claim_prefix": "Precision measures fidelity (image quality) while recall measures diversity in g",
+     "quote_prefix": "Recent papers (Sajjadi et al., 2018; Simon et al., 2019; Kynk¨ a¨ anniemi et al.",
+     "item_id": "f26a1ef85302fb47",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly defines precision and recall as the specific metrics for fidelity and diversity, directly answering the aspect's request for evaluation criteria."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "7d7d1b7e-3c59-4ec6-a076-39c815d4f298",
+  "sub_question": "How do diffusion models compare with GANs in terms of image generation quality?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 5,
+   "partial": 1,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Diffusion models now outperform GANs on benchmark image quality, achieving top‑notch performance.",
+   "Diffusion models generate higher‑quality images than GANs, offering more detail.",
+   "Diffusion models have recently outperformed GANs in overall image quality.",
+   "Diffusion models achieve high-fidelity images but incur higher computational cost than GANs.",
+   "Diffusion models produce finer detail and texture than GANs, improving image quality."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "1d4a6d2a-5b2e-49e4-a232-818743d789d7",
+     "claim_prefix": "Diffusion models achieve high-fidelity images but incur higher computational cos",
+     "quote_prefix": "while DMs iteratively denoise random noise into images, achieving high fidelity ",
+     "item_id": "fdad094ba27d3aa6",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms both the high fidelity and higher computational cost of diffusion models compared to GANs, providing a complete answer to the comparison aspect."
+    },
+    {
+     "source_id": "1d4a6d2a-5b2e-49e4-a232-818743d789d7",
+     "claim_prefix": "Diffusion models have recently outperformed GANs in overall image quality.",
+     "quote_prefix": "While Diffusion Models have recently surpassed GANs in image quality and are gai",
+     "item_id": "03db532bdbaaf7de",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly states that diffusion models have surpassed GANs in image quality, which fully supports the claim and answers the aspect regarding the comparison of their generation quality."
+    },
+    {
+     "source_id": "4e16463d-b2e0-4a16-929f-fa0437569e38",
+     "claim_prefix": "Diffusion models generate higher‑quality images than GANs, offering more detail.",
+     "quote_prefix": "Diffusion Models stand out for their ability to produce the highest quality imag",
+     "item_id": "1706cfb502dc0dc6",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly supports the claim that diffusion models produce higher quality images than GANs, and the claim serves as a complete, direct answer to the aspect asking for a comparison of image generation quality."
+    },
+    {
+     "source_id": "6ba670b2-c2c2-4351-8e82-c500b57f322c",
+     "claim_prefix": "Diffusion models produce finer detail and texture than GANs, improving image qua",
+     "quote_prefix": "Diffusion models employ a step-by-step noise reduction and denoising process. Th",
+     "item_id": "5240a56b6760be83",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly states that diffusion models provide better detail and texture than GANs, which directly supports the claim and answers the aspect regarding the comparison of image generation quality."
+    },
+    {
+     "source_id": "b6dd02d0-0087-4383-8573-aa98e2c553fd",
+     "claim_prefix": "Diffusion models now outperform GANs on benchmark image quality, achieving top‑n",
+     "quote_prefix": "diffusion models have primarily overtaken GANs, achieving top‑notch performance ",
+     "item_id": "c606c470097c7281",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms that diffusion models outperform GANs in benchmarks, which is the specific comparison requested by the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "7d7d1b7e-3c59-4ec6-a076-39c815d4f298",
+  "sub_question": "How do diffusion models compare with GANs in terms of training stability?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 4,
+   "partial": 2,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "GANs suffer from unstable training and pattern collapse, whereas diffusion models are more stable during training.",
+   "Diffusion Model is superior in terms of stability and controllability compared to GANs.",
+   "Diffusion models avoid adversarial training, which improves training stability and controllability, while GANs exhibit unstable training and pattern collapse.",
+   "GANs encounter training stability challenges."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "6eff0591-486e-4319-89fc-e4ab0ab5850b",
+     "claim_prefix": "Diffusion Model is superior in terms of stability and controllability compared t",
+     "quote_prefix": "Diffusion Model is superior in terms of stability and controllability, while GAN",
+     "item_id": "57856a14d2561f53",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly affirms the claim that diffusion models are superior to GANs in stability, which directly answers the aspect asking for a comparison of training stability."
+    },
+    {
+     "source_id": "6eff0591-486e-4319-89fc-e4ab0ab5850b",
+     "claim_prefix": "GANs suffer from unstable training and pattern collapse, whereas diffusion model",
+     "quote_prefix": "GANs ... face problems such as unstable training and pattern collapse [1,2]. Dif",
+     "item_id": "1b3cd164069cbd54",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim's comparison of training stability between GANs and diffusion models, which fully answers the aspect."
+    },
+    {
+     "source_id": "6eff0591-486e-4319-89fc-e4ab0ab5850b",
+     "claim_prefix": "Diffusion models avoid adversarial training, which improves training stability a",
+     "quote_prefix": "GANs suffer from the problems of unstable training, pattern crashes, and pattern",
+     "item_id": "f1d110ed1cb1f525",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly supports the claim's comparison of training stability between diffusion models and GANs, and the claim fully answers the aspect by explaining the mechanism (avoiding adversarial training) and the resulting stability differences."
+    },
+    {
+     "source_id": "b0219677-43e3-4186-95f2-3c36b7c057f9",
+     "claim_prefix": "GANs encounter training stability challenges.",
+     "quote_prefix": "GANs face challenges with training stability and diversity",
+     "item_id": "2d53b1b615406243",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim that GANs have training stability issues, which directly answers the aspect asking for a comparison regarding this specific challenge."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "fb587186-7af6-4bea-be1e-dbb0a10936ee",
+  "sub_question": "What is federated learning and how does it work?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 4,
+   "partial": 2,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Federated learning is a distributed machine‑learning framework where multiple clients collaborate under a central server without sharing their private data.",
+   "Federated learning is a decentralized training approach where many clients collaboratively train a shared model under a central server’s coordination while keeping data on the devices.",
+   "Federated Learning is a framework where many clients jointly train a model under a central server while keeping their data decentralized.",
+   "Federated learning trains algorithms across multiple devices using decentralized data without transferring the data to a central location."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "5efe4758-0562-4acb-8d49-666a3c4f09ef",
+     "claim_prefix": "Federated learning is a decentralized training approach where many clients colla",
+     "quote_prefix": "Federated learning (FL) is a machine learning setting where many clients (e.g. m",
+     "item_id": "cfdcbe812499f174",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote faithfully restates the claim and provides a complete definition of federated learning and its mechanism, directly answering the aspect."
+    },
+    {
+     "source_id": "a59d4f26-76ba-4a0d-a24e-fb7fda085b5e",
+     "claim_prefix": "Federated Learning is a framework where many clients jointly train a model under",
+     "quote_prefix": "Federated Learning (FL) is a machine learning framework where multiple clients, ",
+     "item_id": "8d04c89978db0609",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote provides a complete definition of federated learning and explains its mechanism, which directly answers the aspect."
+    },
+    {
+     "source_id": "bdc02d41-10e4-44ab-99b7-9ef06cd543ad",
+     "claim_prefix": "Federated learning is a distributed machine‑learning framework where multiple cl",
+     "quote_prefix": "Federated learning (FL) is a distributed machine learning (ML) framework. In FL,",
+     "item_id": "8859225b0c275f6d",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote fully supports the claim, which provides a complete definition of federated learning and explains its mechanism as requested by the aspect."
+    },
+    {
+     "source_id": "f9ee438e-dd83-4cd1-8f1a-a26e0cee2ce2",
+     "claim_prefix": "Federated learning trains algorithms across multiple devices using decentralized",
+     "quote_prefix": "FL is known as collaborative learning, where algorithm(s) get trained across mul",
+     "item_id": "c3d3f69e7ed5f56e",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly defines federated learning and explains its mechanism, which fully answers the aspect's question."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "fb587186-7af6-4bea-be1e-dbb0a10936ee",
+  "sub_question": "What are the privacy risks of federated learning?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 5,
+   "partial": 0,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": true,
+  "stored_sufficient": true,
+  "yes_claims": [
+   "Sharing model parameters and many communication rounds creates new privacy leakage risks in federated learning.",
+   "Inference attacks constitute a type of privacy leakage threat in federated learning.",
+   "Privacy attacks in federated learning include member inference, feature inference, attribute inference, and reconstruction attacks.",
+   "Federated learning is vulnerable to membership inference, property inference, and data reconstruction attacks.",
+   "A federated‑learning server that knows a client’s identity can link inferred private data to that real identity, causing a privacy breach."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "42976921-800f-4c63-9713-e2b919aa095a",
+     "claim_prefix": "Federated learning is vulnerable to membership inference, property inference, an",
+     "quote_prefix": "Recent works in membership inference, property inference, and even data reconstr",
+     "item_id": "0cd6e85cc21ad94e",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the specific privacy attacks mentioned in the claim, directly answering the question about privacy risks."
+    },
+    {
+     "source_id": "a1b52ec2-b1a4-4b50-b1fd-201af4ef24f7",
+     "claim_prefix": "Inference attacks constitute a type of privacy leakage threat in federated learn",
+     "quote_prefix": "Examples of attacks include data and model poisoning, backdoor attacks, and infe",
+     "item_id": "d668e43d36f827bc",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists inference attacks as an example of threats in federated learning, directly supporting the claim and answering the question about privacy risks."
+    },
+    {
+     "source_id": "a1b52ec2-b1a4-4b50-b1fd-201af4ef24f7",
+     "claim_prefix": "Sharing model parameters and many communication rounds creates new privacy leaka",
+     "quote_prefix": "To some extent, model parameters sharing combined with an increased number of co",
+     "item_id": "5efba7325402abb3",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim that parameter sharing and communication rounds create privacy risks, which directly answers the question about privacy risks in federated learning."
+    },
+    {
+     "source_id": "be188be7-f851-48b7-8a5d-ad2cd5d56709",
+     "claim_prefix": "Privacy attacks in federated learning include member inference, feature inferenc",
+     "quote_prefix": "the paper focuses on three categories of attacks: (1) Member inference; (2) feat",
+     "item_id": "026046d956591e5b",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the four categories of privacy attacks mentioned in the claim, and the claim correctly answers the aspect by enumerating these specific risks."
+    },
+    {
+     "source_id": "d79dae4a-7a37-451a-bf46-980b4f7fa169",
+     "claim_prefix": "A federated‑learning server that knows a client’s identity can link inferred pri",
+     "quote_prefix": "a record with private data inferred on a specific client could be associated to ",
+     "item_id": "af077c42d2d50807",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly confirms the claim that linking inferred data to a real identity causes a privacy breach, and this statement effectively answers the aspect by describing a specific privacy risk."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "fb587186-7af6-4bea-be1e-dbb0a10936ee",
+  "sub_question": "What are the defenses against privacy risks in federated learning?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 4,
+   "no": 1,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Defenses against privacy risks in federated learning include differential privacy, secure aggregation, homomorphic encryption, and trusted execution environments."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "da269e7b-f0da-41a8-939f-0c05cb79b67b",
+     "claim_prefix": "Defenses against privacy risks in federated learning include differential privac",
+     "quote_prefix": "provides a comprehensive discussion on the current privacy attack threats ... al",
+     "item_id": "e06e72da82fdee21",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote explicitly lists the specific defenses mentioned in the claim, and the claim provides a complete list of these defenses to answer the aspect."
+    }
+   ]
+  }
+ },
+ {
+  "query_id": "fb587186-7af6-4bea-be1e-dbb0a10936ee",
+  "sub_question": "How effective are the defenses against privacy risks in federated learning?",
+  "candidates": 6,
+  "verdicts": {
+   "yes": 1,
+   "partial": 5,
+   "no": 0,
+   "error": 0
+  },
+  "topic_covered": false,
+  "stored_sufficient": false,
+  "yes_claims": [
+   "Federated learning mitigates many systemic privacy risks compared to centralized machine learning."
+  ],
+  "aspect_states": {
+   "0": [
+    {
+     "source_id": "46934239-fadd-4958-a187-b97b7277f7e0",
+     "claim_prefix": "Federated learning mitigates many systemic privacy risks compared to centralized",
+     "quote_prefix": "FL embodies the principles of focused data collection and minimization, and can ",
+     "item_id": "55e7b8284c31d9aa",
+     "verdict": "yes",
+     "quote_supports_claim": "yes",
+     "answers_aspect": "yes",
+     "reason": "The quote directly supports the claim that FL mitigates privacy risks, and the claim effectively answers the aspect by stating the effectiveness of these defenses."
+    }
+   ]
+  }
+ }
+]

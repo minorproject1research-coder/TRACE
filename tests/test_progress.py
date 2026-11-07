@@ -200,14 +200,14 @@ def test_papers_node_reports_every_step_including_parsing_rounds(monkeypatch, se
 def test_summarizer_reports_digest_progress_from_worker_threads(monkeypatch, seen):
     sub_questions = [SimpleNamespace(id=f"s{i}", main_topic=f"Topic {i}?", detail_questions=["d"]) for i in range(2)]
     monkeypatch.setattr(sn.detail_aspects, "flatten_aspects", lambda details, sq_id, topic: (["a1"], {"a1": "d"}))
-    monkeypatch.setattr(sn.detail_aspects, "with_topic_aspect", lambda a, m, d, t: (a + ["t"], m, d))
+    monkeypatch.setattr(sn.detail_aspects, "with_topic_aspect", lambda a, m, d, t, enabled=None: (a + ["t"], m, d))
     monkeypatch.setattr(sn.detail_aspects, "merge_mode", lambda: "x")
     monkeypatch.setattr(sn.db_service, "get_papers_for_stage3", lambda qid, sq_id: [{"id": f"{sq_id}-p{i}", "title": "P", "combined_score": 0.8, "has_full_text": True} for i in range(3)])
     monkeypatch.setattr(sn.db_service, "get_web_sources_for_stage3", lambda sq_id: [{"id": f"{sq_id}-w", "title": "W", "snippet": "x" * 300, "reliability_score": 0.4}])
     monkeypatch.setattr(sn.chunk_selector, "build_chunks", lambda p: [])
     monkeypatch.setattr(sn.chunk_selector, "select_chunks", lambda *a, **k: [(0, "text")])
     monkeypatch.setattr(sn.digest_generator, "generate_digest", lambda *a, **k: [{"claim": "c", "quote": "q", "verified": True, "stance": "supports"}])
-    monkeypatch.setattr(sn.evidence_judge, "run_judge_for_subquestion", lambda aspects, rows, lookup: ([], {}))
+    monkeypatch.setattr(sn.evidence_judge, "run_judge_for_subquestion", lambda aspects, rows, lookup, **kw: ([], {}))
     monkeypatch.setattr(sn.coverage_check, "check_coverage_judged", lambda *a, **k: {"sufficient": True, "judge_used": True, "judge_stats": {}, "uncovered_aspects": []})
     written = {}
     monkeypatch.setattr(sn.db_service, "write_digests", lambda rows: written.setdefault("digests", rows))

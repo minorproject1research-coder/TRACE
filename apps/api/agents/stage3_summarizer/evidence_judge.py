@@ -78,8 +78,13 @@ def select_candidates(
     digests: List[Dict],
     chunk_lookup: Dict[str, str],
     embedder=None,
+    topic_aspect_idx: Optional[int] = None,
 ) -> List[Dict]:
     """
+    topic_aspect_idx: index of the sub-question's own question when it is judged as an aspect (TOPIC_ASPECT=judge). No finding is tagged
+    for it (the digest prompt never saw it), so its candidates are the JUDGE_CANDIDATES_PER_ASPECT most similar verified findings
+    instead of the JUDGE_EXTRA_BY_SIM extras of the other aspects.
+
     Per aspect, collect VERIFIED findings tagged for that aspect (any strength),
     plus top JUDGE_EXTRA_BY_SIM verified findings by embedding similarity to the
     aspect text among findings NOT already included. Dedupe, rank by similarity,
@@ -166,7 +171,8 @@ def select_candidates(
 
         # Sort by similarity descending, take top JUDGE_EXTRA_BY_SIM
         extras.sort(key=lambda x: x[0], reverse=True)
-        for sim, vf_idx, source_id, claim, quote, chunk_id, d_idx, f_idx in extras[:config["JUDGE_EXTRA_BY_SIM"]]:
+        n_extra = config["JUDGE_CANDIDATES_PER_ASPECT"] if aspect_idx == topic_aspect_idx else config["JUDGE_EXTRA_BY_SIM"]
+        for sim, vf_idx, source_id, claim, quote, chunk_id, d_idx, f_idx in extras[:n_extra]:
             used_per_aspect[aspect_idx].add((source_id, f_idx))
             candidates.append({
                 "aspect_idx": aspect_idx,
@@ -497,6 +503,7 @@ def run_judge_for_subquestion(
     digests: List[Dict],
     chunk_lookup: Dict[str, str],
     embedder=None,
+    topic_aspect_idx: Optional[int] = None,
 ) -> Tuple[List[Dict], Dict[Tuple[int, str, str], Dict]]:
     """
     Full pipeline: select candidates -> build items -> judge -> write verdicts.
@@ -505,7 +512,7 @@ def run_judge_for_subquestion(
     if not aspects or not digests:
         return [], {}
 
-    candidates = select_candidates(aspects, digests, chunk_lookup, embedder)
+    candidates = select_candidates(aspects, digests, chunk_lookup, embedder, topic_aspect_idx=topic_aspect_idx)
     if not candidates:
         logger.info("No candidates for judge")
         return [], {}

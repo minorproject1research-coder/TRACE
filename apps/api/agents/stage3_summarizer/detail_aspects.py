@@ -280,7 +280,21 @@ def topic_aspect_enabled() -> bool:
     model returned 1.50 findings per digest instead of 4.25 (-65%, same 6 sources, same chunks, each condition run twice; repeat spread 0.5;
     tests/topic_aspect_digest_experiment.py), and the first run through the API had 0 of 5 sub-questions sufficient against 4 of 5. The idea
     (judge the topic) is kept; the way it is wired is not: it should reach the judge and the coverage rule only, not the digest prompt."""
-    return os.getenv("TOPIC_ASPECT", "false").strip().lower() in ("1", "true", "yes", "on")
+    return topic_aspect_mode() == "all"
+
+
+def topic_aspect_mode() -> str:
+    """TOPIC_ASPECT: 'off' (default), 'all' (true: digest prompt, chunk selection and judge), or 'judge' (planned item B2: the judge and the
+    coverage rule only; the aspect list of the chunk selection and of the digest prompt stays as it is)."""
+    v = os.getenv("TOPIC_ASPECT", "false").strip().lower()
+    if v == "judge":
+        return "judge"
+    return "all" if v in ("1", "true", "yes", "on") else "off"
+
+
+def topic_aspect_for_judge() -> bool:
+    """Whether the judge and the coverage rule see the sub-question as an aspect ('all' or 'judge' mode)."""
+    return topic_aspect_mode() in ("all", "judge")
 
 
 def run_topic_aspect(coverage_row: Optional[Dict]) -> bool:

@@ -164,7 +164,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
         )
         n_before = len(aspects)
         aspects, aspect_to_detail, details_for_coverage = detail_aspects.with_topic_aspect(
-            aspects, aspect_to_detail, sq.detail_questions, sq.main_topic)     # same aspects as in step 1
+            aspects, aspect_to_detail, sq.detail_questions, sq.main_topic,
+            enabled=detail_aspects.topic_aspect_for_judge())     # TOPIC_ASPECT=all: same aspects as in step 1; =judge: one more than in step 1
         topic_aspect_used = len(aspects) > n_before
         
         # Build chunk_lookup for judge context
@@ -181,7 +182,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
         has_verified = any(f.get("verified") for r in rows for f in r.get("findings", []))
         if has_verified and aspects:
             candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
-                aspects, rows, chunk_lookup
+                aspects, rows, chunk_lookup, topic_aspect_idx=len(aspects) - 1 if topic_aspect_used else None
             )
         
         # Judge-based coverage with fallback
