@@ -1,0 +1,300 @@
+[
+ {
+  "query": "bf7055",
+  "sub_question": 2,
+  "aspect_idx": 0,
+  "label": "A",
+  "aspect": "How does 4-bit precision affect the representation of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "no": 1,
+   "partial": 3,
+   "yes": 2
+  },
+  "control": {
+   "no": 1,
+   "partial": 3,
+   "yes": 2
+  },
+  "effect": {
+   "partial": 1,
+   "yes": 5
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 2,
+  "aspect_idx": 1,
+  "label": "A",
+  "aspect": "How does 4-bit precision affect the computation of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "partial": 3,
+   "yes": 1,
+   "no": 2
+  },
+  "control": {
+   "partial": 3,
+   "yes": 1,
+   "no": 2
+  },
+  "effect": {
+   "partial": 1,
+   "yes": 4,
+   "no": 1
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 2,
+  "aspect_idx": 2,
+  "label": "A",
+  "aspect": "How does 4-bit precision affect the accuracy of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "yes": 2,
+   "partial": 2,
+   "no": 2
+  },
+  "control": {
+   "yes": 2,
+   "partial": 2,
+   "no": 2
+  },
+  "effect": {
+   "yes": 4,
+   "no": 2
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 2,
+  "aspect_idx": 3,
+  "label": "A",
+  "aspect": "How does 4-bit precision affect the performance of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "yes": 2,
+   "partial": 3,
+   "no": 1
+  },
+  "control": {
+   "yes": 3,
+   "partial": 2,
+   "no": 1
+  },
+  "effect": {
+   "yes": 6
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 0,
+  "label": "A",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?",
+  "pairs": 6,
+  "stored": {
+   "no": 3,
+   "yes": 1,
+   "partial": 2
+  },
+  "control": {
+   "no": 3,
+   "yes": 1,
+   "partial": 2
+  },
+  "effect": {
+   "no": 2,
+   "partial": 3,
+   "yes": 1
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 1,
+  "label": "A",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect inference speed and latency?",
+  "pairs": 6,
+  "stored": {
+   "partial": 3,
+   "no": 3
+  },
+  "control": {
+   "partial": 3,
+   "no": 3
+  },
+  "effect": {
+   "yes": 3,
+   "no": 3
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 2,
+  "label": "A",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+  "pairs": 6,
+  "stored": {
+   "partial": 5,
+   "no": 1
+  },
+  "control": {
+   "partial": 5,
+   "no": 1
+  },
+  "effect": {
+   "partial": 3,
+   "no": 1,
+   "yes": 2
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 3,
+  "label": "U",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?",
+  "pairs": 2,
+  "stored": {
+   "no": 2
+  },
+  "control": {
+   "no": 2
+  },
+  "effect": {
+   "no": 1,
+   "partial": 1
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 4,
+  "label": "A",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+  "pairs": 3,
+  "stored": {
+   "no": 1,
+   "partial": 1,
+   "yes": 1
+  },
+  "control": {
+   "no": 1,
+   "partial": 1,
+   "yes": 1
+  },
+  "effect": {
+   "yes": 2,
+   "partial": 1
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 5,
+  "label": "U",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the security of LLMs?",
+  "pairs": 2,
+  "stored": {
+   "no": 2
+  },
+  "control": {
+   "no": 2
+  },
+  "effect": {
+   "yes": 1,
+   "partial": 1
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 6,
+  "label": "?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+  "pairs": 2,
+  "stored": {
+   "partial": 2
+  },
+  "control": {
+   "partial": 2
+  },
+  "effect": {
+   "yes": 2
+  }
+ },
+ {
+  "query": "bf7055",
+  "sub_question": 3,
+  "aspect_idx": 7,
+  "label": "U",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?",
+  "pairs": 3,
+  "stored": {
+   "partial": 1,
+   "no": 2
+  },
+  "control": {
+   "partial": 1,
+   "no": 2
+  },
+  "effect": {
+   "yes": 3
+  }
+ },
+ {
+  "query": "d76170",
+  "sub_question": 3,
+  "aspect_idx": 2,
+  "label": "A",
+  "aspect": "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "partial": 4,
+   "no": 2
+  },
+  "control": {
+   "partial": 5,
+   "no": 1
+  },
+  "list1": {
+   "partial": 3,
+   "no": 2,
+   "yes": 1
+  },
+  "list2": {
+   "partial": 2,
+   "no": 2,
+   "yes": 2
+  }
+ },
+ {
+  "query": "d76170",
+  "sub_question": 3,
+  "aspect_idx": 3,
+  "label": "A",
+  "aspect": "What are the existing metrics for evaluating the reasoning ability of LLMs?",
+  "pairs": 6,
+  "stored": {
+   "partial": 4,
+   "no": 2
+  },
+  "control": {
+   "partial": 4,
+   "no": 2
+  },
+  "list1": {
+   "yes": 1,
+   "partial": 2,
+   "no": 3
+  },
+  "list2": {
+   "yes": 1,
+   "partial": 2,
+   "no": 3
+  }
+ }
+]

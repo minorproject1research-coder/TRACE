@@ -58,3 +58,18 @@ A real test needs the same findings judged under two wordings of the same aspect
 1. A1: R1 becomes the default triage for Loop 2, marked unvalidated, with its yield measured (A4). The "off-question sub-question" case moves to B3.
 2. B1: needs the re-judge experiment above before any change to aspect wording or judge prompt; nothing was changed.
 3. The label file and the rule table are the only A1 artifacts; the labels are LLM labels (known limit 5.1) and the B10 human-labeled subset would settle R1 versus R4.
+
+## B1, second part: the same findings judged under reworded aspects (tests/aspect_wording_experiment.py, 2026-11-07)
+
+Stored pairs of 14 aspects of Q3 (12 "how does 4-bit affect X" aspects) and Q4 (the two "existing benchmarks / metrics" aspects), 66 pairs, judged again with the real judge-v2, same findings, quotes and passages, only the aspect text changed. Wordings and the pass rule were written before the run (see the script). Labels A/U from the table above.
+
+| Check | Result |
+|---|---|
+| Control (original wording) reproduces the stored verdict | 64 of 66 pairs (97%); the judge is almost, not exactly, deterministic (one aspect moved by one pair between two runs) |
+| "What is reported about X of LLMs quantized to 4-bit precision?" on the A-labeled effect aspects | "yes" 10 -> 27 of 51 pairs |
+| The same wording on the U-labeled aspects (diversity, security, interoperability) | "yes" 0 -> 4 of 7 pairs; **fails the rule (at most +1)** |
+| List aspects, "Which benchmarks / metrics are used ...?" | "yes" 0 -> 2; with "(each one that a source uses is an answer)" 0 -> 3 of 12 pairs (rule passes, but the sample is 12 pairs and the judge moves by 1 to 2 pairs between runs) |
+
+Reading the 4 "yes" on the invented aspects: the reworded judge accepts "4-bit FP4 halves memory usage and gives a 2 to 3 times speedup" as an answer to "what is reported about the SECURITY of 4-bit LLMs" and "4-bit quantization lacks out-of-the-box hardware support" as an answer about INTEROPERABILITY. So the "what is reported about" wording does not find the evidence that exists, it makes the judge accept anything about the topic. That raises the covered share of the answerable aspects (27 versus 10 yes) and also of the aspects nobody can answer, which is the opposite of what the judge is for.
+
+Decision: do not reword effect aspects this way; nothing changed in the pipeline. The list wording is the only one that passed its rule; it is a candidate to test again with more list aspects (needs the B10 labeled subset, because the judge's noise is the size of the effect). The explanation by wording stands as a hypothesis for the covered share (86% versus 23%), but this experiment shows the lever is dangerous: loosening the aspect loosens the judge for every aspect.
