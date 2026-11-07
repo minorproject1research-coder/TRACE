@@ -1,6 +1,11 @@
+import logging
+import os
+
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 from apps.api.agents.stage4_factcheck.common import nli_probs, doc_key
-from apps.api.agents.stage4_factcheck.judge import judge_support, judge_same_claim
+from apps.api.agents.stage4_factcheck.judge import judge_support, judge_same_claim, run_parallel
+
+logger = logging.getLogger("apps.api.agents.stage4_factcheck")
 
 try:
     from apps.api.agents.stage3_summarizer.coverage_check import EVIDENCE_WEIGHT
@@ -10,17 +15,23 @@ except ImportError:
 CLUSTER_CAND_SIM = 0.80      # claims at least this similar are merge candidates
 CLUSTER_AUTO_SIM = 0.95      # near-identical wording: merge without asking the judge
 CLUSTER_SIM = CLUSTER_CAND_SIM   # kept so older scripts that print it still work
-MAX_MERGE_JUDGE = 300        # cap judge calls for merging per sub-question
+MAX_MERGE_JUDGE = int(os.getenv("STAGE4_MAX_MERGE_JUDGE", "300"))      # cap judge calls for merging per sub-question
 
 ENTAIL_MIN = 0.50            # NLI entailment needed for a quote to count as support
 SUPPORT_JUDGE_MIN = 0.70     # judge confidence needed to accept a quote that NLI rejected
-MAX_SUPPORT_JUDGE = 150      # cap judge calls for support checks per sub-question
+MAX_SUPPORT_JUDGE = int(os.getenv("STAGE4_MAX_SUPPORT_JUDGE", "150"))  # cap judge calls for support checks per sub-question
 
 MIN_EVIDENCE = 1.5           # "supported" needs this much evidence weight over distinct documents
 
 
+def _stage3_supports(finding: dict) -> bool:
+    """Stage 3's independent judge (judge-v2, with the surrounding passage) already said "yes, the quote supports the claim" for this finding
+    (for some aspect; support of the claim by its own quote does not depend on the aspect)."""
+    return any(isinstance(j, dict) and j.get("quote_supports_claim") == "yes" for j in (finding.get("judge") or {}).values())
+
+
 def load_claims(digests: list[dict]) -> list[dict]:
-    claims = []
+    claims, seen = [], set()
     for d in digests:
         level = d.get("evidence_level") or "full_text"   # older rows without a level count as full text
         ev = EVIDENCE_WEIGHT.get(level, 1.0)
@@ -30,6 +41,10 @@ def load_claims(digests: list[dict]) -> list[dict]:
                 continue
             if not f.get("claim") or not f.get("quote"):
                 continue
+            key = (str(d["source_id"]), " ".join(f["claim"].lower().split()))
+            if key in seen:                  # Loop 2 may read the same source again and find the same statement: it counts once
+                continue
+            seen.add(key)
             claims.append({
                 "claim": f["claim"],
                 "quote": f["quote"],
@@ -40,21 +55,36 @@ def load_claims(digests: list[dict]) -> list[dict]:
                 "evidence_level": level,
                 "ev": ev,
                 "weight": round(rel * ev, 3),
+                "stage3_support": _stage3_supports(f),
             })
     return claims
 
 
 def build_clusters(claims: list[dict]) -> list[dict]:
-    """Greedy clustering, strongest claim first. Embeddings propose merges, the judge confirms."""
+    """Greedy clustering, strongest claim first. Embeddings propose merges, the judge confirms.
+
+    The result is the same as asking the judge one candidate at a time: the (up to 3) candidate clusters of a claim are judged side by side
+    and then looked at in order, the first one that is the same claim wins, and the budget is charged only for the candidates that the
+    sequential version would have asked about. A representative claim never changes, so a judged pair does not depend on thread order."""
     if not claims:
         return []
     emb = get_embedder().encode([c["claim"] for c in claims], normalize_embeddings=True)
     order = sorted(range(len(claims)), key=lambda i: claims[i]["weight"], reverse=True)
 
-    clusters, budget = [], MAX_MERGE_JUDGE
+    clusters, budget, skipped_for_budget = [], MAX_MERGE_JUDGE, 0
     for i in order:
         cands = sorted(((float(emb[i] @ c["emb"]), k) for k, c in enumerate(clusters)), reverse=True)
         cands = [(s, k) for s, k in cands if s >= CLUSTER_CAND_SIM][:3]
+
+        # which candidates need the judge (an auto-merge before them makes the later ones irrelevant)
+        ask = []
+        for s, k in cands:
+            if s >= CLUSTER_AUTO_SIM:
+                break
+            if claims[i]["doc"] in {m["doc"] for m in clusters[k]["members"]}:
+                continue                  # same document adds no new support, so no judge call
+            ask.append(k)
+        answers = dict(zip(ask, run_parallel(judge_same_claim, [(clusters[k]["claim"], claims[i]["claim"]) for k in ask])))
 
         placed = False
         for s, k in cands:
@@ -62,38 +92,61 @@ def build_clusters(claims: list[dict]) -> list[dict]:
             if s >= CLUSTER_AUTO_SIM:
                 same = True
             elif claims[i]["doc"] in {m["doc"] for m in c["members"]}:
-                same = False      # same document adds no new support, so skip the judge call
+                same = False
             elif budget > 0:
                 budget -= 1
-                same = judge_same_claim(c["claim"], claims[i]["claim"])
+                same = answers.get(k, False)
             else:
                 same = False
+                skipped_for_budget += 1
             if same:
                 c["members"].append(claims[i])
                 placed = True
                 break
         if not placed:
             clusters.append({"claim": claims[i]["claim"], "emb": emb[i], "members": [claims[i]]})
+    if skipped_for_budget:
+        logger.warning("Stage 4: the merge judge budget (%d) ran out; %d candidate pair(s) were not judged and stay separate clusters",
+                       MAX_MERGE_JUDGE, skipped_for_budget)
     return clusters
 
 
 def verify_support(clusters: list[dict]) -> list[dict]:
     """A member counts as support when its quote supports its OWN claim.
     The merge step already confirmed that its claim states the same proposition as the cluster's.
-    NLI is the fast path; quotes NLI does not accept are re-checked by the judge."""
-    budget = MAX_SUPPORT_JUDGE
-    for c in clusters:
-        probs = nli_probs([(m["quote"], m["claim"]) for m in c["members"]])
+    NLI is the fast path; quotes NLI does not accept are re-checked by the judge (calls run side by side; the budget is charged in the
+    order the members are met, so which members get a re-check does not depend on timing)."""
+    # members whose quote the Stage 3 judge already found to support the claim need neither NLI nor a Groq call
+    pending = [m for c in clusters for m in c["members"] if not m.get("stage3_support")]
+    probs = iter(nli_probs([(m["quote"], m["claim"]) for m in pending]))
+    ACCEPTED = {"entailment": 1.0, "contradiction": 0.0, "neutral": 0.0, "stage3": True}
+    scored = [[(m, ACCEPTED if m.get("stage3_support") else next(probs)) for m in c["members"]] for c in clusters]
+
+    budget, asks, skipped = MAX_SUPPORT_JUDGE, [], 0
+    for ci, members in enumerate(scored):
+        for mi, (m, p) in enumerate(members):
+            if p["entailment"] < ENTAIL_MIN and p["contradiction"] < 0.5:
+                if budget > 0:
+                    budget -= 1
+                    asks.append((ci, mi))
+                else:
+                    skipped += 1
+    answers = dict(zip(asks, run_parallel(judge_support, [(scored[ci][mi][0]["claim"], scored[ci][mi][0]["quote"]) for ci, mi in asks])))
+    for ci, (c, members) in enumerate(zip(clusters, scored)):
         support = []
-        for m, p in zip(c["members"], probs):
-            if p["entailment"] >= ENTAIL_MIN:
+        for mi, (m, p) in enumerate(members):
+            if p.get("stage3"):
+                support.append({**m, "relation": "supports", "prob": 0.95, "via": "stage3_judge"})
+            elif p["entailment"] >= ENTAIL_MIN:
                 support.append({**m, "relation": "supports", "prob": p["entailment"]})
-            elif p["contradiction"] < 0.5 and budget > 0:
-                budget -= 1
-                v = judge_support(m["claim"], m["quote"])
+            elif (ci, mi) in answers:
+                v = answers[(ci, mi)]
                 if v["supports"] and v["confidence"] >= SUPPORT_JUDGE_MIN:
                     support.append({**m, "relation": "supports", "prob": v["confidence"]})
         c["support"] = support
+    if skipped:
+        logger.warning("Stage 4: the support judge budget (%d) ran out; %d quote(s) NLI did not accept were not re-checked and do not count as support",
+                       MAX_SUPPORT_JUDGE, skipped)
     return clusters
 
 
@@ -140,7 +193,7 @@ def label_clusters(clusters: list[dict], conflicts: dict[int, list[dict]]) -> li
             "evidence": [
                 {"source_id": e["source_id"], "source_title": e["source_title"], "quote": e["quote"],
                  "relation": e["relation"], "reliability": e["reliability"],
-                 "evidence_level": e["evidence_level"], "prob": round(e["prob"], 3)}
+                 "evidence_level": e["evidence_level"], "prob": round(e["prob"], 3), "via": e.get("via")}
                 for e in sup + con
             ],
         })

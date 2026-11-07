@@ -16,7 +16,7 @@ from typing import Callable, Optional
 
 logger = logging.getLogger("apps.api.progress")
 
-LANES = ("papers", "web", "summarizer")
+LANES = ("papers", "web", "summarizer", "factcheck")
 STATES = ("running", "completed", "skipped", "failed")
 
 Sink = Callable[[dict], None]

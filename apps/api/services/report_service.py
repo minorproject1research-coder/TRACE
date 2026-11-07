@@ -15,10 +15,13 @@ from apps.api.services.db_service import supabase
 logger = logging.getLogger("apps.api.report_service")
 
 GENERATION_WINDOW_S = 180          # rows written by one Stage 3 run share (almost) the same created_at; a rerun of Stage 3 writes new rows
-NOT_RUN = ("factcheck", "report")
+NOT_RUN = ("report",)
+FACTCHECK_OFF = ("Stage 4 (fact checking) did not run for this report: findings are verified only in the sense that their quote was found in the source, "
+                 "and judged by an independent model against the aspect they should answer. Nothing checks across sources that a claim is true.")
+FACTCHECK_ON = ("Stage 4 compared the claims across sources. \"Supported\" means two independent documents state the claim; \"unverified\" means it rests on one "
+                "document, which says nothing about whether it is false; \"contradicted\" means a source asserts the opposite. The checks are automatic "
+                "(language models), not reviewed by a person, and their thresholds have not been tuned on a large labeled set.")
 LIMITATIONS = [
-    "Stage 4 (fact checking) is not part of the pipeline yet: findings are verified only in the sense that their quote was found in the source, "
-    "and judged by an independent model against the aspect they should answer. Nothing checks that a claim is true.",
     "Stage 5 (the written report) is not built: this is the collected evidence, not an answer.",
     "Retrieval can only reach what the sources expose: papers behind publisher bot protection or without an open copy are read as abstracts or not at all.",
 ]
@@ -80,7 +83,9 @@ def session_from_db(query_id: str) -> Optional[dict]:
     covs = supabase.table("coverage_results").select("sub_question_id").eq("query_id", query_id).execute().data
     done = bool(sqs) and {c["sub_question_id"] for c in covs} >= {s["id"] for s in sqs}
     stages = {"planner": "completed" if sqs else "failed", "retrieval": "completed" if done else "unknown",
-              "summarizer": "completed" if done else "unknown", "factcheck": "not_built", "report": "not_built"}
+              "summarizer": "completed" if done else "unknown", "factcheck": "not_run", "report": "not_built"}
+    if done and supabase.table("fact_claims").select("id").eq("query_id", query_id).limit(1).execute().data:
+        stages["factcheck"] = "completed"
     return {"id": query_id, "question": rq[0]["raw_query"], "status": "completed" if done else "failed", "createdAt": rq[0].get("created_at"),
             "startedAt": None, "finishedAt": None, "error": None if done else "The run did not finish (the server restarted or the run was stopped).",
             "stages": stages}
@@ -137,6 +142,25 @@ def _loop2_view(cov: dict) -> Optional[dict]:
                          "steps": _as_list(a.get("steps"))}
                         for t, a in aspects.items() if isinstance(a, dict)],
             "knownGaps": [t for t, a in aspects.items() if isinstance(a, dict) and str(a.get("status", "")).startswith("known_gap")]}
+
+
+LABEL_ORDER = {"contradicted": 0, "supported": 1, "unverified": 2}
+
+
+def _fact_check_view(claims: list[dict], disagreements: list[dict]) -> dict:
+    """Stage 4 result of one sub-question: counts, the checked claims (contradicted first, then supported, then unverified) and the disagreements."""
+    rows = []
+    for c in claims:
+        rows.append({"claim": c.get("claim"), "label": c.get("label"), "confidence": c.get("confidence"),
+                     "supportDocCount": c.get("support_doc_count"), "contraDocCount": c.get("contra_doc_count"), "contested": bool(c.get("contested")),
+                     "evidence": [{"sourceId": e.get("source_id"), "sourceTitle": e.get("source_title"), "quote": e.get("quote"), "relation": e.get("relation"),
+                                   "reliability": e.get("reliability"), "evidenceLevel": e.get("evidence_level"), "prob": e.get("prob")}
+                                  for e in _as_list(c.get("evidence")) if isinstance(e, dict)]})
+    rows.sort(key=lambda r: (LABEL_ORDER.get(r["label"], 3), not r["contested"], -(r["confidence"] or 0)))
+    return {"counts": {l: sum(1 for r in rows if r["label"] == l) for l in LABEL_ORDER} | {"contested": sum(1 for r in rows if r["contested"])},
+            "claims": rows,
+            "disagreements": [{"claimA": d.get("claim_a"), "claimB": d.get("claim_b"), "sourceATitle": d.get("source_a_title"), "sourceBTitle": d.get("source_b_title"),
+                               "quoteA": d.get("quote_a"), "quoteB": d.get("quote_b"), "prob": d.get("prob"), "reason": d.get("reason")} for d in disagreements]}
 
 
 def _aspect_rows(aspects: Optional[list[str]], cov: dict) -> list[dict]:
@@ -199,14 +223,19 @@ def build_report(query_id: str) -> Optional[dict]:
     papers = {str(p["id"]): p for p in _select("retrieved_papers", "id", [d["source_id"] for d in digests if d.get("source_type") == "paper"])}
     webs = {str(w["id"]): w for w in _select("web_sources", "id", [d["source_id"] for d in digests if d.get("source_type") != "paper"])}
 
-    sub_questions, limitations = [], list(LIMITATIONS)
+    fact_rows = _select("fact_claims", "sub_question_id", sq_ids)
+    contra_rows = _select("contradictions", "sub_question_id", sq_ids)
+    fact_ran = bool(fact_rows)
+    sub_questions, limitations = [], ([FACTCHECK_ON] if fact_ran else [FACTCHECK_OFF]) + list(LIMITATIONS)
     for sq in sqs:
         cov = covs.get(sq["id"])
         mine = [d for d in digests if d["sub_question_id"] == sq["id"]]
         details = _as_list(sq.get("detail_questions"))
         view: dict = {"id": sq["id"], "topic": sq["main_topic"], "detailQuestions": details,
                       "sources": [_source_view(d, papers, webs) for d in sorted(mine, key=lambda d: -(d.get("weight") or 0))],
-                      "coverage": None}
+                      "coverage": None,
+                      "factCheck": _fact_check_view([r for r in fact_rows if r["sub_question_id"] == sq["id"]],
+                                                    [r for r in contra_rows if r["sub_question_id"] == sq["id"]]) if fact_ran else None}
         if cov:
             aspects = _cached_aspects(details, sq["id"], sq["main_topic"], cov)
             view["coverage"] = {"sufficient": bool(cov.get("sufficient")), "judgeUsed": cov.get("judge_used"), "sourceCount": cov.get("source_count"),
@@ -223,14 +252,19 @@ def build_report(query_id: str) -> Optional[dict]:
                     limitations.append(f"Covered by combining findings of several sources, not by one source: {a.get('text')}")
         else:
             limitations.append(f"Stage 3 did not finish for: {sq['main_topic']}")
+        for d in (view["factCheck"] or {}).get("disagreements") or []:
+            limitations.append(f"Sources disagree ({sq['main_topic']}): \"{d['claimA']}\" versus \"{d['claimB']}\"")
         sub_questions.append(view)
 
     done = [s for s in sub_questions if s["coverage"]]
     return {"id": query_id, "question": rq[0]["raw_query"], "createdAt": rq[0].get("created_at"),
             "stages": {"planner": "completed" if sqs else "unknown", "retrieval": "completed" if sqs else "unknown",
-                       "summarizer": "completed" if sqs and len(done) == len(sqs) else "incomplete", **{s: "not_built" for s in NOT_RUN}},
+                       "summarizer": "completed" if sqs and len(done) == len(sqs) else "incomplete", "factcheck": "completed" if fact_ran else "not_run",
+                       **{s: "not_built" for s in NOT_RUN}},
             "totals": {"subQuestions": len(sqs), "subQuestionsSufficient": sum(1 for s in done if s["coverage"]["sufficient"]),
                        "sources": sum(len(s["sources"]) for s in sub_questions),
                        "findings": sum(f for s in sub_questions for src in s["sources"] for f in [len(src["findings"])]),
-                       "findingsQuoteFound": sum(1 for s in sub_questions for src in s["sources"] for f in src["findings"] if f["quoteFound"])},
+                       "findingsQuoteFound": sum(1 for s in sub_questions for src in s["sources"] for f in src["findings"] if f["quoteFound"]),
+                       "factChecked": ({l: sum(1 for r in fact_rows if r["label"] == l) for l in LABEL_ORDER} | {"contested": sum(1 for r in fact_rows if r.get("contested"))}
+                                       if fact_ran else None)},
             "subQuestions": sub_questions, "limitations": limitations}

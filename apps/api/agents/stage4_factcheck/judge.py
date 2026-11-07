@@ -1,9 +1,133 @@
-import logging
+"""The three LLM judges of Stage 4. Every one FAILS CLOSED: any error means "no conflict", "does not support", "not the same", so a judge
+failure can never create a conflict, a support or a merge (handoff report section 11; keep this).
 
+Answers are cached on disk (STAGE4_CACHE, default on, .cache/stage4_judge): a rerun of Stage 4 on the same claims gives the same labels and
+costs no LLM calls, which matters because the free Groq quota is the scarce resource. A failed call is never cached, only a parsed reply.
+`run_parallel` runs independent judge calls on a few threads (STAGE4_WORKERS, default 4) and returns the results in input order, so the
+outcome never depends on which thread finished first.
+"""
+import hashlib
+import json
+import logging
+import os
+import tempfile
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Callable, Sequence, TypeVar
+
+from apps.api.services import llm_service
 from apps.api.services.llm_service import squeezer_json
 
 logger = logging.getLogger("apps.api.agents.stage4_factcheck")
+T = TypeVar("T")
 
+
+# ------------------------------------------------------------------------------------------------------------ counters + breaker
+class JudgeUnavailable(Exception):
+    """The judge model is rate limited for good (a daily Groq limit) or was just found to be: the call is not even tried."""
+
+
+_lock = threading.Lock()
+_stats = {"calls": 0, "cache_hits": 0, "failures": 0, "skipped": 0}
+_breaker_until = 0.0
+BREAKER_SECONDS = 300.0
+
+
+def stats() -> dict:
+    """Counters since the process started (take two snapshots and subtract to count one piece of work)."""
+    with _lock:
+        return dict(_stats)
+
+
+def reset_breaker() -> None:
+    global _breaker_until
+    with _lock:
+        _breaker_until = 0.0
+
+
+def _bump(key: str) -> None:
+    with _lock:
+        _stats[key] += 1
+
+
+def _rate_limited_for_good(e: Exception) -> bool:
+    """Groq 'all keys rate limited for 179s' / 'gave up after ...s of rate limits': waiting will not help within this run."""
+    name = type(e).__name__
+    return name == "GroqRateLimitExhausted" or "rate limited for" in str(e) or "of rate limits" in str(e)
+
+
+# ------------------------------------------------------------------------------------------------------------ cache + parallel
+def _cache_on() -> bool:
+    return os.getenv("STAGE4_CACHE", "true").strip().lower() not in ("0", "false", "no", "off")
+
+
+def _cache_dir() -> Path:
+    return Path(os.getenv("STAGE4_CACHE_DIR", ".cache/stage4_judge"))
+
+
+def workers() -> int:
+    try:
+        return max(1, int(os.getenv("STAGE4_WORKERS", "4")))
+    except ValueError:
+        return 4
+
+
+def ask(prompt: str) -> dict:
+    """squeezer_json with the disk cache. Raises on failure (callers turn that into their fail-closed answer).
+    After a rate-limit-for-good failure the model is not asked again for BREAKER_SECONDS (cached answers still work): a sub-question would
+    otherwise wait on hundreds of calls that all fail, and every one of them fails closed anyway."""
+    global _breaker_until
+    path = None
+    if _cache_on():
+        key = hashlib.sha256(f"{getattr(llm_service, 'MODEL_NAME', '')}|{prompt}".encode("utf-8")).hexdigest()
+        path = _cache_dir() / f"{key}.json"
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            _bump("cache_hits")
+            return value
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError):
+            logger.warning("stage 4 judge cache entry %s unreadable; asking again", key[:12])
+    with _lock:
+        tripped = time.monotonic() < _breaker_until
+    if tripped:
+        _bump("skipped")
+        raise JudgeUnavailable("the judge model is rate limited; not asked again for a few minutes")
+    _bump("calls")
+    try:
+        value = squeezer_json(prompt)
+    except Exception as e:
+        _bump("failures")
+        if _rate_limited_for_good(e):
+            with _lock:
+                _breaker_until = time.monotonic() + BREAKER_SECONDS
+            logger.warning("Stage 4: the judge model is rate limited (%s); judge calls fail closed for the next %.0f s", str(e)[:100], BREAKER_SECONDS)
+        raise
+    if path is not None and isinstance(value, dict):
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(value, f, ensure_ascii=False)
+            os.replace(tmp, path)                       # atomic: parallel workers never see half a file
+        except OSError as e:
+            logger.warning("stage 4 judge cache write failed: %s", e)
+    return value
+
+
+def run_parallel(fn: Callable[..., T], jobs: Sequence[tuple]) -> list[T]:
+    """[fn(*job) for job in jobs], on up to STAGE4_WORKERS threads, results in input order."""
+    jobs = list(jobs)
+    if len(jobs) <= 1 or workers() <= 1:
+        return [fn(*j) for j in jobs]
+    with ThreadPoolExecutor(max_workers=min(workers(), len(jobs))) as pool:
+        return list(pool.map(lambda j: fn(*j), jobs))
+
+
+# ------------------------------------------------------------------------------------------------------------------ the judges
 PROMPT = """You compare two statements from different research sources.
 
 Statement A: {claim}
@@ -25,7 +149,7 @@ Return ONLY JSON: {{"same_aspect": true, "conflicts": true, "confidence": 0.0, "
 
 def judge_conflict(claim: str, quote: str, other_claim: str) -> dict:
     try:
-        v = squeezer_json(PROMPT.format(claim=claim, quote=quote, other_claim=other_claim))
+        v = ask(PROMPT.format(claim=claim, quote=quote, other_claim=other_claim))
         return {
             "same_aspect": bool(v.get("same_aspect")),
             "conflicts": bool(v.get("conflicts")),
@@ -36,8 +160,8 @@ def judge_conflict(claim: str, quote: str, other_claim: str) -> dict:
         logger.warning("Conflict judge failed: %s", e)
         return {"same_aspect": False, "conflicts": False, "confidence": 0.0,
                 "reason": f"judge failed: {e}"}
-        
-        
+
+
 SUPPORT_PROMPT = """Quote from a research source: "{quote}"
 Claim: "{claim}"
 
@@ -53,7 +177,7 @@ Return ONLY JSON: {{"supports": true, "confidence": 0.0, "reason": "one sentence
 
 def judge_support(claim: str, quote: str) -> dict:
     try:
-        v = squeezer_json(SUPPORT_PROMPT.format(claim=claim, quote=quote))
+        v = ask(SUPPORT_PROMPT.format(claim=claim, quote=quote))
         return {
             "supports": bool(v.get("supports")),
             "confidence": float(v.get("confidence", 0.0)),
@@ -62,7 +186,8 @@ def judge_support(claim: str, quote: str) -> dict:
     except Exception as e:
         logger.warning("Support judge failed: %s", e)
         return {"supports": False, "confidence": 0.0, "reason": f"judge failed: {e}"}
-    
+
+
 SAME_PROMPT = """Two claims from different research sources.
 
 Claim 1: "{a}"
@@ -81,7 +206,7 @@ Return ONLY JSON: {{"same": true, "reason": "one sentence"}}
 
 def judge_same_claim(a: str, b: str) -> bool:
     try:
-        v = squeezer_json(SAME_PROMPT.format(a=a, b=b))
+        v = ask(SAME_PROMPT.format(a=a, b=b))
         return bool(v.get("same"))
     except Exception as e:
         logger.warning("Same-claim judge failed: %s", e)

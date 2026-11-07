@@ -83,7 +83,7 @@ def test_start_a_run_and_read_its_status(client):
     wait_finished(client.manager, body["id"])
     done = client.get(f"/api/research/{body['id']}").json()
     assert done["status"] == "completed" and done["error"] is None
-    assert done["stages"] == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "not_built", "report": "not_built"}
+    assert done["stages"] == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "not_run", "report": "not_built"}
 
 
 def test_the_question_is_validated_and_tidied(client):
@@ -282,8 +282,10 @@ def test_the_report_is_built_from_the_database(monkeypatch):
     monkeypatch.setattr(report_service, "supabase", FakeDb(db_fixture()))
     da._save_cache_entry(da._cache_key("sq1", "How does it differ from a dense model?"), ["How does it differ from a dense model?"])
     report = report_service.build_report(QID)
-    assert report["question"] == "What is mixture of experts?" and report["stages"]["factcheck"] == "not_built" and report["stages"]["report"] == "not_built"
-    assert report["totals"] == {"subQuestions": 1, "subQuestionsSufficient": 0, "sources": 2, "findings": 2, "findingsQuoteFound": 1}
+    assert report["question"] == "What is mixture of experts?" and report["stages"]["factcheck"] == "not_run" and report["stages"]["report"] == "not_built"
+    assert report["totals"] == {"subQuestions": 1, "subQuestionsSufficient": 0, "sources": 2, "findings": 2, "findingsQuoteFound": 1,
+                                "factChecked": None}
+    assert report["subQuestions"][0]["factCheck"] is None and any("Stage 4" in x and "did not run" in x for x in report["limitations"])
     sq = report["subQuestions"][0]
     cov = sq["coverage"]
     assert cov["sufficient"] is False and cov["uncoveredAspects"] == ["What is a MoE model?"]
@@ -328,3 +330,27 @@ def test_health_and_cors(client):
     assert ok.status_code == 200 and ok.headers["access-control-allow-origin"] == "http://localhost:3000"
     bad = client.options("/api/research", headers={"Origin": "http://evil.example", "Access-Control-Request-Method": "POST"})
     assert "access-control-allow-origin" not in bad.headers
+
+
+def test_the_report_shows_the_stage_4_result_when_it_ran(monkeypatch):
+    tables = db_fixture()
+    tables["fact_claims"] = [
+        {"id": "f1", "query_id": QID, "sub_question_id": "sq1", "claim": "MoE activates few experts per token.", "label": "supported", "confidence": 0.8,
+         "support_doc_count": 2, "contra_doc_count": 0, "contested": False,
+         "evidence": [{"source_id": "p1", "source_title": "A Survey on MoE", "quote": "routes each input to a few experts", "relation": "supports",
+                       "reliability": 0.8, "evidence_level": "full_text", "prob": 0.97}]},
+        {"id": "f2", "query_id": QID, "sub_question_id": "sq1", "claim": "MoE is cheaper to train.", "label": "unverified", "confidence": 0.5,
+         "support_doc_count": 1, "contra_doc_count": 0, "contested": False, "evidence": []},
+        {"id": "f3", "query_id": QID, "sub_question_id": "sq1", "claim": "Routing is stable.", "label": "contradicted", "confidence": 0.7,
+         "support_doc_count": 1, "contra_doc_count": 1, "contested": False, "evidence": json.dumps([{"source_id": "w1", "quote": "unstable", "relation": "contradicts"}])}]
+    tables["contradictions"] = [{"id": "x1", "query_id": QID, "sub_question_id": "sq1", "claim_a": "Routing is stable.", "claim_b": "Routing is unstable.",
+                                 "source_a_title": "A", "source_b_title": "B", "quote_a": "qa", "quote_b": "qb", "prob": 0.9, "reason": "Opposite assertions."}]
+    monkeypatch.setattr(report_service, "supabase", FakeDb(tables))
+    report = report_service.build_report(QID)
+    fc = report["subQuestions"][0]["factCheck"]
+    assert report["stages"]["factcheck"] == "completed" and report["totals"]["factChecked"] == {"contradicted": 1, "supported": 1, "unverified": 1, "contested": 0}
+    assert [c["label"] for c in fc["claims"]] == ["contradicted", "supported", "unverified"]           # contradicted first
+    assert fc["claims"][1]["evidence"][0]["sourceTitle"] == "A Survey on MoE" and fc["claims"][2]["evidence"] == []
+    assert fc["claims"][0]["evidence"][0]["quote"] == "unstable"                                       # jsonb arrives as text in some clients
+    assert fc["disagreements"][0]["reason"] == "Opposite assertions." and fc["counts"]["contradicted"] == 1
+    assert report["limitations"][0].startswith("Stage 4 compared") and any("Sources disagree" in x for x in report["limitations"])

@@ -1,0 +1,376 @@
+"""Stage 4 (fact checking) without models or network: hand-made claims, a fake embedder, fake NLI and fake judges.
+Checks the rules of the handoff report (docs/reports/TRACE Stage 4 Fact Checking, Handoff Report.md, section 11): judges fail closed, an
+unverified claim is never "supported", NLI alone never declares a conflict, and the results do not depend on thread timing."""
+import logging
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from apps.api.agents.stage4_factcheck import common, contradiction_detector as cd, fact_checker as fc, judge  # noqa: E402
+
+
+# ---------------------------------------------------------------------------------------------------------------- fakes
+class FakeEmbedder:
+    """The first word is the topic (one axis each). '@a' / '@b' in the text adds a small component on a second axis: same topic and same
+    marker = identical vectors (cosine 1.0, auto-merge), same topic and different marker = cosine 0.89 (the judge's gray zone),
+    different topic = 0."""
+    TOPICS = {"speed": 0, "memory": 1, "quality": 2, "quote": 3}
+
+    def encode(self, texts, normalize_embeddings=True):
+        out = []
+        for t in texts:
+            v = np.zeros(8, dtype=np.float32)
+            v[self.TOPICS.get(t.split()[0].split("@")[0], 4)] = 1.0
+            if "@a" in t.split()[0]:
+                v[6] = 0.35
+            elif "@b" in t.split()[0]:
+                v[7] = 0.35
+            out.append(v / np.linalg.norm(v))
+        return np.array(out)
+
+
+@pytest.fixture(autouse=True)
+def fakes(monkeypatch, tmp_path):
+    monkeypatch.setattr(fc, "get_embedder", lambda: FakeEmbedder())
+    monkeypatch.setattr(cd, "get_embedder", lambda: FakeEmbedder())
+    monkeypatch.setenv("STAGE4_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("STAGE4_CACHE", "false")
+    monkeypatch.setenv("STAGE4_WORKERS", "3")
+
+
+def claim(text, doc, weight=0.6, ev=1.0, source=None, quote=None):
+    return {"claim": text, "quote": quote or f"quote of {text}", "source_id": source or doc, "source_title": doc, "doc": doc,
+            "reliability": weight, "evidence_level": "full_text", "ev": ev, "weight": weight}
+
+
+# ---------------------------------------------------------------------------------------------------------- load_claims
+def digest(source, title, findings, level="full_text", rel=0.8):
+    return {"source_id": source, "source_title": title, "evidence_level": level, "reliability": rel, "findings": findings}
+
+
+def test_load_claims_keeps_only_verified_grounded_claims_with_quotes():
+    d = [digest("s1", "Paper A", [
+        {"claim": "good", "quote": "q", "verified": True},
+        {"claim": "unverified", "quote": "q", "verified": False},
+        {"claim": "ungrounded", "quote": "q", "verified": True, "grounded": False},
+        {"claim": "", "quote": "q", "verified": True},
+        {"claim": "no quote", "quote": "", "verified": True}])]
+    got = fc.load_claims(d)
+    assert [c["claim"] for c in got] == ["good"]
+    assert got[0]["weight"] == round(0.8 * fc.EVIDENCE_WEIGHT["full_text"], 3)
+
+
+def test_load_claims_counts_a_repeated_statement_of_one_source_once():
+    """Loop 2 can read a source again and find the same sentence."""
+    d = [digest("s1", "Paper A", [{"claim": "X is faster.", "quote": "q1", "verified": True}]),
+         digest("s1", "Paper A", [{"claim": "x is  faster.", "quote": "q2", "verified": True}, {"claim": "Y is smaller.", "quote": "q3", "verified": True}])]
+    assert [c["claim"] for c in fc.load_claims(d)] == ["X is faster.", "Y is smaller."]
+
+
+def test_older_rows_without_an_evidence_level_count_as_full_text():
+    d = [{"source_id": "s", "source_title": "T", "reliability": 0.5, "findings": [{"claim": "c", "quote": "q", "verified": True}]}]
+    assert fc.load_claims(d)[0]["evidence_level"] == "full_text"
+
+
+# --------------------------------------------------------------------------------------------- distinct docs, noisy-or, labels
+def test_distinct_docs_keeps_the_strongest_item_per_document():
+    items = [claim("a", "D1", 0.3), claim("a", "D1", 0.7), claim("a", "D2", 0.5)]
+    best = {i["doc"]: i["weight"] for i in fc._distinct_docs(items)}
+    assert best == {"D1": 0.7, "D2": 0.5}
+
+
+def test_noisy_or_is_monotone_and_caps_each_weight():
+    assert fc._noisy_or([]) == 0.0
+    assert fc._noisy_or([claim("a", "D", 0.5)]) == 0.5
+    assert fc._noisy_or([claim("a", "D", 0.5), claim("a", "E", 0.5)]) == 0.75
+    assert fc._noisy_or([claim("a", "D", 2.0)]) == 0.95            # one source can never reach certainty
+
+
+def cluster(text, members, support=None):
+    return {"claim": text, "emb": np.zeros(2), "members": members, "support": members if support is None else support}
+
+
+def sup(m, **kw):
+    return {**m, "relation": "supports", "prob": 0.9, **kw}
+
+
+def test_two_independent_documents_make_a_claim_supported():
+    rows = fc.label_clusters([cluster("c", [], [sup(claim("c", "D1")), sup(claim("c", "D2"))])], {})
+    assert rows[0]["label"] == "supported" and rows[0]["support_doc_count"] == 2 and rows[0]["contested"] is False
+
+
+def test_one_document_is_never_enough_even_with_many_quotes():
+    rows = fc.label_clusters([cluster("c", [], [sup(claim("c", "D1", 0.9)), sup(claim("c", "D1", 0.8))])], {})
+    assert rows[0]["label"] == "unverified" and rows[0]["support_doc_count"] == 1 and rows[0]["confidence"] <= 0.5
+
+
+def test_two_weak_documents_do_not_reach_the_evidence_minimum():
+    weak = [sup(claim("c", "D1", 0.3, ev=0.5)), sup(claim("c", "D2", 0.3, ev=0.5))]          # evidence weight 0.5 + 0.5 < MIN_EVIDENCE
+    assert fc.label_clusters([cluster("c", [], weak)], {})[0]["label"] == "unverified"
+
+
+def test_a_claim_no_quote_supports_is_dropped_not_labelled():
+    assert fc.label_clusters([cluster("drift", [claim("drift", "D1")], [])], {}) == []
+
+
+def test_a_conflict_that_outweighs_the_support_makes_it_contradicted_and_a_weaker_one_only_contested():
+    support = [sup(claim("c", "D1", 0.4)), sup(claim("c", "D2", 0.4))]
+    strong = {0: [{**claim("not c", "D3", 0.9), "relation": "contradicts", "prob": 0.9}]}
+    weak = {0: [{**claim("not c", "D3", 0.2), "relation": "contradicts", "prob": 0.9}]}
+    r1 = fc.label_clusters([cluster("c", [], support)], strong)[0]
+    r2 = fc.label_clusters([cluster("c", [], support)], weak)[0]
+    assert r1["label"] == "contradicted" and r1["contra_doc_count"] == 1
+    assert r2["label"] == "supported" and r2["contested"] is True
+    assert {e["relation"] for e in r2["evidence"]} == {"supports", "contradicts"}
+
+
+def test_evidence_rows_hold_only_plain_fields_for_the_database():
+    row = fc.label_clusters([cluster("c", [], [sup(claim("c", "D1"), q_emb=np.zeros(3)), sup(claim("c", "D2"))])], {})[0]
+    assert all(set(e) == {"source_id", "source_title", "quote", "relation", "reliability", "evidence_level", "prob", "via"} for e in row["evidence"])
+
+
+# ------------------------------------------------------------------------------------------------------------ build_clusters
+def test_clustering_asks_the_judge_only_in_the_gray_zone_and_never_for_the_same_document(monkeypatch):
+    asked = []
+    monkeypatch.setattr(fc, "judge_same_claim", lambda a, b: asked.append((a, b)) or True)
+    claims = [claim("speed@a first", "D1", 0.9),            # strongest: representative
+              claim("speed@b second", "D2", 0.8),           # same topic, other document, cosine 0.89: the judge decides
+              claim("speed@b third", "D1", 0.7),            # same document as a member: no judge, no merge
+              claim("memory@a other", "D3", 0.6)]           # other topic: own cluster
+    clusters = fc.build_clusters(claims)
+    assert asked == [("speed@a first", "speed@b second")]
+    assert sorted(len(c["members"]) for c in clusters) == [1, 1, 2]
+
+
+def test_near_identical_wording_merges_without_the_judge(monkeypatch):
+    monkeypatch.setattr(fc, "judge_same_claim", lambda a, b: pytest.fail("the judge must not be asked"))
+    clusters = fc.build_clusters([claim("speed@a one", "D1", 0.9), claim("speed@a two", "D2", 0.8)])
+    assert len(clusters) == 1 and len(clusters[0]["members"]) == 2
+
+
+def test_clustering_never_merges_when_the_judge_says_no(monkeypatch):
+    monkeypatch.setattr(fc, "judge_same_claim", lambda a, b: False)
+    assert len(fc.build_clusters([claim("speed@a a", "D1", 0.9), claim("speed@b b", "D2", 0.8)])) == 2
+
+
+def test_clustering_result_does_not_depend_on_the_number_of_threads(monkeypatch):
+    def fake_judge(a, b):
+        time.sleep(0.01 * (len(a) % 3))                        # different answers arrive at different times
+        return (len(a) + len(b)) % 2 == 0
+    monkeypatch.setattr(fc, "judge_same_claim", fake_judge)
+    claims = [claim(f"speed@{'ab'[i % 2]} claim number {i}", f"D{i}", 0.95 - i / 100) for i in range(14)]
+    results = []
+    for w in ("1", "4"):
+        monkeypatch.setenv("STAGE4_WORKERS", w)
+        results.append([[m["claim"] for m in c["members"]] for c in fc.build_clusters(list(claims))])
+    assert results[0] == results[1]
+
+
+def test_merge_budget_exhaustion_is_logged_and_stops_merging(monkeypatch, caplog):
+    monkeypatch.setattr(fc, "MAX_MERGE_JUDGE", 1)
+    monkeypatch.setattr(fc, "judge_same_claim", lambda a, b: True)
+    claims = [claim("speed@a rep", "D0", 0.99)] + [claim(f"speed@b claim {i}", f"D{i + 1}", 0.9 - i / 100) for i in range(4)]
+    with caplog.at_level(logging.WARNING, logger="apps.api.agents.stage4_factcheck"):
+        clusters = fc.build_clusters(claims)
+    assert any("merge judge budget" in r.message for r in caplog.records)
+    assert len(clusters) >= 2
+
+
+# ------------------------------------------------------------------------------------------------------------ verify_support
+def test_support_uses_nli_first_then_the_judge_for_rejections(monkeypatch):
+    probs = {"quote ok": {"entailment": 0.9, "contradiction": 0.0, "neutral": 0.1},
+             "quote neutral": {"entailment": 0.0, "contradiction": 0.0, "neutral": 1.0},
+             "quote opposite": {"entailment": 0.0, "contradiction": 0.9, "neutral": 0.1}}
+    monkeypatch.setattr(fc, "nli_probs", lambda pairs: [probs[q] for q, _ in pairs])
+    asked = []
+    monkeypatch.setattr(fc, "judge_support", lambda c, q: asked.append(q) or {"supports": True, "confidence": 0.9, "reason": ""})
+    members = [claim("c", "D1", quote="quote ok"), claim("c", "D2", quote="quote neutral"), claim("c", "D3", quote="quote opposite")]
+    out = fc.verify_support([{"claim": "c", "emb": np.zeros(2), "members": members}])
+    assert [m["doc"] for m in out[0]["support"]] == ["D1", "D2"]            # D3 contradicts: not re-checked, not support
+    assert asked == ["quote neutral"]
+
+
+def test_a_low_confidence_or_failed_support_judge_does_not_count(monkeypatch):
+    monkeypatch.setattr(fc, "nli_probs", lambda pairs: [{"entailment": 0.0, "contradiction": 0.0, "neutral": 1.0}] * len(pairs))
+    monkeypatch.setattr(fc, "judge_support", lambda c, q: {"supports": True, "confidence": 0.5, "reason": ""})
+    out = fc.verify_support([{"claim": "c", "emb": np.zeros(2), "members": [claim("c", "D1")]}])
+    assert out[0]["support"] == []
+
+
+def test_support_budget_is_charged_in_order_and_logged(monkeypatch, caplog):
+    monkeypatch.setattr(fc, "MAX_SUPPORT_JUDGE", 2)
+    monkeypatch.setattr(fc, "nli_probs", lambda pairs: [{"entailment": 0.0, "contradiction": 0.0, "neutral": 1.0}] * len(pairs))
+    asked = []
+    monkeypatch.setattr(fc, "judge_support", lambda c, q: asked.append(q) or {"supports": True, "confidence": 0.9, "reason": ""})
+    clusters = [{"claim": f"c{i}", "emb": np.zeros(2), "members": [claim(f"c{i}", f"D{i}", quote=f"q{i}")]} for i in range(4)]
+    with caplog.at_level(logging.WARNING, logger="apps.api.agents.stage4_factcheck"):
+        out = fc.verify_support(clusters)
+    assert sorted(asked) == ["q0", "q1"] and [bool(c["support"]) for c in out] == [True, True, False, False]
+    assert any("support judge budget" in r.message for r in caplog.records)
+
+
+# ----------------------------------------------------------------------------------------------------------------- detect
+def make_cluster(text, docs_quotes):
+    members = [sup(claim(text, d, quote=q)) for d, q in docs_quotes]
+    c = cluster(text, [], members)
+    c["emb"] = FakeEmbedder().encode([text])[0]
+    return c
+
+
+def two_clusters():
+    return [make_cluster("speed@a 4-bit is faster", [("D1", "speed@a faster quote one"), ("D2", "speed@a faster quote two")]),
+            make_cluster("speed@a 4-bit is slower", [("D3", "speed@a slower quote")])]
+
+
+NLI_HIGH = lambda pairs: [{"contradiction": 0.95, "entailment": 0.0, "neutral": 0.05}] * len(pairs)       # noqa: E731
+
+
+def test_a_conflict_needs_nli_and_the_judge_and_the_same_aspect(monkeypatch):
+    monkeypatch.setattr(cd, "nli_probs", NLI_HIGH)
+    monkeypatch.setattr(cd, "judge_conflict", lambda a, q, o: {"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": "opposite"})
+    conflicts, disagreements = cd.detect(two_clusters())
+    assert 0 in conflicts and conflicts[0][0]["relation"] == "contradicts" and "judge_reason" in conflicts[0][0]
+    assert len(disagreements) == 1 and disagreements[0]["reason"] == "opposite"
+
+
+def test_nli_alone_never_creates_a_conflict(monkeypatch):
+    monkeypatch.setattr(cd, "nli_probs", lambda pairs: [{"contradiction": 1.0, "entailment": 0.0, "neutral": 0.0}] * len(pairs))
+    monkeypatch.setattr(cd, "judge_conflict", lambda a, q, o: {"same_aspect": True, "conflicts": False, "confidence": 0.99, "reason": "both can be true"})
+    assert cd.detect(two_clusters()) == ({}, [])
+
+
+@pytest.mark.parametrize("verdict", [
+    {"same_aspect": False, "conflicts": True, "confidence": 0.99, "reason": ""},          # different aspect
+    {"same_aspect": True, "conflicts": True, "confidence": 0.5, "reason": ""},            # not confident
+    {"same_aspect": False, "conflicts": False, "confidence": 0.0, "reason": "judge failed: x"}])    # fail closed
+def test_only_a_confident_same_aspect_conflict_counts(monkeypatch, verdict):
+    monkeypatch.setattr(cd, "nli_probs", NLI_HIGH)
+    monkeypatch.setattr(cd, "judge_conflict", lambda a, q, o: verdict)
+    assert cd.detect(two_clusters()) == ({}, [])
+
+
+def test_a_document_that_supports_a_claim_cannot_contradict_it(monkeypatch):
+    cs = two_clusters()
+    cs[1]["support"][0]["doc"] = "D1"                      # D1 supports claim A, so its quote under B must not be used against A
+    monkeypatch.setattr(cd, "nli_probs", NLI_HIGH)
+    monkeypatch.setattr(cd, "judge_conflict", lambda a, q, o: {"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": "x"})
+    conflicts, _ = cd.detect(cs)
+    assert 0 not in conflicts
+
+
+def test_detect_logs_when_the_conflict_judge_budget_cuts_pairs(monkeypatch, caplog):
+    monkeypatch.setattr(cd, "MAX_JUDGE", 1)
+    cs = two_clusters() + [make_cluster("speed@a 4-bit is the same", [("D4", "speed@a same quote")])]
+    monkeypatch.setattr(cd, "nli_probs", NLI_HIGH)
+    monkeypatch.setattr(cd, "judge_conflict", lambda a, q, o: {"same_aspect": False, "conflicts": False, "confidence": 0.0, "reason": ""})
+    with caplog.at_level(logging.WARNING, logger="apps.api.agents.stage4_factcheck"):
+        cd.detect(cs)
+    assert any("conflict judge" in r.message for r in caplog.records)
+
+
+def test_a_topic_gate_keeps_unrelated_quotes_away_from_the_judge(monkeypatch):
+    cs = [make_cluster("speed@a 4-bit is faster", [("D1", "speed@a q"), ("D2", "speed@a q2")]),
+          make_cluster("memory@a 4-bit uses less", [("D3", "memory@a q")])]
+    monkeypatch.setattr(cd, "nli_probs", NLI_HIGH)
+    monkeypatch.setattr(cd, "judge_conflict", lambda *a: pytest.fail("a different topic must never reach the judge"))
+    assert cd.detect(cs) == ({}, [])
+
+
+# ----------------------------------------------------------------------------------------------------------- judges + cache
+def test_every_judge_fails_closed(monkeypatch):
+    def boom(prompt):
+        raise RuntimeError("rate limited")
+    monkeypatch.setattr(judge, "squeezer_json", boom)
+    assert judge.judge_conflict("a", "q", "b")["conflicts"] is False
+    assert judge.judge_support("a", "q")["supports"] is False
+    assert judge.judge_same_claim("a", "b") is False
+
+
+def test_judge_replies_are_cached_and_failures_are_not(monkeypatch):
+    monkeypatch.setenv("STAGE4_CACHE", "true")
+    calls = []
+    replies = iter([RuntimeError("down"), {"same": True}, {"same": False}])
+
+    def fake(prompt):
+        calls.append(prompt)
+        r = next(replies)
+        if isinstance(r, Exception):
+            raise r
+        return r
+    monkeypatch.setattr(judge, "squeezer_json", fake)
+    assert judge.judge_same_claim("a", "b") is False            # failed: closed, not cached
+    assert judge.judge_same_claim("a", "b") is True             # asked again, answered, cached
+    assert judge.judge_same_claim("a", "b") is True             # from the cache: no third call
+    assert len(calls) == 2
+
+
+def test_run_parallel_returns_results_in_input_order():
+    def slow(i):
+        time.sleep(0.02 * (5 - i))
+        return i
+    assert judge.run_parallel(slow, [(i,) for i in range(5)]) == [0, 1, 2, 3, 4]
+
+
+# --------------------------------------------------------------------------------------------------------------- common
+def test_doc_key_counts_the_same_document_found_as_web_page_and_paper_once():
+    assert common.doc_key("Mamba: Linear-Time Sequence Modeling | arXiv", "web1") == common.doc_key("Mamba: Linear-Time Sequence Modeling", "paper1")
+    assert common.doc_key(None, "id9") == "id9"
+
+
+def test_clean_text_normalises_unicode_noise():
+    assert common.clean_text("4‑bit  model  it’s") == "4-bit model it's"
+
+
+# ------------------------------------------------------------------------------------------ reuse of Stage 3, circuit breaker
+def test_a_quote_the_stage3_judge_already_accepted_needs_no_nli_and_no_llm_call(monkeypatch):
+    monkeypatch.setattr(fc, "nli_probs", lambda pairs: [{"entailment": 0.0, "contradiction": 0.0, "neutral": 1.0}] * len(pairs))
+    monkeypatch.setattr(fc, "judge_support", lambda c, q: pytest.fail("the Groq judge must not be asked"))
+    digests = [digest("s1", "Paper A", [{"claim": "c", "quote": "q", "verified": True, "judge": {"0": {"final": "partial", "quote_supports_claim": "yes"}}}])]
+    claims = fc.load_claims(digests)
+    assert claims[0]["stage3_support"] is True
+    out = fc.verify_support([{"claim": "c", "emb": np.zeros(2), "members": claims}])
+    assert out[0]["support"][0]["via"] == "stage3_judge"
+    row = fc.label_clusters(out, {})[0]
+    assert row["label"] == "unverified" and row["support_doc_count"] == 1       # one document is still not "supported"
+    assert row["evidence"][0]["via"] == "stage3_judge"
+
+
+def test_only_a_stage3_yes_counts_not_partial_or_no():
+    for verdict, expected in (("yes", True), ("partial", False), ("no", False), (None, False)):
+        f = {"claim": "c", "quote": "q", "verified": True, "judge": {"0": {"quote_supports_claim": verdict}}}
+        assert fc._stage3_supports(f) is expected
+    assert fc._stage3_supports({"claim": "c", "quote": "q", "verified": True}) is False
+
+
+def test_the_judge_stops_asking_after_a_daily_limit_and_fails_closed_fast(monkeypatch):
+    class GroqRateLimitExhausted(Exception):
+        pass
+    calls = []
+
+    def limited(prompt):
+        calls.append(prompt)
+        raise GroqRateLimitExhausted("all 7 Groq key(s) are rate limited for 900s")
+    monkeypatch.setattr(judge, "squeezer_json", limited)
+    judge.reset_breaker()
+    s0 = judge.stats()
+    assert judge.judge_same_claim("a", "b") is False
+    assert judge.judge_same_claim("c", "d") is False                 # not even tried
+    assert judge.judge_support("c", "q")["supports"] is False
+    assert len(calls) == 1
+    s1 = judge.stats()
+    assert s1["failures"] - s0["failures"] == 1 and s1["skipped"] - s0["skipped"] == 2
+    judge.reset_breaker()
+
+
+def test_an_ordinary_failure_does_not_trip_the_breaker(monkeypatch):
+    monkeypatch.setattr(judge, "squeezer_json", lambda p: (_ for _ in ()).throw(ValueError("bad json")))
+    judge.reset_breaker()
+    judge.judge_same_claim("a", "b")
+    judge.judge_same_claim("c", "d")
+    assert judge.stats()["skipped"] == judge.stats()["skipped"]       # unchanged by these two
+    monkeypatch.setattr(judge, "squeezer_json", lambda p: {"same": True})
+    assert judge.judge_same_claim("e", "f") is True

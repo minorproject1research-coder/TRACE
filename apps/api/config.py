@@ -20,5 +20,10 @@ MAX_CONCURRENT_RUNS = _int("MAX_CONCURRENT_RUNS", 1)
 MAX_PENDING_RUNS = _int("MAX_PENDING_RUNS", 5, minimum=0)         # queued runs beyond the running ones; more get HTTP 429
 MAX_RUNS_IN_MEMORY = _int("MAX_RUNS_IN_MEMORY", 200)               # finished runs older than this are forgotten (their report stays in the database)
 
+def factcheck_enabled() -> bool:
+    """FACTCHECK=true runs Stage 4 (claims checked across sources) after Stage 3. Read at call time so a test or a restart-free switch works."""
+    return os.getenv("FACTCHECK", "false").strip().lower() in ("1", "true", "yes", "on")
+
+
 QUESTION_MIN_CHARS = 10
 QUESTION_MAX_CHARS = 1000

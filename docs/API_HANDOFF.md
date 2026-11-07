@@ -17,7 +17,7 @@ uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
 A run executes the whole graph in a background thread: **planner -> (paper retrieval + web search in parallel) -> summarizer**. It takes **15-25 minutes**. The UI must be built around progress events, not around waiting for a response.
 - The run id is a UUID and is also the id of the research query in the database, so a finished run can be read after a server restart.
 - Runs are queued: `MAX_CONCURRENT_RUNS` (default 1) at a time, `MAX_PENDING_RUNS` (default 5) waiting. A further `POST` gets **429** `{"detail": "..."}`.
-- Two stages **do not exist yet**: `factcheck` (Stage 4, not wired into the graph) and `report` (Stage 5, not built). They are always `"not_built"`. There is no written answer, only collected and judged evidence (see "Report").
+- `report` (Stage 5) **does not exist yet**: always `"not_built"`. `factcheck` (Stage 4) exists and runs after the summarizer **only when the server has `FACTCHECK=true`**; otherwise its state is `"not_run"`. There is no written answer, only collected and judged evidence (see "Report").
 - There is no quick or web-only mode: every run uses the full pipeline. (`depth` and `scope` were removed from the request and from the session; a client that still sends them is ignored.)
 - A run cannot be cancelled (no endpoint).
 
@@ -44,7 +44,7 @@ Errors are `{"detail": "text"}` (validation errors: FastAPI's list under `detail
 ```ts
 type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
 type StageId = 'planner' | 'retrieval' | 'summarizer' | 'factcheck' | 'report'
-type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'unknown'
+type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'not_run' | 'unknown'   // not_run: the stage exists but was switched off for this run
 
 type Session = {
   id: string
@@ -80,7 +80,7 @@ Typical order for one run (the 11 stage-level events; `branch_started` and `step
 | `step` | retrieval or summarizer | `{lane, step, state, ...counts}`: see "Steps" below |
 | `branch_completed` | retrieval | `{branch: 'papers', papers}` or `{branch: 'web', webSources}` |
 | `stage_completed` | summarizer | `{digests, subQuestions, sufficientSubQuestions}` |
-| `run_completed` | null | `{reportUrl, stagesNotRun: ['factcheck','report']}` |
+| `run_completed` | null | `{reportUrl, stagesNotRun: ['report']}` (also `'factcheck'` when it was off) |
 | `run_failed` | the stage that was running, or null | `message` is `"ErrorType: text"` (also `session.error`) |
 
 Timing hint for the progress UI: planner about 30 s, retrieval and parsing 2-9 min (longer for a new topic), summarizer 8-11 min.
@@ -124,8 +124,9 @@ type Report = {
   question: string
   createdAt: string | null
   runError?: string                       // only when the run failed in this server process
-  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built'>
-  totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number }
+  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built' | 'not_run'>   // factcheck: 'completed' when fact_claims exist, else 'not_run'
+  totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number;
+            factChecked: null | { supported: number; unverified: number; contradicted: number; contested: number } }   // null: Stage 4 did not run
   subQuestions: SubQuestionReport[]
   limitations: string[]                   // show these: Stage 4 / Stage 5 missing, retrieval limits, and each sub-question whose evidence is not sufficient
 }

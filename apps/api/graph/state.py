@@ -12,3 +12,5 @@ class SharedResearchState(BaseModel):
     paper_results: list[dict] = []
     digests: list[dict] = []
     coverage: dict = {}
+    fact_claims: list = []              # Stage 4 (FACTCHECK=true): one row per checked claim
+    fact_summary: dict = {}             # Stage 4: counts per sub-question id, or {"error": ...}

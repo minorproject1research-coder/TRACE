@@ -418,18 +418,23 @@ def _ts(row: dict):
         return datetime.min.replace(tzinfo=timezone.utc)
 
 
+STAGE4_GENERATION_WINDOW_S = 180        # rows written by one Stage 3 run (digests of Stage 3 and of Loop 2) share almost the same created_at
+
+
+@retry_transient
 def get_digests_for_stage4(query_id: str, sub_question_id: str) -> list[dict]:
-    """Newest digest per source for one sub-question, each with the source's reliability_score.
+    """The digests of the NEWEST Stage 3 run of one sub-question, each with the source's reliability_score.
+    A rerun of Stage 3 writes a new set of rows, so older sets are ignored; inside the newest set EVERY row counts, because Loop 2 can
+    add a second digest of a source it read again (other passages) and the first one must not be dropped.
     select('*') so a missing optional column (evidence_level) never breaks the read."""
     rows = (
         supabase.table("digests").select("*")
         .eq("query_id", query_id).eq("sub_question_id", sub_question_id)
         .execute().data
     )
-    newest = {}
-    for r in sorted(rows, key=_ts):          
-        newest[str(r["source_id"])] = r
-    rows = list(newest.values())
+    if rows:
+        newest = max(_ts(r) for r in rows)
+        rows = [r for r in rows if (newest - _ts(r)).total_seconds() <= STAGE4_GENERATION_WINDOW_S]
 
     rel = {}
     paper_ids = [r["source_id"] for r in rows if r["source_type"] == "paper"]
@@ -447,6 +452,7 @@ def get_digests_for_stage4(query_id: str, sub_question_id: str) -> list[dict]:
     return rows
 
 
+@retry_transient
 def get_missing_evidence(sub_question_id: str) -> list[str]:
     """Detail questions Stage 3's coverage check could not cover (latest row)."""
     rows = (
@@ -457,22 +463,25 @@ def get_missing_evidence(sub_question_id: str) -> list[str]:
     return (rows[0]["uncovered_details"] or []) if rows else []
 
 
+@retry_transient
 def write_fact_claims(query_id: str, rows: list[dict]) -> None:
-    """Idempotent: replaces any earlier fact-check result for this query."""
+    """Idempotent: replaces any earlier fact-check result for this query (delete then insert, safe to repeat after a dropped connection)."""
     supabase.table("fact_claims").delete().eq("query_id", query_id).execute()
     if not rows:
         return
     now = _now_ist()
     for row in rows:
         row.setdefault("created_at", now)
-    supabase.table("fact_claims").insert(rows).execute()
+    supabase.table("fact_claims").insert(strip_nul(rows)).execute()
 
 
+@retry_transient
 def write_contradictions(query_id: str, rows: list[dict]) -> None:
+    """Idempotent like write_fact_claims. Rows are stored without `reason` when the column is missing (migration 015), not lost."""
     supabase.table("contradictions").delete().eq("query_id", query_id).execute()
     if not rows:
         return
     now = _now_ist()
     for row in rows:
         row.setdefault("created_at", now)
-    supabase.table("contradictions").insert(rows).execute()
+    _insert_with_optional_columns("contradictions", rows, ("reason",))

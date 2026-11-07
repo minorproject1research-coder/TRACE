@@ -9,8 +9,8 @@ after a server restart. Progress is the stream of node updates of the graph (str
 branch_started and step come from INSIDE the nodes (services/progress.py): the paper and web branches run at the same time, and each reports its
 steps (search, relevance judge, scoring, store, parsing; digest and evidence judge in the summarizer) with small counts.
 
-Stages the UI should show: planner, retrieval (papers + web), summarizer; factcheck and report are not built / not wired yet and are
-reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
+Stages the UI should show: planner, retrieval (papers + web), summarizer, factcheck (only when FACTCHECK=true, otherwise "not_run");
+report is not built and is reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
 """
 import logging
 import threading
@@ -27,10 +27,10 @@ from apps.api.services import progress
 logger = logging.getLogger("apps.api.run_manager")
 
 STAGES = ("planner", "retrieval", "summarizer", "factcheck", "report")
-NOT_BUILT = ("factcheck", "report")
-NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer"}
+NOT_BUILT = ("report",)                     # "factcheck" is added per run when FACTCHECK is off
+NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck"}
 BRANCH = {"paper_retrieval": "papers", "web_search": "web"}
-LANE_STAGE = {"papers": "retrieval", "web": "retrieval", "summarizer": "summarizer"}
+LANE_STAGE = {"papers": "retrieval", "web": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck"}
 TERMINAL = ("run_completed", "run_failed")
 
 
@@ -48,7 +48,7 @@ class RunRecord:
         self.status = "pending"
         self.created_at, self.started_at, self.finished_at = _now(), None, None
         self.error: Optional[str] = None
-        self.stages = {s: ("not_built" if s in NOT_BUILT else "pending") for s in STAGES}
+        self.stages = {s: ("not_built" if s in NOT_BUILT else "not_run" if (s == "factcheck" and not config.factcheck_enabled()) else "pending") for s in STAGES}
         self.events: list[dict] = []
         self._lock = threading.Lock()
 
@@ -99,6 +99,16 @@ def summarize_update(node: str, update: dict) -> tuple[str, dict]:
             sufficient = sum(1 for c in cov.values() if isinstance(c, dict) and c.get("sufficient"))
             data = {"digests": _count(update.get("digests")), "subQuestions": len(cov), "sufficientSubQuestions": sufficient}
             return f"Digested {data['digests']} sources; {sufficient} of {len(cov)} sub-questions have sufficient evidence", data
+        if node == "factcheck":
+            claims = update.get("fact_claims") or []
+            summary = update.get("fact_summary") or {}
+            if summary.get("error"):
+                return f"Fact checking failed: {summary['error']}", {"error": summary["error"]}
+            data = {"claims": _count(claims), "subQuestions": len(summary), "failedSubQuestions": sum(1 for s in summary.values() if isinstance(s, dict) and s.get("error")),
+                    **{l: sum(1 for c in claims if c.get("label") == l) for l in ("supported", "unverified", "contradicted")},
+                    "contested": sum(1 for c in claims if c.get("contested")),
+                    "disagreements": sum(s.get("disagreements", 0) for s in summary.values() if isinstance(s, dict))}
+            return f"Checked {data['claims']} claims: {data['supported']} supported, {data['unverified']} unverified, {data['contradicted']} contradicted", data
     except Exception:                                   # a summary must never break a run
         logger.exception("could not summarize the update of node %s", node)
     return "", {}
@@ -200,8 +210,12 @@ class RunManager:
                             self._stage(rec, "summarizer", "running", "Reading sources and checking evidence")
                     elif node == "summarizer":
                         self._stage(rec, "summarizer", "completed", message, data)
+                        if rec.stages["factcheck"] == "pending":
+                            self._stage(rec, "factcheck", "running", "Checking claims across sources")
+                    elif node == "factcheck" and rec.stages["factcheck"] == "running":
+                        self._stage(rec, "factcheck", "failed" if data.get("error") else "completed", message, data)
             rec.status, rec.finished_at = "completed", _now()
-            rec.emit("run_completed", status="completed", message="Run finished", data={"reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": list(NOT_BUILT)})
+            rec.emit("run_completed", status="completed", message="Run finished", data={"reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
         except Exception as e:
             logger.error("run %s failed:\n%s", rec.id, traceback.format_exc())
             rec.status, rec.finished_at = "failed", _now()
