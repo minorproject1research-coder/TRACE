@@ -483,3 +483,15 @@ def test_report_marks_synthesis_and_known_gaps():
                                                       "known_gaps_no_evidence": ["c"], "aspects": {"a": {"status": "covered", "how": "synthesis", "steps": []}}, "steps": []}}})
     assert view["coveredBySynthesis"] == 1 and view["sufficientStrict"] is False and view["knownGapsNoEvidence"] == ["c"]
     assert view["aspects"][0]["how"] == "synthesis"
+
+
+def test_core_rule_does_not_trust_an_empty_result_when_the_first_digests_failed(monkeypatch):
+    """Q3, 2026-11-07 17:22: the Groq quota was gone, every digest failed, and 'no evidence' looked like a finding."""
+    monkeypatch.setenv("LOOP2_GAP_RULE", "core")
+    ctx = make_ctx(rows=[{"source_id": f"row{i}", "evidence_level": "full_text", "verified_count": 1, "findings": [{"claim": "c", "verified": True}]} for i in range(3)])
+    ctx.digest_failures = 4
+    spec = {0: (0, 0, 3), 1: (2, 0, 0), 2: (2, 0, 0)}
+    verdicts, cands = base_verdicts(spec), cands_for(spec)
+    cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=cands)
+    out, _, _, info = loop2.run_subquestion(ctx, cov, cands, verdicts, FakeServices(), time.monotonic() + 60)
+    assert info["aspects"]["alpha topic"]["status"] == "known_gap_skipped_triage" and out["sufficient"] is False

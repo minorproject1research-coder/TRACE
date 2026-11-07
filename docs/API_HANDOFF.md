@@ -149,8 +149,15 @@ type SubQuestionReport = {
       covered: number                     // of those, covered afterwards
       seconds: number
       triage: 'r1' | 'all'
+      gapRule: 'core' | 'strict'          // core (default with Loop 2): an aspect that stays uncovered after the whole search and has thin evidence does not stop `sufficient`
+      sufficientStrict: boolean | null    // `sufficient` under the old rule (every aspect covered); `coverage.sufficient` is the gapRule value
+      coveredBySynthesis: number          // aspects covered because the judge accepted several sources' findings TOGETHER (weaker than two single claims: say so in the UI)
+      knownGapsNoEvidence: string[]       // searched, nothing usable found: show "evidence not found" (also added to `limitations`)
       steps: { step: 'reselect' | 'pool' | 'queries', aspects: number, newSources: number, newVerifiedFindings: number, covered: number, seconds: number }[]
-      aspects: { text: string, status: 'covered' | 'known_gap' | 'known_gap_skipped_triage' | 'known_gap_skipped_cap' | 'unjudged_not_searched', coveredBy: string | null, steps: string[] }[]
+      aspects: { text: string, status: 'covered' | 'known_gap' | 'known_gap_no_evidence' | 'known_gap_skipped_triage' | 'known_gap_skipped_cap' | 'unjudged_not_searched',
+                 coveredBy: string | null,           // 'synthesis' | 'reselect' | 'pool' | 'queries'
+                 how: 'single claims' | 'synthesis' | null, nearMiss: boolean | null,   // nearMiss: evidence exists (>= 3 partial/yes findings, >= 2 sources) but no answer was complete: still blocks `sufficient`
+                 steps: string[] }[]
       knownGaps: string[]                 // aspects still uncovered after the search (or not searched): show "evidence not found" for them
     }
   }
@@ -161,6 +168,7 @@ type AspectRow = {
   index: number
   text: string | null                     // null when the aspect texts could not be rebuilt (then only index and counts are known)
   state: 'covered' | 'judged_insufficient' | 'no_candidates' | 'unjudged' | 'uncovered' | 'unknown'
+  coveredBy: 'single_claims' | 'synthesis' | null   // synthesis = findings of several sources judged together (Loop 2)
   yesVerdicts: number                     // findings the independent judge accepted as answering this aspect
   sources: number                         // distinct sources behind those
 }

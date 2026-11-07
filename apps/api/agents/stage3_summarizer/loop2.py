@@ -28,8 +28,9 @@ the start (no search needed) and after every step. A composite is weaker evidenc
 
 Known gaps and "sufficient" (B3): an aspect that is still uncovered after the whole ladder, whose evidence is thin (fewer than
 LOOP2_NEARMISS_MIN yes/partial verdicts or fewer than 2 sources), is a known gap "no evidence found" and does NOT stop the sub-question from
-being sufficient (LOOP2_GAP_RULE=core, default; strict keeps the old rule). Near misses, aspects not searched (cap) and aspects whose search
-was cut short (time, failed digests) keep blocking. coverage.sufficient is the core value; the strict value and the gap list are stored in
+being sufficient (LOOP2_GAP_RULE=core, default; strict keeps the old rule). Near misses, aspects not searched (cap), aspects whose search
+was cut short (time, failed digests) and every aspect of a sub-question whose first Stage 3 digests failed keep blocking (Q5, 2026-11-07:
+a run with the Groq quota gone would otherwise look "sufficient" because nothing was found). coverage.sufficient is the core value; the strict value and the gap list are stored in
 judge_stats["loop2"] and shown in the report ("Evidence not found for ...").
 
 Stop rules (A3): at most LOOP2_MAX_ROUNDS steps per aspect, at most LOOP2_MAX_ASPECTS aspects per sub-question, a time budget for the
@@ -127,6 +128,7 @@ class SubQuestionContext:
     chunk_lookup: dict
     papers: list[dict]                       # the papers Stage 3 read, with sections / full_text
     topic_aspect_idx: Optional[int] = None
+    digest_failures: int = 0                 # digests of the first Stage 3 pass that failed (Groq): "no evidence" is then no proof that none exists
     anchor: str = ""
     context: str = ""
     web_urls: set = field(default_factory=set)       # web pages already known for this sub-question
@@ -553,7 +555,7 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
         e = evid_end.get(idx, [])
         a["after"] = {"yes": sum(1 for x in e if x["final"] == "yes"), "partial": sum(1 for x in e if x["final"] == "partial"), "sources": len({x["source_id"] for x in e})}
         near_miss = a["after"]["yes"] + a["after"]["partial"] >= _env_int("LOOP2_NEARMISS_MIN", 3) and a["after"]["sources"] >= 2
-        finished = a["status"] in ("known_gap", "known_gap_skipped_triage") and not a.get("stopped")
+        finished = a["status"] in ("known_gap", "known_gap_skipped_triage") and not a.get("stopped") and not ctx.digest_failures
         a["near_miss"] = near_miss
         if gap_rule() == "core" and finished and not near_miss:
             non_blocking.add(idx)

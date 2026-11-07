@@ -56,7 +56,7 @@ class _Loop2Services(loop2.Services):
 
 
 def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects, rows, chunk_lookup, jobs, candidates,
-               judge_verdicts, cov, topic_aspect_used, deadline):
+               judge_verdicts, cov, topic_aspect_used, deadline, digest_failures=0):
     """Loop 2 for one sub-question; returns the final coverage (rows and chunk_lookup are extended in place). Never raises."""
     n_rows = len(rows)
     try:
@@ -65,7 +65,7 @@ def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_covera
         ctx = loop2.SubQuestionContext(
             query_id=qid, sq=sq, aspects=aspects, aspect_to_detail=aspect_to_detail, details_for_coverage=details_for_coverage,
             digest_aspects=digest_aspects, rows=rows, chunk_lookup=chunk_lookup, papers=papers,
-            topic_aspect_idx=len(aspects) - 1 if topic_aspect_used else None,
+            topic_aspect_idx=len(aspects) - 1 if topic_aspect_used else None, digest_failures=digest_failures,
             anchor=state.task_plan.domain_anchor, context=state.task_plan.domain_context,
             tried_queries=list(sq.queries or []))
         pool = svc.pool_rows(qid, sq.id)
@@ -195,14 +195,14 @@ def summarizer_node(state: SharedResearchState) -> dict:
         cov = coverage_check.check_coverage_judged(
             aspects, aspect_to_detail, details_for_coverage, rows, judge_verdicts, candidates=candidates
         )
+        sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
         if loop2.enabled() and has_verified and cov.get("uncovered_aspects"):
             cov = _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects_by_sq.get(si, aspects), rows,
-                             chunk_lookup, jobs, candidates, judge_verdicts, cov, topic_aspect_used, loop2_deadline)
+                             chunk_lookup, jobs, candidates, judge_verdicts, cov, topic_aspect_used, loop2_deadline, sq_failures)
         if isinstance(cov.get("judge_stats"), dict):
             cov["judge_stats"]["aspect_merge"] = detail_aspects.merge_mode()      # tools that rebuild this run's aspects need to know
             cov["judge_stats"]["topic_aspect"] = topic_aspect_used                # ... both markers
         # Add digest failures count
-        sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
         cov["digest_failures"] = sq_failures
         
         coverage[sq.id] = cov
