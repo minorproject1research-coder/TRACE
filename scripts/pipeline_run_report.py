@@ -345,11 +345,13 @@ def main() -> int:
             w("\nUncovered details: " + "; ".join(c["uncovered_details"]))
         l2 = (st.get("loop2") if isinstance(st, dict) else None) or {}
         if l2:
-            w(f"\nLoop 2 ({l2.get('triage')} triage, steps {', '.join(l2.get('steps_enabled') or [])}): searched {l2.get('searched')} aspect(s), covered {l2.get('covered')}, {l2.get('seconds')} s.\n")
-            w("| Aspect | Status | Steps tried | Covered by | Before (yes/partial/no) |\n|---|---|---|---|---|")
+            w(f"\nLoop 2 ({l2.get('triage')} triage, steps {', '.join(l2.get('steps_enabled') or [])}): searched {l2.get('searched')} aspect(s), covered {l2.get('covered')} ({l2.get('covered_by_synthesis', 0)} by synthesis of several sources), "
+              f"sufficient {l2.get('sufficient')} (strict rule: {l2.get('sufficient_strict')}), gap rule {l2.get('gap_rule')}, {l2.get('seconds')} s.\n")
+            w("| Aspect | Status | Steps tried | Covered by | How | Before (yes/partial/no) | After (yes/partial, sources) |\n|---|---|---|---|---|---|---|")
             for text, a in (l2.get("aspects") or {}).items():
                 b = a.get("before") or {}
-                w(f"| {text[:80]} | {a.get('status')} | {', '.join(a.get('steps') or []) or '-'} | {a.get('covered_by') or '-'} | {b.get('yes', '-')}/{b.get('partial', '-')}/{b.get('no', '-')} |")
+                w(f"| {text[:80]} | {a.get('status')} | {', '.join(a.get('steps') or []) or '-'} | {a.get('covered_by') or '-'} | {a.get('how') or '-'} | {b.get('yes', '-')}/{b.get('partial', '-')}/{b.get('no', '-')} | "
+                  f"{('%s/%s, %s' % (a['after']['yes'], a['after']['partial'], a['after']['sources'])) if a.get('after') else '-'} |")
             w("\n| Step | Aspects | New sources | New verified findings | Covered | Seconds | Other |\n|---|---|---|---|---|---|---|")
             for s in l2.get("steps") or []:
                 other = ", ".join(f"{k}={v}" for k, v in s.items() if k in ("sources_tried", "parsed", "queries", "new_papers_found", "new_papers_kept", "new_papers_parsed", "new_web_found", "new_web_kept", "digest_failed", "note", "error"))

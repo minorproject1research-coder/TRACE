@@ -1,0 +1,838 @@
+[
+ {
+  "run": "Q3",
+  "sub_question": "What is quantization and how does it affect large language models (LLMs)?",
+  "aspect": "What are the benefits of quantization for LLMs?",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Quantization makes it possible to run LLMs in real time on resource‑constrained hardware such as consumer GPUs and edge devices.",
+   "Post‑training quantization of LLM weights reduces the models' runtime cost.",
+   "Quantization makes LLMs easier to deploy and enables AI scaling, broader access, and operation on everyday hardware.",
+   "Larger LLMs are more stable under quantization, showing smaller performance drops."
+  ],
+  "reason": "The quote directly lists the specific benefits of quantization for LLMs, which matches the aspect's request for benefits."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What is quantization and how does it affect large language models (LLMs)?",
+  "aspect": "What are the challenges of quantization for LLMs?",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Quantization often leads to performance degradation in LLMs.",
+   "Activations are more difficult to quantize than weights, posing a challenge for LLM quantization.",
+   "The massive scale of LLMs makes it hard to apply existing quantization techniques.",
+   "Quantizing to very low bit‑widths (e.g., W4A4) can make LLMs unable to produce meaningful responses.",
+   "LLMs contain many outliers in weights and activations, making standard clipping‑based quantization ineffective."
+  ],
+  "reason": "The quote directly supports all five specific challenges listed in the claim, and the claim effectively summarizes these findings as a comprehensive answer to the question about quantization challenges."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What is 4-bit precision and how does it differ from other precisions?",
+  "aspect": "How does 4-bit precision affect the representation and computation of LLMs?",
+  "covered_before": false,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Using 4-bit precision instead of 8-bit can increase computational speed and reduce resource usage.",
+   "4-bit precision compresses LLM weights to under 4 bits each, drastically lowering memory use for deployment on constrained devices but introduces reconstruction error and accuracy trade‑offs.",
+   "The framework uses 8-bit precision for intra-node communication but drops to 4-bit precision for inter-node synchronization, showing a precision trade‑off across communication layers.",
+   "Reducing precision from 16‑bit to 4‑bit improves zero‑shot accuracy for a fixed total model size.",
+   "Uniform int4 quantization requires higher bitwidth for accuracy because its fixed‑scale representation mismatches neural‑network weight distributions.",
+   "When the average bitwidth exceeds 3, the most salient channels receive 4‑bit precision to boost model performance."
+  ],
+  "reason": "The claim is a faithful restatement of the provided quotes and comprehensively answers the aspect by detailing the effects of 4-bit precision on speed, memory, accuracy, and communication."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What is 4-bit precision and how does it differ from other precisions?",
+  "aspect": "How does 4-bit precision affect the performance of LLMs?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Reducing precision from 16‑bit to 4‑bit improves zero‑shot accuracy for a fixed total model size.",
+   "Underflow is identified as a primary cause of performance degradation when converting LLM weights to 4‑bit precision.",
+   "4-bit precision compresses LLM weights to under 4 bits each, drastically lowering memory use for deployment on constrained devices but introduces reconstruction error and accuracy trade‑offs.",
+   "The framework uses 8-bit precision for intra-node communication but drops to 4-bit precision for inter-node synchronization, showing a precision trade‑off across communication layers.",
+   "When the average bitwidth exceeds 3, the most salient channels receive 4‑bit precision to boost model performance.",
+   "Choosing between 4-bit and 8-bit quantized LLMs entails trade‑offs in quality, speed, and VRAM usage that differ markedly between the precisions."
+  ],
+  "reason": "The claim is a faithful restatement of the provided quotes and comprehensively answers the aspect by detailing the performance effects, causes of degradation, and trade-offs of 4-bit precision."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What is 4-bit precision and how does it differ from other precisions?",
+  "aspect": "How does 4-bit precision affect the accuracy of LLMs?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Reducing precision from 16‑bit to 4‑bit improves zero‑shot accuracy for a fixed total model size.",
+   "4-bit precision causes higher error rates on rare or specialized vocabulary because it compresses infrequently used weight patterns more aggressively.",
+   "4-bit precision compresses LLM weights to under 4 bits each, drastically lowering memory use for deployment on constrained devices but introduces reconstruction error and accuracy trade‑offs.",
+   "The method reduces quantization error while keeping inference speed unchanged, showing 4‑bit precision does not hurt performance.",
+   "LLMs trained with 4-bit precision can match the accuracy of FP8‑trained models.",
+   "Choosing FP4 special values ±5 and ±8 minimizes quantization error, showing 4‑bit floating‑point formats can be tuned for LLMs."
+  ],
+  "reason": "The claim is a comprehensive list of findings directly supported by the provided quote, effectively answering how 4-bit precision affects LLM accuracy."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?",
+  "covered_before": false,
+  "sources": 2,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "4-bit quantization does not hurt inference speed, compatibility, or interoperability.",
+   "Lack of out‑of‑the‑box hardware support for 4‑bit quantization limits practical speed gains."
+  ],
+  "reason": "The quote partially supports the claim by mentioning compatibility and speed but lacks the explicit conclusion on interoperability and the specific limitation regarding hardware support found in the claim, yet the claim itself provides a complete and direct answer to the aspect."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+  "covered_before": false,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "fp4 and nf4‑dq 4‑bit quantizations increase duplicate content words, indicating lower generated‑text quality at low temperatures.",
+   "4‑bit activation quantization performed poorly, indicating robustness limits.",
+   "Quantizing LLMs to 4‑bit reduces total model bits and improves zero‑shot performance, indicating better quality with smaller memory footprint.",
+   "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "4-bit quantization degrades accuracy more for smaller models than for larger ones."
+  ],
+  "reason": "The quote provides specific evidence for each point in the claim regarding the effects of 4-bit quantization on model accuracy and text quality, directly answering the aspect."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Undertrained LLMs are more robust to 4‑bit quantization because their weights fluctuate more during training.",
+   "Quantizing to 4‑bit does not yield a single robustness profile; effects vary with architecture, task, and quantization method.",
+   "4‑bit activation quantization performed poorly, indicating robustness limits.",
+   "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "4-bit quantized LLMs can achieve downstream task accuracy nearly identical to FP8 models.",
+   "The 4‑bit FP quantization method shows robust generalization across different transformer architectures, indicating maintained robustness after quantization."
+  ],
+  "reason": "The claim is a faithful restatement of the provided quotes and comprehensively answers the aspect by summarizing the effects of 4-bit quantization on LLM robustness."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?",
+  "covered_before": false,
+  "sources": 3,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "Quantizing to 4‑bit cuts memory usage by about 50 % and speeds up arithmetic 2–3× versus FP8.",
+   "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference."
+  ],
+  "reason": "The quote explicitly confirms the reduction in size/memory and the specific performance metrics (2-3x speedup, 50% reduction) claimed, directly answering how quantization affects size and memory usage."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the inference speed and latency?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "4-bit quantization reduces memory usage and speeds up inference, while weight‑only and mixed‑precision methods help balance performance and accuracy.",
+   "Quantizing to 4‑bit cuts memory usage by about 50 % and speeds up arithmetic 2–3× versus FP8.",
+   "4-bit quantization does not hurt inference speed, compatibility, or interoperability.",
+   "Lowering bit‑precision increases model FLOPS utilization, which can speed up inference.",
+   "Quantizing to 4‑bit enables compute‑efficient low‑bit matrix multiplication, which speeds up inference."
+  ],
+  "reason": "The quote provides specific evidence for the speed and memory metrics in the claim, though the claim adds generalizations about compatibility and other methods not explicitly detailed in the provided text."
+ },
+ {
+  "run": "Q3",
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspect": "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Applying aggressive 4-bit quantization requires substantial engineering effort, impacting compatibility and ease of integration.",
+   "4‑bit quantization is less compatible with fully trained LLMs and favors undertrained models.",
+   "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "4-bit quantization does not hurt inference speed, compatibility, or interoperability.",
+   "Achieving reliable 4‑bit quantization requires quantization‑aware training, adding extra training overhead."
+  ],
+  "reason": "The quote provides specific evidence supporting the claim's points about accuracy, compatibility, and training requirements, though it lacks the explicit summary phrasing found in the claim."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "How are LLMs trained",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "An LLM is an AI model trained on massive text data that learns statistical language patterns to understand word and idea relationships.",
+   "LLMs are pre‑trained on huge datasets with large computational resources and can later be fine‑tuned for specific domains.",
+   "LLMs are deep learning models trained on massive data that can understand and generate natural language and other content for many tasks.",
+   "LLMs are first pretrained on massive unlabeled text in an unsupervised way and then finetuned on supervised downstream data."
+  ],
+  "reason": "The quote provides four distinct definitions and descriptions of LLM training that directly and completely answer the aspect asking how LLMs are trained."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "How are LLMs used",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "LLMs can be used for many downstream tasks by casting each task into a text‑to‑text format and generating the target text.",
+   "LLMs are deep learning models trained on massive data that can understand and generate natural language and other content for many tasks.",
+   "LLMs are AI systems designed to understand and generate human‑like text from input.",
+   "LLMs are applied across many domains for tasks such as translation, question‑answering, summarization, and programming assistance."
+  ],
+  "reason": "The claim is a faithful restatement of the four provided quotes and effectively answers the aspect by listing the specific ways LLMs are used."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "main challenges of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Key challenges of LLMs include bias, toxic content, hallucination, privacy risks, high cost and energy use, adversarial attacks, and environmental impact.",
+   "LLMs face major challenges such as data drawbacks and model compression, which demand massive compute and cause memory‑intensive training and deployment.",
+   "Understanding and explaining LLM predictions is a major challenge due to model complexity.",
+   "Deploying LLMs requires attention to ethical and practical considerations."
+  ],
+  "reason": "The claim is a faithful, comprehensive restatement of the four specific challenges listed in the quote, directly answering the aspect."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "main limitations of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Key challenges of LLMs include bias, toxic content, hallucination, privacy risks, high cost and energy use, adversarial attacks, and environmental impact.",
+   "A key limitation of LLMs is that they rely on statistical patterns rather than genuine understanding.",
+   "LLMs face limitations related to data curation, fairness, privacy, and potential harm.",
+   "Deploying LLMs requires attention to ethical and practical considerations."
+  ],
+  "reason": "The claim is a faithful restatement of the four numbered points found in the quote, and it comprehensively lists the challenges and limitations requested by the aspect."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "aspect": "disadvantages of using a MoE model",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Traditional MoE models can suffer from training instability and uneven expert utilization.",
+   "Router decisions in MoE models can depend more on token IDs than on expert specialisation, limiting effective expert use.",
+   "MoE systems face challenges such as routing stability and expert specialization, which can hinder performance.",
+   "A major drawback of MoE models is that their theoretical understanding remains limited."
+  ],
+  "reason": "The quote directly lists the specific disadvantages of MoE models mentioned in the claim, and the claim serves as a complete summary of these disadvantages."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "aspect": "How does a MoE model differ from a standard neural network model?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Unlike standard neural networks that use the entire model for every input, MoE activates only selected experts per input.",
+   "Unlike standard neural networks that use the whole network for every input, MoE models activate only a subset of experts per token.",
+   "Unlike a standard neural network that processes every input through the whole architecture, a MoE activates only a small portion of the network for each input.",
+   "MoE models are more memory‑efficient than dense neural networks, allowing better scaling under memory constraints.",
+   "A MoE model consists of many expert sub‑networks and a gating function that routes each input to a few experts, unlike a standard neural network which is a single monolithic model.",
+   "MoE reduces computation cost and speeds up inference for large models."
+  ],
+  "reason": "The quote explicitly contrasts MoE mechanisms (selective expert activation, gating) with standard dense networks, directly answering how they differ."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "aspect": "advantages of using a MoE model",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "MoE enables large models to stay computationally efficient because only a small subset of parameters is used per input.",
+   "MoE models function as an implicit multi‑task learning framework that does not need explicit task boundaries, giving them strong adaptability across domains.",
+   "MoE models are more memory‑efficient than dense neural networks, allowing better scaling under memory constraints.",
+   "MoE reduces computation cost and speeds up inference for large models."
+  ],
+  "reason": "The quote explicitly lists the four specific advantages of MoE models mentioned in the claim, and the claim serves as a complete, direct answer to the aspect asking for those advantages."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is MoE applied to LLMs?",
+  "aspect": "What are the challenges of using MoE in LLMs?",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Applying MoE to LVLMs is challenging because converting a LLM to a LVLM while sparsifying causes significant performance loss.",
+   "MoE models introduce challenges in computation, communication, and storage.",
+   "Evaluating MoE‑based LLMs is difficult because standard LLM benchmarks are not well‑suited for them.",
+   "Context‑Independent Specialization is a problem when training MoE LLMs from scratch."
+  ],
+  "reason": "The quote directly supports all four specific challenges listed in the claim regarding MoE in LLMs, and the claim effectively summarizes these findings as a complete answer to the aspect."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is MoE applied to LLMs?",
+  "aspect": "What are the benefits of using MoE in LLMs?",
+  "covered_before": true,
+  "sources": 2,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Combining MoE with LoRA yields higher parameter efficiency and enables dynamic composition of expert skills.",
+   "MoE provides superior model capacity, better task-specific performance, and efficient scaling compared to Bayesian approaches."
+  ],
+  "reason": "The quote directly lists the specific advantages of MoE (parameter efficiency, dynamic skill composition, superior capacity, performance, and scaling) which fully answers the aspect asking for benefits."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is expert routing in MoE models?",
+  "aspect": "How does expert routing affect the performance and efficiency of MoE models?",
+  "covered_before": false,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "MoE uses a dynamic routing mechanism that assigns different experts to handle different data or tasks, leading to more efficient resource allocation and improved performance.",
+   "Accurate expert selection is crucial; random perturbations of routing decisions significantly degrade MoE performance.",
+   "When routing assigns each expert to a single cluster, nonlinear MoEs achieve near‑100% test accuracy, showing routing’s strong impact on performance.",
+   "ProbMoE treats routing as a probabilistic distribution over expert subsets and optimizes expected loss.",
+   "Expert routing in MoE models activates only a subset of network parts for each input example."
+  ],
+  "reason": "The claim is a faithful synthesis of the provided quotes regarding expert routing's impact on performance and efficiency, and it directly answers the aspect by explaining the mechanism and outcomes."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is expert routing in MoE models?",
+  "aspect": "How does expert routing work in MoE models?",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "In MoE models a learnable router directs each input to only a subset of experts, activating partial network regions.",
+   "Expert routing computes a probability distribution over experts for each token, selects the top‑k experts, and combines their outputs with mixture weights, enabling conditional computation.",
+   "Expert routing in MoE models activates only a subset of network parts for each input example.",
+   "MoE uses a dynamic routing mechanism that assigns different experts to handle different data or tasks, leading to more efficient resource allocation and improved performance.",
+   "MoE models use either fixed‑k (top‑k) routing or dynamic‑k routing where the number of activated experts varies per token."
+  ],
+  "reason": "The quote explicitly details the mechanism of expert routing (router, top-k selection, combination) and directly answers how it works in MoE models."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "What is expert routing in MoE models?",
+  "aspect": "What are the different types of expert routing strategies?",
+  "covered_before": false,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Two common routing strategies are top‑K routing (K ≥ 2) and single‑expert routing (K = 1).",
+   "Expert‑choice routing lets each expert use its own router to select a fixed number of patches from the input.",
+   "Top‑P routing is a strategy that selects the number of active experts by applying a probability threshold.",
+   "Some routing methods allow selecting a variable number of experts for each token.",
+   "Expert routing strategies include standard top‑1 routing, shared‑expert routing, and reinforcement‑learning‑based routing."
+  ],
+  "reason": "The quote explicitly lists and defines the specific routing strategies mentioned in the claim, directly answering the question about their types."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspect": "How do expert routing methods compare in terms of accuracy, speed, and scalability?",
+  "covered_before": false,
+  "sources": 6,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "ScoutRoute speeds up expert routing by selecting experts from a single inference, avoiding the need to run all candidate models, which also improves scalability.",
+   "Comparing expert routing methods requires controlled experiments that separate routing specialization (accuracy) from system throughput (speed) and scalability.",
+   "The new routing approach yields over 2× faster training than GShard and Switch Transformer.",
+   "Standard top‑k routing is far less accurate than sampled equal‑compute alternatives on fragile tokens.",
+   "Gradient‑estimation routing methods often perform worse than hand‑designed heuristic routing.",
+   "Expert routing methods aim to balance accuracy, speed, and scalability by activating only a subset of experts for each input."
+  ],
+  "reason": "The claim is a faithful restatement of the provided quotes, but it only addresses specific findings from one paper (ScoutRoute) rather than providing a comprehensive comparison of all expert routing methods across accuracy, speed, and scalability as requested by the aspect."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspect": "existing methods for expert routing in LLMs",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Expert routing in MoE LLMs is implemented with a learned linear projection followed by top‑k selection of experts.",
+   "The Deep Mixture of Experts model introduces a hierarchical architecture with stacked routing layers that separate “where” experts from “what” experts.",
+   "A newly proposed routing method tackles load imbalance and lets each token use a variable number of experts.",
+   "Understanding expert routing decisions and clustering mechanisms in MoE models remains an open research problem.",
+   "Expert routing methods aim to balance accuracy, speed, and scalability by activating only a subset of experts for each input."
+  ],
+  "reason": "The quote provides direct evidence for each of the five specific claims regarding existing expert routing methods, and the claim effectively summarizes the current state of the art as requested by the aspect."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspect": "existing architectures for expert routing in LLMs",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Expert routing in MoE LLMs is implemented with a learned linear projection followed by top‑k selection of experts.",
+   "ScoutRoute implements routing by using a lightweight scout model to extract hidden‑state and confidence signals, predicting each expert’s competence without executing the experts.",
+   "The Deep Mixture of Experts model introduces a hierarchical architecture with stacked routing layers that separate “where” experts from “what” experts.",
+   "Understanding expert routing decisions and clustering mechanisms in MoE models remains an open research problem.",
+   "Expert routing methods aim to balance accuracy, speed, and scalability by activating only a subset of experts for each input."
+  ],
+  "reason": "The quote faithfully restates all five specific claims regarding expert routing architectures, and the claim comprehensively answers the aspect by listing existing methods and their characteristics."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspect": "future directions for expert routing in LLMs",
+  "covered_before": true,
+  "sources": 3,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Expert routing in MoE LLMs is implemented with a learned linear projection followed by top‑k selection of experts.",
+   "Balancing scope is the crucial factor in MoE training, outweighing the specific balancing method, and large token scopes enable favorable utilization‑specialization trade‑offs.",
+   "Understanding expert routing decisions and clustering mechanisms in MoE models remains an open research problem."
+  ],
+  "reason": "The quote directly supports all three points in the claim, which collectively provide a comprehensive summary of current knowledge and open problems regarding expert routing in MoE LLMs."
+ },
+ {
+  "run": "Q2",
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspect": "open problems for expert routing in LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Some approaches modify routing at inference by sampling uncertain expert choices, pruning or reinforcing experts, or optimizing expert mixtures per input.",
+   "Balancing scope matters more than the choice of routing method, and sufficient local tokens-per-expert is critical for expert specialization.",
+   "Poor expert routing can leave experts under‑trained, causing over‑ or under‑specialization.",
+   "Understanding expert routing decisions and clustering mechanisms in MoE models remains an open research problem."
+  ],
+  "reason": "The quote provides direct evidence for all four points in the claim, including the specific open research problem regarding routing decisions and clustering mechanisms."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "main applications of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "LLMs power a wide range of applications such as chatbots, search engines, writing assistants, productivity tools, meeting assistants, research workflows, and code generation.",
+   "LLMs are used for NLP tasks and as general‑purpose task solvers, e.g., powering Microsoft’s Co‑Pilot systems.",
+   "LLMs are cutting‑edge AI models that process and generate coherent text and can generalize to many tasks.",
+   "LLMs enable human‑like interactions and are used in chatbots, virtual assistants, and automated customer support."
+  ],
+  "reason": "The quote directly lists the specific applications of LLMs mentioned in the claim, and the claim effectively summarizes these applications to answer the aspect."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "How are LLMs trained?",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "LLMs are trained in a self‑supervised manner on massive text corpora.",
+   "LLMs are AI models that can process and generate natural language text, trained on massive amounts of text data using deep learning techniques.",
+   "LLMs are foundation models trained on massive data to understand and generate text.",
+   "LLMs are trained by first pre‑training on massive text corpora to predict the next word, then fine‑tuning for specific tasks."
+  ],
+  "reason": "The quote explicitly details the training methods (self-supervised, pre-training, fine-tuning) and data sources (massive text corpora) for LLMs, directly answering how they are trained."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "How are LLMs structured?",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "LLMs use transformer‑based neural network architectures.",
+   "LLMs are foundation models trained on massive data to understand and generate text.",
+   "Modern LLMs are built primarily on transformer architectures.",
+   "LLMs are deep learning models that generate human-like text and are built on large‑scale transformer architectures such as GPT and BERT."
+  ],
+  "reason": "The quote directly states the architectural and functional definitions of LLMs, which fully answers the aspect asking how they are structured."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is a large language model (LLM)?",
+  "aspect": "challenges of LLMs",
+  "covered_before": true,
+  "sources": 2,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Evaluating LLMs is challenging because of fairness, bias, fact‑checking, and reasoning concerns.",
+   "The powerful capabilities of LLMs raise ethical responsibilities, requiring careful, responsible use."
+  ],
+  "reason": "The quote directly lists the specific challenges (fairness, bias, fact-checking, reasoning) and ethical responsibilities mentioned in the claim, providing a complete answer to the aspect regarding LLM challenges."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspect": "What are the types of reasoning ability that LLMs can exhibit?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Logical reasoning for LLMs is defined as a distinct form of reasoning that includes deductive, inductive, abductive, and analogical paradigms.",
+   "Reasoning ability in LLMs is defined as logical reasoning comprising deductive, inductive, and abductive types.",
+   "LLMs can exhibit a range of reasoning types, including abstractive, compositional, inductive, abductive, deductive, logical, commonsense, mathematical, and social reasoning.",
+   "LLMs can exhibit three levels of reasoning ability: deductive, abductive, and analogical reasoning.",
+   "Core reasoning tasks assess isolated reasoning types such as logical, mathematical, or causal reasoning.",
+   "LLMs can exhibit inductive reasoning ability."
+  ],
+  "reason": "The quote provides the specific definitions and lists of reasoning types that the claim synthesizes into numbered points, though the claim adds the framing of 'Taken together' and specific categorizations not explicitly stated as a summary in the quote."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspect": "What are the factors that influence reasoning ability in LLMs?",
+  "covered_before": true,
+  "sources": 3,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Factors such as difficulty with extended reasoning, lack of example sub‑proofs, poor generalization, and sensitivity to syntactic variations limit LLM reasoning ability.",
+   "Factors that influence LLM reasoning ability include a tendency to hallucinate facts and to abandon reasoning (laziness).",
+   "Self‑feedback mechanisms such as MCTS combined with LLM‑guided feedback can enhance the reasoning process."
+  ],
+  "reason": "The claim is a faithful restatement of the quote and directly lists the factors influencing LLM reasoning ability as requested by the aspect."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspect": "how reasoning ability is defined",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Reasoning ability is defined as the capacity to produce accurate conclusions, maintain coherent inferential chains, and stay stable under equivalent reformulations.",
+   "Reasoning ability is defined as the capacity to draw inferences from evidence or premises.",
+   "Reasoning ability in LLMs is the capacity to analyze evidence, construct arguments, and apply logic through multi‑step processing beyond simple token‑by‑token generation.",
+   "Reasoning ability in LLMs is defined as logical reasoning comprising deductive, inductive, and abductive types.",
+   "Reasoning ability in LLMs refers to the model's capability to think before answering."
+  ],
+  "reason": "The quote explicitly lists five distinct definitions of reasoning ability, which directly and completely answers the aspect asking how reasoning ability is defined."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspect": "What are the levels of reasoning ability that LLMs can exhibit?",
+  "covered_before": false,
+  "sources": 6,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Reasoning ability can be categorized into three levels: associational, interventional, and counterfactual.",
+   "LLMs can exhibit three levels of reasoning ability: deductive, abductive, and analogical reasoning.",
+   "Reasoning ability in LLMs is defined as logical reasoning comprising deductive, inductive, and abductive types.",
+   "Reasoning ability in LLMs refers to the model's capability to think before answering.",
+   "LLMs excel at computational reasoning steps yet struggle with tool‑augmented reasoning.",
+   "LLMs can exhibit inductive reasoning ability."
+  ],
+  "reason": "The quote supports specific sub-claims about reasoning types and levels but fails to support the claim that LLMs exhibit deductive, abductive, and analogical reasoning as a unified set of levels, nor does it fully define the levels of reasoning ability for LLMs in general."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspect": "how reasoning ability is measured",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Reasoning ability is defined as the capacity to produce accurate conclusions, maintain coherent inferential chains, and stay stable under equivalent reformulations.",
+   "Reasoning ability is defined as the capacity to draw inferences from evidence or premises.",
+   "Reasoning ability is measured by probing model performance on associational, interventional, and counterfactual queries.",
+   "Reasoning ability of LLMs is often measured by answer accuracy.",
+   "Reasoning ability is measured with an automated Reasoning Evaluator that validates free‑text reasoning against web‑scale resources and computes metrics for efficiency, factuality, and completeness."
+  ],
+  "reason": "The quote explicitly lists five distinct methods and definitions for measuring reasoning ability, which directly and completely answers the aspect asking how it is measured."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "characteristics of a good benchmark or metric for evaluating the reasoning ability of LLMs",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "A robust benchmark includes conceptually distinct, theoretically motivated dimensions of reasoning quality.",
+   "Good benchmarks should assess final outputs, reasoning steps, interactive behavior, and internal mechanisms of LLMs.",
+   "Effective benchmarks must use content‑neutral samples and avoid overlap with training data while covering deductive, inductive, and abductive reasoning.",
+   "LLM‑w‑Rationale quantifies reasoning‑error detection with precision, recall, and F1‑score at the step level.",
+   "Effective benchmarks provide comprehensive coverage of reasoning types, multiple difficulty levels, and varied question formats such as multiple‑choice, free‑form, and rule‑based.",
+   "The benchmark uses a theoretically grounded six‑dimensional behavioral framework to measure LLM reasoning."
+  ],
+  "reason": "The quote provides specific evidence for each of the six characteristics listed in the claim, and the claim effectively summarizes these findings as a comprehensive answer to the aspect regarding benchmark characteristics."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "benchmarks for evaluating the reasoning ability of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "NeuLR is a newly introduced benchmark consisting of 3,000 neutral‑content items that evaluate deductive, inductive, and abductive reasoning abilities.",
+   "LLM‑w‑Rationale quantifies reasoning‑error detection with precision, recall, and F1‑score at the step level.",
+   "GLoRE is a benchmark for logical reasoning that comprises 12 datasets covering multiple‑choice reading comprehension, NLI, and true‑or‑false questions.",
+   "Existing benchmarks for multimodal reasoning include CLEVR, GQA, MathVista, PuzzleBench, ChartX, PuzzleVQA, GPQA, OlympiaBench, and the newer MME‑Reasoning."
+  ],
+  "reason": "The quote explicitly lists and defines the specific benchmarks mentioned in the claim, directly answering the aspect by providing the requested examples."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "criteria of a good benchmark or metric for evaluating the reasoning ability of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Four metrics are used to assess LLM reasoning: answer correctness, explanation correctness, explanation completeness, and explanation redundancy.",
+   "Benchmark questions should require reasoning beyond simple visual perception.",
+   "Good benchmarks should assess final outputs, reasoning steps, interactive behavior, and internal mechanisms of LLMs.",
+   "LLM‑w‑Rationale quantifies reasoning‑error detection with precision, recall, and F1‑score at the step level."
+  ],
+  "reason": "The quote explicitly lists the four metrics, design criteria, evaluation dimensions, and specific quantification methods mentioned in the claim, directly answering the aspect regarding criteria for good benchmarks."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "metrics for evaluating the reasoning ability of LLMs",
+  "covered_before": true,
+  "sources": 4,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Four metrics are used to assess LLM reasoning: answer correctness, explanation correctness, explanation completeness, and explanation redundancy.",
+   "LLM‑w‑Rationale quantifies reasoning‑error detection with precision, recall, and F1‑score at the step level.",
+   "The framework defines six concrete metrics—Correctness, Consistency, Robustness, Local Logical Coherence, Efficiency, and Stability—to evaluate reasoning ability.",
+   "Metrics such as MMLU and AGIEval are aligned with Information Retrieval rather than reasoning tasks."
+  ],
+  "reason": "The quote explicitly lists the four metrics, the specific metrics for LLM-w-Rationale, the six framework metrics, and the alignment of MMLU/AGIEval, directly answering the aspect about evaluation metrics for LLM reasoning."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "How are benchmarks and metrics categorized for evaluating the reasoning ability of LLMs?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Four metrics are used to assess LLM reasoning: answer correctness, explanation correctness, explanation completeness, and explanation redundancy.",
+   "Benchmarks are organized into seven reasoning categories, covering commonsense, mathematical, multimodal, coding, reading comprehension, general knowledge, and LLM‑specific capabilities.",
+   "Good benchmarks should assess final outputs, reasoning steps, interactive behavior, and internal mechanisms of LLMs.",
+   "LLM‑w‑Rationale quantifies reasoning‑error detection with precision, recall, and F1‑score at the step level.",
+   "Future benchmarks should separate outcome‑oriented from trace‑oriented properties rather than rely solely on correctness.",
+   "Benchmarks can be grouped by purpose (LLM‑specific), task coverage (e.g., reasoning, coding, medical QA), and community adoption (citation counts, recognition)."
+  ],
+  "reason": "The claim is a comprehensive, point-by-point restatement of the provided quote regarding benchmark categorization and metrics, and it directly answers the aspect by listing the specific categories and metrics mentioned."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "How are benchmarks and metrics compared for evaluating the reasoning ability of LLMs?",
+  "covered_before": false,
+  "sources": 2,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Four metrics are used to assess LLM reasoning: answer correctness, explanation correctness, explanation completeness, and explanation redundancy.",
+   "Good benchmarks should assess final outputs, reasoning steps, interactive behavior, and internal mechanisms of LLMs."
+  ],
+  "reason": "The quote supports the first part of the claim regarding specific metrics but lacks the context to support the second part about benchmark types, yet the claim itself comprehensively answers the aspect by listing both metrics and benchmark categories."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "What are the limitations of the current benchmarks and metrics?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Current correctness‑based benchmarks fail to distinguish genuine reasoning from pattern recognition, revealing a key limitation.",
+   "Current benchmarks are unsuitable as metrics for generalizable reasoning competence.",
+   "Current AI benchmarking metrics do not capture Reviewing Work and Data Structuring capabilities.",
+   "Effective benchmarks align with real‑world applications and avoid artificial, surface‑level metrics.",
+   "Current benchmarks are limited by labor‑intensive expert annotations, small dataset size, and omission of dimensions such as fairness, harm, and readability.",
+   "Effective benchmarks require documentation of evaluation conditions and dataset characteristics."
+  ],
+  "reason": "The quote directly lists specific limitations of current benchmarks and metrics, which constitutes a complete answer to the aspect asking for those limitations."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspect": "What are the gaps of the current benchmarks and metrics?",
+  "covered_before": true,
+  "sources": 6,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Current correctness‑based benchmarks fail to distinguish genuine reasoning from pattern recognition, revealing a key limitation.",
+   "Current AI benchmarking metrics do not capture Reviewing Work and Data Structuring capabilities.",
+   "Effective benchmarks align with real‑world applications and avoid artificial, surface‑level metrics.",
+   "Benchmarks should offer diverse evaluation formats and question types.",
+   "Current benchmarks are limited by labor‑intensive expert annotations, small dataset size, and omission of dimensions such as fairness, harm, and readability.",
+   "Effective benchmarks require documentation of evaluation conditions and dataset characteristics."
+  ],
+  "reason": "The quote provides direct evidence for each numbered point in the claim, and the claim effectively lists the specific gaps and limitations requested by the aspect."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What are the best practices for using benchmarks and metrics to improve the reasoning ability of LLMs?",
+  "covered_before": true,
+  "sources": 2,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Using expert‑curated rationales enables the benchmark to capture flawed reasoning and provide a nuanced evaluation of LLM medical capabilities.",
+   "Evaluating LLMs across multiple standard benchmarks and metrics, and selecting task‑appropriate measures, is a best practice for improving reasoning ability."
+  ],
+  "reason": "The quote supports the first part of the claim regarding expert-curated rationales but only partially supports the second part by stating a general principle rather than explicitly labeling it as a 'best practice' for improving reasoning, though the claim itself effectively answers the aspect by listing the recommended practices."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What are the insights from using the benchmarks and metrics to improve the reasoning ability of LLMs?",
+  "covered_before": false,
+  "sources": 3,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Using expert‑curated rationales enables the benchmark to capture flawed reasoning and provide a nuanced evaluation of LLM medical capabilities.",
+   "Benchmarks allow researchers to evaluate how new training strategies affect LLM reasoning performance.",
+   "Metric‑based evaluation using automated computational metrics provides a method to apply benchmarks for assessing LLM reasoning."
+  ],
+  "reason": "The claim faithfully restates the three specific insights regarding expert-curated rationales, training strategy evaluation, and metric-based methods found in the quote, directly answering the aspect's request for insights."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What are the open problems for using the benchmarks and metrics?",
+  "covered_before": false,
+  "sources": 4,
+  "synthesis": "partial",
+  "control": "no",
+  "claims": [
+   "Rationale‑based evaluation exposes the gap between prediction accuracy and true reasoning quality, highlighting the need for richer metrics.",
+   "Checking for data contamination between pre‑training corpora and benchmark sets is essential to ensure reliable evaluation of reasoning improvements.",
+   "Current benchmarks fail to measure generalizable reasoning, highlighting the open problem of creating metrics that capture intermediate steps and compositional abilities.",
+   "Benchmarks often focus on narrow, isolated tasks and miss the full spectrum of user interactions, indicating the need to align evaluation metrics with real‑world workflows."
+  ],
+  "reason": "The quote provides specific evidence for the claim's points but lacks the explicit framing of them as 'open problems' or a numbered summary list, while the claim itself effectively answers the aspect by listing the identified limitations and open problems."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What methods can be used for applying benchmarks and metrics to improve the reasoning ability of LLMs?",
+  "covered_before": true,
+  "sources": 2,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "A theory‑grounded, behavioral, and deployment‑aware framework provides a method for applying benchmarks to assess and improve LLM reasoning.",
+   "Metric‑based evaluation using automated computational metrics provides a method to apply benchmarks for assessing LLM reasoning."
+  ],
+  "reason": "The quote explicitly lists two distinct methods (theory-grounded framework and metric-based evaluation) that address the aspect's request for methods to apply benchmarks to improve LLM reasoning."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What are the results from using the benchmarks and metrics to improve the reasoning ability of LLMs?",
+  "covered_before": true,
+  "sources": 2,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Empirical results show that the six reasoning dimensions collapse into two correlated layers, revealing which aspects contribute uniquely to performance.",
+   "Increasing the size of the LLM component leads to higher reasoning scores on the benchmark."
+  ],
+  "reason": "The quote explicitly provides the empirical results regarding the collapse of reasoning dimensions and the impact of model size, which directly answers the aspect asking for these results."
+ },
+ {
+  "run": "Q4",
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspect": "What are the future directions for using the benchmarks and metrics?",
+  "covered_before": true,
+  "sources": 5,
+  "synthesis": "yes",
+  "control": "no",
+  "claims": [
+   "Future reasoning benchmarks should separate outcome‑oriented and trace‑oriented properties rather than rely solely on correctness.",
+   "Future work should focus on formalized reasoning tasks, layered evaluation procedures, and metrics beyond accuracy to drive reasoning improvements.",
+   "Reasoning errors stem from combined weaknesses in representation, supervision, inference control, and evaluation design, so future work should address these jointly rather than in isolation.",
+   "Adding manual and qualitative evaluation alongside benchmark metrics offers deeper insights and guides future improvements in reasoning capabilities.",
+   "Benchmarks often focus on narrow, isolated tasks and miss the full spectrum of user interactions, indicating the need to align evaluation metrics with real‑world workflows."
+  ],
+  "reason": "The claim is a faithful restatement of the quote's list of future directions and directly answers the question about future directions for benchmarks and metrics."
+ }
+]

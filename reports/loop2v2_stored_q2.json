@@ -1,0 +1,199 @@
+[
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "How is MoE applied to LLMs?",
+  "aspects": 2,
+  "uncovered_before": [
+   "What are the challenges of using MoE in LLMs?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "What are the challenges of using MoE in LLMs?": {
+     "before": {
+      "yes": 2,
+      "partial": 5,
+      "no": 3
+     },
+     "steps": [],
+     "covered_by": "synthesis",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "Deploying MoE systems requires extensive system‑level engineering, making practi",
+       "source_id": "22614418-702a-436f-9435-4b7d5889c1d0",
+       "reason": "The quote directly supports the claim that MoE deployment requires extensive engineering, which constitutes a valid answer to the question a"
+      },
+      {
+       "claim": "Current standard LLM benchmarks are ill‑suited for assessing MoE models, creatin",
+       "source_id": "22614418-702a-436f-9435-4b7d5889c1d0",
+       "reason": "The quote directly states that traditional benchmarks are ill-suited for MoE models, which faithfully supports the claim and serves as a val"
+      },
+      {
+       "claim": "Current standard LLM benchmarks are ill‑suited for assessing MoE models, creatin",
+       "source_id": "22614418-702a-436f-9435-4b7d5889c1d0",
+       "reason": "The quote directly lists five specific challenges regarding MoE in LLMs, which fully answers the aspect asking for challenges."
+      },
+      {
+       "claim": "Current MoE designs still require more robust and efficient architectures for la",
+       "source_id": "478f8e45-9802-4610-80e9-c25e52e5fa15",
+       "reason": "The quote directly lists five specific challenges regarding MoE in LLMs, which fully answers the aspect asking for challenges."
+      }
+     ]
+    }
+   },
+   "steps": [],
+   "seconds": 3.7,
+   "searched": 0,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What is expert routing in MoE models?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspects": 7,
+  "uncovered_before": [
+   "How does expert routing implementation in LLMs compare in terms of scalability?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "How does expert routing implementation in LLMs compare in terms of scalability?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": "synthesis",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "Routing insights from small-scale experiments scale to models 35× larger, showin",
+       "source_id": "677643c0-8258-443e-b4c8-4c2c1c01e824",
+       "reason": "The quote provides specific evidence of scalability (35x larger model) and design principles that directly answer the aspect regarding how e"
+      },
+      {
+       "claim": "Combining hidden‑state and confidence signals, ScoutRoute attains higher routing",
+       "source_id": "8393804f-8c89-4dd5-a8e6-9a5ab968ff24",
+       "reason": "The quote provides specific evidence of scalability (35x larger model) and design principles that directly answer the aspect regarding how e"
+      },
+      {
+       "claim": "Designs balance model sparsity with fine‑grained expressiveness, supporting scal",
+       "source_id": "b7314f03-12ee-4921-bdac-7489db20b1bd",
+       "reason": "The quote provides specific evidence of scalability (35x larger model) and design principles that directly answer the aspect regarding how e"
+      }
+     ]
+    }
+   },
+   "steps": [],
+   "seconds": 4.1,
+   "searched": 0,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ }
+]

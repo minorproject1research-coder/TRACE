@@ -275,9 +275,17 @@ def check_coverage_judged(
     min_sources: int = 3,
     fallback: bool = True,
     candidates: Optional[List[Dict]] = None,
+    synthesis_covered: Optional[Dict[int, List[Dict]]] = None,
+    non_blocking: Optional[set] = None,
 ) -> Dict[str, Any]:
     """
     Judge-based coverage check with explicit per-aspect states.
+
+    Loop 2 additions (both default to "not used", which gives exactly the rule below):
+    - synthesis_covered {aspect index: evidence entries}: the aspect has no two single claims that answer it, but the judge accepted the
+      findings of several sources TOGETHER (loop2.synthesis). It counts as covered and its evidence entries carry "synthesis": True.
+    - non_blocking {aspect indexes}: uncovered aspects that were searched and have no usable evidence (known gaps). They do not stop the
+      sub-question from being "sufficient"; "sufficient_strict" is the value without this and "known_gap_aspects" lists them.
 
     Per-aspect states:
     - covered_judge: at least JUDGE_MIN_YES "yes" verdicts from at least MIN_COVER_SOURCES distinct sources
@@ -404,6 +412,11 @@ def check_coverage_judged(
             aspect_covered[i] = True
             logger.info("Aspect %d covered_judge: yes=%d sources=%d", i + 1, len(yes_keys), len(yes_sources))
             continue
+        if synthesis_covered and i in synthesis_covered:
+            aspect_covered[i] = True
+            aspect_evidence[i] = evidence + list(synthesis_covered[i])
+            logger.info("Aspect %d covered_synthesis: %d sources combined", i + 1, len(synthesis_covered[i]))
+            continue
 
         keys = cand_keys.get(i, set())
         unusable = [k for k in keys if _verdict_final(judge_verdicts.get(k)) not in ("yes", "partial", "no")]
@@ -423,14 +436,21 @@ def check_coverage_judged(
 
     # A detail is covered only if ALL of its aspects are covered (uncovered_judged and unjudged both make it uncovered)
     n_details = len(original_details)
-    detail_covered = [True] * n_details
-    for i, covered in enumerate(aspect_covered):
-        if not covered and aspect_to_detail[i] < n_details:
-            detail_covered[aspect_to_detail[i]] = False
-    uncovered_details = [original_details[i] for i, ok in enumerate(detail_covered) if not ok]
 
-    return {
-        "sufficient": weighted_sources >= min_sources and not uncovered_details,
+    def details_left(ignore: set) -> list:
+        ok = [True] * n_details
+        for i, covered in enumerate(aspect_covered):
+            if not covered and i not in ignore and aspect_to_detail[i] < n_details:
+                ok[aspect_to_detail[i]] = False
+        return [original_details[i] for i, good in enumerate(ok) if not good]
+
+    uncovered_details = details_left(set())
+    ignore = {i for i in (non_blocking or set()) if 0 <= i < n_aspects and not aspect_covered[i] and aspects[i] not in unjudged_aspects}
+    blocking_details = details_left(ignore)
+    sufficient_strict = weighted_sources >= min_sources and not uncovered_details
+
+    result = {
+        "sufficient": weighted_sources >= min_sources and not blocking_details,
         "source_count": len(by_source),
         "full_text_source_count": sum(1 for level in by_source.values() if level == "full_text"),
         "uncovered_details": uncovered_details,
@@ -441,6 +461,11 @@ def check_coverage_judged(
         "judge_stats": ({**judge_stats, "one_finding_one_aspect_dropped": one_to_one_dropped} if one_to_one_dropped is not None else judge_stats),
         "aspect_evidence": aspect_evidence,
     }
+    if non_blocking is not None:
+        # not columns of coverage_results: the caller (loop2) moves them into judge_stats before anything is stored
+        result["sufficient_strict"] = sufficient_strict
+        result["known_gap_aspects"] = [aspects[i] for i in sorted(ignore)]
+    return result
 
 
 # Legacy function for backward compatibility with old calls

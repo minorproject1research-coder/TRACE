@@ -1,0 +1,301 @@
+[
+ {
+  "sub_question": "What are diffusion models and GANs?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What are the metrics or criteria for evaluating image generation quality and training stability?",
+  "aspects": 4,
+  "uncovered_before": [
+   "How is convergence measured in image generation models?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "How is convergence measured in image generation models?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 1
+     },
+     "steps": [],
+     "covered_by": "synthesis",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "Precision measures fidelity (image quality) while recall measures diversity in g",
+       "source_id": "7059fa4d-5603-457f-b26b-28608e71647a",
+       "reason": "The quote explicitly defines how convergence (fidelity and diversity) is measured using precision and recall, which directly answers the asp"
+      },
+      {
+       "claim": "Precision measures fidelity (image quality) while recall measures diversity in g",
+       "source_id": "7059fa4d-5603-457f-b26b-28608e71647a",
+       "reason": "The quote explicitly defines how fidelity and diversity are measured (precision/recall) and explains the mechanism of FID, directly answerin"
+      },
+      {
+       "claim": "The Fréchet Inception Distance evaluates image diversity by comparing feature di",
+       "source_id": "867f3bef-069d-4d56-a87d-e2a45e2ca75d",
+       "reason": "The quote explicitly defines how fidelity and diversity are measured (precision/recall) and explains the mechanism of FID, directly answerin"
+      }
+     ]
+    }
+   },
+   "steps": [],
+   "seconds": 4.1,
+   "searched": 0,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "How do diffusion models compare with GANs in terms of image generation quality?",
+  "aspects": 3,
+  "uncovered_before": [
+   "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?": {
+     "before": {
+      "yes": 0,
+      "partial": 6,
+      "no": 0
+     },
+     "steps": [],
+     "covered_by": "synthesis",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "Diffusion models now outperform GANs on benchmark image quality, achieving top‑n",
+       "source_id": "b6dd02d0-0087-4383-8573-aa98e2c553fd",
+       "reason": "The claim is a faithful restatement of the quote and directly answers the aspect by summarizing the performance differences between diffusio"
+      },
+      {
+       "claim": "Diffusion models achieve high-fidelity images but incur higher computational cos",
+       "source_id": "1d4a6d2a-5b2e-49e4-a232-818743d789d7",
+       "reason": "The claim is a faithful restatement of the quote and directly answers the aspect by summarizing the performance differences between diffusio"
+      },
+      {
+       "claim": "Diffusion models excel at text‑to‑image generation, delivering high‑quality resu",
+       "source_id": "6ba670b2-c2c2-4351-8e82-c500b57f322c",
+       "reason": "The claim is a faithful restatement of the quote and directly answers the aspect by summarizing the performance differences between diffusio"
+      },
+      {
+       "claim": "Diffusion models can handle diverse text and image inputs, enabling generation a",
+       "source_id": "dba0047f-00b5-43cd-b1d6-39060b9938f3",
+       "reason": "The claim is a faithful restatement of the quote and directly answers the aspect by summarizing the performance differences between diffusio"
+      }
+     ]
+    }
+   },
+   "steps": [],
+   "seconds": 4.4,
+   "searched": 0,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "How do diffusion models compare with GANs in terms of training stability?",
+  "aspects": 6,
+  "uncovered_before": [
+   "How do diffusion models vs. GANs scale with computational resources?",
+   "How do diffusion models vs. GANs scale with data size?",
+   "How do diffusion models vs. GANs scale with model size?",
+   "What are the solutions for training diffusion models vs. GANs?"
+  ],
+  "uncovered_after": [
+   "How do diffusion models vs. GANs scale with computational resources?",
+   "How do diffusion models vs. GANs scale with data size?",
+   "How do diffusion models vs. GANs scale with model size?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "What are the solutions for training diffusion models vs. GANs?": {
+     "before": {
+      "yes": 0,
+      "partial": 2,
+      "no": 7
+     },
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "Adversarial Diffusion Distillation provides more stable gradients, improving the",
+       "source_id": "f1820a52-10f2-4948-aa7d-7052ffaa3d22",
+       "reason": "The quote directly supports all three specific solutions mentioned in the claim regarding training stability, convergence, and GAN instabili"
+      },
+      {
+       "claim": "Score‑based generative models built on diffusion use the score function to achie",
+       "source_id": "78861f78-c8d5-4277-a5f4-dfc74fe2385e",
+       "reason": "The quote directly supports all three specific solutions mentioned in the claim regarding training stability, convergence, and GAN instabili"
+      },
+      {
+       "claim": "BigGAN mitigates GAN instability by using architectural changes and regularizati",
+       "source_id": "6eff0591-486e-4319-89fc-e4ab0ab5850b",
+       "reason": "The quote directly supports all three specific solutions mentioned in the claim regarding training stability, convergence, and GAN instabili"
+      }
+     ]
+    },
+    "How do diffusion models vs. GANs scale with data size?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 0,
+      "partial": 0,
+      "sources": 0
+     },
+     "near_miss": false
+    },
+    "How do diffusion models vs. GANs scale with model size?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 0,
+      "partial": 1,
+      "sources": 1
+     },
+     "near_miss": false
+    },
+    "How do diffusion models vs. GANs scale with computational resources?": {
+     "before": {
+      "yes": 0,
+      "partial": 2,
+      "no": 2
+     },
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 0,
+      "partial": 2,
+      "sources": 2
+     },
+     "near_miss": false
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the solutions for training diffusion models vs. GANs?",
+      "How do diffusion models vs. GANs scale with computational resources?"
+     ],
+     "new_sources": 2,
+     "new_findings": 7,
+     "new_verified": 7,
+     "covered": [
+      "What are the solutions for training diffusion models vs. GANs?"
+     ],
+     "seconds": 170.4,
+     "sources_tried": 5,
+     "digest_total": 5,
+     "digest_failed": 2
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How do diffusion models vs. GANs scale with computational resources?"
+     ],
+     "new_sources": 0,
+     "new_findings": 0,
+     "new_verified": 0,
+     "covered": [],
+     "seconds": 195.2,
+     "sources_tried": 3,
+     "parsed": 2,
+     "digest_total": 2,
+     "digest_failed": 1
+    }
+   ],
+   "seconds": 371.1,
+   "searched": 2,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": true,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "How do diffusion models vs. GANs scale with data size?",
+    "How do diffusion models vs. GANs scale with model size?",
+    "How do diffusion models vs. GANs scale with computational resources?"
+   ]
+  }
+ }
+]

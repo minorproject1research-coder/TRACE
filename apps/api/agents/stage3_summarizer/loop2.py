@@ -19,6 +19,19 @@ Triage (A1, report 16): an aspect is searched again if its judged candidates hol
 hand label in 79% of 29 cases (bar 80%), so it is a default, not a validated rule; LOOP2_TRIAGE=all searches every uncovered aspect (used
 to measure the yield of the skipped ones).
 
+Synthesis (2026-11-08, report 19): after Loop 2 the aspects still uncovered were mostly NOT "no evidence" cases but near misses: 3 or more
+yes/partial verdicts from 2 or more sources, each claim being one measured result of a broad aspect, so two single claims that each answer
+the whole aspect never came. For such an aspect the judge now also gets ONE item holding the claims and quotes of up to 6 sources together;
+if it says "yes" the aspect counts as covered "by synthesis" (marked in the evidence and in the report). Controls: composites built from
+another topic's findings were rated yes 0 of 51 times; 6 of 6 accepted composites answered the aspect when read by hand. Synthesis runs at
+the start (no search needed) and after every step. A composite is weaker evidence than two single claims and says so.
+
+Known gaps and "sufficient" (B3): an aspect that is still uncovered after the whole ladder, whose evidence is thin (fewer than
+LOOP2_NEARMISS_MIN yes/partial verdicts or fewer than 2 sources), is a known gap "no evidence found" and does NOT stop the sub-question from
+being sufficient (LOOP2_GAP_RULE=core, default; strict keeps the old rule). Near misses, aspects not searched (cap) and aspects whose search
+was cut short (time, failed digests) keep blocking. coverage.sufficient is the core value; the strict value and the gap list are stored in
+judge_stats["loop2"] and shown in the report ("Evidence not found for ...").
+
 Stop rules (A3): at most LOOP2_MAX_ROUNDS steps per aspect, at most LOOP2_MAX_ASPECTS aspects per sub-question, a time budget for the
 whole loop, and an aspect that is judged "unjudged" (a verdict failed) is never searched. What is still uncovered at the end is a KNOWN
 GAP; the state of every aspect is stored in coverage judge_stats["loop2"] (no migration).
@@ -28,7 +41,12 @@ GAP; the state of every aspect is stored in coverage judge_stats["loop2"] (no mi
   LOOP2_MAX_ROUNDS=3          steps per aspect
   LOOP2_TRIAGE=r1|all         r1
   LOOP2_MIN_SIGNAL=2
-  LOOP2_MAX_ASPECTS=4         aspects searched per sub-question
+  LOOP2_MAX_ASPECTS=8         aspects searched per sub-question
+  LOOP2_SYNTHESIS=true        judge the findings of several sources together for near misses
+  LOOP2_GAP_RULE=core|strict  core: thin, fully searched gaps do not block "sufficient"
+  LOOP2_NEARMISS_MIN=3        yes/partial verdicts (from >= 2 sources) that make an uncovered aspect a near miss, not a gap
+  LOOP2_QUERY_ROUNDS=1        times the queries step is repeated (new queries each time)
+  LOOP2_CANDIDATES_PER_ASPECT=10  findings judged per aspect when Loop 2 judges again (Stage 3: 6)
   LOOP2_CHUNKS_PER_ASPECT=2   chunks per aspect and paper
   LOOP2_POOL_PAPERS=3         pool papers parsed per sub-question
   LOOP2_NEW_PAPERS=3          papers kept from the new queries per sub-question
@@ -37,6 +55,7 @@ GAP; the state of every aspect is stored in coverage judge_stats["loop2"] (no mi
   LOOP2_MAX_SECONDS=1200      budget of the whole loop in one run
 """
 import asyncio
+import hashlib
 import logging
 import os
 import time
@@ -72,7 +91,19 @@ def enabled() -> bool:
 
 def steps() -> list[str]:
     wanted = [s.strip() for s in os.getenv("LOOP2_STEPS", ",".join(STEP_ORDER)).split(",") if s.strip()]
-    return [s for s in STEP_ORDER if s in wanted][:max(0, _env_int("LOOP2_MAX_ROUNDS", 3))]
+    out = []
+    for s in STEP_ORDER:
+        if s in wanted:
+            out += [s] * (max(1, _env_int("LOOP2_QUERY_ROUNDS", 1)) if s == "queries" else 1)
+    return out[:max(0, _env_int("LOOP2_MAX_ROUNDS", 3) + (max(1, _env_int("LOOP2_QUERY_ROUNDS", 1)) - 1))]
+
+
+def synthesis_enabled() -> bool:
+    return _env_bool("LOOP2_SYNTHESIS", True)
+
+
+def gap_rule() -> str:
+    return "strict" if os.getenv("LOOP2_GAP_RULE", "core").strip().lower() == "strict" else "core"
 
 
 def triage_mode() -> str:
@@ -175,7 +206,13 @@ class Services:
         return digest_generator.generate_digest_with_retry(sub_question, selected, detail_aspects=aspects, main_topic=main_topic, cache_scope=scope)
 
     def judge(self, ctx: SubQuestionContext):
-        return evidence_judge.run_judge_for_subquestion(ctx.aspects, ctx.rows, ctx.chunk_lookup, topic_aspect_idx=ctx.topic_aspect_idx)
+        return evidence_judge.run_judge_for_subquestion(ctx.aspects, ctx.rows, ctx.chunk_lookup, topic_aspect_idx=ctx.topic_aspect_idx,
+                                                        candidates_per_aspect=_env_int("LOOP2_CANDIDATES_PER_ASPECT", 10))
+
+    def synthesize(self, items: list[dict]) -> list[dict]:
+        """Verdict dicts (final, reason, ...) for composite items, in order. Composite verdicts are cached like any other."""
+        verdicts = evidence_judge.judge_candidates(items) if items else {}
+        return [verdicts.get((0, "synthesis", hashlib.sha256(it["claim"].encode()).hexdigest()[:16]), {}).get("verdict", {}) for it in items]
 
     def paper_key(self, paper: dict) -> str:
         from apps.api.services import db_service
@@ -212,7 +249,7 @@ def triage(cov: dict, aspects: list[str], counts: dict[int, Counter]) -> tuple[l
             chosen.append(idx)
         else:
             skipped[idx] = "skipped_triage"
-    cap = _env_int("LOOP2_MAX_ASPECTS", 4)
+    cap = _env_int("LOOP2_MAX_ASPECTS", 8)
     for idx in chosen[cap:]:
         skipped[idx] = "skipped_cap"
     return chosen[:cap], skipped
@@ -220,6 +257,71 @@ def triage(cov: dict, aspects: list[str], counts: dict[int, Counter]) -> tuple[l
 
 def _is_covered(cov: dict, text: str) -> bool:
     return text not in (cov.get("uncovered_aspects") or []) and text not in (cov.get("unjudged_aspects") or [])
+
+
+# ------------------------------------------------------------------------------------------------------------------ synthesis
+SYNTH_MAX_CLAIMS = 6
+SYNTH_MIN_SOURCES = 2
+
+
+def _evidence_by_aspect(candidates: list[dict], verdicts: dict) -> dict[int, list[dict]]:
+    """{aspect index: yes/partial findings, one per source (yes first, then by similarity)}."""
+    best: dict[int, dict[str, tuple]] = {}
+    for c in candidates or []:
+        v = verdicts.get((c["aspect_idx"], c["source_id"], hashlib.sha256(c["claim"].encode()).hexdigest()[:16]))
+        final = coverage_check._verdict_final(v) if v else None
+        if final not in ("yes", "partial"):
+            continue
+        rank = (final == "yes", c.get("similarity", 0.0))
+        cur = best.setdefault(c["aspect_idx"], {}).get(c["source_id"])
+        if cur is None or rank > cur[0]:
+            best[c["aspect_idx"]][c["source_id"]] = (rank, c, final)
+    return {i: [x[1] | {"final": x[2]} for x in sorted(per.values(), key=lambda x: x[0], reverse=True)] for i, per in best.items()}
+
+
+def composite_item(aspect: str, evid: list[dict]) -> dict:
+    """ONE judge item for several findings: the claims and the quotes numbered alike (the judge sees the aspect, the claims and their quotes)."""
+    claims = " ".join(f"({i}) {e['claim'].strip()}" for i, e in enumerate(evid, 1))
+    quotes = " ".join(f"[{i}] {e['quote'].strip()}" for i, e in enumerate(evid, 1))
+    return {"id": hashlib.sha256((aspect + claims).encode()).hexdigest()[:16], "aspect_idx": 0, "source_id": "synthesis", "aspect": aspect,
+            "claim": f"Taken together, these findings from different sources answer the question: {claims}", "quote": quotes, "context": ""}
+
+
+def synthesis(ctx: SubQuestionContext, base_cov: dict, candidates: list[dict], verdicts: dict, svc: Services) -> dict[int, list[dict]]:
+    """{aspect index: evidence entries} for uncovered aspects whose findings, taken together, the judge accepts as an answer."""
+    if not synthesis_enabled():
+        return {}
+    by_aspect = _evidence_by_aspect(candidates, verdicts)
+    todo, items = [], []
+    for text in base_cov.get("uncovered_aspects") or []:
+        if text not in ctx.aspects:
+            continue
+        idx = ctx.aspects.index(text)
+        evid = by_aspect.get(idx, [])[:SYNTH_MAX_CLAIMS]
+        if len({e["source_id"] for e in evid}) >= SYNTH_MIN_SOURCES:
+            todo.append((idx, evid))
+            items.append(composite_item(text, evid))
+    out = {}
+    for (idx, evid), v in zip(todo, svc.synthesize(items)):
+        if (v or {}).get("final") == "yes":
+            out[idx] = [{"source_id": e["source_id"], "claim_prefix": e["claim"][:80], "quote_prefix": e["quote"][:80], "item_id": "", "verdict": "yes",
+                         "quote_supports_claim": v.get("quote_supports_claim"), "answers_aspect": v.get("answers_aspect"),
+                         "reason": v.get("reason"), "synthesis": True} for e in evid]
+    return out
+
+
+def _cover(ctx: SubQuestionContext, candidates: list[dict], verdicts: dict, svc: Services, non_blocking: Optional[set] = None) -> dict:
+    """Coverage of the sub-question with everything Loop 2 knows: single claims first, then aspects covered by synthesis, then known gaps
+    that do not block. Called after every step because new findings change both."""
+    args = (ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts)
+    base = coverage_check.check_coverage_judged(*args, candidates=candidates)
+    if base.get("fallback_reason"):
+        return base
+    synth = synthesis(ctx, base, candidates, verdicts, svc)
+    if not synth and non_blocking is None:
+        return base
+    return coverage_check.check_coverage_judged(*args, candidates=candidates, synthesis_covered=synth or None,
+                                                non_blocking=non_blocking if non_blocking is not None else set())
 
 
 # ------------------------------------------------------------------------------------------------------------------ digesting new sources
@@ -366,18 +468,27 @@ STEP_FUNCS: dict[str, Callable] = {"reselect": _step_reselect, "pool": _step_poo
 
 # ------------------------------------------------------------------------------------------------------------------ the loop
 def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], verdicts: dict, svc: Services, deadline: float):
-    """Run the ladder for one sub-question. Returns (cov, candidates, verdicts, info); ctx.rows and ctx.chunk_lookup are extended in place.
-    info is what gets stored in judge_stats['loop2']."""
+    """Synthesis, then the ladder, for one sub-question. Returns (cov, candidates, verdicts, info); ctx.rows and ctx.chunk_lookup are
+    extended in place. info is what gets stored in judge_stats['loop2']."""
     started = time.monotonic()
+    if cov.get("fallback_reason"):                       # the judge was not usable for this sub-question: nothing to search for
+        return cov, candidates, verdicts, {"skipped": cov["fallback_reason"], "searched": 0, "covered": 0, "aspects": {}, "steps": [], "seconds": 0.0}
+    original_uncovered = list(cov.get("uncovered_aspects") or [])
+    unjudged = list(cov.get("unjudged_aspects") or [])
     counts = verdict_counts(candidates, verdicts)
+    cov = _cover(ctx, candidates, verdicts, svc)         # near misses may be covered by synthesis before anything is searched
     chosen, skipped = triage(cov, ctx.aspects, counts)
+
     aspects_info: dict[str, dict] = {}
-    for text in cov.get("uncovered_aspects") or []:
+    for text in dict.fromkeys(original_uncovered + list(cov.get("uncovered_aspects") or [])):
         idx = ctx.aspects.index(text) if text in ctx.aspects else None
         c = counts.get(idx, Counter()) if idx is not None else Counter()
-        aspects_info[text] = {"before": {k: c[k] for k in ("yes", "partial", "no")}, "status": "searched" if idx in chosen else skipped.get(idx, "skipped"),
-                              "steps": [], "covered_by": None}
-    for text in cov.get("unjudged_aspects") or []:
+        info_a = {"before": {k: c[k] for k in ("yes", "partial", "no")}, "steps": [], "covered_by": None,
+                  "status": "searched" if idx in chosen else skipped.get(idx, "skipped")}
+        if _is_covered(cov, text):
+            info_a["covered_by"] = "synthesis"
+        aspects_info[text] = info_a
+    for text in unjudged:
         aspects_info[text] = {"status": "unjudged_not_searched", "steps": [], "covered_by": None}
 
     step_log = []
@@ -403,7 +514,7 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
         if new_rows:
             ctx.rows.extend(new_rows)
             candidates, verdicts = svc.judge(ctx)
-            cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=candidates)
+            cov = _cover(ctx, candidates, verdicts, svc)
         all_failed = bool(stats.get("digest_total")) and stats.get("digest_failed") == stats.get("digest_total")
         newly = [ctx.aspects[i] for i in open_idx if _is_covered(cov, ctx.aspects[i])]
         for text in newly:
@@ -421,14 +532,37 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
                     aspects_info[ctx.aspects[i]]["stopped"] = "digests_failed"
             break
 
+    # final state of every aspect that was uncovered after Stage 3
+    evid_end = _evidence_by_aspect(candidates, verdicts)
+    cov_evidence = cov.get("aspect_evidence") or {}
+    non_blocking: set[int] = set()
     for text, a in aspects_info.items():
-        if a["covered_by"] and text in ctx.aspects:       # what covers it now: the claims the judge accepted (shown in the report, checked by hand in tests)
-            ev = (cov.get("aspect_evidence") or {}).get(ctx.aspects.index(text)) or []
+        idx = ctx.aspects.index(text) if text in ctx.aspects else None
+        if a["covered_by"] and idx is not None:       # what covers it now (shown in the report, read by hand in report 18/19)
+            ev = cov_evidence.get(idx) or []
+            a["how"] = "synthesis" if any(e.get("synthesis") for e in ev) else "single claims"
             a["evidence"] = [{"claim": e.get("claim_prefix"), "source_id": e.get("source_id"), "reason": (e.get("reason") or "")[:140]} for e in ev[:4]]
         if a["status"] == "searched":
             a["status"] = "covered" if a["covered_by"] else "known_gap"
+        elif a["covered_by"]:
+            a["status"] = "covered"
         elif a["status"] in ("skipped_triage", "skipped_cap", "skipped"):
             a["status"] = "known_gap_" + a["status"]
-    info = {"triage": triage_mode(), "steps_enabled": steps(), "aspects": aspects_info, "steps": step_log,
-            "seconds": round(time.monotonic() - started, 1), "searched": len(chosen), "covered": sum(1 for a in aspects_info.values() if a["status"] == "covered")}
+        if idx is None or a["covered_by"] or a["status"] == "unjudged_not_searched":
+            continue
+        e = evid_end.get(idx, [])
+        a["after"] = {"yes": sum(1 for x in e if x["final"] == "yes"), "partial": sum(1 for x in e if x["final"] == "partial"), "sources": len({x["source_id"] for x in e})}
+        near_miss = a["after"]["yes"] + a["after"]["partial"] >= _env_int("LOOP2_NEARMISS_MIN", 3) and a["after"]["sources"] >= 2
+        finished = a["status"] in ("known_gap", "known_gap_skipped_triage") and not a.get("stopped")
+        a["near_miss"] = near_miss
+        if gap_rule() == "core" and finished and not near_miss:
+            non_blocking.add(idx)
+            a["status"] = "known_gap_no_evidence"
+    cov = _cover(ctx, candidates, verdicts, svc, non_blocking=non_blocking)
+    strict, gaps = cov.pop("sufficient_strict", cov.get("sufficient")), cov.pop("known_gap_aspects", [])
+    info = {"triage": triage_mode(), "steps_enabled": steps(), "gap_rule": gap_rule(), "synthesis": synthesis_enabled(), "aspects": aspects_info,
+            "steps": step_log, "seconds": round(time.monotonic() - started, 1), "searched": len(chosen),
+            "covered": sum(1 for a in aspects_info.values() if a["status"] == "covered"),
+            "covered_by_synthesis": sum(1 for a in aspects_info.values() if a.get("how") == "synthesis"),
+            "sufficient": cov.get("sufficient"), "sufficient_strict": strict, "known_gaps_no_evidence": gaps}
     return cov, candidates, verdicts, info

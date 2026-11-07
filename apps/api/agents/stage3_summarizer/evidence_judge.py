@@ -79,8 +79,10 @@ def select_candidates(
     chunk_lookup: Dict[str, str],
     embedder=None,
     topic_aspect_idx: Optional[int] = None,
+    candidates_per_aspect: Optional[int] = None,
 ) -> List[Dict]:
     """
+    candidates_per_aspect: overrides JUDGE_CANDIDATES_PER_ASPECT for this call (Loop 2 judges more findings per aspect once it added sources).
     topic_aspect_idx: index of the sub-question's own question when it is judged as an aspect (TOPIC_ASPECT=judge). No finding is tagged
     for it (the digest prompt never saw it), so its candidates are the JUDGE_CANDIDATES_PER_ASPECT most similar verified findings
     instead of the JUDGE_EXTRA_BY_SIM extras of the other aspects.
@@ -95,6 +97,8 @@ def select_candidates(
       item_id (stable unique identifier for this candidate)
     """
     config = _get_config()
+    if candidates_per_aspect:
+        config = {**config, "JUDGE_CANDIDATES_PER_ASPECT": candidates_per_aspect}
     if embedder is None:
         embedder = get_embedder()
 
@@ -504,6 +508,7 @@ def run_judge_for_subquestion(
     chunk_lookup: Dict[str, str],
     embedder=None,
     topic_aspect_idx: Optional[int] = None,
+    candidates_per_aspect: Optional[int] = None,
 ) -> Tuple[List[Dict], Dict[Tuple[int, str, str], Dict]]:
     """
     Full pipeline: select candidates -> build items -> judge -> write verdicts.
@@ -512,7 +517,8 @@ def run_judge_for_subquestion(
     if not aspects or not digests:
         return [], {}
 
-    candidates = select_candidates(aspects, digests, chunk_lookup, embedder, topic_aspect_idx=topic_aspect_idx)
+    candidates = select_candidates(aspects, digests, chunk_lookup, embedder, topic_aspect_idx=topic_aspect_idx,
+                                   candidates_per_aspect=candidates_per_aspect)
     if not candidates:
         logger.info("No candidates for judge")
         return [], {}

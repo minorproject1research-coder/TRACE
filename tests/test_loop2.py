@@ -142,7 +142,8 @@ def base_verdicts(spec):
 def env(monkeypatch):
     monkeypatch.setattr(chunk_selector, "get_embedder", lambda: FakeEmbedder())
     for k, v in {"CHUNK_EMBED_CACHE": "false", "LOOP2": "true", "LOOP2_TRIAGE": "r1", "LOOP2_STEPS": "reselect,pool,queries",
-                 "LOOP2_MAX_ROUNDS": "3", "LOOP2_MIN_SIGNAL": "2", "LOOP2_MAX_ASPECTS": "4"}.items():
+                 "LOOP2_MAX_ROUNDS": "3", "LOOP2_MIN_SIGNAL": "2", "LOOP2_MAX_ASPECTS": "4", "LOOP2_SYNTHESIS": "false",
+                 "LOOP2_GAP_RULE": "strict", "LOOP2_QUERY_ROUNDS": "1"}.items():
         monkeypatch.setenv(k, v)
 
 
@@ -180,10 +181,15 @@ def test_unjudged_aspects_are_never_searched():
 
 # ---------------------------------------------------------------------------------------------------------------- the ladder
 def run(svc, uncovered=("alpha topic", "beta topic"), spec=None, ctx=None, deadline=None):
+    """Aspects not named in `uncovered` get two single-claim yes verdicts from two sources, so the coverage the loop recomputes matches."""
     ctx = ctx or make_ctx()
-    spec = spec or {0: (1, 2, 0), 1: (0, 3, 0), 2: (0, 0, 3)}
-    cov = base_cov(uncovered)
-    return ctx, loop2.run_subquestion(ctx, cov, [], base_verdicts(spec), svc, deadline or time.monotonic() + 60)
+    spec = dict(spec or {0: (1, 2, 0), 1: (0, 3, 0), 2: (0, 0, 3)})
+    for i, a in enumerate(ctx.aspects):
+        if a not in uncovered:
+            spec[i] = (2, 0, 0)
+    verdicts = base_verdicts(spec)
+    cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=None)
+    return ctx, loop2.run_subquestion(ctx, cov, [], verdicts, svc, deadline or time.monotonic() + 60)
 
 
 def test_ladder_stops_for_an_aspect_as_soon_as_it_is_covered():
@@ -350,3 +356,130 @@ def test_a_digest_that_found_nothing_is_not_a_failure():
             return [], 0
     ctx, (cov, _, _, info) = run(Empty(), uncovered=("alpha topic",))
     assert [s["step"] for s in info["steps"]] == ["reselect", "pool", "queries"]
+
+
+# ---------------------------------------------------------------------------------------------------- synthesis and known gaps
+def cands_for(spec):
+    """Candidate dicts that match base_verdicts(spec), so the loop can read claims and sources."""
+    out = []
+    for idx, (y, p, n) in spec.items():
+        for kind, count in (("yes", y), ("partial", p), ("no", n)):
+            for k in range(count):
+                out.append({"aspect_idx": idx, "aspect_text": ASPECTS[idx], "source_id": f"s{k}{kind}", "claim": f"{idx}{kind}{k}",
+                            "quote": f"quote {idx}{kind}{k}", "similarity": 0.9 - k / 10, "item_id": f"{idx}{kind}{k}"})
+    return out
+
+
+class SynthServices(FakeServices):
+    def __init__(self, accept=(), **kw):
+        super().__init__(**kw)
+        self.accept, self.items = set(accept), []
+
+    def synthesize(self, items):
+        self.items.extend(items)
+        return [{"final": "yes" if it["aspect"] in self.accept else "partial", "reason": "r"} for it in items]
+
+
+def run_synth(svc, spec, uncovered=("alpha topic",), gap_rule="strict", monkeypatch=None):
+    ctx = make_ctx(rows=[{"source_id": f"row{i}", "evidence_level": "full_text", "verified_count": 1, "findings": [{"claim": "c", "verified": True}]}
+                         for i in range(3)])             # three sources with a verified finding: "sufficient" also needs enough sources
+    spec = dict(spec)
+    for i, a in enumerate(ctx.aspects):
+        if a not in uncovered:
+            spec[i] = (2, 0, 0)
+    verdicts, cands = base_verdicts(spec), cands_for(spec)
+    cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=cands)
+    return ctx, loop2.run_subquestion(ctx, cov, cands, verdicts, svc, time.monotonic() + 60)
+
+
+def test_synthesis_covers_a_near_miss_before_any_search(monkeypatch):
+    monkeypatch.setenv("LOOP2_SYNTHESIS", "true")
+    svc = SynthServices(accept=["alpha topic"])
+    ctx, (cov, _, _, info) = run_synth(svc, {0: (1, 3, 0)})
+    a = info["aspects"]["alpha topic"]
+    assert a["covered_by"] == "synthesis" and a["how"] == "synthesis" and a["status"] == "covered"
+    assert info["covered_by_synthesis"] == 1 and info["steps"] == []                       # nothing was searched
+    assert "alpha topic" not in cov["uncovered_aspects"] and cov["sufficient"] is True
+    item = svc.items[0]
+    assert item["aspect"] == "alpha topic" and item["claim"].count("(") >= 3 and "[1]" in item["quote"] and item["source_id"] == "synthesis"
+    assert any(e.get("synthesis") for e in cov["aspect_evidence"][0])
+
+
+def test_synthesis_needs_two_sources_and_a_judge_yes(monkeypatch):
+    monkeypatch.setenv("LOOP2_SYNTHESIS", "true")
+    svc = SynthServices(accept=[])                                                           # the judge says "partial" to every composite
+    ctx, (cov, _, _, info) = run_synth(svc, {0: (0, 3, 0)})
+    assert info["aspects"]["alpha topic"]["covered_by"] is None and "alpha topic" in cov["uncovered_aspects"]
+    svc2 = SynthServices(accept=["alpha topic"])
+    run_synth(svc2, {0: (0, 1, 2)})                                                           # one yes/partial source only: no composite is built
+    assert svc2.items == []
+
+
+def test_synthesis_is_off_when_switched_off(monkeypatch):
+    monkeypatch.setenv("LOOP2_SYNTHESIS", "false")
+    svc = SynthServices(accept=["alpha topic"])
+    run_synth(svc, {0: (1, 3, 0)})
+    assert svc.items == []
+
+
+def test_core_rule_lets_an_aspect_without_evidence_stop_blocking(monkeypatch):
+    monkeypatch.setenv("LOOP2_GAP_RULE", "core")
+    svc = FakeServices(covers={})
+    ctx, (cov, _, _, info) = run_synth(svc, {0: (0, 0, 3)}, uncovered=("alpha topic",))
+    assert info["aspects"]["alpha topic"]["status"] == "known_gap_no_evidence"
+    assert cov["sufficient"] is True and info["sufficient"] is True and info["sufficient_strict"] is False
+    assert info["known_gaps_no_evidence"] == ["alpha topic"]
+    assert "sufficient_strict" not in cov and "known_gap_aspects" not in cov               # not columns of coverage_results
+
+
+def test_strict_rule_keeps_the_old_meaning(monkeypatch):
+    monkeypatch.setenv("LOOP2_GAP_RULE", "strict")
+    ctx, (cov, _, _, info) = run_synth(FakeServices(), {0: (0, 0, 3)})
+    assert cov["sufficient"] is False and info["aspects"]["alpha topic"]["status"] == "known_gap_skipped_triage"
+
+
+def test_a_near_miss_keeps_blocking_even_under_the_core_rule(monkeypatch):
+    monkeypatch.setenv("LOOP2_GAP_RULE", "core")
+    monkeypatch.setenv("LOOP2_SYNTHESIS", "true")
+    svc = SynthServices(accept=[])
+    ctx, (cov, _, _, info) = run_synth(svc, {0: (0, 4, 0)})
+    a = info["aspects"]["alpha topic"]
+    assert a["near_miss"] is True and a["status"] == "known_gap" and cov["sufficient"] is False
+
+
+def test_an_aspect_whose_search_was_cut_short_keeps_blocking(monkeypatch):
+    monkeypatch.setenv("LOOP2_GAP_RULE", "core")
+    ctx = make_ctx()
+    spec = {0: (0, 2, 1), 1: (2, 0, 0), 2: (2, 0, 0)}
+    verdicts, cands = base_verdicts(spec), cands_for(spec)
+    cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=cands)
+    _, _, _, info = loop2.run_subquestion(ctx, cov, cands, verdicts, FakeServices(), time.monotonic() - 1)      # deadline already past
+    assert info["aspects"]["alpha topic"]["stopped"] == "time_budget" and info["aspects"]["alpha topic"]["status"] == "known_gap"
+
+
+def test_query_rounds_repeat_the_queries_step(monkeypatch):
+    monkeypatch.setenv("LOOP2_QUERY_ROUNDS", "2")
+    monkeypatch.setenv("LOOP2_MAX_ROUNDS", "3")
+    assert loop2.steps() == ["reselect", "pool", "queries", "queries"]
+    monkeypatch.setenv("LOOP2_QUERY_ROUNDS", "1")
+    assert loop2.steps() == ["reselect", "pool", "queries"]
+
+
+def test_the_judge_gets_a_larger_candidate_cap_in_loop2(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(loop2.evidence_judge, "run_judge_for_subquestion", lambda *a, **k: seen.update(k) or ([], {}))
+    monkeypatch.setenv("LOOP2_CANDIDATES_PER_ASPECT", "12")
+    loop2.Services().judge(make_ctx())
+    assert seen["candidates_per_aspect"] == 12
+
+
+def test_report_marks_synthesis_and_known_gaps():
+    from apps.api.services import report_service as rs
+    rows = rs._aspect_rows(["a", "b", "c"], {"aspect_evidence": {"0": [{"verdict": "yes", "source_id": "s1", "synthesis": True}, {"verdict": "yes", "source_id": "s2", "synthesis": True}],
+                                                                  "1": [{"verdict": "yes", "source_id": "s1"}, {"verdict": "yes", "source_id": "s2"}]},
+                                             "uncovered_aspects": ["c"], "uncovered_reasons": {"c": "judged_insufficient"}})
+    assert [r["coveredBy"] for r in rows] == ["synthesis", "single_claims", None]
+    view = rs._loop2_view({"judge_stats": {"loop2": {"searched": 1, "covered": 1, "covered_by_synthesis": 1, "gap_rule": "core", "sufficient_strict": False,
+                                                      "known_gaps_no_evidence": ["c"], "aspects": {"a": {"status": "covered", "how": "synthesis", "steps": []}}, "steps": []}}})
+    assert view["coveredBySynthesis"] == 1 and view["sufficientStrict"] is False and view["knownGapsNoEvidence"] == ["c"]
+    assert view["aspects"][0]["how"] == "synthesis"

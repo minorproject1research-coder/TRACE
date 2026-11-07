@@ -1,0 +1,204 @@
+[
+ {
+  "sub_question": "What is federated learning and how does it work?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What are the privacy risks of federated learning?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What are the defenses against privacy risks in federated learning?",
+  "aspects": 6,
+  "uncovered_before": [
+   "How are the defenses against privacy risks in federated learning compared?",
+   "What are the assumptions of the defenses against privacy risks in federated learning?"
+  ],
+  "uncovered_after": [
+   "How are the defenses against privacy risks in federated learning compared?",
+   "What are the assumptions of the defenses against privacy risks in federated learning?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "What are the assumptions of the defenses against privacy risks in federated learning?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 3
+     },
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null,
+     "status": "known_gap",
+     "stopped": "digests_failed",
+     "after": {
+      "yes": 1,
+      "partial": 2,
+      "sources": 3
+     },
+     "near_miss": true
+    },
+    "How are the defenses against privacy risks in federated learning compared?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 1
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 1,
+      "partial": 0,
+      "sources": 1
+     },
+     "near_miss": false
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the assumptions of the defenses against privacy risks in federated learning?"
+     ],
+     "new_sources": 1,
+     "new_findings": 2,
+     "new_verified": 2,
+     "covered": [],
+     "seconds": 15.8,
+     "sources_tried": 5,
+     "digest_total": 5,
+     "digest_failed": 2
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the assumptions of the defenses against privacy risks in federated learning?"
+     ],
+     "new_sources": 0,
+     "new_findings": 0,
+     "new_verified": 0,
+     "covered": [],
+     "seconds": 3.5,
+     "sources_tried": 3,
+     "parsed": 3,
+     "digest_total": 3,
+     "digest_failed": 3
+    }
+   ],
+   "seconds": 24.2,
+   "searched": 1,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": false,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "How are the defenses against privacy risks in federated learning compared?"
+   ]
+  }
+ },
+ {
+  "sub_question": "How effective are the defenses against privacy risks in federated learning?",
+  "aspects": 6,
+  "uncovered_before": [
+   "How can the defenses against privacy risks in federated learning be combined?"
+  ],
+  "uncovered_after": [
+   "How can the defenses against privacy risks in federated learning be combined?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "How can the defenses against privacy risks in federated learning be combined?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 0,
+      "partial": 0,
+      "sources": 0
+     },
+     "near_miss": false
+    }
+   },
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "How can the defenses against privacy risks in federated learning be combined?"
+   ]
+  }
+ }
+]

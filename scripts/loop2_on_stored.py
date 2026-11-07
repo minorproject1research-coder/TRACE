@@ -135,8 +135,13 @@ def main() -> int:
         unc0, unc1 = set(cov0["uncovered_aspects"]), set(cov1["uncovered_aspects"])
         print(f"\nSQ{si} {sq['main_topic'][:70]}\n  aspects {len(aspects)}; uncovered before {len(unc0)} -> after {len(unc1)}; sufficient {cov0['sufficient']} -> {cov1['sufficient']};"
               f" sources {base_n} -> {len(ctx.rows)}; {time.monotonic() - t0:.0f}s")
+        if info.get("skipped"):
+            print("    Loop 2 skipped:", info["skipped"])
+        else:
+            print(f"    sufficient: stored/baseline {cov0['sufficient']} -> core {info['sufficient']} (strict {info['sufficient_strict']}); covered by synthesis {info['covered_by_synthesis']}; "
+                  f"known gaps without evidence {len(info['known_gaps_no_evidence'])}")
         for text, a in info["aspects"].items():
-            print(f"    [{a['status']:<26}] {text[:78]}  before={a.get('before')} steps={a['steps']} covered_by={a['covered_by']}")
+            print(f"    [{a['status']:<26}] {text[:78]}  before={a.get('before')} steps={a['steps']} covered_by={a['covered_by']} how={a.get('how')} after={a.get('after')}")
         for s in info["steps"]:
             print(f"    step {s['step']:<9} aspects {len(s['aspects'])} -> new sources {s['new_sources']}, verified findings {s['new_verified']}, covered {len(s['covered'])}"
                   f" ({s['seconds']}s) " + " ".join(f"{k}={v}" for k, v in s.items() if k in ("sources_tried", "parsed", "queries", "new_papers_found", "new_web_found", "note", "error")))

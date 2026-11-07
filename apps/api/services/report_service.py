@@ -128,10 +128,13 @@ def _loop2_view(cov: dict) -> Optional[dict]:
         return None
     aspects = _as_dict(info.get("aspects"))
     return {"searched": info.get("searched"), "covered": info.get("covered"), "seconds": info.get("seconds"), "triage": info.get("triage"),
+            "coveredBySynthesis": info.get("covered_by_synthesis"), "gapRule": info.get("gap_rule"), "sufficientStrict": info.get("sufficient_strict"),
+            "knownGapsNoEvidence": _as_list(info.get("known_gaps_no_evidence")),
             "steps": [{"step": s.get("step"), "aspects": len(_as_list(s.get("aspects"))), "newSources": s.get("new_sources"),
                        "newVerifiedFindings": s.get("new_verified"), "covered": len(_as_list(s.get("covered"))), "seconds": s.get("seconds")}
                       for s in _as_list(info.get("steps")) if isinstance(s, dict)],
-            "aspects": [{"text": t, "status": a.get("status"), "coveredBy": a.get("covered_by"), "steps": _as_list(a.get("steps"))}
+            "aspects": [{"text": t, "status": a.get("status"), "coveredBy": a.get("covered_by"), "how": a.get("how"), "nearMiss": a.get("near_miss"),
+                         "steps": _as_list(a.get("steps"))}
                         for t, a in aspects.items() if isinstance(a, dict)],
             "knownGaps": [t for t, a in aspects.items() if isinstance(a, dict) and str(a.get("status", "")).startswith("known_gap")]}
 
@@ -153,7 +156,8 @@ def _aspect_rows(aspects: Optional[list[str]], cov: dict) -> list[dict]:
             state = reasons.get(text, "uncovered")
         else:
             state = "covered" if text is not None else "unknown"
-        rows.append({"index": i, "text": text, "state": state, "yesVerdicts": len(yes), "sources": len({x.get("source_id") for x in yes})})
+        rows.append({"index": i, "text": text, "state": state, "yesVerdicts": len(yes), "sources": len({x.get("source_id") for x in yes}),
+                     "coveredBy": "synthesis" if state == "covered" and any(x.get("synthesis") for x in items) else ("single_claims" if state == "covered" else None)})
     return rows
 
 
@@ -212,6 +216,11 @@ def build_report(query_id: str) -> Optional[dict]:
                                 "loop2": _loop2_view(cov)}
             if not cov.get("sufficient"):
                 limitations.append(f"Evidence is not sufficient for: {sq['main_topic']}")
+            for gap in (view["coverage"]["loop2"] or {}).get("knownGapsNoEvidence") or []:
+                limitations.append(f"Evidence not found for: {gap} (searched again; part of: {sq['main_topic']})")
+            for a in (view["coverage"]["loop2"] or {}).get("aspects") or []:
+                if a.get("how") == "synthesis":
+                    limitations.append(f"Covered by combining findings of several sources, not by one source: {a.get('text')}")
         else:
             limitations.append(f"Stage 3 did not finish for: {sq['main_topic']}")
         sub_questions.append(view)

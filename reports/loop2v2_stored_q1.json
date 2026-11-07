@@ -1,0 +1,286 @@
+[
+ {
+  "sub_question": "What are state space models (SSMs) and how do they work?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "What are transformers and how do they work?",
+  "aspects": 4,
+  "uncovered_before": [
+   "What are the parameters of a transformer?"
+  ],
+  "uncovered_after": [
+   "What are the parameters of a transformer?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "What are the parameters of a transformer?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 1,
+      "partial": 0,
+      "sources": 1
+     },
+     "near_miss": false
+    }
+   },
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "What are the parameters of a transformer?"
+   ]
+  }
+ },
+ {
+  "sub_question": "What is Mamba and how does it relate to SSMs?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": true,
+   "known_gaps_no_evidence": []
+  }
+ },
+ {
+  "sub_question": "How are SSMs and transformers trained and evaluated?",
+  "aspects": 3,
+  "uncovered_before": [
+   "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+   "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?",
+   "What are the computational and memory requirements for training and inference of SSMs and transformers?"
+  ],
+  "uncovered_after": [
+   "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+   "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?": {
+     "before": {
+      "yes": 0,
+      "partial": 1,
+      "no": 6
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 0,
+      "partial": 1,
+      "sources": 1
+     },
+     "near_miss": false
+    },
+    "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?": {
+     "before": {
+      "yes": 1,
+      "partial": 2,
+      "no": 6
+     },
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null,
+     "status": "known_gap",
+     "after": {
+      "yes": 0,
+      "partial": 5,
+      "sources": 5
+     },
+     "near_miss": true
+    },
+    "What are the computational and memory requirements for training and inference of SSMs and transformers?": {
+     "before": {
+      "yes": 1,
+      "partial": 6,
+      "no": 3
+     },
+     "steps": [],
+     "covered_by": "synthesis",
+     "status": "covered",
+     "how": "synthesis",
+     "evidence": [
+      {
+       "claim": "SSMs use a fixed-size memory that does not grow with sequence length, enabling e",
+       "source_id": "bc91a681-ea63-4420-9822-407aa8d389c1",
+       "reason": "The quote explicitly states that SSMs use fixed-size memory independent of sequence length, which directly supports the claim and answers th"
+      },
+      {
+       "claim": "SSMs use a fixed-size memory that does not grow with sequence length, enabling e",
+       "source_id": "bc91a681-ea63-4420-9822-407aa8d389c1",
+       "reason": "The claim is a faithful synthesis of the provided quotes regarding memory and computational requirements, and it directly answers the aspect"
+      },
+      {
+       "claim": "SSM‑based models can provide inference‑time speedups relative to Transformers wi",
+       "source_id": "d5900ccd-a97c-48b3-88c8-72491948e470",
+       "reason": "The claim is a faithful synthesis of the provided quotes regarding memory and computational requirements, and it directly answers the aspect"
+      },
+      {
+       "claim": "Mamba tackles transformers' quadratic complexity by employing input‑specific sta",
+       "source_id": "9e7a11d2-80a2-44ee-bfe3-cc8bff145fac",
+       "reason": "The claim is a faithful synthesis of the provided quotes regarding memory and computational requirements, and it directly answers the aspect"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?"
+     ],
+     "new_sources": 3,
+     "new_findings": 4,
+     "new_verified": 4,
+     "covered": [],
+     "seconds": 16.4,
+     "sources_tried": 5,
+     "digest_total": 5,
+     "digest_failed": 0
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?"
+     ],
+     "new_sources": 3,
+     "new_findings": 7,
+     "new_verified": 7,
+     "covered": [],
+     "seconds": 31.6,
+     "sources_tried": 3,
+     "parsed": 3,
+     "digest_total": 3,
+     "digest_failed": 0
+    }
+   ],
+   "seconds": 52.8,
+   "searched": 1,
+   "covered": 1,
+   "covered_by_synthesis": 1,
+   "sufficient": false,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?"
+   ]
+  }
+ },
+ {
+  "sub_question": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "aspects": 4,
+  "uncovered_before": [
+   "open challenges or limitations for transformers"
+  ],
+  "uncovered_after": [
+   "open challenges or limitations for transformers"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "r1",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "gap_rule": "core",
+   "synthesis": true,
+   "aspects": {
+    "open challenges or limitations for transformers": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "steps": [],
+     "covered_by": null,
+     "status": "known_gap_no_evidence",
+     "after": {
+      "yes": 1,
+      "partial": 0,
+      "sources": 1
+     },
+     "near_miss": false
+    }
+   },
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0,
+   "covered_by_synthesis": 0,
+   "sufficient": true,
+   "sufficient_strict": false,
+   "known_gaps_no_evidence": [
+    "open challenges or limitations for transformers"
+   ]
+  }
+ }
+]
