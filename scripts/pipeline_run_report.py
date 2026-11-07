@@ -112,7 +112,7 @@ def main() -> int:
 
     from apps.api.services.db_service import supabase
     query = supabase.table("research_queries").select("*").eq("id", qid).execute().data[0]
-    sqs = supabase.table("sub_questions").select("*").eq("query_id", qid).execute().data
+    sqs = sorted(supabase.table("sub_questions").select("*").eq("query_id", qid).execute().data, key=lambda r: r["created_at"])   # plan order
     papers = supabase.table("retrieved_papers").select("*").eq("query_id", qid).execute().data
     paper_ids = [p["id"] for p in papers]
     parsed = supabase.table("parsed_papers").select("retrieved_paper_id").in_("retrieved_paper_id", paper_ids).execute().data if paper_ids else []
@@ -205,10 +205,17 @@ def main() -> int:
     def key(topic):
         return topic[:40]
 
-    j_by_sq = {name: (int(sh), int(pa)) for _, name, sh, pa, _k in judged}
-    pf_by_sq = {}
-    for (cand, cleared, shortlist), (_, name, _, _, _) in zip(prefilter, judged):
-        pf_by_sq[name] = (cand, cleared, shortlist)
+    # The log names a sub-question by its first 40 characters, and two sub-questions can start alike ("How do diffusion models compare with
+    # GANs in terms of image generation quality / training stability"): match by ORDER (the log lists them in plan order), never by name.
+    judged_rows = [(name, int(sh), int(pa)) for _, name, sh, pa, _k in judged]
+    j_by_sq = {j: (sh, pa) for j, (_, sh, pa) in enumerate(judged_rows)}
+    sq_stats, used = {}, set()
+    for sq in sqs:
+        for j, (name, sh, pa) in enumerate(judged_rows):
+            if j not in used and sq["main_topic"].startswith(name.rstrip()):
+                used.add(j)
+                sq_stats[sq["id"]] = (tuple(prefilter[j]) if j < len(prefilter) else ("?", "?", "?"), (sh, pa))
+                break
 
     out = []
     w = out.append
@@ -268,12 +275,11 @@ def main() -> int:
     w("| # | Sub-question | Pre-filter (cand. -> cleared -> shortlist) | Judge passed | Parsed full text | Web | Digests (full / abs / web) | Verified / total findings | Coverage |")
     w("|---|---|---|---|---|---|---|---|---|")
     for i, sq in enumerate(sqs, 1):
-        k = next((n for n in j_by_sq if sq["main_topic"].startswith(n.rstrip())), key(sq["main_topic"]))
-        pf = pf_by_sq.get(k, ("?", "?", "?"))
+        pf, (j_short, j_pass) = sq_stats.get(sq["id"], (("?", "?", "?"), ("?", "?")))
         dgs = dg_by_sq.get(sq["id"], [])
         lv = Counter(d.get("evidence_level") for d in dgs)
         c = cov_by_sq.get(sq["id"], {})
-        w(f"| {i} | {sq['main_topic']} | {pf[0]} -> {pf[1]} -> {pf[2]} | {j_by_sq.get(k, ('?', '?'))[1]} of {j_by_sq.get(k, ('?', '?'))[0]} | {parsed_by_sq.get(sq['id'], 0)} | {web_by_sq.get(sq['id'], 0)} | {len(dgs)} ({lv.get('full_text', 0)} / {lv.get('abstract', 0)} / {lv.get('web_snippet', 0)}) | {sum(d.get('verified_count') or 0 for d in dgs)} / {sum(d.get('total_count') or 0 for d in dgs)} | {'sufficient' if c.get('sufficient') else 'NOT sufficient'} |")
+        w(f"| {i} | {sq['main_topic']} | {pf[0]} -> {pf[1]} -> {pf[2]} | {j_pass} of {j_short} | {parsed_by_sq.get(sq['id'], 0)} | {web_by_sq.get(sq['id'], 0)} | {len(dgs)} ({lv.get('full_text', 0)} / {lv.get('abstract', 0)} / {lv.get('web_snippet', 0)}) | {sum(d.get('verified_count') or 0 for d in dgs)} / {sum(d.get('total_count') or 0 for d in dgs)} | {'sufficient' if c.get('sufficient') else 'NOT sufficient'} |")
     w("")
     for name, ex in reject_examples.items():
         w(f"- Relevance judge rejected {rejects[name]} papers for [{name}]. Examples: " + "; ".join(f"'{t}' ({r})" for t, r in ex))
@@ -382,7 +388,7 @@ def main() -> int:
         flags.append("Scopus was unavailable (host returned 404 for /scopus/search): no Scopus papers in this run.")
     if s2_down:
         flags.append("Semantic Scholar search was skipped (probe returned 429)" + (f" and citation enrichment still spent {dur((t_ret - t_enr0[0]).total_seconds())} on {s2_batch_429} rate-limited batch calls." if t_enr0 and s2_batch_429 else "."))
-    for name, (sh, pa) in j_by_sq.items():
+    for name, sh, pa in judged_rows:
         if pa == 0:
             flags.append(f"Sub-question [{name}]: 0 of {sh} shortlisted papers passed the relevance judge; it has web sources only.")
     for sq in sqs:

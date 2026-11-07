@@ -172,7 +172,7 @@ type SourceReport = {
 type Finding = {
   claim: string                           // one sentence, the digest model's words
   quote: string                           // up to 40 words from the source
-  stance: 'supports' | 'contradicts' | 'neutral'
+  stance: string                          // usually 'supports' | 'contradicts' | 'neutral', but it is free output of the digest model and NOT validated: a real run produced 'challenges'. Treat it as an open string.
   quoteFound: boolean                     // false: the quote could not be located in the source; treat the claim as unverified
   judgements: { aspect: string | null; verdict: 'yes' | 'partial' | 'no' | null; quoteSupportsClaim: string | null; answersAspect: string | null; reason: string | null }[]
 }

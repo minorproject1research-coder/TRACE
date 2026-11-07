@@ -157,3 +157,39 @@
 {"key": "4960a084c93564ee", "aspects": ["How does quantizing LLMs to 4-bit precision affect the quality of generated text?", "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?"]}
 {"key": "2a850cb927e860d5", "aspects": ["How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?", "How does quantizing LLMs to 4-bit precision affect the security of LLMs?"]}
 {"key": "656819bb8d1243db", "aspects": ["How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?", "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?"]}
+{"key": "cd1cdbf4d5c0a462", "aspects": ["How are LLMs trained?", "How are LLMs structured?"]}
+{"key": "a6207d19dece4e30", "aspects": ["main applications of LLMs", "challenges of LLMs"]}
+{"key": "151a3fe1251e42e6", "aspects": ["how reasoning ability in LLMs is defined", "how reasoning ability in LLMs is measured"]}
+{"key": "744364b410aba177", "aspects": ["types of reasoning ability that LLMs can exhibit", "levels of reasoning ability that LLMs can exhibit"]}
+{"key": "cf0f9fa1e4914b07", "aspects": ["What are the factors that influence reasoning ability in LLMs?"]}
+{"key": "08cfa52ebb45a7fe", "aspects": ["How are LLMs trained?", "How are LLMs structured?"]}
+{"key": "4ac96ecca89b2beb", "aspects": ["What are the main applications of LLMs?", "What are the main challenges of LLMs?"]}
+{"key": "fdc005fa03708d9d", "aspects": ["how reasoning ability is defined", "how reasoning ability is measured"]}
+{"key": "cd68efe9714833e6", "aspects": ["What are the types of reasoning ability that LLMs can exhibit?", "What are the levels of reasoning ability that LLMs can exhibit?"]}
+{"key": "e687d62585fc8b25", "aspects": ["What are the factors that influence reasoning ability in LLMs?"]}
+{"key": "aeb50a21310341c0", "aspects": ["criteria of a good benchmark or metric", "characteristics of a good benchmark or metric"]}
+{"key": "56697fb0407087ad", "aspects": ["What are the existing benchmarks for evaluating the reasoning ability of LLMs?", "What are the existing metrics for evaluating the reasoning ability of LLMs?"]}
+{"key": "764437acf44618d9", "aspects": ["How are the benchmarks and metrics categorized?", "How are the benchmarks and metrics compared?"]}
+{"key": "1d9449a0d55f1d88", "aspects": ["limitations of the current benchmarks and metrics", "gaps of the current benchmarks and metrics"]}
+{"key": "46a2940e65d32eae", "aspects": ["best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs", "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"]}
+{"key": "2e48f8a6966fef70", "aspects": ["results from using the benchmarks and metrics to improve the reasoning ability of LLMs", "insights from using the benchmarks and metrics to improve the reasoning ability of LLMs"]}
+{"key": "d21f548444d99c71", "aspects": ["What are the open problems for using the benchmarks and metrics?", "What are the future directions for using the benchmarks and metrics?"]}
+{"key": "6200f3ca49884f17", "aspects": ["How do diffusion models and GANs generate images from noise or latent representations?"]}
+{"key": "90f53651189afb91", "aspects": ["differences between diffusion models and GANs", "similarities between diffusion models and GANs"]}
+{"key": "33ace10b61e800c0", "aspects": ["How is image quality measured in image generation evaluation?", "How is diversity measured in image generation evaluation?"]}
+{"key": "12cf60f5fc11f366", "aspects": ["How is training stability measured in image generation models?", "How is convergence measured in image generation models?"]}
+{"key": "3dee4d5180142fdb", "aspects": ["advantages of diffusion models vs. GANs for image quality", "disadvantages of diffusion models vs. GANs for image quality"]}
+{"key": "750b69cebab2f0ad", "aspects": ["How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"]}
+{"key": "8990c4c08b4706ec", "aspects": ["What are the challenges for training diffusion models vs. GANs?", "What are the solutions for training diffusion models vs. GANs?"]}
+{"key": "a2a49eee142e6647", "aspects": ["How do diffusion models vs. GANs handle mode collapse, overconfidence, or other training issues?"]}
+{"key": "3e5144c95d725b77", "aspects": ["How do diffusion models vs. GANs scale with data size?", "How do diffusion models vs. GANs scale with model size?", "How do diffusion models vs. GANs scale with computational resources?"]}
+{"key": "7f76a7d512af7ed3", "aspects": ["benefits of federated learning", "challenges of federated learning"]}
+{"key": "7213b0cf4643c1cc", "aspects": ["main components of federated learning", "protocols of federated learning"]}
+{"key": "68bc5ff6853eeed6", "aspects": ["sources of privacy leakage in federated learning", "types of privacy leakage in federated learning"]}
+{"key": "8f50dfa9666c4183", "aspects": ["potential harms of privacy leakage in federated learning", "potential impacts of privacy leakage in federated learning"]}
+{"key": "21ae763f9657ecc1", "aspects": ["What are the goals of the defenses against privacy risks in federated learning?", "What are the assumptions of the defenses against privacy risks in federated learning?"]}
+{"key": "406b452712643750", "aspects": ["methods of the defenses against privacy risks in federated learning", "techniques of the defenses against privacy risks in federated learning"]}
+{"key": "369929fddaa3bba6", "aspects": ["How are the defenses against privacy risks in federated learning evaluated?", "How are the defenses against privacy risks in federated learning compared?"]}
+{"key": "b0a9726785a5bbbd", "aspects": ["strengths of the defenses against privacy risks in federated learning", "limitations of the defenses against privacy risks in federated learning"]}
+{"key": "3a34d6a9b190f12e", "aspects": ["trade-offs of the defenses", "open problems of the defenses"]}
+{"key": "b5fb5ee94b26cd23", "aspects": ["How can the defenses against privacy risks in federated learning be improved?", "How can the defenses against privacy risks in federated learning be combined?"]}
