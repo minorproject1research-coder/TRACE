@@ -1,3 +1,4 @@
+import { ladderLabel, SUBSTEP_TITLE } from './loop2'
 import type { PapersOverview, StepState, WorkflowEvent } from './trace-types'
 
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
@@ -54,6 +55,8 @@ const DEFS: Record<LaneId, { id: string; label: string }[]> = {
     { id: 'prepare', label: 'Select the passages to read' },
     { id: 'digest', label: 'Read the sources (LLM digests)' },
     { id: 'judge', label: 'Judge the evidence (LLM judge, coverage)' },
+    // Only when the server runs Loop 2 (LOOP2=true). Left out of the lane when no such event arrives, so a run without it looks as before.
+    { id: 'loop2', label: SUBSTEP_TITLE },
     { id: 'store', label: 'Save digests and coverage' },
   ],
 }
@@ -89,6 +92,33 @@ function chipsFor(lane: LaneId, step: string, d: Record<string, unknown>, done: 
   return out.filter(Boolean)
 }
 
+/** Loop 2 reports in two shapes: {loop2Step, aspects} when it climbs a rung of the ladder, and {subQuestion, searched, covered} per sub-question searched
+ *  again; the last event (completed) carries the totals. Unknown or malformed data is ignored. */
+function loop2Chips(evs: WorkflowEvent[], done: boolean): string[] {
+  const out: string[] = []
+  const rung = [...evs].reverse().find(e => typeof e.data.loop2Step === 'string')
+  if (rung && !done) {
+    const a = n(rung.data, 'aspects')
+    out.push(`now: ${ladderLabel(String(rung.data.loop2Step))}${a != null ? ` (${a} aspect${a === 1 ? '' : 's'})` : ''}`)
+  }
+  const completed = [...evs].reverse().find(e => e.data.state === 'completed')
+  let searched = completed ? n(completed.data, 'searched') : null
+  let covered = completed ? n(completed.data, 'covered') : null
+  if (searched == null || covered == null) {                       // still running: add up the latest report of each sub-question
+    const per = new Map<string, { searched: number; covered: number }>()
+    for (const e of evs) {
+      const sq = s(e.data, 'subQuestion')
+      const a = n(e.data, 'searched')
+      const c = n(e.data, 'covered')
+      if (sq && a != null && c != null) per.set(sq, { searched: a, covered: c })
+    }
+    if (per.size > 0) { searched = [...per.values()].reduce((x, y) => x + y.searched, 0); covered = [...per.values()].reduce((x, y) => x + y.covered, 0) }
+  }
+  if (searched != null) out.push(`${searched} aspect${searched === 1 ? '' : 's'} searched again`)
+  if (covered != null) out.push(`${covered} covered`)
+  return out
+}
+
 function progressFor(step: string, d: Record<string, unknown>): { done: number; total: number } | null {
   const [a, b] = step === 'parsing' ? [n(d, 'usable'), n(d, 'target')] : [n(d, 'done'), n(d, 'total')]
   return a != null && b != null && b > 0 ? { done: Math.min(a, b), total: b } : null
@@ -96,15 +126,18 @@ function progressFor(step: string, d: Record<string, unknown>): { done: number; 
 
 function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, subtitle: string, runFailed: boolean): LaneView {
   const mine = events.filter(e => (e.event === 'step' && e.data.lane === lane) || (e.event === 'branch_started' && e.data.branch === lane))
-  const steps: StepView[] = DEFS[lane].map(def => {
+  const hasLoop2 = lane === 'summarizer' && mine.some(e => e.event === 'step' && e.data.step === 'loop2')
+  const steps: StepView[] = DEFS[lane].filter(def => def.id !== 'loop2' || hasLoop2).map(def => {
     const evs = mine.filter(e => e.event === 'step' && e.data.step === def.id)
     if (evs.length === 0) return { id: def.id, label: def.label, status: 'pending' as StepStatus, startedAt: null, endedAt: null, message: '', chips: [], progress: null, approx: false }
     const last = evs[evs.length - 1]
     const status = String(last.data.state ?? 'running') as StepState
     const closed = status !== 'running'
+    let chips = def.id === 'loop2' ? loop2Chips(evs, status === 'completed') : chipsFor(lane, def.id, last.data, status === 'completed')
+    if (def.id === 'judge' && hasLoop2) chips = [...chips, 'includes the second search']          // loop2 runs between the judge events, inside its span
     return {
       id: def.id, label: def.label, status, startedAt: evs[0].timestamp, endedAt: closed ? last.timestamp : null, message: last.message,
-      chips: chipsFor(lane, def.id, last.data, status === 'completed'), progress: closed ? null : progressFor(def.id, last.data), approx: false,
+      chips, progress: closed || def.id === 'loop2' ? null : progressFor(def.id, last.data), approx: false,
     }
   })
   const started = mine[0]?.timestamp ?? null
@@ -183,7 +216,7 @@ function reconstruct(ov: PapersOverview, planner: TimelineModel['planner']): Tim
     step('prepare', DEFS.summarizer[0].label, { status: 'unreported', message: 'Not recorded for this run.' }),
     step('digest', DEFS.summarizer[1].label, { chips: [`${c.papersUsedAsEvidence + c.webUsedAsEvidence} sources read`], endedAt: t.digestsFirstAt ?? null, message: 'Digests are saved after all of them are done.' }),
     step('judge', DEFS.summarizer[2].label, { endedAt: t.coverageAt ?? null }),
-    step('store', DEFS.summarizer[3].label, { chips: [`${c.papersUsedAsEvidence + c.webUsedAsEvidence} digests saved`], endedAt: t.digestsLastAt ?? null }),
+    step('store', DEFS.summarizer[4].label, { chips: [`${c.papersUsedAsEvidence + c.webUsedAsEvidence} digests saved`], endedAt: t.digestsLastAt ?? null }),
   ]
   const lane = (id: LaneId, def: [string, string], startedAt: string | null, endedAt: string | null, steps: StepView[], summary: string): LaneView => ({ id, title: def[0], subtitle: def[1], status: 'completed', startedAt, endedAt, summary, steps })
   return {

@@ -1,6 +1,8 @@
 import { AlertTriangle, BookOpen, Check, ExternalLink, Globe, HelpCircle, Quote } from 'lucide-react'
 import { aspectStateLabel, evidenceLevelLabel, stanceInfo } from '@/lib/format'
+import { aspectStateHint, digestWarning, ladderLabel, noEvidenceGaps, SECOND_SEARCH_BADGE, sufficiencyMeaning, sufficiencyNote, SYNTHESIS_BADGE, SYNTHESIS_TOOLTIP } from '@/lib/loop2'
 import type { Coverage, Finding, Report, SourceReport, SubQuestionReport } from '@/lib/trace-types'
+import { Loop2Panel } from './loop2-panel'
 import { StatusPill } from './status-pill'
 
 /** Safe external link: only http(s) URLs become links, and they never get opener access. */
@@ -12,6 +14,13 @@ function safeUrl(url: string | null | undefined): string | null {
 export function StanceChip({ stance }: { stance: Finding['stance'] }) {
   const info = stanceInfo(stance)
   return <StatusPill tone={info.tone}>{info.label}</StatusPill>
+}
+
+/** Next to a green "sufficient" badge: the aspects where the second search found no evidence. A green badge must never hide them. Renders nothing without Loop 2. */
+export function NoEvidenceTag({ coverage }: { coverage: Coverage | null | undefined }) {
+  const gaps = noEvidenceGaps(coverage)
+  if (gaps.length === 0) return null
+  return <span className="tag gap" title={`Evidence not found for: ${gaps.join('; ')}`}>evidence not found for {gaps.length}<span className="sr-only">: {gaps.join('; ')}</span></span>
 }
 
 export function FindingCard({ finding, children }: { finding: Finding; children?: React.ReactNode }) {
@@ -46,7 +55,7 @@ export function FindingCard({ finding, children }: { finding: Finding; children?
   )
 }
 
-export function SourceCard({ source, topic, open = false, headingLevel = 4 }: { source: SourceReport; topic?: string; open?: boolean; headingLevel?: 2 | 4 }) {
+export function SourceCard({ source, topic, open = false, headingLevel = 4, repeat = false }: { source: SourceReport; topic?: string; open?: boolean; headingLevel?: 2 | 4; repeat?: boolean }) {
   const Heading = `h${headingLevel}` as 'h2' | 'h4'
   const level = evidenceLevelLabel[source.evidenceLevel] ?? { label: source.evidenceLevel, partial: true }
   const href = safeUrl(source.url)
@@ -64,6 +73,8 @@ export function SourceCard({ source, topic, open = false, headingLevel = 4 }: { 
       <div className="source-tags">
         <StatusPill tone={source.type === 'paper' ? 'lav' : 'blue'}>{source.type === 'paper' ? 'Paper' : 'Web'}</StatusPill>
         <StatusPill tone={level.partial ? 'amber' : 'mint'}>{level.label}</StatusPill>
+        {source.foundByLoop2Step && <span title={`Added by the second search, by ${ladderLabel(source.foundByLoop2Step)}.`}><StatusPill tone="lav">{SECOND_SEARCH_BADGE}</StatusPill><span className="sr-only"> ({ladderLabel(source.foundByLoop2Step)})</span></span>}
+        {repeat && <span className="tag" title="This source was read again (for another aspect), so it is listed again with its other findings.">read again</span>}
         <span className="tag">{source.findingsQuoteFound}/{source.findingsTotal} quotes found</span>
         {source.weight != null && <span className="tag">weight {source.weight.toFixed(2)}</span>}
         {source.citations != null && <span className="tag">{source.citations} citations</span>}
@@ -94,21 +105,29 @@ export function CoverageBlock({ sq }: { sq: SubQuestionReport }) {
         {c.digestFailures ? <span className="tag warn">{c.digestFailures} failed to digest</span> : null}
         {c.judgeUsed === false && <span className="tag warn">judge not used</span>}
       </div>
-      {c.sufficient && <p className="meta">&ldquo;Sufficient&rdquo; means each aspect has at least two independent supporting sources. It does not mean the question is answered.</p>}
+      {noEvidenceGaps(c).length > 0 && (
+        <div className="callout-box amber gaps" role="note"><AlertTriangle size={18} aria-hidden="true" />
+          <div><b>Evidence not found for:</b><ul>{noEvidenceGaps(c).map((t, i) => <li key={`${i}:${t}`}>{t}</li>)}</ul></div></div>
+      )}
+      {sufficiencyNote(c) && <p className="meta gap-note">{sufficiencyNote(c)}</p>}
+      {digestWarning(c) && <div className="callout-box coral" role="alert"><AlertTriangle size={18} aria-hidden="true" /><div><b>Some sources could not be read</b><p>{digestWarning(c)}</p></div></div>}
+      {c.sufficient && <p className="meta">{sufficiencyMeaning(c)}</p>}
       {c.fallbackReason && <p className="meta">Note: {c.fallbackReason}</p>}
       <ul className="aspects" aria-label="Aspects checked">
         {c.aspects.map(a => (
           <li key={a.index}>
             <span className="aspect-text">{a.text ?? `Aspect ${a.index + 1} (text unavailable)`}</span>
-            <StatusPill tone={aspectStateLabel(a.state).tone}>{aspectStateLabel(a.state).label}</StatusPill>
+            <span title={aspectStateHint(a.state)}><StatusPill tone={aspectStateLabel(a.state).tone}>{aspectStateLabel(a.state).label}</StatusPill></span>
+            {a.coveredBy === 'synthesis' && <span className="tag synth" title={SYNTHESIS_TOOLTIP}>{SYNTHESIS_BADGE}<span className="sr-only">. {SYNTHESIS_TOOLTIP}</span></span>}
             <span className="tag">{a.yesVerdicts} yes · {a.sources} source{a.sources === 1 ? '' : 's'}</span>
           </li>
         ))}
       </ul>
       {c.uncoveredAspects.length > 0 && (
         <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" />
-          <div><b>Known gaps</b><ul>{c.uncoveredAspects.map(t => <li key={t}>{t}</li>)}</ul></div></div>
+          <div><b>Known gaps</b><ul>{c.uncoveredAspects.map((t, i) => <li key={`${i}:${t}`}>{t}</li>)}</ul></div></div>
       )}
+      {c.loop2 && <Loop2Panel loop2={c.loop2} label={sq.topic} />}
     </div>
   )
 }

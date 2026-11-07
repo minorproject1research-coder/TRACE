@@ -1,10 +1,11 @@
+import { withLoop2Fixtures } from './demo-loop2'
 import type { Report } from './trace-types'
 
 // DEMO MODE ONLY. Fictional sample data in the exact shape of GET /api/research/{id}/report.
 // It exists so every UI state can be exercised without a 15-25 minute run. Nothing here comes from the TRACE backend,
 // and the publications are invented, not real.
 
-export function demoReport(id: string, question: string, createdAt: string | null): Report {
+function baseReport(id: string, question: string, createdAt: string | null): Report {
   return {
     id,
     question,
@@ -141,4 +142,9 @@ export function demoReport(id: string, question: string, createdAt: string | nul
       },
     ],
   }
+}
+
+/** The sample report: sub-questions without Loop 2, one that did not finish, and the Loop 2 cases of lib/demo-loop2.ts. */
+export function demoReport(id: string, question: string, createdAt: string | null): Report {
+  return withLoop2Fixtures(baseReport(id, question, createdAt))
 }

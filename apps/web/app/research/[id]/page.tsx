@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ArrowLeft, FileText, Hourglass, ShieldAlert } from 'lucide-react'
 import { ActivityTab } from '@/components/trace/activity-tab'
-import { CoverageBlock, FindingCard, SourceCard, verificationStats } from '@/components/trace/evidence'
+import { CoverageBlock, FindingCard, NoEvidenceTag, SourceCard, verificationStats } from '@/components/trace/evidence'
 import { Boundary } from '@/components/trace/boundary'
 import { Pipeline } from '@/components/trace/pipeline'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
@@ -151,12 +151,18 @@ function Gate({ active, finished, report, what }: { active: boolean; finished: b
 function SourcesTab({ events, active, report, finished }: { events: WorkflowEvent[]; active: boolean; report: Async<Report>; finished: boolean }) {
   const [type, setType] = useState<'all' | 'paper' | 'web'>('all')
   const [partial, setPartial] = useState(false)
+  const [second, setSecond] = useState(false)
   const topics = (events.find(e => e.stage === 'planner' && e.event === 'stage_completed')?.data.topics as string[] | undefined) ?? []
   const papers = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'papers')?.data, 'papers')
   const web = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'web')?.data, 'webSources')
 
-  const all = useMemo(() => (report.data?.subQuestions ?? []).flatMap(sq => sq.sources.map(src => ({ src, topic: sq.topic }))), [report.data])
-  const rows = all.filter(x => (type === 'all' || x.src.type === type) && (!partial || x.src.evidenceLevel !== 'full_text'))
+  // A source can appear more than once in a sub-question (a paper read again for another aspect): list every entry, flag the repeats.
+  const all = useMemo(() => (report.data?.subQuestions ?? []).flatMap(sq => {
+    const seen = new Set<string>()
+    return sq.sources.map(src => { const repeat = seen.has(src.id); seen.add(src.id); return { src, topic: sq.topic, repeat } })
+  }), [report.data])
+  const secondCount = all.filter(x => !!x.src.foundByLoop2Step).length          // 0 when Loop 2 did not run: then the filter is not shown
+  const rows = all.filter(x => (type === 'all' || x.src.type === type) && (!partial || x.src.evidenceLevel !== 'full_text') && (!second || !!x.src.foundByLoop2Step))
 
   if (active) {
     return (
@@ -176,10 +182,11 @@ function SourcesTab({ events, active, report, finished }: { events: WorkflowEven
       <TabFixed><div className="filter-row">
         <div className="segmented" role="radiogroup" aria-label="Source type" onKeyDown={radioGroupKeys}>{(['all', 'paper', 'web'] as const).map(t => <button key={t} type="button" role="radio" aria-checked={type === t} tabIndex={type === t ? 0 : -1} className={type === t ? 'gborder' : ''} onClick={() => setType(t)}>{t === 'all' ? 'All' : t === 'paper' ? 'Papers' : 'Web'}</button>)}</div>
         <label className="check"><input type="checkbox" checked={partial} onChange={e => setPartial(e.target.checked)} /> Only partly read</label>
+        {secondCount > 0 && <label className="check"><input type="checkbox" checked={second} onChange={e => setSecond(e.target.checked)} /> Found by second search ({secondCount})</label>}
         <span className="meta" aria-live="polite">{rows.length} of {all.length} sources</span>
       </div></TabFixed>
       <TabScroll label="Sources list">
-        {rows.length === 0 ? <EmptyState title="No sources match" message="Change the filters to see more." /> : <div className="card-list">{rows.map(({ src, topic }) => <SourceCard key={src.id + topic} source={src} topic={topic} headingLevel={2} />)}</div>}
+        {rows.length === 0 ? <EmptyState title="No sources match" message="Change the filters to see more." /> : <div className="card-list">{rows.map(({ src, topic, repeat }, i) => <SourceCard key={`${src.id}:${topic}:${i}`} source={src} topic={topic} headingLevel={2} repeat={repeat} />)}</div>}
       </TabScroll>
     </>
   )
@@ -206,7 +213,7 @@ function EvidenceTab({ active, report, finished }: { active: boolean; report: As
         const items = sq.sources.flatMap(src => src.findings.map(f => ({ f, src }))).filter(x => (stance === 'all' || stanceInfo(x.f.stance).group === stance) && (!unverified || !x.f.quoteFound))
         return (
           <details key={sq.id} className="sq-group" open={items.length > 0 && r.subQuestions.length <= 3}>
-            <summary><span>{sq.topic}</span><span className="tag">{items.length} finding{items.length === 1 ? '' : 's'}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}</summary>
+            <summary><span>{sq.topic}</span><span className="tag">{items.length} finding{items.length === 1 ? '' : 's'}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}<NoEvidenceTag coverage={sq.coverage} /></summary>
             {items.length === 0 ? <p className="meta">No findings match.</p> : items.map(({ f, src }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {src.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}
           </details>
         )
@@ -239,7 +246,7 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
         </div>
         <p className="meta">yes {stats.verdicts.yes} · partial {stats.verdicts.partial} · no {stats.verdicts.no}</p></div>
 
-      {r.subQuestions.map(sq => <details key={sq.id} className="sq-group"><summary><span>{sq.topic}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}</summary><CoverageBlock sq={sq} /></details>)}
+      {r.subQuestions.map(sq => <details key={sq.id} className="sq-group"><summary><span>{sq.topic}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}<NoEvidenceTag coverage={sq.coverage} /></summary><CoverageBlock sq={sq} /></details>)}
 
       <h2 className="sub-h">Contradicting or challenging findings ({stats.contradicting.length})</h2>
       {stats.contradicting.length === 0 ? <p className="meta">No finding is marked as contradicting or challenging.</p> : stats.contradicting.map(({ f, s }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {s.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}

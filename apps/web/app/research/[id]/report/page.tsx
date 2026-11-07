@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { AlertTriangle, ArrowLeft, Hourglass, ShieldAlert } from 'lucide-react'
-import { CoverageBlock, SourceCard } from '@/components/trace/evidence'
+import { CoverageBlock, NoEvidenceTag, SourceCard } from '@/components/trace/evidence'
 import { StatusPill } from '@/components/trace/status-pill'
 import { ErrorState, Skeleton } from '@/components/trace/states'
 import { formatDateTime } from '@/lib/format'
@@ -55,7 +55,7 @@ export default function ReportPage() {
       </section>
 
       <nav className="toc" aria-label="Sub-questions">
-        {r.subQuestions.map((sq, i) => <a key={sq.id} href={`#sq-${sq.id}`}><span className="n">{i + 1}</span>{sq.topic}{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : sq.coverage.sufficient ? <StatusPill tone="mint">Sufficient</StatusPill> : <StatusPill tone="amber">Not sufficient</StatusPill>}</a>)}
+        {r.subQuestions.map((sq, i) => <a key={sq.id} href={`#sq-${sq.id}`}><span className="n">{i + 1}</span>{sq.topic}{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : sq.coverage.sufficient ? <StatusPill tone="mint">Sufficient</StatusPill> : <StatusPill tone="amber">Not sufficient</StatusPill>}<NoEvidenceTag coverage={sq.coverage} /></a>)}
       </nav>
 
       {r.subQuestions.map((sq, i) => (
@@ -65,7 +65,7 @@ export default function ReportPage() {
           {sq.detailQuestions.length > 0 && <p className="meta">Also asked: {sq.detailQuestions.join(' · ')}</p>}
           <CoverageBlock sq={sq} />
           <h3 className="sub-h">Sources ({sq.sources.length})</h3>
-          {sq.sources.length === 0 ? <p className="meta">No sources were kept for this sub-question.</p> : <div className="card-list">{sq.sources.map(s => <SourceCard key={s.id} source={s} />)}</div>}
+          {sq.sources.length === 0 ? <p className="meta">No sources were kept for this sub-question.</p> : <div className="card-list">{sq.sources.map((s, i) => <SourceCard key={`${s.id}:${i}`} source={s} repeat={sq.sources.findIndex(x => x.id === s.id) < i} />)}</div>}
         </section>
       ))}
     </article>

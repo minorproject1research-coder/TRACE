@@ -36,7 +36,42 @@ export const TERMINAL_EVENTS: EventName[] = ['run_completed', 'run_failed']
 
 export type AspectState = 'covered' | 'judged_insufficient' | 'no_candidates' | 'unjudged' | 'uncovered' | 'unknown'
 
-export type AspectRow = { index: number; text: string | null; state: AspectState; yesVerdicts: number; sources: number }
+export type AspectRow = {
+  index: number
+  text: string | null
+  state: AspectState
+  /** 'single_claims' | 'synthesis' | null. synthesis = the judge accepted the findings of several sources TOGETHER (Loop 2): weaker evidence. Open string on purpose. */
+  coveredBy?: string | null
+  yesVerdicts: number
+  sources: number
+}
+
+// ---- Loop 2 (optional second search; the server runs it only with LOOP2=true). Everything is optional and tolerant: older runs carry null fields
+// (gapRule, sufficientStrict, coveredBySynthesis, nearMiss) and the status words are open strings, so unknown values never break the page.
+
+/** The ladder Loop 2 climbs for an aspect: reselect, pool, queries (in this order). */
+export type Loop2LadderStep = 'reselect' | 'pool' | 'queries'
+
+export type Loop2StepRow = { step: string; aspects: number; newSources: number; newVerifiedFindings: number; covered: number; seconds: number }
+
+/** status: covered | known_gap | known_gap_no_evidence | known_gap_skipped_triage | known_gap_skipped_cap | unjudged_not_searched (open string). */
+export type Loop2Aspect = { text: string; status: string; coveredBy?: string | null; how?: string | null; nearMiss?: boolean | null; steps?: string[] }
+
+export type Loop2 = {
+  searched: number
+  covered: number
+  seconds: number
+  triage?: string | null
+  /** 'core' (default with Loop 2): an aspect that stays uncovered after the whole search and has thin evidence does not stop `sufficient`. */
+  gapRule?: string | null
+  /** `sufficient` under the old, stricter rule (every aspect covered). `coverage.sufficient` is the gapRule value. */
+  sufficientStrict?: boolean | null
+  coveredBySynthesis?: number | null
+  knownGapsNoEvidence?: string[]
+  steps?: Loop2StepRow[]
+  aspects?: Loop2Aspect[]
+  knownGaps?: string[]
+}
 
 export type Judgement = {
   aspect: string | null
@@ -75,6 +110,8 @@ export type SourceReport = {
   arxivId?: string | null
   citations?: number | null
   origin?: string | null
+  /** Set when Loop 2 added this source ('reselect' | 'pool' | 'queries'). Open string. */
+  foundByLoop2Step?: string | null
   provider?: string | null
   publishedDate?: string | null
 }
@@ -89,6 +126,8 @@ export type Coverage = {
   uncoveredAspects: string[]
   unjudgedAspects: string[]
   fallbackReason: string | null
+  /** null or absent: Loop 2 did not run for this sub-question. */
+  loop2?: Loop2 | null
 }
 
 export type SubQuestionReport = {

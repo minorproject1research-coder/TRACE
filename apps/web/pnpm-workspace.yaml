@@ -10,3 +10,6 @@ overrides:
   browserslist: '>=4.28.7'
   source-map-js: '>=1.2.2'
   baseline-browser-mapping: '>=2.11.0'
+
+allowBuilds:
+  esbuild: false     # its install script only checks the binary; tsx (tests) works without it

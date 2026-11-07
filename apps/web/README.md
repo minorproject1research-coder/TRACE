@@ -26,6 +26,13 @@ Backend, from the repository root: `uvicorn apps.api.main:app --port 8000`. Its 
 
 The run page's **Activity** tab shows the evidence funnel (papers kept → parsed → used as evidence; web sources found → used), and its views: Timeline (the planner, then the **paper and web retrieval branches side by side on one time axis**, each with a dropdown of its steps: paper search, relevance judge calls, citation counts, scoring, saving and PDF parsing with live counts; then the evidence digest and judge steps. A run that finished before steps were recorded shows an approximate timeline reconstructed from database timestamps, labelled as such), Plan (sub-questions with their paper counts), Papers (searchable, filterable cards) and Web sources. The funnel steps are buttons: they open the matching, filtered list. A paper card opens the paper page (a normal link, so it can be opened in a new browser tab). Data comes from `GET /api/research/{id}/papers` and `/papers/{paper_id}` (see `docs/API_HANDOFF.md`), and refreshes whenever a stage finishes.
 
+**Second search (Loop 2, optional).** When the server runs with `LOOP2=true`, an aspect that stayed uncovered gets a second search, and the UI shows it without changing anything else (a run without Loop 2 renders exactly as before):
+
+- *Timeline:* a sub-step "Searching again for missing evidence" appears between the judge events, with the current rung (re-reading papers we already have, reading more papers from the search results, searching with new queries), the running totals and elapsed time. Unknown steps are ignored.
+- *Evidence report:* per sub-question a collapsible "Second search" panel (summary line, steps table, every aspect with its status), the badge "combined from several sources" for aspects covered by synthesis, and "Sufficient, with gaps where no evidence was found." when `sufficientStrict` is false. "Evidence not found for: ..." is always shown next to the sufficient badge, and a warning appears when sources could not be read (`digestFailures`), because "no evidence" may then be wrong.
+- *Sources:* a "found by second search" badge and a filter. A source can be listed more than once in a sub-question (read again for another aspect); repeats are marked "read again".
+- Every Loop 2 field is optional and tolerant (older runs carry nulls; status words are open strings). The pure logic is in `lib/loop2.ts` and tested in `tests/loop2.test.ts` (`pnpm test`); demo fixtures are in `lib/demo-loop2.ts`.
+
 Keyboard: `Ctrl+K` search and jump, `N` new research, `Ctrl+Enter` start a run from the question box.
 
 ## Live mode and demo mode
