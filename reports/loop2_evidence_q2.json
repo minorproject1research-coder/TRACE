@@ -1,0 +1,126 @@
+[
+ {
+  "sub_question": "How is MoE applied to LLMs?",
+  "aspects": 2,
+  "uncovered_before": [
+   "What are the challenges of using MoE in LLMs?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the challenges of using MoE in LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 3,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Current standard LLM benchmarks are ill‑suited for assessing MoE models, creatin",
+       "source_id": "22614418-702a-436f-9435-4b7d5889c1d0",
+       "reason": "The quote directly affirms the claim that benchmarks are ill-suited for MoE models, which constitutes a valid statement of an evaluation cha"
+      },
+      {
+       "claim": "A key challenge for MoE in LLMs is insufficient multimodal instruction data to e",
+       "source_id": "81f434d8-be4f-485b-a9bb-18098ee72d20",
+       "reason": "The quote explicitly identifies insufficient multimodal instruction data as a challenge for MoE models, which directly answers the aspect as"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the challenges of using MoE in LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 9,
+     "new_verified": 9,
+     "covered": [
+      "What are the challenges of using MoE in LLMs?"
+     ],
+     "seconds": 7.6,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 7.6,
+   "searched": 1,
+   "covered": 1
+  }
+ },
+ {
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspects": 7,
+  "uncovered_before": [
+   "How does expert routing implementation in LLMs compare in terms of scalability?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "How does expert routing implementation in LLMs compare in terms of scalability?": {
+     "before": {
+      "yes": 1,
+      "partial": 3,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Expert routing decouples capacity from compute, allowing model size to increase ",
+       "source_id": "19e1e158-fbff-4e12-b8eb-e9e27aee9c65",
+       "reason": "The quote directly confirms the claim about decoupling capacity and compute, which effectively answers the aspect regarding how expert routi"
+      },
+      {
+       "claim": "Routing insights from small-scale experiments scale to models 35× larger, showin",
+       "source_id": "677643c0-8258-443e-b4c8-4c2c1c01e824",
+       "reason": "The quote directly confirms the claim's specific finding about scaling to a 35x larger model, and the claim effectively answers the aspect b"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How does expert routing implementation in LLMs compare in terms of scalability?"
+     ],
+     "new_sources": 4,
+     "new_findings": 5,
+     "new_verified": 5,
+     "covered": [
+      "How does expert routing implementation in LLMs compare in terms of scalability?"
+     ],
+     "seconds": 7.8,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 7.8,
+   "searched": 1,
+   "covered": 1
+  }
+ }
+]

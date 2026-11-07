@@ -1,0 +1,425 @@
+[
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "aspects": 4,
+  "uncovered_before": [
+   "What are the main applications of LLMs?",
+   "What are the main challenges of LLMs?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the main applications of LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 4
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "LLMs are applied in education, healthcare, finance, code writing, labour market ",
+       "source_id": "16ee2a20-2f4c-488b-878c-b6707b0592f5",
+       "reason": "The quote explicitly lists the specific domains where LLMs are applied, which directly supports the claim and answers the aspect asking for "
+      },
+      {
+       "claim": "LLMs can be prompted to perform a variety of tasks such as summarizing, classify",
+       "source_id": "8972528b-916d-4bdc-997b-e1e6cf8bf770",
+       "reason": "The quote explicitly lists the specific tasks mentioned in the claim, and the claim effectively answers the aspect by providing a list of ma"
+      },
+      {
+       "claim": "LLMs are especially useful for content creation, summarization, and sentiment an",
+       "source_id": "adf02ef5-5fd2-486c-b4ff-b858c25bdcdb",
+       "reason": "The quote explicitly lists the applications mentioned in the claim, and the claim directly answers the aspect by providing a list of main us"
+      },
+      {
+       "claim": "LLMs are used for creative tasks such as poetry, art description, and music comp",
+       "source_id": "bc7fbbcc-b320-4b07-b518-943d283ac12c",
+       "reason": "The quote explicitly lists the creative applications mentioned in the claim, and the claim provides a valid, complete list of examples answe"
+      }
+     ]
+    },
+    "What are the main challenges of LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "LLMs face many challenges, such as biased data, reliance on surface patterns, li",
+       "source_id": "16ee2a20-2f4c-488b-878c-b6707b0592f5",
+       "reason": "The quote faithfully lists the specific limitations mentioned in the claim, and the claim provides a complete list of challenges answering t"
+      },
+      {
+       "claim": "LLMs incur high computational costs and environmental impact due to resource‑int",
+       "source_id": "77d12859-1833-4867-bb6d-d697714cd0e9",
+       "reason": "The quote explicitly states the high computational costs and environmental impact of LLM training, which directly answers the question about"
+      },
+      {
+       "claim": "Training LLMs can cost hundreds of thousands of dollars, posing a resource chall",
+       "source_id": "8972528b-916d-4bdc-997b-e1e6cf8bf770",
+       "reason": "The quote confirms the cost figure in the claim, and the claim correctly identifies high training costs as a specific challenge of LLMs."
+      },
+      {
+       "claim": "Key challenges of LLMs include bias, misinformation, and privacy concerns.",
+       "source_id": "bc7fbbcc-b320-4b07-b518-943d283ac12c",
+       "reason": "The quote explicitly lists bias, misinformation, and privacy as issues that must be addressed, which directly supports the claim and answers"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the main applications of LLMs?",
+      "What are the main challenges of LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 13,
+     "new_verified": 12,
+     "covered": [
+      "What are the main applications of LLMs?",
+      "What are the main challenges of LLMs?"
+     ],
+     "seconds": 24.8,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 24.8,
+   "searched": 2,
+   "covered": 2
+  }
+ },
+ {
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspects": 5,
+  "uncovered_before": [
+   "What are the levels of reasoning ability that LLMs can exhibit?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the levels of reasoning ability that LLMs can exhibit?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 3
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "LLMs display hierarchical reasoning levels: early layers perform knowledge retri",
+       "source_id": "5cc52ed6-c29b-485c-9d7e-667ebd7a0359",
+       "reason": "The quote explicitly details the three hierarchical reasoning levels (knowledge retrieval, in-context reasoning, answer generation) claimed,"
+      },
+      {
+       "claim": "LLMs exhibit mathematical, logical, and commonsense reasoning abilities.",
+       "source_id": "df00783e-dcd8-4df5-b59c-0c95447d4040",
+       "reason": "The quote directly lists the specific reasoning abilities mentioned in the claim, which serves as a complete answer to the question about th"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the levels of reasoning ability that LLMs can exhibit?"
+     ],
+     "new_sources": 4,
+     "new_findings": 13,
+     "new_verified": 13,
+     "covered": [
+      "What are the levels of reasoning ability that LLMs can exhibit?"
+     ],
+     "seconds": 9.2,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 9.2,
+   "searched": 1,
+   "covered": 1
+  }
+ },
+ {
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspects": 8,
+  "uncovered_before": [
+   "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+   "What are the existing metrics for evaluating the reasoning ability of LLMs?",
+   "characteristics of a good benchmark or metric",
+   "criteria of a good benchmark or metric"
+  ],
+  "uncovered_after": [
+   "How are the benchmarks and metrics compared?",
+   "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+   "What are the existing metrics for evaluating the reasoning ability of LLMs?",
+   "criteria of a good benchmark or metric"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "criteria of a good benchmark or metric": {
+     "before": {
+      "yes": 2,
+      "partial": 1,
+      "no": 0
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Benchmarks that no longer discriminate between models provide limited evaluative",
+       "source_id": "f1108a7b-138e-489e-a07e-3b2e55463466",
+       "reason": "The quote directly supports the claim by stating that non-discriminative benchmarks have limited value, and the claim serves as a complete, "
+      },
+      {
+       "claim": "Effective evaluation requires standardized, representative, and domain‑informed ",
+       "source_id": "f1108a7b-138e-489e-a07e-3b2e55463466",
+       "reason": "The quote explicitly lists the three criteria (standardized, representative, domain-informed) that the claim asserts are required for effect"
+      }
+     ]
+    },
+    "characteristics of a good benchmark or metric": {
+     "before": {
+      "yes": 1,
+      "partial": 2,
+      "no": 0
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Benchmarks and metrics are organized into two layers: outcome‑oriented (Correctn",
+       "source_id": "baf7de07-d12f-4a80-8480-b33fbbe4b119",
+       "reason": "The quote explicitly defines the two layers and lists the specific dimensions within each, which directly answers the aspect asking for the "
+      },
+      {
+       "claim": "Benchmarks that no longer discriminate between models provide limited evaluative",
+       "source_id": "f1108a7b-138e-489e-a07e-3b2e55463466",
+       "reason": "The quote directly supports the claim that benchmarks lacking discrimination have limited value, and the claim serves as a complete, direct "
+      },
+      {
+       "claim": "Effective evaluation requires standardized, representative, and domain‑informed ",
+       "source_id": "f1108a7b-138e-489e-a07e-3b2e55463466",
+       "reason": "The quote explicitly lists the three required characteristics (standardized, representative, domain-informed) which directly answers the asp"
+      }
+     ]
+    },
+    "What are the existing benchmarks for evaluating the reasoning ability of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the existing metrics for evaluating the reasoning ability of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "criteria of a good benchmark or metric",
+      "characteristics of a good benchmark or metric",
+      "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+      "What are the existing metrics for evaluating the reasoning ability of LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 22,
+     "new_verified": 17,
+     "covered": [
+      "criteria of a good benchmark or metric",
+      "characteristics of a good benchmark or metric"
+     ],
+     "seconds": 16.2,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+      "What are the existing metrics for evaluating the reasoning ability of LLMs?"
+     ],
+     "new_sources": 2,
+     "new_findings": 7,
+     "new_verified": 4,
+     "covered": [],
+     "seconds": 9.7,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 25.9,
+   "searched": 4,
+   "covered": 2
+  }
+ },
+ {
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspects": 6,
+  "uncovered_before": [
+   "What are the open problems for using the benchmarks and metrics?",
+   "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+   "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+  ],
+  "uncovered_after": [
+   "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+   "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs": {
+     "before": {
+      "yes": 1,
+      "partial": 4,
+      "no": 1
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the open problems for using the benchmarks and metrics?": {
+     "before": {
+      "yes": 1,
+      "partial": 4,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Estimating the contamination risk of each benchmark example is a difficult open ",
+       "source_id": "690a3902-9183-4c3f-bf9e-85e268cd5ad0",
+       "reason": "The quote directly confirms the claim that estimating contamination risk is a challenging task, which serves as a valid answer to the aspect"
+      },
+      {
+       "claim": "Fragmented and selective benchmark use across model families highlights the need",
+       "source_id": "cd73a06d-f4bf-4da7-b297-de5045e9d0ae",
+       "reason": "The quote directly states the problem of fragmented benchmark use and the need for standardized frameworks, which fully answers the aspect a"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "What are the open problems for using the benchmarks and metrics?"
+     ],
+     "new_sources": 5,
+     "new_findings": 22,
+     "new_verified": 22,
+     "covered": [
+      "What are the open problems for using the benchmarks and metrics?"
+     ],
+     "seconds": 10.4,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+     ],
+     "new_sources": 2,
+     "new_findings": 9,
+     "new_verified": 9,
+     "covered": [],
+     "seconds": 98.7,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 109.1,
+   "searched": 3,
+   "covered": 1
+  }
+ }
+]

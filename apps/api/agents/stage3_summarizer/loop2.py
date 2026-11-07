@@ -115,7 +115,7 @@ class Services:
                                              # (the pool step still parses: that fills the parse cache and changes no run data)
 
     def __init__(self):
-        self._agent = None
+        pass
 
     # --- database
     def pool_rows(self, query_id: str, sq_id: str) -> list[dict]:
@@ -137,10 +137,10 @@ class Services:
 
     # --- retrieval
     def agent(self):
-        if self._agent is None:
-            from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
-            self._agent = PaperRetrievalAgent(max_results_per_query=10)
-        return self._agent
+        """A NEW agent for every call: its rate limiters and key pools hold asyncio locks that belong to the event loop of the first
+        asyncio.run that used them, and Loop 2 calls asyncio.run many times (seen 2026-11-07: 'is bound to a different event loop')."""
+        from apps.api.agents.stage2_retrieval.paper_retrieval_agent import PaperRetrievalAgent
+        return PaperRetrievalAgent(max_results_per_query=10)
 
     def parse(self, ids: list[str]) -> set:
         """Parse the papers (the agent writes parsed_papers); returns the ids with usable full text."""
@@ -302,22 +302,26 @@ def _step_pool(ctx, open_idx, svc):
 def _step_queries(ctx, open_idx, svc):
     new_papers: dict[str, dict] = {}
     new_queries: list[str] = []
-    web_queries: list[str] = []
-    for i in open_idx:
+    tried = list(ctx.tried_queries)
+
+    def search(i):                                   # one aspect: new queries, papers, relevance filter (aspects run side by side)
         aspect = ctx.aspects[i]
-        queries = svc.gap_queries(aspect, ctx.sq.main_topic, ctx.tried_queries, ctx.anchor)
+        queries = svc.gap_queries(aspect, ctx.sq.main_topic, tried, ctx.anchor)
         if not queries:
-            continue
+            return i, [], []
+        question = svc.standalone_question(aspect, ctx.sq.main_topic)
+        return i, queries, svc.relevance(question, svc.retrieve(question, queries), ctx.anchor, ctx.context)
+
+    with ThreadPoolExecutor(max_workers=max(1, min(_env_int("LOOP2_SEARCH_WORKERS", 3), len(open_idx)))) as pool:
+        searched = list(pool.map(search, open_idx))
+    for i, queries, kept in searched:
         ctx.tried_queries.extend(queries)
         new_queries.extend(queries)
-        question = svc.standalone_question(aspect, ctx.sq.main_topic)
-        found = svc.retrieve(question, queries)
-        kept = svc.relevance(question, found, ctx.anchor, ctx.context)
         for p in kept:
             key = svc.paper_key(p)
             if key in ctx.paper_keys or key in new_papers:
                 continue
-            p["matched_aspect"] = aspect
+            p["matched_aspect"] = ctx.aspects[i]
             new_papers[key] = p
     web = []
     if new_queries:
@@ -382,7 +386,7 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
                 aspects_info[ctx.aspects[i]]["stopped"] = "time_budget"
             break
         t0 = time.monotonic()
-        svc.progress(f"Loop 2 ({step}): {len(open_idx)} aspect(s) of '{ctx.sq.main_topic[:50]}'", step=step, aspects=len(open_idx))
+        svc.progress(f"Loop 2 ({step}): {len(open_idx)} aspect(s) of '{ctx.sq.main_topic[:50]}'", loop2Step=step, aspects=len(open_idx))
         try:
             new_rows, stats = STEP_FUNCS[step](ctx, open_idx, svc)
         except Exception as e:                       # a failed step must never cost the run; the aspect stays a gap
@@ -406,6 +410,9 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
                     len(new_rows), len(newly), len(open_idx), time.monotonic() - t0)
 
     for text, a in aspects_info.items():
+        if a["covered_by"] and text in ctx.aspects:       # what covers it now: the claims the judge accepted (shown in the report, checked by hand in tests)
+            ev = (cov.get("aspect_evidence") or {}).get(ctx.aspects.index(text)) or []
+            a["evidence"] = [{"claim": e.get("claim_prefix"), "source_id": e.get("source_id"), "reason": (e.get("reason") or "")[:140]} for e in ev[:4]]
         if a["status"] == "searched":
             a["status"] = "covered" if a["covered_by"] else "known_gap"
         elif a["status"] in ("skipped_triage", "skipped_cap", "skipped"):

@@ -301,3 +301,31 @@ def test_report_view_of_loop2_lists_known_gaps():
     assert view["knownGaps"] == ["b", "c"] and view["covered"] == 1
     assert view["steps"][0] == {"step": "reselect", "aspects": 2, "newSources": 2, "newVerifiedFindings": 3, "covered": 0, "seconds": 4.0}
     assert [a["coveredBy"] for a in view["aspects"]] == ["pool", None, None]
+
+
+def test_real_progress_reports_reach_the_event_sink():
+    """The first live run failed here: a data key called 'step' collided with progress.report's own 'step' argument (the fake services hid it)."""
+    from apps.api.graph.nodes import summarizer_node as sn
+    from apps.api.services import progress
+    events = []
+    progress.register("run-x", events.append)
+    try:
+        svc = sn._Loop2Services("run-x")
+        svc.progress("Loop 2 (reselect): 2 aspect(s)", loop2Step="reselect", aspects=2)
+    finally:
+        progress.unregister("run-x")
+    assert events and events[0]["lane"] == "summarizer" and events[0]["step"] == "loop2" and events[0]["data"] == {"loop2Step": "reselect", "aspects": 2}
+
+
+def test_a_real_loop2_failure_keeps_the_stage3_result(monkeypatch):
+    """_run_loop2 never raises and puts the digests back as they were."""
+    from apps.api.graph.nodes import summarizer_node as sn
+    rows = [{"findings": []}]
+    sq = SimpleNamespace(id="sq1", main_topic="t", queries=[])
+    state = SimpleNamespace(task_plan=SimpleNamespace(domain_anchor="", domain_context=""))
+    monkeypatch.setattr(sn.loop2, "run_subquestion", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(sn._Loop2Services, "pool_rows", lambda self, q, s: [])
+    monkeypatch.setattr(sn.db_service, "get_web_sources_for_stage3", lambda sid: [])
+    cov = {"uncovered_aspects": ["a"]}
+    out = sn._run_loop2("q", state, sq, 0, ["a"], [0], ["d"], ["a"], rows, {}, [], [], {}, cov, False, 0)
+    assert out is cov and rows == [{"findings": []}]

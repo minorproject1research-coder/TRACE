@@ -1,0 +1,265 @@
+[
+ {
+  "sub_question": "What are diffusion models and GANs?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "What are the metrics or criteria for evaluating image generation quality and training stability?",
+  "aspects": 4,
+  "uncovered_before": [
+   "How is convergence measured in image generation models?"
+  ],
+  "uncovered_after": [
+   "How is convergence measured in image generation models?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "How is convergence measured in image generation models?": {
+     "before": {
+      "yes": 1,
+      "partial": 2,
+      "no": 0
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How is convergence measured in image generation models?"
+     ],
+     "new_sources": 4,
+     "new_findings": 12,
+     "new_verified": 12,
+     "covered": [],
+     "seconds": 35.5,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How is convergence measured in image generation models?"
+     ],
+     "new_sources": 1,
+     "new_findings": 4,
+     "new_verified": 3,
+     "covered": [],
+     "seconds": 42.5,
+     "sources_tried": 3,
+     "parsed": 1
+    }
+   ],
+   "seconds": 77.9,
+   "searched": 1,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How do diffusion models compare with GANs in terms of image generation quality?",
+  "aspects": 3,
+  "uncovered_before": [
+   "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"
+  ],
+  "uncovered_after": [
+   "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?": {
+     "before": {
+      "yes": 0,
+      "partial": 6,
+      "no": 0
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"
+     ],
+     "new_sources": 5,
+     "new_findings": 13,
+     "new_verified": 11,
+     "covered": [],
+     "seconds": 27.4,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How do diffusion models vs. GANs perform on different types of images, e.g. realistic, artistic, text-to-image, etc.?"
+     ],
+     "new_sources": 2,
+     "new_findings": 8,
+     "new_verified": 7,
+     "covered": [],
+     "seconds": 42.5,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 69.9,
+   "searched": 1,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How do diffusion models compare with GANs in terms of training stability?",
+  "aspects": 6,
+  "uncovered_before": [
+   "How do diffusion models vs. GANs scale with computational resources?",
+   "How do diffusion models vs. GANs scale with data size?",
+   "How do diffusion models vs. GANs scale with model size?",
+   "What are the solutions for training diffusion models vs. GANs?"
+  ],
+  "uncovered_after": [
+   "How do diffusion models vs. GANs scale with computational resources?",
+   "How do diffusion models vs. GANs scale with data size?",
+   "How do diffusion models vs. GANs scale with model size?",
+   "What are the solutions for training diffusion models vs. GANs?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the solutions for training diffusion models vs. GANs?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How do diffusion models vs. GANs scale with data size?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How do diffusion models vs. GANs scale with model size?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How do diffusion models vs. GANs scale with computational resources?": {
+     "before": {
+      "yes": 0,
+      "partial": 2,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the solutions for training diffusion models vs. GANs?",
+      "How do diffusion models vs. GANs scale with data size?",
+      "How do diffusion models vs. GANs scale with model size?",
+      "How do diffusion models vs. GANs scale with computational resources?"
+     ],
+     "new_sources": 5,
+     "new_findings": 16,
+     "new_verified": 16,
+     "covered": [],
+     "seconds": 28.7,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the solutions for training diffusion models vs. GANs?",
+      "How do diffusion models vs. GANs scale with data size?",
+      "How do diffusion models vs. GANs scale with model size?",
+      "How do diffusion models vs. GANs scale with computational resources?"
+     ],
+     "new_sources": 0,
+     "new_findings": 0,
+     "new_verified": 0,
+     "covered": [],
+     "seconds": 39.2,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 67.9,
+   "searched": 4,
+   "covered": 0
+  }
+ }
+]

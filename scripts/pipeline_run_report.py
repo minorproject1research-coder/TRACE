@@ -129,8 +129,10 @@ def main() -> int:
     covs = rd(supabase.table("coverage_results").select("*").eq("query_id", qid))
 
     # ---------------------------------------------------------------- phases
-    M = lambda pat: first(msgs, lambda l: re.search(pat, l[3]))
-    ML = lambda pat: last(msgs, lambda l: re.search(pat, l[3]))
+    t_st3_first = first(msgs, lambda l: re.search(r"^Stage 3: \d+ digests", l[3]))
+    msgs2 = [m for m in msgs if t_st3_first is None or m[0] < t_st3_first[0]]          # Stage 1 + 2 (Loop 2 searches come after this point)
+    M = lambda pat: first(msgs2, lambda l: re.search(pat, l[3]))
+    ML = lambda pat: last(msgs2, lambda l: re.search(pat, l[3]))
     t_plan = M(r"^Saved task plan")[0]
     t_web0, t_web1 = M(r"^Starting web search")[0], ML(r"^Web search complete")[0]
     t_pf0 = M(r"^Embedding pre-filter")[0]
@@ -139,11 +141,11 @@ def main() -> int:
     t_ret = M(r"^Retrieved \d+ relevant papers")[0]
     t_parse0 = M(r"^Parsing the top")[0]
     t_parse1 = M(r"^Parsing done")[0]
-    st3 = M(r"^Stage 3: \d+ digests")
+    st3 = t_st3_first
     t_st3 = st3[0]
     t_judge0 = first(msgs, lambda l: l[0] > t_st3 and "detail_aspects: Aspect cache hit" in (l[2] + ": " + l[3]) or (l[0] > t_st3 and l[2].endswith("detail_aspects") and l[3].startswith("Aspect cache hit")))
     t_judge0 = t_judge0[0] if t_judge0 else t_st3
-    t_last_sq = ML(r"Judge used:")[0]
+    t_last_sq = last(msgs, lambda l: re.search(r"Judge used:", l[3]))[0]
     phases = [(f"Planner (decompose, {len(sqs)} sub-questions)", t_start, t_plan), ("Web search (Tavily)", t_web0, t_web1),
               ("Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus)", t_web1, t_pf0), ("Embedding pre-filter + relevance judge", t_pf0, t_pf1)]
     if t_enr0:
@@ -152,44 +154,47 @@ def main() -> int:
                ("Stage 3 preparation (aspect split, chunking, embedding)", t_parse1, t_st3), ("Stage 3 digest generation (Groq)", t_st3, t_judge0),
                ("Stage 3 judge + coverage (per sub-question)", t_judge0, t_last_sq)]
     total = (t_end - t_start).total_seconds()
+    cov_by_sq_early = {}
+    for c in sorted(covs, key=lambda c: c["created_at"]):
+        cov_by_sq_early[c["sub_question_id"]] = c
 
     # ---------------------------------------------------------------- retrieval + filter
-    web_variant = [int(re.search(r"(\d+) unique", l[3]).group(1)) for l in msgs if l[3].startswith("Web search complete")]
-    prefilter = [tuple(int(x) for x in re.search(r"(\d+) candidates -> (\d+) cleared min_similarity \(([\d.]+)\) -> top (\d+)", l[3]).group(1, 2, 4)) for l in msgs if l[3].startswith("Embedding pre-filter")]
-    pf_text = [l[3] for l in msgs if l[3].startswith("Embedding pre-filter")]
-    judged = [re.search(r"Relevance filter \[(.*?)\] for \[(.*?)\]: (\d+) shortlisted -> (\d+) passed \((\d+) kept without", l[3]).groups() for l in msgs if l[3].startswith("Relevance filter [")]
+    web_variant = [int(re.search(r"(\d+) unique", l[3]).group(1)) for l in msgs2 if l[3].startswith("Web search complete")]
+    prefilter = [tuple(int(x) for x in re.search(r"(\d+) candidates -> (\d+) cleared min_similarity \(([\d.]+)\) -> top (\d+)", l[3]).group(1, 2, 4)) for l in msgs2 if l[3].startswith("Embedding pre-filter")]
+    pf_text = [l[3] for l in msgs2 if l[3].startswith("Embedding pre-filter")]
+    judged = [re.search(r"Relevance filter \[(.*?)\] for \[(.*?)\]: (\d+) shortlisted -> (\d+) passed \((\d+) kept without", l[3]).groups() for l in msgs2 if l[3].startswith("Relevance filter [")]
     rejects = Counter()
-    for l in msgs:
+    for l in msgs2:
         m = re.match(r"Filtered out \[(.*?)\] ", l[3])
         if m:
             rejects[m.group(1)] += 1
     reject_examples = defaultdict(list)
-    for l in msgs:
+    for l in msgs2:
         m = re.match(r"Filtered out \[(.*?)\] '(.*?)'.*?reason: (.*)", l[3])
         if m and len(reject_examples[m.group(1)]) < 3:
             reject_examples[m.group(1)].append((m.group(2), m.group(3)[:140]))
 
     # ---------------------------------------------------------------- parsing
-    obtained = Counter(re.search(r"PDF obtained via (.*?) \(", l[3]).group(1) for l in msgs if l[3].startswith("PDF obtained via"))
-    n_cache = sum(1 for l in msgs if l[3].startswith("Parse cache hit"))
-    n_unpaywall_found = sum(1 for l in msgs if l[3].startswith("Unpaywall found OA URL"))
-    n_landing = sum(1 for l in msgs if l[3].startswith("Found the PDF through the landing"))
-    n_dl_fail = [l for l in msgs if l[3].startswith("Failed to download from")]
+    obtained = Counter(re.search(r"PDF obtained via (.*?) \(", l[3]).group(1) for l in msgs2 if l[3].startswith("PDF obtained via"))
+    n_cache = sum(1 for l in msgs2 if l[3].startswith("Parse cache hit"))
+    n_unpaywall_found = sum(1 for l in msgs2 if l[3].startswith("Unpaywall found OA URL"))
+    n_landing = sum(1 for l in msgs2 if l[3].startswith("Found the PDF through the landing"))
+    n_dl_fail = [l for l in msgs2 if l[3].startswith("Failed to download from")]
     dl_fail_reason = Counter(re.search(r"(HTTPStatusError\('\d+ [A-Za-z ]+'\)|ValueError\('Non-PDF[^)]*\)?|[A-Za-z]+Error)", l[3]).group(1)[:40] if re.search(r"(HTTPStatusError\('\d+ [A-Za-z ]+'\)|ValueError\('Non-PDF|[A-Za-z]+Error)", l[3]) else "other" for l in n_dl_fail)
-    n_pw_try = sum(1 for l in msgs if l[3].startswith("Trying undetected Playwright"))
-    n_pw_fail = sum(1 for l in msgs if l[3].startswith("Playwright fallback failed"))
-    n_docling_url = sum(1 for l in msgs if "Docling fetches and parses" in l[3])
-    n_html_fail = sum(1 for l in msgs if l[3].startswith("HTML full-text attempt failed"))
-    final_fail = [(re.search(r"failed for ([\w-]+): (.*)", l[3]).groups()) for l in msgs if l[3].startswith("All PDF URLs failed")]
-    parse_err = [(re.search(r"Failed to parse paper ([\w-]+): (.*)", l[3]).groups()) for l in msgs if l[3].startswith("Failed to parse paper")]
+    n_pw_try = sum(1 for l in msgs2 if l[3].startswith("Trying undetected Playwright"))
+    n_pw_fail = sum(1 for l in msgs2 if l[3].startswith("Playwright fallback failed"))
+    n_docling_url = sum(1 for l in msgs2 if "Docling fetches and parses" in l[3])
+    n_html_fail = sum(1 for l in msgs2 if l[3].startswith("HTML full-text attempt failed"))
+    final_fail = [(re.search(r"failed for ([\w-]+): (.*)", l[3]).groups()) for l in msgs2 if l[3].startswith("All PDF URLs failed")]
+    parse_err = [(re.search(r"Failed to parse paper ([\w-]+): (.*)", l[3]).groups()) for l in msgs2 if l[3].startswith("Failed to parse paper")]
     done = re.search(r"(\d+) usable full texts out of (\d+) papers attempted \((\d+) saved", M(r"^Parsing done")[3])
     title_of = {p["id"]: p.get("title") or "?" for p in papers}
 
     # ---------------------------------------------------------------- scopus / s2 / groq
     notes = [l for l in msgs if l[1] in ("WARNING", "ERROR")]
-    scopus_down = first(msgs, lambda l: "Scopus unavailable" in l[3])
-    s2_down = first(msgs, lambda l: "Semantic Scholar probe failed" in l[3])
-    s2_batch_429 = sum(1 for l in msgs if l[3].startswith("S2 batch response: status=429"))
+    scopus_down = first(msgs2, lambda l: "Scopus unavailable" in l[3])
+    s2_down = first(msgs2, lambda l: "Semantic Scholar probe failed" in l[3])
+    s2_batch_429 = sum(1 for l in msgs2 if l[3].startswith("S2 batch response: status=429"))
     groq_events = [(l[0], re.search(r"key \.\.\.(\w+) rate limited, parked (\d+)s", l[3]).groups()) for l in msgs if "groq_pool" in l[2] and "rate limited" in l[3]]
     groq_by_key = defaultdict(lambda: [0, 0])
     for _, (k, s) in groq_events:
@@ -278,6 +283,15 @@ def main() -> int:
         d = (b - a).total_seconds()
         w(f"| {name} | {a:%H:%M:%S} | {b:%H:%M:%S} | {dur(d)} | {100 * d / total:.0f}% |")
     w(f"| **Total** | {t_start:%H:%M:%S} | {t_end:%H:%M:%S} | **{dur(total)}** | 100% |\n")
+    l2_seconds = sum((((c.get("judge_stats") or {}).get("loop2") or {}).get("seconds") or 0) for c in cov_by_sq_early.values())
+    if l2_seconds:
+        l2_steps = [s for c in cov_by_sq_early.values() for s in ((c.get("judge_stats") or {}).get("loop2") or {}).get("steps", [])]
+        added_p = sum(s.get("new_papers_kept", 0) for s in l2_steps)
+        added_w = sum(s.get("new_web_kept", 0) for s in l2_steps)
+        w(f"Loop 2 (second search for uncovered aspects) is part of the judge + coverage phase above: {dur(l2_seconds)} by its own step timings "
+          f"({100 * l2_seconds / total:.0f}% of the run). Its searches, parses and filters are NOT counted in the retrieval figures of this report; "
+          f"it stored {added_p} new paper(s) and {added_w} new web page(s) with the run, so the stored counts of papers and web sources are higher "
+          f"than the log counts by these numbers.\n")
 
     w("## 3. Sub-questions: retrieval, filtering, parsing, Stage 3\n")
     w("| # | Sub-question | Pre-filter (cand. -> cleared -> shortlist) | Judge passed | Parsed full text | Web | Digests (full / abs / web) | Verified / total findings | Coverage |")
@@ -369,7 +383,7 @@ def main() -> int:
     w("")
 
     w("## 7. Groq and judge\n")
-    st3m = M(r"^Stage 3: \d+ digests")
+    st3m = t_st3_first
     w(f"- {st3m[3]}")
     w(f"- Rate-limit parking events: {len(groq_events)}; per key (events / parked seconds): " + ", ".join(f"...{k}: {v[0]} / {v[1]}s" for k, v in sorted(groq_by_key.items())))
     w(f"- Judge batch latencies (s): {[round(x / 1000, 1) for x in judge_batches]}")

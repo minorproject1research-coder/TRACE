@@ -101,7 +101,7 @@ The nodes report what they are doing between a stage's start and its end. `data 
 | `summarizer` | `prepare` | choose the passages to read | completed `{jobs, papers, web}` |
 | `summarizer` | `digest` | LLM digest per source, in parallel | `{done, total, failures}`, reported in counting order |
 | `summarizer` | `judge` | independent evidence judge and coverage, per sub-question | `{done, total, sufficient, judgeUsed, sufficientSoFar}`; completed `{sufficientSubQuestions}` |
-| `summarizer` | `loop2` | **only when `LOOP2=true`.** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{step, aspects}` (step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
+| `summarizer` | `loop2` | **only when `LOOP2=true`.** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{loop2Step, aspects}` (loop2Step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
 | `summarizer` | `store` | digests and coverage saved | completed `{stored}` |
 
 - Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.

@@ -1,0 +1,255 @@
+[
+ {
+  "sub_question": "What are state space models (SSMs) and how do they work?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "What are transformers and how do they work?",
+  "aspects": 4,
+  "uncovered_before": [
+   "What are the limitations of transformers?",
+   "What are the parameters of a transformer?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the parameters of a transformer?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    },
+    "What are the limitations of transformers?": {
+     "before": {
+      "yes": 2,
+      "partial": 3,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the parameters of a transformer?",
+      "What are the limitations of transformers?"
+     ],
+     "new_sources": 5,
+     "new_findings": 17,
+     "new_verified": 15,
+     "covered": [
+      "What are the parameters of a transformer?",
+      "What are the limitations of transformers?"
+     ],
+     "seconds": 68.5,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 68.5,
+   "searched": 2,
+   "covered": 2
+  }
+ },
+ {
+  "sub_question": "What is Mamba and how does it relate to SSMs?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How are SSMs and transformers trained and evaluated?",
+  "aspects": 3,
+  "uncovered_before": [
+   "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+   "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?",
+   "What are the computational and memory requirements for training and inference of SSMs and transformers?"
+  ],
+  "uncovered_after": [
+   "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+   "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?",
+   "What are the computational and memory requirements for training and inference of SSMs and transformers?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?": {
+     "before": {
+      "yes": 0,
+      "partial": 1,
+      "no": 5
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 4
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the computational and memory requirements for training and inference of SSMs and transformers?": {
+     "before": {
+      "yes": 0,
+      "partial": 5,
+      "no": 1
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?",
+      "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+      "What are the computational and memory requirements for training and inference of SSMs and transformers?"
+     ],
+     "new_sources": 5,
+     "new_findings": 20,
+     "new_verified": 19,
+     "covered": [],
+     "seconds": 68.2,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the common metrics and benchmarks for measuring training efficiency of SSMs and transformers?",
+      "What are the common metrics and benchmarks for measuring long-sequence performance of SSMs and transformers?",
+      "What are the computational and memory requirements for training and inference of SSMs and transformers?"
+     ],
+     "new_sources": 3,
+     "new_findings": 15,
+     "new_verified": 15,
+     "covered": [],
+     "seconds": 47.9,
+     "sources_tried": 3,
+     "parsed": 3
+    }
+   ],
+   "seconds": 116.1,
+   "searched": 3,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "aspects": 4,
+  "uncovered_before": [
+   "open challenges or limitations for transformers"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "open challenges or limitations for transformers": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "open challenges or limitations for transformers"
+     ],
+     "new_sources": 5,
+     "new_findings": 16,
+     "new_verified": 13,
+     "covered": [
+      "open challenges or limitations for transformers"
+     ],
+     "seconds": 14.1,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 14.1,
+   "searched": 1,
+   "covered": 1
+  }
+ }
+]

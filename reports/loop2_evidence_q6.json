@@ -1,0 +1,91 @@
+[
+ {
+  "sub_question": "What are the defenses against privacy risks in federated learning?",
+  "aspects": 6,
+  "uncovered_before": [
+   "How are the defenses against privacy risks in federated learning compared?",
+   "What are the assumptions of the defenses against privacy risks in federated learning?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the assumptions of the defenses against privacy risks in federated learning?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 3
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Distributed Differential Privacy relies on the assumption that a sufficient frac",
+       "source_id": "3477464f-4d52-42b0-a9a5-4e992a779356",
+       "reason": "The quote explicitly states the assumption (honest participants) for Distributed Differential Privacy, which directly answers the aspect ask"
+      },
+      {
+       "claim": "Defenses against privacy risks in federated learning include differential privac",
+       "source_id": "da269e7b-f0da-41a8-939f-0c05cb79b67b",
+       "reason": "The quote explicitly lists the specific defenses mentioned in the claim, and the claim correctly answers the aspect by enumerating these def"
+      }
+     ]
+    },
+    "How are the defenses against privacy risks in federated learning compared?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Defenses are compared by weighing the trade‑off between shared information and p",
+       "source_id": "7a71b7a6-e160-48ec-a13b-ef207268ecb5",
+       "reason": "The quote explicitly states that defenses are compared by weighing the trade-off between shared information and privacy risk, which directly"
+      },
+      {
+       "claim": "Defenses against privacy risks in federated learning include differential privac",
+       "source_id": "da269e7b-f0da-41a8-939f-0c05cb79b67b",
+       "reason": "The quote explicitly lists the specific defenses mentioned in the claim, and the claim correctly answers the aspect by enumerating these def"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the assumptions of the defenses against privacy risks in federated learning?",
+      "How are the defenses against privacy risks in federated learning compared?"
+     ],
+     "new_sources": 5,
+     "new_findings": 22,
+     "new_verified": 19,
+     "covered": [
+      "What are the assumptions of the defenses against privacy risks in federated learning?",
+      "How are the defenses against privacy risks in federated learning compared?"
+     ],
+     "seconds": 14.5,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 14.5,
+   "searched": 2,
+   "covered": 2
+  }
+ }
+]

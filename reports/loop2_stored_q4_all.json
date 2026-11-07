@@ -1,0 +1,313 @@
+[
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "aspects": 4,
+  "uncovered_before": [
+   "What are the main challenges of LLMs?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the main challenges of LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the main challenges of LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 7,
+     "new_verified": 7,
+     "covered": [
+      "What are the main challenges of LLMs?"
+     ],
+     "seconds": 70.5,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 70.5,
+   "searched": 1,
+   "covered": 1
+  }
+ },
+ {
+  "sub_question": "What is reasoning ability in the context of LLMs?",
+  "aspects": 5,
+  "uncovered_before": [
+   "What are the levels of reasoning ability that LLMs can exhibit?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the levels of reasoning ability that LLMs can exhibit?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 3
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the levels of reasoning ability that LLMs can exhibit?"
+     ],
+     "new_sources": 4,
+     "new_findings": 13,
+     "new_verified": 13,
+     "covered": [
+      "What are the levels of reasoning ability that LLMs can exhibit?"
+     ],
+     "seconds": 59.2,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 59.2,
+   "searched": 1,
+   "covered": 1
+  }
+ },
+ {
+  "sub_question": "What are benchmarks and metrics for evaluating the reasoning ability of LLMs?",
+  "aspects": 8,
+  "uncovered_before": [
+   "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+   "What are the existing metrics for evaluating the reasoning ability of LLMs?",
+   "characteristics of a good benchmark or metric",
+   "criteria of a good benchmark or metric"
+  ],
+  "uncovered_after": [
+   "How are the benchmarks and metrics compared?",
+   "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+   "What are the existing metrics for evaluating the reasoning ability of LLMs?",
+   "criteria of a good benchmark or metric"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "criteria of a good benchmark or metric": {
+     "before": {
+      "yes": 2,
+      "partial": 1,
+      "no": 0
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    },
+    "characteristics of a good benchmark or metric": {
+     "before": {
+      "yes": 1,
+      "partial": 2,
+      "no": 0
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    },
+    "What are the existing benchmarks for evaluating the reasoning ability of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the existing metrics for evaluating the reasoning ability of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "criteria of a good benchmark or metric",
+      "characteristics of a good benchmark or metric",
+      "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+      "What are the existing metrics for evaluating the reasoning ability of LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 22,
+     "new_verified": 17,
+     "covered": [
+      "criteria of a good benchmark or metric",
+      "characteristics of a good benchmark or metric"
+     ],
+     "seconds": 38.0,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "What are the existing benchmarks for evaluating the reasoning ability of LLMs?",
+      "What are the existing metrics for evaluating the reasoning ability of LLMs?"
+     ],
+     "new_sources": 2,
+     "new_findings": 7,
+     "new_verified": 4,
+     "covered": [],
+     "seconds": 34.6,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 72.6,
+   "searched": 4,
+   "covered": 2
+  }
+ },
+ {
+  "sub_question": "How can the benchmarks and metrics be used to improve the reasoning ability of LLMs?",
+  "aspects": 6,
+  "uncovered_before": [
+   "What are the open problems for using the benchmarks and metrics?",
+   "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+   "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+  ],
+  "uncovered_after": [
+   "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+   "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs": {
+     "before": {
+      "yes": 1,
+      "partial": 3,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "What are the open problems for using the benchmarks and metrics?": {
+     "before": {
+      "yes": 1,
+      "partial": 3,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "What are the open problems for using the benchmarks and metrics?"
+     ],
+     "new_sources": 5,
+     "new_findings": 22,
+     "new_verified": 22,
+     "covered": [
+      "What are the open problems for using the benchmarks and metrics?"
+     ],
+     "seconds": 22.4,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "best practices for using the benchmarks and metrics to improve the reasoning ability of LLMs",
+      "methods for using the benchmarks and metrics to improve the reasoning ability of LLMs"
+     ],
+     "new_sources": 2,
+     "new_findings": 9,
+     "new_verified": 9,
+     "covered": [],
+     "seconds": 106.5,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 128.8,
+   "searched": 3,
+   "covered": 1
+  }
+ }
+]

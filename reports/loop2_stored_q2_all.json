@@ -1,0 +1,181 @@
+[
+ {
+  "sub_question": "What is a large language model (LLM)?",
+  "aspects": 4,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool",
+    "queries"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "What is a mixture of experts (MoE) model?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool",
+    "queries"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How is MoE applied to LLMs?",
+  "aspects": 2,
+  "uncovered_before": [
+   "What are the challenges of using MoE in LLMs?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool",
+    "queries"
+   ],
+   "aspects": {
+    "What are the challenges of using MoE in LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 3,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the challenges of using MoE in LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 9,
+     "new_verified": 9,
+     "covered": [
+      "What are the challenges of using MoE in LLMs?"
+     ],
+     "seconds": 58.1,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 58.2,
+   "searched": 1,
+   "covered": 1
+  }
+ },
+ {
+  "sub_question": "What is expert routing in MoE models?",
+  "aspects": 3,
+  "uncovered_before": [],
+  "uncovered_after": [],
+  "sufficient_before": true,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool",
+    "queries"
+   ],
+   "aspects": {},
+   "steps": [],
+   "seconds": 0.0,
+   "searched": 0,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "How is expert routing implemented in LLMs?",
+  "aspects": 7,
+  "uncovered_before": [
+   "How does expert routing implementation in LLMs compare in terms of scalability?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool",
+    "queries"
+   ],
+   "aspects": {
+    "How does expert routing implementation in LLMs compare in terms of scalability?": {
+     "before": {
+      "yes": 0,
+      "partial": 4,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": "pool"
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How does expert routing implementation in LLMs compare in terms of scalability?"
+     ],
+     "new_sources": 4,
+     "new_findings": 5,
+     "new_verified": 5,
+     "covered": [],
+     "seconds": 55.0,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How does expert routing implementation in LLMs compare in terms of scalability?"
+     ],
+     "new_sources": 2,
+     "new_findings": 7,
+     "new_verified": 6,
+     "covered": [
+      "How does expert routing implementation in LLMs compare in terms of scalability?"
+     ],
+     "seconds": 66.6,
+     "sources_tried": 3,
+     "parsed": 2
+    }
+   ],
+   "seconds": 121.6,
+   "searched": 1,
+   "covered": 1
+  }
+ }
+]

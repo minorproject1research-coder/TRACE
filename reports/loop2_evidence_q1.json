@@ -1,0 +1,178 @@
+[
+ {
+  "sub_question": "What are transformers and how do they work?",
+  "aspects": 4,
+  "uncovered_before": [
+   "What are the limitations of transformers?",
+   "What are the parameters of a transformer?"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "What are the parameters of a transformer?": {
+     "before": {
+      "yes": 1,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Transformers allow a user‑defined number of identical encoder (and decoder) laye",
+       "source_id": "1792bcb5-6118-4336-a307-cca040e0f89b",
+       "reason": "The quote explicitly states that the number of layers is self-defined, which directly supports the claim about configurable depth and answer"
+      },
+      {
+       "claim": "In typical use, a transformer’s parameters are the learned weight values θ assoc",
+       "source_id": "91f864bd-342c-40c5-9842-2f3a07f477f9",
+       "reason": "The quote explicitly defines the parameters as the learned weight values in a fixed architecture, which directly answers the aspect asking f"
+      },
+      {
+       "claim": "A transformer’s key architectural parameters include the number of layers M, tok",
+       "source_id": "ed4b1916-eff2-4c7e-8b4b-bf1226678d29",
+       "reason": "The quote explicitly defines the key architectural parameters (layers M, dimensions D, sequence length N) which directly answers the aspect "
+      }
+     ]
+    },
+    "What are the limitations of transformers?": {
+     "before": {
+      "yes": 2,
+      "partial": 3,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Transformers need high computing power and large datasets, which are major chall",
+       "source_id": "024a3821-a32b-4c34-833f-3c8f48a4a4b9",
+       "reason": "The quote directly states the specific limitations (high computing power and large datasets) requested by the aspect, and the claim faithful"
+      },
+      {
+       "claim": "Transformers are computationally expensive, especially for long sequences due to",
+       "source_id": "41bdbce8-d99a-4c8d-9979-066ae3ea45f6",
+       "reason": "The quote explicitly states the computational cost and cause (self-attention for long sequences), which directly answers the question about "
+      },
+      {
+       "claim": "Transformer attention operations have quadratic time and memory complexity in se",
+       "source_id": "91f864bd-342c-40c5-9842-2f3a07f477f9",
+       "reason": "The quote explicitly states the quadratic time and space complexities of transformer attention operations, which directly supports the claim"
+      },
+      {
+       "claim": "Constraints on activation functions needed to prevent representation explosion c",
+       "source_id": "ed4b1916-eff2-4c7e-8b4b-bf1226678d29",
+       "reason": "The quote explicitly states that constraints on activation functions to prevent representation explosion can hinder learning, which directly"
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "What are the parameters of a transformer?",
+      "What are the limitations of transformers?"
+     ],
+     "new_sources": 5,
+     "new_findings": 17,
+     "new_verified": 15,
+     "covered": [
+      "What are the parameters of a transformer?",
+      "What are the limitations of transformers?"
+     ],
+     "seconds": 9.6,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 9.6,
+   "searched": 2,
+   "covered": 2
+  }
+ },
+ {
+  "sub_question": "How do SSMs and transformers compare in training efficiency and long-sequence performance?",
+  "aspects": 4,
+  "uncovered_before": [
+   "open challenges or limitations for transformers"
+  ],
+  "uncovered_after": [],
+  "sufficient_before": false,
+  "sufficient_after": true,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "open challenges or limitations for transformers": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 1
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Attention‑based transformers struggle to model dependencies that exceed their at",
+       "source_id": "086c4910-a9d3-4e4d-861b-058cf3842d8b",
+       "reason": "The quote directly states the limitation regarding long dependencies, which is exactly the kind of challenge information requested by the as"
+      },
+      {
+       "claim": "Transformers like ViT suffer from quadratic attention complexity, limiting effic",
+       "source_id": "086c4910-a9d3-4e4d-861b-058cf3842d8b",
+       "reason": "The quote explicitly states the quadratic complexity challenge of ViT, which directly supports the claim and serves as a valid example of an"
+      },
+      {
+       "claim": "Transformers' quadratic O(N²) complexity is a key limitation for long‑sequence p",
+       "source_id": "086c4910-a9d3-4e4d-861b-058cf3842d8b",
+       "reason": "The quote explicitly states the O(N^2) complexity and its resulting inefficiencies for long sequences, which directly supports the claim and"
+      },
+      {
+       "claim": "Transformers suffer from high computational and memory costs, limiting their tra",
+       "source_id": "790e8a80-770f-4fea-8673-d216ecda1ce1",
+       "reason": "The quote directly states the high computational and memory requirements as a limitation of Transformers, which perfectly matches the claim "
+      }
+     ]
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "open challenges or limitations for transformers"
+     ],
+     "new_sources": 5,
+     "new_findings": 16,
+     "new_verified": 13,
+     "covered": [
+      "open challenges or limitations for transformers"
+     ],
+     "seconds": 8.4,
+     "sources_tried": 5
+    }
+   ],
+   "seconds": 8.4,
+   "searched": 1,
+   "covered": 1
+  }
+ }
+]

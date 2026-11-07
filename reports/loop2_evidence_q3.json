@@ -1,0 +1,260 @@
+[
+ {
+  "sub_question": "What is 4-bit precision and how does it differ from other precisions?",
+  "aspects": 4,
+  "uncovered_before": [
+   "How does 4-bit precision affect the computation of LLMs?"
+  ],
+  "uncovered_after": [
+   "How does 4-bit precision affect the computation of LLMs?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "How does 4-bit precision affect the computation of LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 5,
+      "no": 0
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How does 4-bit precision affect the computation of LLMs?"
+     ],
+     "new_sources": 4,
+     "new_findings": 11,
+     "new_verified": 11,
+     "covered": [],
+     "seconds": 20.2,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How does 4-bit precision affect the computation of LLMs?"
+     ],
+     "new_sources": 1,
+     "new_findings": 2,
+     "new_verified": 2,
+     "covered": [],
+     "seconds": 60.3,
+     "sources_tried": 3,
+     "parsed": 1
+    }
+   ],
+   "seconds": 80.5,
+   "searched": 1,
+   "covered": 0
+  }
+ },
+ {
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "aspects": 8,
+  "uncovered_before": [
+   "How does quantizing LLMs to 4-bit precision affect inference speed and latency?",
+   "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?",
+   "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?",
+   "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+   "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the security of LLMs?"
+  ],
+  "uncovered_after": [
+   "How does quantizing LLMs to 4-bit precision affect inference speed and latency?",
+   "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?",
+   "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+   "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+   "How does quantizing LLMs to 4-bit precision affect the security of LLMs?"
+  ],
+  "sufficient_before": false,
+  "sufficient_after": false,
+  "loop2": {
+   "triage": "all",
+   "steps_enabled": [
+    "reselect",
+    "pool"
+   ],
+   "aspects": {
+    "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?": {
+     "before": {
+      "yes": 1,
+      "partial": 2,
+      "no": 3
+     },
+     "status": "covered",
+     "steps": [
+      "reselect"
+     ],
+     "covered_by": "reselect",
+     "evidence": [
+      {
+       "claim": "Quantizing LLMs to 4‑bit FP4 halves memory usage and yields a 2‑ to 3‑fold arith",
+       "source_id": "2d320d40-0b01-4368-a923-d8a3f91089da",
+       "reason": "The quote explicitly confirms the specific metrics (halved memory, 2-3x speedup) and the comparison baseline (FP8) stated in the claim, whic"
+      },
+      {
+       "claim": "Quantizing LLMs to 4‑bit dramatically reduces model size and memory requirements",
+       "source_id": "56673cc1-c626-4361-87fb-ca3b1a8a9e16",
+       "reason": "The quote directly confirms the claim that quantization reduces model size and inference cost, which fully answers the aspect regarding the "
+      }
+     ]
+    },
+    "How does quantizing LLMs to 4-bit precision affect inference speed and latency?": {
+     "before": {
+      "yes": 0,
+      "partial": 3,
+      "no": 3
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the quality of generated text?": {
+     "before": {
+      "yes": 1,
+      "partial": 4,
+      "no": 1
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?": {
+     "before": {
+      "yes": 1,
+      "partial": 1,
+      "no": 1
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the security of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 0,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 2,
+      "no": 0
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    },
+    "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?": {
+     "before": {
+      "yes": 0,
+      "partial": 1,
+      "no": 2
+     },
+     "status": "known_gap",
+     "steps": [
+      "reselect",
+      "pool"
+     ],
+     "covered_by": null
+    }
+   },
+   "steps": [
+    {
+     "step": "reselect",
+     "aspects": [
+      "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?",
+      "How does quantizing LLMs to 4-bit precision affect inference speed and latency?",
+      "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+      "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?",
+      "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the security of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?"
+     ],
+     "new_sources": 5,
+     "new_findings": 24,
+     "new_verified": 21,
+     "covered": [
+      "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?"
+     ],
+     "seconds": 28.4,
+     "sources_tried": 5
+    },
+    {
+     "step": "pool",
+     "aspects": [
+      "How does quantizing LLMs to 4-bit precision affect inference speed and latency?",
+      "How does quantizing LLMs to 4-bit precision affect the quality of generated text?",
+      "How does quantizing LLMs to 4-bit precision affect the diversity of generated text?",
+      "How does quantizing LLMs to 4-bit precision affect the robustness of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the security of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the compatibility of LLMs?",
+      "How does quantizing LLMs to 4-bit precision affect the interoperability of LLMs?"
+     ],
+     "new_sources": 3,
+     "new_findings": 14,
+     "new_verified": 14,
+     "covered": [],
+     "seconds": 29.5,
+     "sources_tried": 3,
+     "parsed": 3
+    }
+   ],
+   "seconds": 57.9,
+   "searched": 8,
+   "covered": 1
+  }
+ }
+]
