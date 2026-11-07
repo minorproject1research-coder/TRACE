@@ -485,7 +485,7 @@ def test_the_factcheck_stage_runs_and_reports_its_result_when_switched_on(monkey
     assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_built"}
     started = [e for e in rec.events if e["stage"] == "factcheck"]
     assert [e["event"] for e in started] == ["stage_started", "stage_completed"]
-    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1}
+    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0}
     assert rec.events[-1]["data"]["stagesNotRun"] == ["report"]
 
 

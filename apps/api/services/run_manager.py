@@ -107,7 +107,8 @@ def summarize_update(node: str, update: dict) -> tuple[str, dict]:
             data = {"claims": _count(claims), "subQuestions": len(summary), "failedSubQuestions": sum(1 for s in summary.values() if isinstance(s, dict) and s.get("error")),
                     **{l: sum(1 for c in claims if c.get("label") == l) for l in ("supported", "unverified", "contradicted")},
                     "contested": sum(1 for c in claims if c.get("contested")),
-                    "disagreements": sum(s.get("disagreements", 0) for s in summary.values() if isinstance(s, dict))}
+                    "disagreements": sum(s.get("disagreements", 0) for s in summary.values() if isinstance(s, dict)),
+                    "judgeFailures": sum(s.get("judge_failures", 0) for s in summary.values() if isinstance(s, dict))}
             return f"Checked {data['claims']} claims: {data['supported']} supported, {data['unverified']} unverified, {data['contradicted']} contradicted", data
     except Exception:                                   # a summary must never break a run
         logger.exception("could not summarize the update of node %s", node)
