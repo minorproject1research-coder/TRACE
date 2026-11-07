@@ -1252,3 +1252,55 @@ class TestAspectMergeModes:
         monkeypatch.setattr(da, "split_detail_aspects", lambda detail, sid, topic: {"d0": ["x one", "y two"], "d1": ["x one"]}[detail])
         aspects, to_detail = da.flatten_aspects(["d0", "d1"], "sq", "topic", merge_mode="off")
         assert aspects == ["x one", "y two", "x one"] and to_detail == [0, 0, 1]
+
+
+class TestTrimPerAspect:
+    """Planned item B6: the sub-question cap must not empty one aspect."""
+
+    @staticmethod
+    def _embedder(sim_by_aspect):
+        """claim 'c<k>' has cosine similarity sim_by_aspect[aspect] with that aspect's text 'a<i>'."""
+        mock = MagicMock()
+        axes = {}
+
+        def vec(text):
+            v = np.zeros(8, dtype=np.float32)
+            if text.startswith("a"):
+                v[int(text[1:])] = 1.0
+            else:                                        # claim "c<aspect>_<k>": mostly its own aspect axis, a little axis 7
+                a = int(text[1:].split("_")[0])
+                s = sim_by_aspect[a]
+                v[a] = s
+                v[7] = (1 - s * s) ** 0.5
+            return v
+        mock.encode = lambda texts, normalize_embeddings=True: np.array([vec(t) for t in texts])
+        return mock
+
+    def test_an_aspect_with_low_similarity_keeps_a_candidate(self):
+        from apps.api.agents.stage3_summarizer.evidence_judge import select_candidates
+        os.environ["MAX_JUDGE_ITEMS_PER_SUBQ"] = "6"
+        os.environ["JUDGE_EXTRA_BY_SIM"] = "0"
+        os.environ["JUDGE_CANDIDATES_PER_ASPECT"] = "4"
+        aspects = ["a0", "a1", "a2"]
+        sims = {0: 0.95, 1: 0.9, 2: 0.3}                  # aspect 2's claims are far less similar than the others
+        findings = []
+        for a in range(3):
+            for k in range(4):
+                findings.append({"claim": f"c{a}_{k}", "quote": f"q{a}_{k}", "chunk_id": 0, "verified": True,
+                                 "answers_details": [{"detail": a + 1, "strength": "full"}]})
+        digests = [{"source_id": f"s{k}", "evidence_level": "full_text", "findings": findings[k::4]} for k in range(4)]
+        candidates = select_candidates(aspects, digests, {"0": "x"}, self._embedder(sims))
+        assert len(candidates) == 6
+        by_aspect = {a: sum(1 for c in candidates if c["aspect_idx"] == a) for a in range(3)}
+        assert by_aspect[2] >= 1, by_aspect                 # the old global sort gave aspects 0 and 1 all six slots
+        assert max(by_aspect.values()) - min(by_aspect.values()) <= 1, by_aspect
+
+    def test_no_trim_below_the_cap(self):
+        from apps.api.agents.stage3_summarizer.evidence_judge import select_candidates
+        os.environ["MAX_JUDGE_ITEMS_PER_SUBQ"] = "60"
+        os.environ["JUDGE_EXTRA_BY_SIM"] = "0"
+        aspects = ["a0", "a1"]
+        findings = [{"claim": f"c{a}_0", "quote": "q", "chunk_id": 0, "verified": True,
+                     "answers_details": [{"detail": a + 1, "strength": "full"}]} for a in range(2)]
+        digests = [{"source_id": "s0", "evidence_level": "full_text", "findings": findings}]
+        assert len(select_candidates(aspects, digests, {"0": "x"}, self._embedder({0: 0.9, 1: 0.2}))) == 2

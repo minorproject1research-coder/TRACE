@@ -201,12 +201,20 @@ def select_candidates(
 
     # 4. Global cap across aspects
     if len(final_candidates) > config["MAX_JUDGE_ITEMS_PER_SUBQ"]:
-        # Trim lowest-similarity candidates evenly
-        final_candidates.sort(key=lambda x: x["similarity"], reverse=True)
-        trimmed = final_candidates[:config["MAX_JUDGE_ITEMS_PER_SUBQ"]]
+        # Trim by rank within each aspect, not by raw similarity: the best candidate of every aspect first, then the second best
+        # of every aspect, and so on until the cap is reached. Sorting all candidates together could drop every candidate of an
+        # aspect whose claims are less similar to it (planned item B6) and make the aspect look "uncovered" without being judged.
+        cap = config["MAX_JUDGE_ITEMS_PER_SUBQ"]
+        ranked = []
+        for aspect_idx in sorted(by_aspect):
+            own = sorted((c for c in final_candidates if c["aspect_idx"] == aspect_idx), key=lambda x: x["similarity"], reverse=True)
+            ranked.extend((rank, -c["similarity"], c) for rank, c in enumerate(own))
+        ranked.sort(key=lambda t: (t[0], t[1]))
+        trimmed = [c for _, _, c in ranked[:cap]]
         logger.warning(
-            f"Trimmed judge candidates from {len(final_candidates)} to {config['MAX_JUDGE_ITEMS_PER_SUBQ']} "
-            f"(lowest similarity: {trimmed[-1]['similarity']:.3f})"
+            f"Trimmed judge candidates from {len(final_candidates)} to {cap} "
+            f"(lowest similarity kept: {min((c['similarity'] for c in trimmed), default=0.0):.3f}; aspects left without a candidate: "
+            f"{len(by_aspect) - len({c['aspect_idx'] for c in trimmed})})"
         )
         final_candidates = trimmed
 
