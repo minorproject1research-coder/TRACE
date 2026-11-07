@@ -10,7 +10,7 @@ logger = logging.getLogger("apps.api.agents.stage4_factcheck")
 QUOTE_CLAIM_SIM = 0.70   # placeholder, tune on the eval set
 CONTRADICT_MIN = 0.70    # NLI is only a prefilter; the judge makes the final call
 JUDGE_MIN = 0.70         # judge confidence needed to keep a conflict
-MAX_PAIRS = int(os.getenv("STAGE4_MAX_PAIRS", "200"))    # cap NLI calls per sub-question, most similar pairs first
+MAX_PAIRS = int(os.getenv("STAGE4_MAX_PAIRS", "80"))    # cap NLI calls per sub-question, most similar pairs first
 MAX_JUDGE = int(os.getenv("STAGE4_MAX_JUDGE", "40"))     # cap judge calls per sub-question
 
 

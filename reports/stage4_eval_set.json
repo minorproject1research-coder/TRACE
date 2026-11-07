@@ -1,0 +1,651 @@
+{
+ "about": "Labeled pairs for the three Stage 4 decisions (merge, support, conflict). Labels written by hand by the assistant (LLM labels, not a human annotator) on 2026-11-08 from claims of the Q3 and Q2 runs (source 'real') plus a few constructed pairs (source 'synthetic') where the real data has no positive case. Strict tests: merge = someone who believes one claim necessarily believes the other; support = everything the claim asserts is in the quote; conflict = opposite assertions about the same subject, property and setting.",
+ "merge": [
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "same": true,
+   "source": "real",
+   "ref": "109,119"
+  },
+  {
+   "a": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "b": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "same": false,
+   "source": "real",
+   "ref": "83,88"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces total model bits and improves zero‑shot performance, indicating better quality with smaller memory footprint.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "same": false,
+   "source": "real",
+   "ref": "72,119"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "same": false,
+   "source": "real",
+   "ref": "109,141"
+  },
+  {
+   "a": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "b": "4-bit quantization typically reduces model accuracy by 2–5%.",
+   "same": false,
+   "source": "real",
+   "ref": "88,142"
+  },
+  {
+   "a": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "b": "4-bit quantization typically reduces model accuracy by 2–5%.",
+   "same": false,
+   "source": "real",
+   "ref": "83,142"
+  },
+  {
+   "a": "Quantizing to 4‑bit enables compute‑efficient low‑bit matrix multiplication, which speeds up inference.",
+   "b": "4-bit floating‑point quantization enables efficient low‑bit matrix multiplication, improving inference speed and latency.",
+   "same": true,
+   "source": "real",
+   "ref": "104,123"
+  },
+  {
+   "a": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "b": "4‑bit quantization can cause notable performance degradation, especially for fully trained models, implying lower text quality.",
+   "same": false,
+   "source": "real",
+   "ref": "88,120"
+  },
+  {
+   "a": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "b": "Using a non‑uniform 4‑bit quantization scheme keeps model performance almost identical to the full‑precision model.",
+   "same": false,
+   "source": "real",
+   "ref": "80,134"
+  },
+  {
+   "a": "Sparse activation in MoE reduces computational cost and improves model performance across tasks.",
+   "b": "MoE models lower computational cost without harming generalization performance.",
+   "same": false,
+   "source": "real",
+   "ref": "169,183"
+  },
+  {
+   "a": "Expert routing selects a subset of experts for each token using probabilistic inference over discrete expert subsets.",
+   "b": "Expert routing is a learned mechanism that selects a small subset of experts for each token, enabling larger model capacity with limited active computation.",
+   "same": false,
+   "source": "real",
+   "ref": "189,194"
+  },
+  {
+   "a": "Top‑k routing selects the k experts with the highest probability for each token.",
+   "b": "A common routing strategy selects a fixed number of top‑k experts per token.",
+   "same": true,
+   "source": "real",
+   "ref": "165,209"
+  },
+  {
+   "a": "Expert routing computes a probability distribution over experts for each token, selects the top‑k experts, and combines their outputs with mixture weights, enabling conditional computation.",
+   "b": "Expert routing selects a subset of experts for each token using probabilistic inference over discrete expert subsets.",
+   "same": false,
+   "source": "real",
+   "ref": "164,189"
+  },
+  {
+   "a": "Standard expert routing computes softmax scores and selects the top‑k experts per token.",
+   "b": "Top‑k routing selects the k experts with the highest probability for each token.",
+   "same": true,
+   "source": "real",
+   "ref": "161,165"
+  },
+  {
+   "a": "Two common routing strategies are top‑K routing (K ≥ 2) and single‑expert routing (K = 1).",
+   "b": "Expert routing strategies include standard top‑1 routing, shared‑expert routing, and reinforcement‑learning‑based routing.",
+   "same": false,
+   "source": "real",
+   "ref": "157,176"
+  },
+  {
+   "a": "In MoE models a learnable router directs each input to only a subset of experts, activating partial network regions.",
+   "b": "Expert routing in MoE models activates only a subset of network parts for each input example.",
+   "same": true,
+   "source": "real",
+   "ref": "151,170"
+  },
+  {
+   "a": "Expert routing is a learned mechanism that selects a small subset of experts for each token, enabling larger model capacity with limited active computation.",
+   "b": "Expert routing is the mechanism that assigns each token or sequence to experts in a MoE layer.",
+   "same": false,
+   "source": "real",
+   "ref": "194,203"
+  },
+  {
+   "a": "Standard expert routing computes softmax scores and selects the top‑k experts per token.",
+   "b": "A common routing strategy selects a fixed number of top‑k experts per token.",
+   "same": false,
+   "source": "real",
+   "ref": "161,209"
+  },
+  {
+   "a": "The 4-bit GGUF quantized model shows a noticeable accuracy drop to 0.89.",
+   "b": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "same": false,
+   "source": "real",
+   "ref": "84,88"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "same": false,
+   "source": "real",
+   "ref": "119,141"
+  },
+  {
+   "a": "Quantizing to 4‑bit enables compute‑efficient low‑bit matrix multiplication, which speeds up inference.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "same": false,
+   "source": "real",
+   "ref": "104,141"
+  },
+  {
+   "a": "Using 4-bit precision instead of 8-bit can increase computational speed and reduce resource usage.",
+   "b": "Using 4-bit precision yields 2–3× higher mathematical throughput than FP8.",
+   "same": false,
+   "source": "real",
+   "ref": "34,62"
+  },
+  {
+   "a": "Expert routing strategies include standard top‑1 routing, shared‑expert routing, and reinforcement‑learning‑based routing.",
+   "b": "Expert routing strategies include token‑level vs. sequence‑level routing and Top‑1 vs. Top‑2 selection of experts.",
+   "same": false,
+   "source": "real",
+   "ref": "176,204"
+  },
+  {
+   "a": "Expert routing is the mechanism that assigns each token or sequence to experts in a MoE layer.",
+   "b": "Expert routing is performed by a learned routing network that assigns probabilities to every expert for each input token.",
+   "same": false,
+   "source": "real",
+   "ref": "203,208"
+  },
+  {
+   "a": "4-bit quantization is one of several configurations that balance inference speed against model size and quality.",
+   "b": "4-bit quantization reduces memory usage and speeds up inference, while weight‑only and mixed‑precision methods help balance performance and accuracy.",
+   "same": false,
+   "source": "real",
+   "ref": "127,147"
+  },
+  {
+   "a": "Top-k routing selects the k experts with the highest probability for each token.",
+   "b": "For every token, the router chooses the k experts with the highest scores.",
+   "same": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "4-bit quantization reduces memory usage.",
+   "b": "Quantizing to 4 bits lowers memory consumption.",
+   "same": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "GANs suffer from unstable training and mode collapse.",
+   "b": "Training GANs is unstable and prone to mode collapse.",
+   "same": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Federated learning keeps raw data on client devices.",
+   "b": "In federated learning the training data never leaves the clients.",
+   "same": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "4-bit quantization reduces memory usage.",
+   "b": "4-bit quantization reduces memory usage and speeds up inference.",
+   "same": false,
+   "source": "synthetic",
+   "ref": ""
+  }
+ ],
+ "support": [
+  {
+   "claim": "Modern GPUs such as the NVIDIA H100 already support floating‑point quantization, making 4‑bit FP quantization compatible with current hardware.",
+   "quote": "Additionally, modern GPUs such as H100 (Micikevicius et al., 2022) now support FP quantization.",
+   "supports": false,
+   "source": "real",
+   "ref": "125"
+  },
+  {
+   "claim": "A unified bit‑serial representation lets low‑precision 4‑bit weights be computed with FP16 activations at reduced hardware cost.",
+   "quote": "This effectively reduces the hardware cost to perform computation between lowprecision weights and FP16 activations, and trades-off weight precision for improved hardware efficiency.",
+   "supports": false,
+   "source": "real",
+   "ref": "56"
+  },
+  {
+   "claim": "One routing strategy trains the router with reinforcement learning that explores perturbed paths and reinforces decisions that improve performance.",
+   "quote": "We propose Exploration-Driven Reinforcement Learning (ERL), which explicitly trains the router toward improved expert selection. ERL explores perturbed (alternative) routing paths and compares their performance against the original path.",
+   "supports": true,
+   "source": "real",
+   "ref": "149"
+  },
+  {
+   "claim": "Orthogonal Mixture‑of‑Experts (OMoE) applies orthogonality constraints on expert weights to reduce redundancy and promote disentangled expert behavior.",
+   "quote": "Orthogonal Mixture-of-Experts (OMoE), in particular, applies orthogonality constraints on expert weights to reduce representational redundancy, thereby encouraging more disentangled expert behavior.",
+   "supports": true,
+   "source": "real",
+   "ref": "238"
+  },
+  {
+   "claim": "MXFP4 stores each value with 1 sign bit, 2 exponent bits, and 1 mantissa bit (E2M1), limiting its representable set.",
+   "quote": "In MXFP4, each element is represented as E2M1 1 ... meaning it has 1 sign bit, 2 exponent bits, and 1 mantissa bit.",
+   "supports": true,
+   "source": "real",
+   "ref": "16"
+  },
+  {
+   "claim": "The any4 4‑bit format achieves superior accuracy and competitive inference speed compared with other int4 quantization methods.",
+   "quote": "We have shown that accuracy of any4 is superior to other 4-bit numeric formats with low memory overhead, and competitive with various orthogonal quantization techniques.",
+   "supports": false,
+   "source": "real",
+   "ref": "23"
+  },
+  {
+   "claim": "The router scores each expert for a token and activates only the top‑k experts.",
+   "quote": "Given a token hidden state h ∈ R H , the router produces a score for each expert, and only the topk experts are activated.",
+   "supports": true,
+   "source": "real",
+   "ref": "199"
+  },
+  {
+   "claim": "Quantizing every linear layer to FP4 causes training to diverge.",
+   "quote": "training diverges when every linear layer is quantized to FP4.",
+   "supports": true,
+   "source": "real",
+   "ref": "37"
+  },
+  {
+   "claim": "Grammar effects at 4-bit differ by architecture: Qwen worsens, Llama improves.",
+   "quote": "Qwen 2.5-7B shows a mean grammar degradation of +19 . 0% , while Llama 3.1-8B shows a mean improvement of - 12 . 8% .",
+   "supports": true,
+   "source": "real",
+   "ref": "137"
+  },
+  {
+   "claim": "Routing inefficiencies contribute to training complexity, load‑balancing problems, and memory constraints, hurting overall performance.",
+   "quote": "MoE architectures face challenges spanning from training complexity and load balancing to routing inefficiencies and memory constraints",
+   "supports": false,
+   "source": "real",
+   "ref": "211"
+  },
+  {
+   "claim": "By using a precise E4M3 block scale, NVFP4 preserves more of FP4’s dynamic range than MXFP4.",
+   "quote": "NVFP4 overcomes this limitation with a more precise E4M3 block scale ... This maximizes the FP4 samples utilization and preserves more of the dynamic range of FP4.",
+   "supports": true,
+   "source": "real",
+   "ref": "18"
+  },
+  {
+   "claim": "The router learns to dispatch inputs to experts that specialize for those inputs, enhancing model performance.",
+   "quote": "the router automatically learns to dispatch the data to the experts according to their specialty .",
+   "supports": false,
+   "source": "real",
+   "ref": "188"
+  },
+  {
+   "claim": "NVFP4’s finer block‑scale preserves more of FP4’s dynamic range, mitigating quality loss.",
+   "quote": "NVFP4 overcomes this limitation with a more precise E4M3 block scale, which maps the block amax much closer to the FP4 maximum representable number. This maximizes the FP4 samples utilization and preserves more of the dynamic range of FP4.",
+   "supports": false,
+   "source": "real",
+   "ref": "78"
+  },
+  {
+   "claim": "A small quantization block size (64‑128) is optimal for 4‑bit models and further improves scaling.",
+   "quote": "For most 4-bit models, a block size between 64 to 128 is optimal in our study.",
+   "supports": false,
+   "source": "real",
+   "ref": "13"
+  },
+  {
+   "claim": "Studies comparing 4‑bit and 16‑bit LLMs show distinct scaling behavior, indicating that precision level directly influences zero‑shot performance trends.",
+   "quote": "there has been work that studies scaling trends of zero-shot performance for 4-bit vs. 16-bit models (Zeng et al., 2022). We study precisions from 3 to 16-bit and disentangle the factors that improve scaling.",
+   "supports": false,
+   "source": "real",
+   "ref": "33"
+  },
+  {
+   "claim": "Top‑k routing selects the k experts with the highest probability for each token.",
+   "quote": "In topk routing, the k experts with highest probability are selected. Only these experts are active for token t at layer ℓ .",
+   "supports": true,
+   "source": "real",
+   "ref": "165"
+  }
+ ],
+ "conflict": [
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "quote_b": "reducing the model's disk size, memory footprint, and improving inference efficiency through lower precision weights and activations.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "109,119"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces total model bits and improves zero‑shot performance, indicating better quality with smaller memory footprint.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "quote_b": "reducing the model's disk size, memory footprint, and improving inference efficiency through lower precision weights and activations.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "72,119"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "quote_b": "converting models to 4-bit precision can shrink their size by 75% and improve speed by up to 2.4x.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "109,141"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces total model bits and improves zero‑shot performance, indicating better quality with smaller memory footprint.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and inference cost, which speeds up inference.",
+   "quote_b": "Low-bit quantization ... due to its capacity to minimize the model size and inference cost",
+   "conflicts": false,
+   "source": "real",
+   "ref": "72,109"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "quote_b": "converting models to 4-bit precision can shrink their size by 75% and improve speed by up to 2.4x.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "119,141"
+  },
+  {
+   "a": "Sparse activation in MoE reduces computational cost and improves model performance across tasks.",
+   "b": "MoE models lower computational cost without harming generalization performance.",
+   "quote_b": "MoE reduces computational costs significantly without hurting the generalization performance in various empirical studies.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "169,183"
+  },
+  {
+   "a": "4-bit quantization reduces memory usage while incurring some loss in code generation accuracy compared to higher precisions.",
+   "b": "4-bit quantization can reduce memory and compute demands but often causes significant accuracy loss or requires substantial effort.",
+   "quote_b": "low-bit quantization techniques, such as 4-bit quantization, present a potential solution, they frequently lead to significant accuracy degradation or require substantial effort for such aggressive quantization approaches.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "52,66"
+  },
+  {
+   "a": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "b": "Using group sizes of 32 or smaller in 4‑bit quantization keeps accuracy loss minimal.",
+   "quote_b": "group size of 32 or smaller provides minimal accuracy loss across various models.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "80,106"
+  },
+  {
+   "a": "4‑bit activation quantization performed poorly, indicating robustness limits.",
+   "b": "Quantizing to 4‑bit does not yield a single robustness profile; effects vary with architecture, task, and quantization method.",
+   "quote_b": "compression does not produce a single robustness profile; it induces capability-specific changes whose magnitude and direction depend on the interaction between architecture, task, and quantization method.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "71,139"
+  },
+  {
+   "a": "Using 4-bit precision instead of 8-bit can increase computational speed and reduce resource usage.",
+   "b": "Using 4-bit precision yields 2–3× higher mathematical throughput than FP8.",
+   "quote_b": "2–3× higher math throughput and ~50% lower memory vs FP8",
+   "conflicts": false,
+   "source": "real",
+   "ref": "34,62"
+  },
+  {
+   "a": "4‑bit activation quantization performed poorly, indicating robustness limits.",
+   "b": "Aggressive 4-bit quantization often causes a noticeable drop in model accuracy.",
+   "quote_b": "they frequently lead to significant accuracy degradation or require substantial effort for such aggressive quantization approaches",
+   "conflicts": false,
+   "source": "real",
+   "ref": "71,88"
+  },
+  {
+   "a": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "b": "Using group sizes of 32 or smaller in 4‑bit quantization keeps accuracy loss minimal.",
+   "quote_b": "group size of 32 or smaller provides minimal accuracy loss across various models.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "83,106"
+  },
+  {
+   "a": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "b": "Quantizing LLMs to 4‑bit reduces model size and memory, which improves inference efficiency.",
+   "quote_b": "reducing the model's disk size, memory footprint, and improving inference efficiency through lower precision weights and activations.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "83,119"
+  },
+  {
+   "a": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "b": "4-bit quantization does not hurt inference speed, compatibility, or interoperability.",
+   "quote_b": "its design showcases how orthogonal transformations... can yield significant reductions in quantization error without compromising compatibility or inference speed.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "80,86"
+  },
+  {
+   "a": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "b": "4-bit quantization reduces memory usage and speeds up inference, while weight‑only and mixed‑precision methods help balance performance and accuracy.",
+   "quote_b": "INT8, FP16, and 4-bit quantization significantly reduce memory usage while leveraging Tensor Cores and optimized libraries (TensorRT, FasterTransformer) to accelerate inference. Weight-only and mixed-precision quantization further balance performance and accuracy.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "80,147"
+  },
+  {
+   "a": "4-bit quantization does not hurt inference speed, compatibility, or interoperability.",
+   "b": "Using group sizes of 32 or smaller in 4‑bit quantization keeps accuracy loss minimal.",
+   "quote_b": "group size of 32 or smaller provides minimal accuracy loss across various models.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "86,106"
+  },
+  {
+   "a": "4‑bit activation quantization performed poorly, indicating robustness limits.",
+   "b": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "quote_b": "smaller models often suffer greater accuracy degradation from 4-bit quantization than larger ones.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "71,83"
+  },
+  {
+   "a": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "b": "Using a non‑uniform 4‑bit quantization scheme keeps model performance almost identical to the full‑precision model.",
+   "quote_b": "we observe that for OPT models, as the model scales up, standard min‑max uniform quantization struggles ... whereas the non‑uniform method maintains the model's performance close to that of the unquantized model.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "83,134"
+  },
+  {
+   "a": "Using 4-bit precision instead of 8-bit can increase computational speed and reduce resource usage.",
+   "b": "4-bit quantization reduces memory usage while incurring some loss in code generation accuracy compared to higher precisions.",
+   "quote_b": "we experiment with 8, 4, 3, and 2-bit quantization. The goal is to carefully study the trade-off between loss in code generation accuracy and savings in terms of memory footprint.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "34,52"
+  },
+  {
+   "a": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+   "b": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+   "quote_b": "smaller models often suffer greater accuracy degradation from 4-bit quantization than larger ones.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "80,83"
+  },
+  {
+   "a": "Using 4-bit precision instead of 8-bit can increase computational speed and reduce resource usage.",
+   "b": "4-bit precision quantizes model weights to four bits, reducing numerical precision to save memory and increase throughput.",
+   "quote_b": "Quantization - reducing the numerical precision of model weights from 16-bit to 8-bit, 4-bit, or lower - has become the primary mechanism for deploying large language models under memory and throughput constraints",
+   "conflicts": false,
+   "source": "real",
+   "ref": "34,49"
+  },
+  {
+   "a": "Quantizing LLMs to 4‑bit reduces total model bits and improves zero‑shot performance, indicating better quality with smaller memory footprint.",
+   "b": "Quantizing LLMs to 4-bit precision can increase inference speed by up to 2.4×.",
+   "quote_b": "converting models to 4-bit precision can shrink their size by 75% and improve speed by up to 2.4x.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "72,141"
+  },
+  {
+   "a": "4-bit weight-only quantization can keep accuracy comparable to higher-precision methods.",
+   "b": "4-bit weight-only quantization causes a large accuracy loss relative to higher-precision methods.",
+   "quote_b": "weight-only 4-bit models lose more than 10 points of accuracy compared with 16-bit models",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Top-k routing selects the k experts with the highest probability for each token.",
+   "b": "Top-k routing picks k experts uniformly at random regardless of the router's scores.",
+   "quote_b": "in our top-k routing, experts are chosen uniformly at random and the router scores are ignored",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "4-bit quantization reduces memory usage.",
+   "b": "4-bit quantization does not reduce memory usage because the weights are cached in FP16.",
+   "quote_b": "memory use stays the same since the dequantized weights are cached in FP16",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Diffusion models achieve higher image quality than GANs.",
+   "b": "GANs achieve higher image quality than diffusion models.",
+   "quote_b": "GANs achieve a better FID than diffusion models on this benchmark",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Federated learning keeps raw data on the clients.",
+   "b": "Federated learning requires uploading raw client data to the server.",
+   "quote_b": "clients must upload their raw data to the central server before training",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Larger models are more robust to 4-bit quantization.",
+   "b": "Larger models are less robust to 4-bit quantization than smaller ones.",
+   "quote_b": "the accuracy drop at 4-bit grows with model size",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Quantization-aware training maintains performance when quantizing below 8 bits.",
+   "b": "Quantization-aware training also loses accuracy below 8 bits, as much as post-training quantization.",
+   "quote_b": "QAT and PTQ show the same accuracy loss below 8 bits",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Mamba matches transformer quality at the same size.",
+   "b": "Mamba is clearly worse than transformers of the same size.",
+   "quote_b": "Mamba underperforms a same-size transformer by 4 points on average",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "4-bit quantization reduces memory usage.",
+   "b": "4-bit quantization reduces memory usage by about 50 percent for 7B models.",
+   "quote_b": "for 7B models 4-bit weights need about half the memory of 8-bit weights",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Top-k routing selects k experts per token.",
+   "b": "Top-2 routing is used in Mixtral.",
+   "quote_b": "Mixtral routes each token to 2 of its 8 experts",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Diffusion models achieve higher image quality than GANs.",
+   "b": "Diffusion models are slower to sample from than GANs.",
+   "quote_b": "diffusion sampling needs 50 network evaluations while a GAN needs one",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Federated learning keeps raw data on the clients.",
+   "b": "Federated learning can still leak private data through shared gradients.",
+   "quote_b": "gradients can be inverted to reconstruct training images",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": ""
+  },
+  {
+   "a": "Quantizing transformers reduces sampling latency while having little impact on overall performance.",
+   "b": "Quantizing model parameters reduces inference latency proportionally but can hurt task accuracy.",
+   "quote_b": "if we reduce the model bits through quantization, we can expect the latency of the model to reduce proportionally, potentially at the expense of end task accuracy",
+   "conflicts": false,
+   "source": "real",
+   "ref": "run 7c8e355e sq3: hedged 'can hurt' versus 'little impact'"
+  },
+  {
+   "a": "Low-bit quantization of weights and activations aims to preserve task performance, implying limited quality loss.",
+   "b": "4-bit quantization can cause notable performance degradation, especially for fully trained models, implying lower text quality.",
+   "quote_b": "fully trained checkpoints demonstrate very little weight fluctuations during training. As a result, low-bit quantization is likely to push weights beyond the narrow range... leading to performance degradation or even model collapse.",
+   "conflicts": false,
+   "source": "real",
+   "ref": "run 7c8e355e sq3: an aim versus a result"
+  },
+  {
+   "a": "Quantization usually reduces accuracy by 2 to 5 percent.",
+   "b": "In some models quantization causes no measurable accuracy loss.",
+   "quote_b": "for the 70B model we measured no measurable accuracy loss after 4-bit quantization",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": "usually versus in some models"
+  },
+  {
+   "a": "The proposed method is designed to improve robustness.",
+   "b": "The proposed method was evaluated on three robustness benchmarks.",
+   "quote_b": "we evaluate the method on three robustness benchmarks",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": "an aim versus a description"
+  },
+  {
+   "a": "Quantization may reduce accuracy.",
+   "b": "Quantization can leave accuracy unchanged.",
+   "quote_b": "in several settings quantization left accuracy unchanged",
+   "conflicts": false,
+   "source": "synthetic",
+   "ref": "may versus can"
+  },
+  {
+   "a": "4-bit quantization never changes the accuracy of a model.",
+   "b": "4-bit quantization reduces model accuracy by about 3 points.",
+   "quote_b": "4-bit quantization reduced accuracy by 3.1 points on average",
+   "conflicts": true,
+   "source": "synthetic",
+   "ref": "strong versus strong"
+  }
+ ]
+}

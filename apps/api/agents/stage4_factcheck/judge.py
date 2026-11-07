@@ -142,20 +142,48 @@ Apply this test: could both statements be true at the same time?
   property and the same setting.
 - Do not stretch wording: related topics or loosely similar terms (e.g. "accuracy" vs "fitness")
   are not the same aspect.
+- A hedged statement ("can", "may", "potentially", "often", "in some cases", "usually") does not conflict with a
+  statement that something is possible in other cases.
+- An aim or intention ("aims to", "is designed to", "is crucial") is not a result, so it does not conflict with
+  a measured result that points the other way.
+- Different models, datasets, methods or settings are not the same setting.
 
 Return ONLY JSON: {{"same_aspect": true, "conflicts": true, "confidence": 0.0, "reason": "one sentence"}}
 (use true/false for the first two fields and a number from 0 to 1 for confidence)"""
 
 
+CONFIRM_PROMPT = """Statement A: {claim}
+Evidence from another source: "{quote}"
+
+A second reader says these two DIRECTLY CONTRADICT each other. Try to prove them wrong.
+Can both be true at the same time under any reasonable reading? Check each of these:
+- hedging (can, may, potentially, often, usually, in some cases) on either side
+- an aim or intention on one side and a measured result on the other
+- different models, datasets, methods, metrics, scale or conditions
+- one side is more specific, or only partly overlaps the other
+If any of them makes both statements possible together, answer both_can_be_true=true.
+Answer false only if the evidence plainly asserts the opposite of A about the same thing in the same setting.
+
+Return ONLY JSON: {{"both_can_be_true": true, "reason": "one sentence"}}"""
+
+
 def judge_conflict(claim: str, quote: str, other_claim: str) -> dict:
+    """A conflict needs TWO yeses: the first reading says "conflicts", and a second reading that tries to reconcile the statements fails.
+    A single lenient answer from one call (the first real run produced two false conflicts that way) cannot create a conflict."""
     try:
         v = ask(PROMPT.format(claim=claim, quote=quote, other_claim=other_claim))
-        return {
+        out = {
             "same_aspect": bool(v.get("same_aspect")),
             "conflicts": bool(v.get("conflicts")),
             "confidence": float(v.get("confidence", 0.0)),
             "reason": str(v.get("reason", "")),
         }
+        if out["conflicts"] and out["same_aspect"]:
+            c = ask(CONFIRM_PROMPT.format(claim=claim, quote=quote))
+            if bool(c.get("both_can_be_true", True)):          # a missing field counts as "can be reconciled"
+                out["conflicts"] = False
+                out["reason"] = "not confirmed: " + str(c.get("reason", ""))
+        return out
     except Exception as e:
         logger.warning("Conflict judge failed: %s", e)
         return {"same_aspect": False, "conflicts": False, "confidence": 0.0,

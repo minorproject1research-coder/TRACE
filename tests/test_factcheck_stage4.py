@@ -374,3 +374,132 @@ def test_an_ordinary_failure_does_not_trip_the_breaker(monkeypatch):
     assert judge.stats()["skipped"] == judge.stats()["skipped"]       # unchanged by these two
     monkeypatch.setattr(judge, "squeezer_json", lambda p: {"same": True})
     assert judge.judge_same_claim("e", "f") is True
+
+
+# ------------------------------------------------------------------------------------- the conflict judge needs two readings
+def test_a_conflict_needs_the_confirming_second_reading(monkeypatch):
+    replies = {"first": {"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": "opposite"}}
+    calls = []
+
+    def fake(prompt):
+        calls.append(prompt)
+        return replies["first"] if "DIRECTLY CONTRADICT" in prompt and "second reader" not in prompt else replies["second"]
+    monkeypatch.setattr(judge, "squeezer_json", fake)
+    replies["second"] = {"both_can_be_true": False, "reason": "plainly opposite"}
+    assert judge.judge_conflict("a", "q", "b")["conflicts"] is True and len(calls) == 2
+    replies["second"] = {"both_can_be_true": True, "reason": "hedged"}
+    v = judge.judge_conflict("a2", "q", "b")
+    assert v["conflicts"] is False and v["reason"].startswith("not confirmed")
+    replies["second"] = {"reason": "no field"}                                    # a missing answer means "can be reconciled"
+    assert judge.judge_conflict("a3", "q", "b")["conflicts"] is False
+
+
+def test_no_second_reading_when_the_first_sees_no_conflict_and_a_failing_second_fails_closed(monkeypatch):
+    seq = iter([{"same_aspect": True, "conflicts": False, "confidence": 0.9, "reason": ""}])
+    monkeypatch.setattr(judge, "squeezer_json", lambda p: next(seq))
+    assert judge.judge_conflict("a", "q", "b")["conflicts"] is False                 # a second call would raise StopIteration
+    answers = iter([{"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": ""}, RuntimeError("down")])
+
+    def second_fails(p):
+        r = next(answers)
+        if isinstance(r, Exception):
+            raise r
+        return r
+    monkeypatch.setattr(judge, "squeezer_json", second_fails)
+    assert judge.judge_conflict("a4", "q", "b")["conflicts"] is False
+
+
+# ------------------------------------------------------------------------------------------------------------ the graph node
+def test_the_node_does_nothing_unless_switched_on(monkeypatch):
+    from apps.api.graph.nodes import factcheck_node as node
+    monkeypatch.delenv("FACTCHECK", raising=False)
+    monkeypatch.setattr(node, "run_factcheck", lambda *a: pytest.fail("Stage 4 must not run"))
+    assert node.factcheck_node(None) == {}
+
+
+def fake_state():
+    from types import SimpleNamespace
+    sqs = [SimpleNamespace(id="s1", main_topic="T1"), SimpleNamespace(id="s2", main_topic="T2")]
+    return SimpleNamespace(task_plan=SimpleNamespace(query_id="q1", sub_questions=sqs))
+
+
+def test_the_node_returns_claims_and_summary_and_survives_a_final_failure(monkeypatch):
+    from apps.api.graph.nodes import factcheck_node as node
+    monkeypatch.setenv("FACTCHECK", "true")
+    monkeypatch.setattr(node, "run_factcheck", lambda q, sqs: ([{"label": "supported"}, {"label": "unverified"}], {"s1": {"supported": 1}}))
+    out = node.factcheck_node(fake_state())
+    assert len(out["fact_claims"]) == 2 and out["fact_summary"] == {"s1": {"supported": 1}}
+    monkeypatch.setattr(node, "run_factcheck", lambda q, sqs: (_ for _ in ()).throw(ConnectionError("database down")))
+    out = node.factcheck_node(fake_state())
+    assert "ConnectionError" in out["fact_summary"]["error"] and "fact_claims" not in out
+
+
+def test_one_failing_sub_question_does_not_stop_the_others_and_nothing_is_written_for_it(monkeypatch):
+    from apps.api.graph.nodes import factcheck_node as node
+    written = {}
+
+    def check(query_id, sq, report):
+        if sq.id == "s1":
+            raise RuntimeError("model error")
+        return [{"label": "supported", "claim": "c"}], [], {"supported": 1, "disagreements": 0}
+    monkeypatch.setattr(node, "_check_sub_question", check)
+    monkeypatch.setattr(node.db_service, "write_fact_claims", lambda q, rows: written.update(claims=rows))
+    monkeypatch.setattr(node.db_service, "write_contradictions", lambda q, rows: written.update(contra=rows))
+    claims, summary = node.run_factcheck("q1", fake_state().task_plan.sub_questions)
+    assert "RuntimeError" in summary["s1"]["error"] and summary["s2"]["supported"] == 1
+    assert written == {"claims": [{"label": "supported", "claim": "c"}], "contra": []}
+
+
+# --------------------------------------------------------------------------------------------------- the stage in the run manager
+class GraphWithFactcheck:
+    def stream(self, state, stream_mode):
+        from types import SimpleNamespace
+        sq = SimpleNamespace(main_topic="What are SSMs?", queries=["a"])
+        yield {"planner": {"task_plan": SimpleNamespace(sub_questions=[sq], domain_anchor="")}}
+        yield {"paper_retrieval": {"paper_results": []}}
+        yield {"web_search": {"web_sources": []}}
+        yield {"summarizer": {"digests": [1], "coverage": {"a": {"sufficient": True}}}}
+        yield {"factcheck": {"fact_claims": [{"label": "supported", "contested": False}, {"label": "contradicted", "contested": False},
+                                              {"label": "unverified", "contested": False}],
+                             "fact_summary": {"a": {"disagreements": 1}}}}
+
+
+def run_to_end(graph, monkeypatch, enabled):
+    from apps.api.services import run_manager as rm
+    monkeypatch.setenv("FACTCHECK", "true" if enabled else "false")
+    manager = rm.RunManager(graph_factory=lambda: graph, max_workers=1)
+    try:
+        rec = manager.submit("How do state space models compare with transformers in training efficiency?")
+        for _ in range(250):
+            if rec.finished:
+                break
+            time.sleep(0.02)
+        assert rec.status == "completed", rec.error
+        return rec
+    finally:
+        manager.shutdown()
+
+
+def test_the_factcheck_stage_runs_and_reports_its_result_when_switched_on(monkeypatch):
+    rec = run_to_end(GraphWithFactcheck(), monkeypatch, True)
+    assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_built"}
+    started = [e for e in rec.events if e["stage"] == "factcheck"]
+    assert [e["event"] for e in started] == ["stage_started", "stage_completed"]
+    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1}
+    assert rec.events[-1]["data"]["stagesNotRun"] == ["report"]
+
+
+def test_the_factcheck_stage_is_not_run_when_switched_off(monkeypatch):
+    rec = run_to_end(GraphWithFactcheck(), monkeypatch, False)
+    assert rec.stages["factcheck"] == "not_run" and not [e for e in rec.events if e["stage"] == "factcheck"]
+    assert rec.events[-1]["data"]["stagesNotRun"] == ["factcheck", "report"]
+
+
+def test_a_failed_factcheck_fails_the_stage_but_not_the_run(monkeypatch):
+    class G(GraphWithFactcheck):
+        def stream(self, state, stream_mode):
+            for chunk in super().stream(state, stream_mode):
+                yield chunk if "factcheck" not in chunk else {"factcheck": {"fact_summary": {"error": "ConnectionError: database down"}}}
+    rec = run_to_end(G(), monkeypatch, True)
+    assert rec.status == "completed" and rec.stages["factcheck"] == "failed"
+    assert [e for e in rec.events if e["stage"] == "factcheck"][-1]["data"] == {"error": "ConnectionError: database down"}

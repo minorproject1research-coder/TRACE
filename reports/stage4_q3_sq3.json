@@ -1,0 +1,593 @@
+[
+ {
+  "sub_question": "What are the trade-offs of quantizing LLMs to 4-bit precision?",
+  "summary": {
+   "supported": 0,
+   "contradicted": 2,
+   "unverified": 23,
+   "total": 25,
+   "digests": 22,
+   "claims_loaded": 80,
+   "contested": 0,
+   "disagreements": 2,
+   "missing_evidence": [
+    "How does quantizing LLMs to 4-bit precision affect the model size and memory usage?",
+    "How does quantizing LLMs to 4-bit precision affect the quality and diversity of generated text?",
+    "How does quantizing LLMs to 4-bit precision affect the robustness and security of LLMs?",
+    "How does quantizing LLMs to 4-bit precision affect the compatibility and interoperability of LLMs?"
+   ],
+   "needs_replan": true
+  },
+  "claims": [
+   {
+    "claim": "Quantization impact on output quality differs by model family; BLOOM and LLaMA stay more accurate, while OPT degrades more.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3bb68b37-e6c2-4861-87db-e9323bb20c6e",
+      "source_title": "What Makes Quantization for Large Language Models Hard? An Empirical Study from the Lens of Perturbation",
+      "quote": "Our findings indicate that the impact of quantization varies significantly across different model families and sizes. The BLOOM and LLAMA model families exhibit greater robustness to quantization, while OPT models are more sensitive to quantization.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.97
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Larger weight values tolerate bigger quantization perturbations, whereas smaller values are more sensitive, indicating robustness varies with magnitude.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3bb68b37-e6c2-4861-87db-e9323bb20c6e",
+      "source_title": "What Makes Quantization for Large Language Models Hard? An Empirical Study from the Lens of Perturbation",
+      "quote": "larger values can endure more significant perturbations with minimal performance degradation, while smaller values can only tolerate minor perturbations.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.617
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Quantizing the KV cache together with weights and activations reduces throughput bottlenecks, speeding up long-sequence generation.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2dc9a415-ccbc-4534-b67a-030d48bc014b",
+      "source_title": "LLM-QAT: Data-Free Quantization Aware Training for Large Language Models",
+      "quote": "We also demonstrate quantizing the KV cache simultaneously with weights and activations, which is critical to alleviate throughput bottlenecks for long sequence generation.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.918
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "With 4-bit weight and KV cache quantization, QAT achieves near‑full‑precision accuracy (69.9), far better than PTQ methods.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2dc9a415-ccbc-4534-b67a-030d48bc014b",
+      "source_title": "LLM-QAT: Data-Free Quantization Aware Training for Large Language Models",
+      "quote": "In the 4-8-4 setting, where both weights and the KV cache are quantized to 4 bits, all PTQ methods produce poor results, whereas LLM-QAT achieves 69.9, only trailing the full precision",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.996
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Quantizing any component below 8‑bits causes PTQ methods to lose accuracy, while QAT maintains performance.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2dc9a415-ccbc-4534-b67a-030d48bc014b",
+      "source_title": "LLM-QAT: Data-Free Quantization Aware Training for Large Language Models",
+      "quote": "when either of these three values are quantized to less than 8-bits, PTQ methods result in accuracy loss, whereas LLM-QAT holds up much better.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.993
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "When GPU memory limits prevent fitting a large model in 4‑bit, a higher precision (e.g., 5‑bit) may be chosen, trading increased bits for model size feasibility.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7579c6ed-73f2-419c-a6af-fa916b53978f",
+      "source_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+      "quote": "A 48 GB GPU has enough memory to use a 66B model in 5-bit precision but cannot fit a 175B model in 4-bit.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.96
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Quantizing model parameters reduces inference latency proportionally but can hurt task accuracy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7579c6ed-73f2-419c-a6af-fa916b53978f",
+      "source_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+      "quote": "if we reduce the model bits through quantization, we can expect the latency of the model to reduce proportionally, potentially at the expense of end task accuracy",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.982
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Four‑bit precision gives the best zero‑shot accuracy across most model families and scales.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7579c6ed-73f2-419c-a6af-fa916b53978f",
+      "source_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+      "quote": "For a given zero-shot performance, 4-bit precision yields optimal scaling for almost all model families and model scales.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.985
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "In high‑throughput settings, low‑bit models with 16‑bit inputs may not reduce latency.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7579c6ed-73f2-419c-a6af-fa916b53978f",
+      "source_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+      "quote": "low-bit models with 16-bit inputs might be less latency efficient if such a model is deployed to be used by many users",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.981
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "NVFP4’s finer block‑scale preserves more of FP4’s dynamic range, mitigating quality loss.",
+    "label": "unverified",
+    "confidence": 0.4,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bf42416a-f98e-40e2-8457-717805f86935",
+      "source_title": "Pretraining Large Language Models with NVFP4",
+      "quote": "NVFP4 overcomes this limitation with a more precise E4M3 block scale, which maps the block amax much closer to the FP4 maximum representable number. This maximizes the FP4 samples utilization and preserves more of the dynamic range of FP4.",
+      "relation": "supports",
+      "reliability": 0.4,
+      "evidence_level": "full_text",
+      "prob": 0.939
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "QRazor’s compression method has far lower computational overhead than dynamic max‑scaled quantization, improving efficiency.",
+    "label": "unverified",
+    "confidence": 0.4,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bb595d32-9bd4-4dcc-a8f4-0f2cd4df2e81",
+      "source_title": "Qrazor: Reliable and Effortless 4-bit LLM Quantization by Significant Data Razoring",
+      "quote": "QRazor's compression incurs substantially lower computational overhead than DMQ. Moreover, QRazor's simpler operations require fewer hardware resources, enabling more efficient implementation in dedicated arithmetic units.",
+      "relation": "supports",
+      "reliability": 0.4,
+      "evidence_level": "full_text",
+      "prob": 0.772
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Post‑training quantization is preferred over quantization‑aware training because QAT demands costly retraining.",
+    "label": "unverified",
+    "confidence": 0.4,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bb595d32-9bd4-4dcc-a8f4-0f2cd4df2e81",
+      "source_title": "Qrazor: Reliable and Effortless 4-bit LLM Quantization by Significant Data Razoring",
+      "quote": "This work focuses on PTQ, due to the substantial computational cost of retraining LLMs required by QAT.",
+      "relation": "supports",
+      "reliability": 0.4,
+      "evidence_level": "full_text",
+      "prob": 0.875
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "4-bit K‑quant formats achieve higher fidelity than standard 4-bit formats for comparable memory usage.",
+    "label": "unverified",
+    "confidence": 0.4,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0cbb4576-6dbf-4e43-bb89-774240ca0945",
+      "source_title": "Which Quantization Should I Use? A Unified Evaluation of llama.cpp Quantization on Llama-3.1-8B-Instruct",
+      "quote": "4-bit: Q4_K_S, Q4_K_M. Effective bit‑widths of roughly ≈ 4 . 2 and ≈ 4 . 5 bits; typically higher‑fidelity than Q4_0/Q4_1 at similar (or slightly higher) size.",
+      "relation": "supports",
+      "reliability": 0.4,
+      "evidence_level": "full_text",
+      "prob": 0.977
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "4-bit quantization degrades accuracy more for smaller models than for larger ones.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7928bf56-c472-4b44-874e-6560ff2344f7",
+      "source_title": "Performance Trade-offs of Optimizing Small Language Models for E-Commerce",
+      "quote": "smaller models often suffer greater accuracy degradation from 4-bit quantization than larger ones.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.999
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Uniform 4-bit quantization of large language models incurs virtually no loss in accuracy.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2a581576-3399-4344-ac52-f2f536b641dc",
+      "source_title": "Mixed-Precision Quantization for Language Models: Techniques and Prospects",
+      "quote": "QuaRot enables uniform 4-bit quantization across weights, activations, and KV cache buffers with virtually no accuracy drop in large-scale LMs, such as Llama-2 and OPT.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.992
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "QRazor’s two‑stage method balances accuracy and efficiency, preserving quality while enabling 4-bit computation.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "64b553bb-6153-41c5-9441-8ef74d253685",
+      "source_title": "QRazor: Reliable and Effortless 4-bit LLM Quantization by Significant Data Razoring",
+      "quote": "Our approach effectively balances accuracy and efficiency by first quantizing weights, activations, and KV caches to 8-bit and 16-bit integer formats, followed by compressing them using the significant data razoring (SDR) technique, which preserves salient bits for low-bit computations",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.55
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Low-bit quantization of weights and activations aims to preserve task performance, implying limited quality loss.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2f70d261-9719-4a06-bc5a-f0c5371f5237",
+      "source_title": "Agile-Quant: Activation-Guided Quantization for Faster Inference of LLMs on the Edge",
+      "quote": "In essence, focusing on low-bit quantization of both weights and activations for LLMs while ensuring task performance is crucial.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.976
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "4-bit weight‑only quantization can keep accuracy comparable to higher‑precision methods.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0ad26a84-ca2f-42fd-b8c2-d292772902d1",
+      "source_title": "Integer or Floating Point? New Outlooks for Low-Bit Quantization on Large Language Models",
+      "quote": "For W-only quantization with 4-bit, MoFQ achieves comparable or better accuracy than GPTQ ...",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.938
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "At 4‑bit precision there is no clear winner between FP4 and INT4 formats; error depends on the layer.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0ad26a84-ca2f-42fd-b8c2-d292772902d1",
+      "source_title": "Integer or Floating Point? New Outlooks for Low-Bit Quantization on Large Language Models",
+      "quote": "When the quantization bit-width decreases to 4-bit, there is no absolute winner between FP and INT formats ... In some layers, FP4 has lower errors, while in others, INT4 has lower errors.",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.997
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Finer granularity or higher bit‑width can improve quantization accuracy but incurs higher memory use and system complexity.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0ad26a84-ca2f-42fd-b8c2-d292772902d1",
+      "source_title": "Integer or Floating Point? New Outlooks for Low-Bit Quantization on Large Language Models",
+      "quote": "Utilizing a finer granularity than the layer level or increasing the bit-width can indeed improve the quantization effect, but it also comes at the cost of increased memory consumption and higher system or hardware complexity",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.997
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Quantizing transformers reduces sampling latency while having little impact on overall performance.",
+    "label": "contradicted",
+    "confidence": 0.7,
+    "support_doc_count": 1,
+    "contra_doc_count": 1,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "48642f72-bee5-47c9-a04e-20537061cdd1",
+      "source_title": "Understanding the Impact of Post-Training Quantization on Large Language Models",
+      "quote": "The application of quantization methods to transformers emerges as a efficacious approach for mitigating sampling latency, while incurring minimal to negligible impact on overall performance.",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.997
+     },
+     {
+      "source_id": "7579c6ed-73f2-419c-a6af-fa916b53978f",
+      "source_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+      "quote": "if we reduce the model bits through quantization, we can expect the latency of the model to reduce proportionally, potentially at the expense of end task accuracy",
+      "relation": "contradicts",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "Double quantization (fp4‑dq, nf4‑dq) slightly reduces memory but slows inference speed.",
+    "label": "contradicted",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 1,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "48642f72-bee5-47c9-a04e-20537061cdd1",
+      "source_title": "Understanding the Impact of Post-Training Quantization on Large Language Models",
+      "quote": "The adoption of double quantization, such as fp4-dq and nf4-dq, can lead to a marginal reduction in memory footprint. However, it is accompanied by a relatively decreased inference speed.",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.997
+     },
+     {
+      "source_id": "0ad26a84-ca2f-42fd-b8c2-d292772902d1",
+      "source_title": "Integer or Floating Point? New Outlooks for Low-Bit Quantization on Large Language Models",
+      "quote": "Utilizing a finer granularity than the layer level or increasing the bit-width can indeed improve the quantization effect, but it also comes at the cost of increased memory consumption and higher system or hardware complexity",
+      "relation": "contradicts",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.841
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "GPTQ 4‑bit quantization failed to achieve satisfactory accuracy and inference speed in this study.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "48642f72-bee5-47c9-a04e-20537061cdd1",
+      "source_title": "Understanding the Impact of Post-Training Quantization on Large Language Models",
+      "quote": "The current experiment did not achieve satisfactory results in terms of accuracy and inference speed when using gptq 4-bit quantization.",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.998
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "At 4-bit precision, factual consistency remains largely unchanged while grammar degrades noticeably.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "61ddd38f-fa98-4a84-8122-066cd19f6e3e",
+      "source_title": "Not All Linguistic Capabilities Degrade Equally Under Quantization",
+      "quote": "Factual consistency (AlignScore) is substantially more stable than grammar at 4-bit across all four architectures ( d = - 0 . 355 , mean = - 1 . 8% ; no model crosses the 10% degradation threshold).",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.972
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim": "4-bit quantization reduces memory usage and speeds up inference, while weight‑only and mixed‑precision methods help balance performance and accuracy.",
+    "label": "unverified",
+    "confidence": 0.225,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "256151c7-99ee-4007-8828-32c43dc83864",
+      "source_title": "What types of quantization will improve LLM inference latency and throughput?",
+      "quote": "INT8, FP16, and 4-bit quantization significantly reduce memory usage while leveraging Tensor Cores and optimized libraries (TensorRT, FasterTransformer) to accelerate inference. Weight-only and mixed-precision quantization further balance performance and accuracy.",
+      "relation": "supports",
+      "reliability": 0.45,
+      "evidence_level": "web_snippet",
+      "prob": 0.997
+     }
+    ],
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   }
+  ],
+  "disagreements": [
+   {
+    "claim_a": "Quantizing transformers reduces sampling latency while having little impact on overall performance.",
+    "claim_b": "Quantizing model parameters reduces inference latency proportionally but can hurt task accuracy.",
+    "source_a_title": "Understanding the Impact of Post-Training Quantization on Large Language Models",
+    "source_b_title": "The case for 4-bit precision: k-bit Inference Scaling Laws",
+    "quote_a": "The application of quantization methods to transformers emerges as a efficacious approach for mitigating sampling latency, while incurring minimal to negligible impact on overall performance.",
+    "quote_b": "if we reduce the model bits through quantization, we can expect the latency of the model to reduce proportionally, potentially at the expense of end task accuracy",
+    "prob": 0.95,
+    "reason": "Both statements address the effect of quantizing transformers on performance, but one claims little impact while the other warns of possible accuracy loss, directly opposing each other.",
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   },
+   {
+    "claim_a": "Double quantization (fp4‑dq, nf4‑dq) slightly reduces memory but slows inference speed.",
+    "claim_b": "Finer granularity or higher bit‑width can improve quantization accuracy but incurs higher memory use and system complexity.",
+    "source_a_title": "Understanding the Impact of Post-Training Quantization on Large Language Models",
+    "source_b_title": "Integer or Floating Point? New Outlooks for Low-Bit Quantization on Large Language Models",
+    "quote_a": "The adoption of double quantization, such as fp4-dq and nf4-dq, can lead to a marginal reduction in memory footprint. However, it is accompanied by a relatively decreased inference speed.",
+    "quote_b": "Utilizing a finer granularity than the layer level or increasing the bit-width can indeed improve the quantization effect, but it also comes at the cost of increased memory consumption and higher system or hardware complexity",
+    "prob": 0.841,
+    "reason": "Statement A says double quantization reduces memory, while Source B says finer granularity or higher bit‑width (related to double quantization) increases memory consumption, directly opposing each other on memory usage.",
+    "query_id": "7c8e355e-122b-46b6-b227-44d876e9da1c",
+    "sub_question_id": "9647048a"
+   }
+  ]
+ }
+]

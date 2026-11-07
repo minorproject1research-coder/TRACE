@@ -12,8 +12,11 @@ try:
 except ImportError:
     EVIDENCE_WEIGHT = {"full_text": 1.0, "abstract": 0.5, "web_snippet": 0.5}
 
-CLUSTER_CAND_SIM = 0.80      # claims at least this similar are merge candidates
-CLUSTER_AUTO_SIM = 0.95      # near-identical wording: merge without asking the judge
+# Checked on tests/stage4_eval.py (30 labeled pairs, 9 of them the same claim): the same-claim pairs had cosine 0.86 to 0.97, and a pair of DIFFERENT
+# claims scored 0.957 ("degrades accuracy more for smaller models" vs "often causes a noticeable drop in accuracy"), so 0.95 merged a wrong pair
+# without asking the judge. Embeddings cannot tell these apart; the judge decides everything but the near-copies.
+CLUSTER_CAND_SIM = 0.84      # claims at least this similar are merge candidates (was 0.80: no same-claim pair was below 0.86)
+CLUSTER_AUTO_SIM = 0.98      # near-identical wording: merge without asking the judge (was 0.95)
 CLUSTER_SIM = CLUSTER_CAND_SIM   # kept so older scripts that print it still work
 MAX_MERGE_JUDGE = int(os.getenv("STAGE4_MAX_MERGE_JUDGE", "300"))      # cap judge calls for merging per sub-question
 
