@@ -100,7 +100,10 @@ def main() -> int:
     from dotenv import load_dotenv
     load_dotenv()
     lines = read_run(args.log, args.run)
-    t_start, t_end = lines[0][0], lines[-1][0]
+    # End of the run = its last pipeline line. The last line of the log segment can be an HTTP line of the web app, written long after the
+    # run finished (41m shown for a 19m run), so lines of other loggers do not count (planned item B9).
+    pipeline_lines = [l for l in lines if l[2].startswith(("apps.api.agents", "apps.api.graph", "apps.api.services.groq_pool"))]
+    t_start, t_end = lines[0][0], (pipeline_lines[-1][0] if pipeline_lines else lines[-1][0])
     msgs = [(t, lvl, name, msg) for t, lvl, name, msg in lines if not name.startswith(("httpx", "sentence_transformers", "urllib3", "filelock"))]
 
     qid = args.query_id
@@ -111,14 +114,19 @@ def main() -> int:
         raise SystemExit("could not find the query id; pass --query-id")
 
     from apps.api.services.db_service import supabase
-    query = supabase.table("research_queries").select("*").eq("id", qid).execute().data[0]
-    sqs = sorted(supabase.table("sub_questions").select("*").eq("query_id", qid).execute().data, key=lambda r: r["created_at"])   # plan order
-    papers = supabase.table("retrieved_papers").select("*").eq("query_id", qid).execute().data
+    from apps.api.services.db_errors import retry_transient
+
+    def rd(query):
+        """Rows of a read query, tried again on a dropped connection (planned item B8)."""
+        return retry_transient(lambda: query.execute().data)()
+    query = rd(supabase.table("research_queries").select("*").eq("id", qid))[0]
+    sqs = sorted(rd(supabase.table("sub_questions").select("*").eq("query_id", qid)), key=lambda r: r["created_at"])   # plan order
+    papers = rd(supabase.table("retrieved_papers").select("*").eq("query_id", qid))
     paper_ids = [p["id"] for p in papers]
-    parsed = supabase.table("parsed_papers").select("retrieved_paper_id").in_("retrieved_paper_id", paper_ids).execute().data if paper_ids else []
-    webs = supabase.table("web_sources").select("id,sub_question_id,title,url,reliability_score").in_("sub_question_id", [s["id"] for s in sqs]).execute().data
-    digests = supabase.table("digests").select("*").eq("query_id", qid).execute().data
-    covs = supabase.table("coverage_results").select("*").eq("query_id", qid).execute().data
+    parsed = rd(supabase.table("parsed_papers").select("retrieved_paper_id").in_("retrieved_paper_id", paper_ids)) if paper_ids else []
+    webs = rd(supabase.table("web_sources").select("id,sub_question_id,title,url,reliability_score").in_("sub_question_id", [s["id"] for s in sqs]))
+    digests = rd(supabase.table("digests").select("*").eq("query_id", qid))
+    covs = rd(supabase.table("coverage_results").select("*").eq("query_id", qid))
 
     # ---------------------------------------------------------------- phases
     M = lambda pat: first(msgs, lambda l: re.search(pat, l[3]))
@@ -237,7 +245,7 @@ def main() -> int:
         anchor_shown = anchor_line[3].replace("Domain anchor", "").strip(" :")
     else:
         # no log line (it can be lost, e.g. by a log-file encoding error): look at the stored queries instead
-        qtexts = [q["query_text"] for q in supabase.table("queries").select("query_text").in_("sub_question_id", [s["id"] for s in sqs]).execute().data]
+        qtexts = [q["query_text"] for q in rd(supabase.table("queries").select("query_text").in_("sub_question_id", [s["id"] for s in sqs]))]
         ends = Counter(" ".join(t.split()[-k:]) for t in qtexts for k in (1, 2, 3) if len(t.split()) > k)
         best = max(ends.items(), key=lambda kv: (kv[1], len(kv[0]))) if ends else None
         anchor_shown = (f"'{best[0]}' ends {best[1]} of {len(qtexts)} stored queries (the log line is missing)"

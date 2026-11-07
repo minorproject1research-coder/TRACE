@@ -1,6 +1,6 @@
 # Pipeline run report - What is mixture of experts in large language models and how does expert routing work?
 
-Generated 2026-11-06 23:06 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 10 in the file) and the database. Query id `abb1db57-d2bd-4a76-b80f-89981ae68563`.
+Generated 2026-11-07 13:58 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 10 in the file) and the database. Query id `abb1db57-d2bd-4a76-b80f-89981ae68563`.
 
 ## 1. Summary
 
@@ -8,8 +8,8 @@ Generated 2026-11-06 23:06 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|
 | Question | What is mixture of experts in large language models and how does expert routing work? |
 | Domain anchor | (cached): 'deep learning' | context: Deep learning for NLP: 'expert' refers to a model subnetwork and 'routing' to the internal selection mechanism, not human experts or data‑network routing. |
-| Started / finished | 2026-11-06 21:52:46 / 22:33:58 |
-| **Total execution time** | **41m 12s** (2472 s) |
+| Started / finished | 2026-11-06 21:52:46 / 22:12:09 |
+| **Total execution time** | **19m 23s** (1163 s) |
 | Sub-questions / search queries | 5 / 13 (per sub-question [3, 3, 0, 2, 3]) |
 | Plan source | plan-cache (stored plan reused, PLAN_CACHE=true) |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 605 candidates -> 579 cleared the similarity floor -> 100 shortlisted |
@@ -31,15 +31,15 @@ Generated 2026-11-06 23:06 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|---|---|---|
 | Planner (decompose, 5 sub-questions) | 21:52:46 | 21:52:51 | 5s | 0% |
 | Web search (Tavily) | 21:52:51 | 21:53:06 | 16s | 1% |
-| Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus) | 21:53:06 | 21:54:02 | 56s | 2% |
-| Embedding pre-filter + relevance judge | 21:54:02 | 21:56:18 | 2m 16s | 5% |
-| Citation enrichment (Semantic Scholar) | 21:56:19 | 21:57:27 | 1m 09s | 3% |
+| Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus) | 21:53:06 | 21:54:02 | 56s | 5% |
+| Embedding pre-filter + relevance judge | 21:54:02 | 21:56:18 | 2m 16s | 12% |
+| Citation enrichment (Semantic Scholar) | 21:56:19 | 21:57:27 | 1m 09s | 6% |
 | Store papers in the database | 21:57:27 | 21:57:28 | 1s | 0% |
-| PDF download + Docling parsing | 21:57:28 | 22:03:59 | 6m 31s | 16% |
-| Stage 3 preparation (aspect split, chunking, embedding) | 22:03:59 | 22:08:53 | 4m 54s | 12% |
-| Stage 3 digest generation (Groq) | 22:08:53 | 22:10:30 | 1m 38s | 4% |
-| Stage 3 judge + coverage (per sub-question) | 22:10:30 | 22:12:09 | 1m 39s | 4% |
-| **Total** | 21:52:46 | 22:33:58 | **41m 12s** | 100% |
+| PDF download + Docling parsing | 21:57:28 | 22:03:59 | 6m 31s | 34% |
+| Stage 3 preparation (aspect split, chunking, embedding) | 22:03:59 | 22:08:53 | 4m 54s | 25% |
+| Stage 3 digest generation (Groq) | 22:08:53 | 22:10:30 | 1m 38s | 8% |
+| Stage 3 judge + coverage (per sub-question) | 22:10:30 | 22:12:09 | 1m 39s | 8% |
+| **Total** | 21:52:46 | 22:12:09 | **19m 23s** | 100% |
 
 ## 3. Sub-questions: retrieval, filtering, parsing, Stage 3
 
@@ -254,7 +254,7 @@ Papers with NO usable text from any route:
 - 1 paper(s) failed at the parse/database step: A Review of Current Trends, Techniques, and Challe (Server disconnected)
 - 1 paper(s) could not be downloaded by any route.
 - Groq rate limiting: 99 parking events; digest generation took 1m 38s.
-- Longest phase: PDF download + Docling parsing (6m 31s, 16% of the run).
+- Longest phase: PDF download + Docling parsing (6m 31s, 34% of the run).
 
 Warnings in the log: 18; errors: 3.
 

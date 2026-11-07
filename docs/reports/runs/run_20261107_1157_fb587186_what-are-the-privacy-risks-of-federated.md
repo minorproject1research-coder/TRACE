@@ -1,6 +1,6 @@
 # Pipeline run report - What are the privacy risks of federated learning and how effective are the defenses against them?
 
-Generated 2026-11-07 13:29 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 17 in the file) and the database. Query id `fb587186-7af6-4bea-be1e-dbb0a10936ee`.
+Generated 2026-11-07 13:57 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 17 in the file) and the database. Query id `fb587186-7af6-4bea-be1e-dbb0a10936ee`.
 
 ## 1. Summary
 
@@ -8,8 +8,8 @@ Generated 2026-11-07 13:29 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|
 | Question | What are the privacy risks of federated learning and how effective are the defenses against them? |
 | Domain anchor | (cached): 'machine learning' | context: Machine learning: federated learning is a privacy‑preserving distributed training method, not an educational or political collaboration. |
-| Started / finished | 2026-11-07 11:57:09 / 12:17:30 |
-| **Total execution time** | **20m 21s** (1221 s) |
+| Started / finished | 2026-11-07 11:57:09 / 12:17:27 |
+| **Total execution time** | **20m 18s** (1218 s) |
 | Sub-questions / search queries | 4 / 13 (per sub-question [3, 3, 3, 3]) |
 | Plan source | planner |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 475 candidates -> 466 cleared the similarity floor -> 80 shortlisted |
@@ -39,7 +39,7 @@ Generated 2026-11-07 13:29 by `scripts/pipeline_run_report.py` from `logs/pipeli
 | Stage 3 preparation (aspect split, chunking, embedding) | 12:06:13 | 12:14:37 | 8m 24s | 41% |
 | Stage 3 digest generation (Groq) | 12:14:37 | 12:15:49 | 1m 12s | 6% |
 | Stage 3 judge + coverage (per sub-question) | 12:15:49 | 12:17:27 | 1m 38s | 8% |
-| **Total** | 11:57:09 | 12:17:30 | **20m 21s** | 100% |
+| **Total** | 11:57:09 | 12:17:27 | **20m 18s** | 100% |
 
 ## 3. Sub-questions: retrieval, filtering, parsing, Stage 3
 
@@ -218,7 +218,7 @@ Warnings in the log: 23; errors: 1.
 
 ## 10. Notes (written by hand after reading the log and the database)
 
-**Bottom line.** The longest run of the six (20m 21s) and the cleanest in terms of errors: no database error, no judge error (107 pairs), no digest failure, 20 of 21 papers with full text, 109 of 116 findings verified (94%). **2 of 4 sub-questions sufficient, and both halves of the user's question are answered**: the privacy risks (sub-question 2: 4 of 4 aspects, 19 "yes" in 23 pairs) and the effectiveness of defenses (sub-question 4: strengths 3, limitations 3, trade-offs 3, open problems 3 "yes"). The two sub-questions that fail fail on three aspects the planner added: "assumptions of the defenses" (1 yes), "how the defenses are compared" (1 yes) and "how the defenses can be combined" (0 yes). This is the Q5 pattern again (core covered, peripheral aspects fail) and the opposite of Q3 and Q4 (the core fails).
+**Bottom line.** The longest run of the six (20m 18s) and the cleanest in terms of errors: no database error, no judge error (107 pairs), no digest failure, 20 of 21 papers with full text, 109 of 116 findings verified (94%). **2 of 4 sub-questions sufficient, and both halves of the user's question are answered**: the privacy risks (sub-question 2: 4 of 4 aspects, 19 "yes" in 23 pairs) and the effectiveness of defenses (sub-question 4: strengths 3, limitations 3, trade-offs 3, open problems 3 "yes"). The two sub-questions that fail fail on three aspects the planner added: "assumptions of the defenses" (1 yes), "how the defenses are compared" (1 yes) and "how the defenses can be combined" (0 yes). This is the Q5 pattern again (core covered, peripheral aspects fail) and the opposite of Q3 and Q4 (the core fails).
 
 ### Numbers
 
@@ -250,7 +250,7 @@ For the planned triage rule (A1, "search again only for aspects with at least 2 
 - **Recall check of the relevance judge**: it rejected "A Detailed Survey on Federated Learning Attacks and Defenses" for sub-question 1 (background) and "Advances and Open Problems in Federated Learning" for sub-question 4; both were kept and used for another sub-question. That is the per-sub-question judging working as intended, not an error.
 
 ### What went wrong
-1. **Longest run so far (20m 21s)**: Stage 3 preparation (8m 24s) and the pre-filter (3m 08s) are 56% of it; the network phases were normal.
+1. **Longest run so far (20m 18s)**: Stage 3 preparation (8m 24s) and the pre-filter (3m 08s) are 56% of it; the network phases were normal.
 2. **Peripheral aspects fail the sub-questions** (above): 2 of 4 sub-questions "not sufficient" because of three aspects that nobody asked.
 3. **Citation enrichment spent 1m 06s on two arXiv-only papers** (three rate-limited Semantic Scholar batches; the search itself was skipped after the probe returned 429).
 4. **16 failed download attempts** (11 HTTP errors, 5 HTML pages instead of PDF); all but one paper were recovered through another route. The one lost, "Federated Machine Learning: Survey, Multi-Level Classification, Desirable Criteria and Future Directions", is a survey of the topic; this is a download problem, not the database problem of Q2, Q4 and Q5.
@@ -265,7 +265,7 @@ For the planned triage rule (A1, "search again only for aspects with at least 2 
 
 | | Q1 Mamba (17:33) | Q2 MoE (23:29) | Q3 quantization | Q4 benchmarks | Q5 diffusion vs GANs | Q6 federated learning |
 |---|---|---|---|---|---|---|
-| Total time | 15m 14s | 16m 04s | 17m 46s | 19m 44s | 15m 11s | 20m 21s |
+| Total time | 15m 14s | 16m 00s | 11m 13s | 19m 40s | 14m 42s | 20m 18s |
 | Papers kept / usable full text | 48 / 25 of 26 | 73 / 25 of 28 | 46 / 15 of 16 | 61 / 20 of 22 | 60 / 20 of 21 | 73 / 20 of 21 |
 | Findings verified | 81% | 89% | 94% | 92% | 86% | 94% |
 | Sub-questions sufficient | 2 of 5 | 3 of 5 | 1 of 3 | 0 of 4 | 2 of 4 | 2 of 4 |

@@ -1,6 +1,6 @@
 # Pipeline run report - How do diffusion models compare with GANs for image generation quality and training stability?
 
-Generated 2026-11-07 11:52 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 16 in the file) and the database. Query id `7d7d1b7e-3c59-4ec6-a076-39c815d4f298`.
+Generated 2026-11-07 13:59 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 16 in the file) and the database. Query id `7d7d1b7e-3c59-4ec6-a076-39c815d4f298`.
 
 ## 1. Summary
 
@@ -8,8 +8,8 @@ Generated 2026-11-07 11:52 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|
 | Question | How do diffusion models compare with GANs for image generation quality and training stability? |
 | Domain anchor | (cached): 'generative modeling' | context: Computer vision/generative AI: diffusion models refer to generative neural networks, not physical diffusion phenomena. |
-| Started / finished | 2026-11-07 11:35:36 / 11:50:47 |
-| **Total execution time** | **15m 11s** (911 s) |
+| Started / finished | 2026-11-07 11:35:36 / 11:50:18 |
+| **Total execution time** | **14m 42s** (882 s) |
 | Sub-questions / search queries | 4 / 11 (per sub-question [3, 2, 3, 3]) |
 | Plan source | planner |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 366 candidates -> 366 cleared the similarity floor -> 80 shortlisted |
@@ -33,13 +33,13 @@ Generated 2026-11-07 11:52 by `scripts/pipeline_run_report.py` from `logs/pipeli
 | Web search (Tavily) | 11:36:05 | 11:36:16 | 11s | 1% |
 | Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus) | 11:36:16 | 11:36:51 | 34s | 4% |
 | Embedding pre-filter + relevance judge | 11:36:51 | 11:38:12 | 1m 22s | 9% |
-| Citation enrichment (Semantic Scholar) | 11:38:13 | 11:39:21 | 1m 08s | 7% |
+| Citation enrichment (Semantic Scholar) | 11:38:13 | 11:39:21 | 1m 08s | 8% |
 | Store papers in the database | 11:39:21 | 11:39:22 | 1s | 0% |
 | PDF download + Docling parsing | 11:39:22 | 11:42:11 | 2m 50s | 19% |
-| Stage 3 preparation (aspect split, chunking, embedding) | 11:42:11 | 11:47:35 | 5m 24s | 36% |
+| Stage 3 preparation (aspect split, chunking, embedding) | 11:42:11 | 11:47:35 | 5m 24s | 37% |
 | Stage 3 digest generation (Groq) | 11:47:35 | 11:48:49 | 1m 14s | 8% |
 | Stage 3 judge + coverage (per sub-question) | 11:48:49 | 11:50:18 | 1m 28s | 10% |
-| **Total** | 11:35:36 | 11:50:47 | **15m 11s** | 100% |
+| **Total** | 11:35:36 | 11:50:18 | **14m 42s** | 100% |
 
 ## 3. Sub-questions: retrieval, filtering, parsing, Stage 3
 
@@ -208,7 +208,7 @@ Papers with NO usable text from any route:
 - Semantic Scholar search was skipped (probe returned 429) and citation enrichment still spent 1m 08s on 3 rate-limited batch calls.
 - 1 paper(s) failed at the parse/database step: Artificial-Intelligence-Generated Content with Dif (<ConnectionTerminated error_code:9, last_stream_id:17, additional_data:None>)
 - Groq rate limiting: 61 parking events; digest generation took 1m 14s.
-- Longest phase: Stage 3 preparation (aspect split, chunking, embedding) (5m 24s, 36% of the run).
+- Longest phase: Stage 3 preparation (aspect split, chunking, embedding) (5m 24s, 37% of the run).
 
 Warnings in the log: 13; errors: 1.
 
@@ -216,7 +216,7 @@ Warnings in the log: 13; errors: 1.
 
 ## 10. Notes (written by hand after reading the log and the database)
 
-**Bottom line.** A clean run on a non-NLP topic (15m 11s, no judge error, no digest failure) and the first one where the **core aspects of the question are covered while the sub-questions still fail**: 2 of 4 sub-questions sufficient. The planner split the question properly (what the two models are, how quality and stability are measured, the quality comparison, the stability comparison) and the evidence for the comparisons exists (quality: "advantages of diffusion models versus GANs" 5 yes from 4 sources, "disadvantages" 2 from 2; stability: "challenges of training" 4 from 3, "mode collapse and other training issues" 2 from 2). What fails are the dimensions the planner added next to them: "performance on different types of images", "solutions for training" and **three scaling aspects** (data size, model size, compute) that nobody asked about. So the Stage 3 test question about a non-NLP domain gives a clear answer: nothing in the pipeline is tuned to LLM wording; the anchor, retrieval, digests and judge behave the same on image generation. This is the opposite pattern to Q3 and Q4, where the aspects that are the question failed.
+**Bottom line.** A clean run on a non-NLP topic (14m 42s, no judge error, no digest failure) and the first one where the **core aspects of the question are covered while the sub-questions still fail**: 2 of 4 sub-questions sufficient. The planner split the question properly (what the two models are, how quality and stability are measured, the quality comparison, the stability comparison) and the evidence for the comparisons exists (quality: "advantages of diffusion models versus GANs" 5 yes from 4 sources, "disadvantages" 2 from 2; stability: "challenges of training" 4 from 3, "mode collapse and other training issues" 2 from 2). What fails are the dimensions the planner added next to them: "performance on different types of images", "solutions for training" and **three scaling aspects** (data size, model size, compute) that nobody asked about. So the Stage 3 test question about a non-NLP domain gives a clear answer: nothing in the pipeline is tuned to LLM wording; the anchor, retrieval, digests and judge behave the same on image generation. This is the opposite pattern to Q3 and Q4, where the aspects that are the question failed.
 
 ### Numbers
 
@@ -250,7 +250,7 @@ The three scaling aspects come from one detail question ("scale with data size, 
 
 ### What went wrong
 1. **A relevant survey was lost to a database error again.** "Artificial-Intelligence-Generated Content with Diffusion Models: A Literature Review" failed at the parse/store step with `ConnectionTerminated error_code:9`, and two parse-cache lookups failed with `RemoteProtocolError: Server disconnected`. In the whole log file there are 10 "Failed to parse paper" lines (6 "Server disconnected", 2 SSL EOF, 1 ConnectionTerminated, 1 old unicode error) and 9 failed parse-cache lookups; since the API went live the pipeline has lost on-topic papers this way in the first MoE API run (1), Q4 (2) and now Q5 (1). The planned retry of the pipeline's own database calls (B8) is now the item with the most repeated evidence.
-2. **Stage 3 preparation took 5m 24s (36%)** for 20 full-text papers; Q3 needed 1m 55s for 15, Q4 9m 22s for 20, the MoE repeat 4m 02s for 25. The same amount of work has taken between 2 and 9 minutes. The chunk-embedding cache (B5) would remove the cost, and the spread suggests it depends on what else the machine is doing.
+2. **Stage 3 preparation took 5m 24s (37%)** for 20 full-text papers; Q3 needed 1m 55s for 15, Q4 9m 22s for 20, the MoE repeat 4m 02s for 25. The same amount of work has taken between 2 and 9 minutes. The chunk-embedding cache (B5) would remove the cost, and the spread suggests it depends on what else the machine is doing.
 3. **Citation enrichment spent 1m 08s on one arXiv-only paper** (three rate-limited Semantic Scholar batches; by decision it is not tied to the search breaker).
 4. **Verified share 86%**, lower than Q3 (94%) and Q4 (92%): the lowest digest is the stability sub-question (18 of 21). Not investigated.
 
@@ -268,7 +268,7 @@ The three scaling aspects come from one detail question ("scale with data size, 
 
 | | Q1 Mamba (17:33) | Q2 MoE (23:29) | Q3 quantization | Q4 benchmarks | Q5 diffusion vs GANs |
 |---|---|---|---|---|---|
-| Total time | 15m 14s | 16m 04s | 17m 46s | 19m 44s | 15m 11s |
+| Total time | 15m 14s | 16m 00s | 11m 13s | 19m 40s | 14m 42s |
 | Papers kept / usable full text | 48 / 25 of 26 | 73 / 25 of 28 | 46 / 15 of 16 | 61 / 20 of 22 | 60 / 20 of 21 |
 | Findings verified | 81% | 89% | 94% | 92% | 86% |
 | Sub-questions sufficient | 2 of 5 | 3 of 5 | 1 of 3 | 0 of 4 | 2 of 4 |

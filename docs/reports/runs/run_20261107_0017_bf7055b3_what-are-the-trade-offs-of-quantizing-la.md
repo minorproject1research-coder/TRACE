@@ -1,6 +1,6 @@
 # Pipeline run report - What are the trade-offs of quantizing large language models to 4-bit precision?
 
-Generated 2026-11-07 00:39 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 13 in the file) and the database. Query id `bf7055b3-a202-4ef6-b47c-9e99c7f7a118`.
+Generated 2026-11-07 13:58 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 13 in the file) and the database. Query id `bf7055b3-a202-4ef6-b47c-9e99c7f7a118`.
 
 ## 1. Summary
 
@@ -8,8 +8,8 @@ Generated 2026-11-07 00:39 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|
 | Question | What are the trade-offs of quantizing large language models to 4-bit precision? |
 | Domain anchor | (cached): 'NLP' | context: NLP: quantizing refers to lowering model weight precision to 4 bits, not to signal or hardware quantization. |
-| Started / finished | 2026-11-07 00:17:31 / 00:35:18 |
-| **Total execution time** | **17m 46s** (1066 s) |
+| Started / finished | 2026-11-07 00:17:31 / 00:28:45 |
+| **Total execution time** | **11m 13s** (673 s) |
 | Sub-questions / search queries | 3 / 12 (per sub-question [3, 3, 3]) |
 | Plan source | planner |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 340 candidates -> 318 cleared the similarity floor -> 60 shortlisted |
@@ -29,16 +29,16 @@ Generated 2026-11-07 00:39 by `scripts/pipeline_run_report.py` from `logs/pipeli
 
 | Phase | Start | End | Duration | Share |
 |---|---|---|---|---|
-| Planner (decompose, 3 sub-questions) | 00:17:31 | 00:18:00 | 29s | 3% |
+| Planner (decompose, 3 sub-questions) | 00:17:31 | 00:18:00 | 29s | 4% |
 | Web search (Tavily) | 00:18:00 | 00:18:09 | 9s | 1% |
-| Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus) | 00:18:09 | 00:18:40 | 31s | 3% |
-| Embedding pre-filter + relevance judge | 00:18:40 | 00:19:46 | 1m 06s | 6% |
+| Paper search (arXiv, IEEE, OpenAlex, Semantic Scholar, Scopus) | 00:18:09 | 00:18:40 | 31s | 5% |
+| Embedding pre-filter + relevance judge | 00:18:40 | 00:19:46 | 1m 06s | 10% |
 | Store papers in the database | 00:19:46 | 00:19:47 | 1s | 0% |
-| PDF download + Docling parsing | 00:19:47 | 00:24:40 | 4m 53s | 27% |
-| Stage 3 preparation (aspect split, chunking, embedding) | 00:24:40 | 00:26:35 | 1m 55s | 11% |
-| Stage 3 digest generation (Groq) | 00:26:35 | 00:27:41 | 1m 06s | 6% |
-| Stage 3 judge + coverage (per sub-question) | 00:27:41 | 00:28:45 | 1m 04s | 6% |
-| **Total** | 00:17:31 | 00:35:18 | **17m 46s** | 100% |
+| PDF download + Docling parsing | 00:19:47 | 00:24:40 | 4m 53s | 44% |
+| Stage 3 preparation (aspect split, chunking, embedding) | 00:24:40 | 00:26:35 | 1m 55s | 17% |
+| Stage 3 digest generation (Groq) | 00:26:35 | 00:27:41 | 1m 06s | 10% |
+| Stage 3 judge + coverage (per sub-question) | 00:27:41 | 00:28:45 | 1m 04s | 9% |
+| **Total** | 00:17:31 | 00:28:45 | **11m 13s** | 100% |
 
 ## 3. Sub-questions: retrieval, filtering, parsing, Stage 3
 
@@ -162,6 +162,7 @@ Uncovered details: How does quantizing LLMs to 4-bit precision affect the model 
 
 | Level | Count | Message (numbers, urls and titles replaced) |
 |---|---|---|
+| WARNING | 5 | database read failed (attempt N/N): RemoteProtocolError: Server disconnected |
 | WARNING | 1 | SN gave up on '<text>' after N attempts (last status N) |
 | WARNING | 1 | Semantic Scholar probe failed (HTTP N): skipping Semantic Scholar search for this run |
 | WARNING | 1 | Docling unavailable, using basic metadata: Server error '<text>' for url '<url> |
@@ -171,15 +172,15 @@ Uncovered details: How does quantizing LLMs to 4-bit precision affect the model 
 
 - Semantic Scholar search was skipped (probe returned 429).
 - Groq rate limiting: 63 parking events; digest generation took 1m 06s.
-- Longest phase: PDF download + Docling parsing (4m 53s, 27% of the run).
+- Longest phase: PDF download + Docling parsing (4m 53s, 44% of the run).
 
-Warnings in the log: 4; errors: 0.
+Warnings in the log: 9; errors: 0.
 
 <!-- MANUAL NOTES (kept when this report is regenerated) -->
 
 ## 10. Notes (written by hand after reading the log and the database)
 
-**Bottom line.** A clean, fast run (17m 46s, no error, no judge error, no digest failure) with the best retrieval and extraction numbers so far: 46 papers kept, 15 of 16 attempted papers with full text, **97 of 103 findings verified (94%)**, 4.3 findings per digest. But **only 1 of 3 sub-questions is sufficient, and the one that fails is the question the user asked**: "What are the trade-offs of quantizing LLMs to 4-bit precision?" has **2 "yes" verdicts in 30 judged pairs and not one covered aspect**. Reading the verdicts, this is not a retrieval failure. It is two other things: the planner wrote aspects that no literature answers, and the judge rates specific measured results "partial" for broad "how does it affect X" aspects. Both are known limits (1.3, 3.1), and this run is the clearest example of them so far.
+**Bottom line.** A clean, fast run (11m 13s, no error, no judge error, no digest failure) with the best retrieval and extraction numbers so far: 46 papers kept, 15 of 16 attempted papers with full text, **97 of 103 findings verified (94%)**, 4.3 findings per digest. But **only 1 of 3 sub-questions is sufficient, and the one that fails is the question the user asked**: "What are the trade-offs of quantizing LLMs to 4-bit precision?" has **2 "yes" verdicts in 30 judged pairs and not one covered aspect**. Reading the verdicts, this is not a retrieval failure. It is two other things: the planner wrote aspects that no literature answers, and the judge rates specific measured results "partial" for broad "how does it affect X" aspects. Both are known limits (1.3, 3.1), and this run is the clearest example of them so far.
 
 ### Numbers
 

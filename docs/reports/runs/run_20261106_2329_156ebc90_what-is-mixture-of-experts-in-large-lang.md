@@ -1,6 +1,6 @@
 # Pipeline run report - What is mixture of experts in large language models and how does expert routing work?
 
-Generated 2026-11-06 23:52 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 12 in the file) and the database. Query id `156ebc90-6250-4178-9d80-94b9ecdf50df`.
+Generated 2026-11-07 13:58 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 12 in the file) and the database. Query id `156ebc90-6250-4178-9d80-94b9ecdf50df`.
 
 ## 1. Summary
 
@@ -8,8 +8,8 @@ Generated 2026-11-06 23:52 by `scripts/pipeline_run_report.py` from `logs/pipeli
 |---|---|
 | Question | What is mixture of experts in large language models and how does expert routing work? |
 | Domain anchor | (cached): 'deep learning' | context: Deep learning for NLP: 'expert' refers to a model subnetwork and 'routing' to the internal selection mechanism, not human experts or data‑network routing. |
-| Started / finished | 2026-11-06 23:29:31 / 23:45:35 |
-| **Total execution time** | **16m 04s** (964 s) |
+| Started / finished | 2026-11-06 23:29:31 / 23:45:31 |
+| **Total execution time** | **16m 00s** (960 s) |
 | Sub-questions / search queries | 5 / 13 (per sub-question [3, 3, 0, 2, 3]) |
 | Plan source | plan-cache (stored plan reused, PLAN_CACHE=true) |
 | Paper candidates retrieved (all sources), after the similarity floor, shortlisted | 606 candidates -> 576 cleared the similarity floor -> 100 shortlisted |
@@ -39,7 +39,7 @@ Generated 2026-11-06 23:52 by `scripts/pipeline_run_report.py` from `logs/pipeli
 | Stage 3 preparation (aspect split, chunking, embedding) | 23:37:41 | 23:41:43 | 4m 02s | 25% |
 | Stage 3 digest generation (Groq) | 23:41:43 | 23:43:44 | 2m 01s | 13% |
 | Stage 3 judge + coverage (per sub-question) | 23:43:44 | 23:45:31 | 1m 47s | 11% |
-| **Total** | 23:29:31 | 23:45:35 | **16m 04s** | 100% |
+| **Total** | 23:29:31 | 23:45:31 | **16m 00s** | 100% |
 
 ## 3. Sub-questions: retrieval, filtering, parsing, Stage 3
 
@@ -221,9 +221,10 @@ Papers with NO usable text from any route:
 | Level | Count | Message (numbers, urls and titles replaced) |
 |---|---|---|
 | ERROR | 1 | All PDF URLs failed for <id>: None: None |
+| WARNING | 6 | database read failed (attempt N/N): RemoteProtocolError: Server disconnected |
+| WARNING | 4 | database read failed (attempt N/N): RemoteProtocolError: <ConnectionTerminated error_code:N, last_stream_id:N, |
 | WARNING | 2 | Dropped query '<text>' for sub-question '<text>' (similarity N.N < N.N); it fits '<text>' better (N.N) |
 | WARNING | 2 | Docling unavailable, using basic metadata: Server error '<text>' for url '<url> |
-| WARNING | 2 | database read failed (attempt N/N): RemoteProtocolError: Server disconnected |
 | WARNING | 1 | SN gave up on '<text>' after N attempts (last status N) |
 | WARNING | 1 | Semantic Scholar probe failed (HTTP N): skipping Semantic Scholar search for this run |
 | WARNING | 1 | SN rate limited on batch, backing off Ns |
@@ -235,13 +236,13 @@ Papers with NO usable text from any route:
 - Groq rate limiting: 139 parking events; digest generation took 2m 01s.
 - Longest phase: PDF download + Docling parsing (4m 35s, 29% of the run).
 
-Warnings in the log: 9; errors: 1.
+Warnings in the log: 17; errors: 1.
 
 <!-- MANUAL NOTES (kept when this report is regenerated) -->
 
 ## 10. Notes (written by hand after reading the log and the database)
 
-**Bottom line.** This is the repeat of the mixture-of-experts question with `TOPIC_ASPECT=false` that the first API run called for, with the same plan (plan cache), the query gate and the tolerant quote verifier active, and **7 Groq keys**. It confirms the diagnosis: the digests are back (**157 findings, 3.92 per digest**, against 104 and 2.60 with the topic aspect on), the verified share rose to **89%**, and **3 of 5 sub-questions are sufficient** (0 of 5 with the topic aspect, 4 of 5 on 5 November). The run took **16m 04s**, the fastest complete run of this question, mostly because the 24 of 28 parsed papers came from the parse cache and the digests ran on 7 keys (2m 01s instead of 4m 01s). The remaining difference from 5 November (3 aspects flipped at the 2-"yes" boundary, see below) is the size of change that re-running Groq digests produces on its own; it is not evidence of another regression.
+**Bottom line.** This is the repeat of the mixture-of-experts question with `TOPIC_ASPECT=false` that the first API run called for, with the same plan (plan cache), the query gate and the tolerant quote verifier active, and **7 Groq keys**. It confirms the diagnosis: the digests are back (**157 findings, 3.92 per digest**, against 104 and 2.60 with the topic aspect on), the verified share rose to **89%**, and **3 of 5 sub-questions are sufficient** (0 of 5 with the topic aspect, 4 of 5 on 5 November). The run took **16m 00s**, the fastest complete run of this question, mostly because the 24 of 28 parsed papers came from the parse cache and the digests ran on 7 keys (2m 01s instead of 4m 01s). The remaining difference from 5 November (3 aspects flipped at the 2-"yes" boundary, see below) is the size of change that re-running Groq digests produces on its own; it is not evidence of another regression.
 
 ### The three runs of this question
 
@@ -250,7 +251,7 @@ Warnings in the log: 9; errors: 1.
 | Plan source | planner | plan-cache | plan-cache (same plan) |
 | Quote verifier | old | new | new |
 | Groq keys / workers | 4 / 4 | 4 / 4 | **7 / 7** |
-| Total time | 22m 10s | about 19m (report says 41m) | **16m 04s** |
+| Total time | 22m 10s | about 19m (report says 41m) | **16m 00s** |
 | Kept papers / web sources | 69 / 54 | 75 / 62 | 73 / 63 |
 | Papers parsed (from the parse cache) | 25 of 32 (6) | 25 of 30 (20) | 25 of 28 (24) |
 | Findings (verified / total) | 124 / 146 | 86 / 104 | **140 / 157** |

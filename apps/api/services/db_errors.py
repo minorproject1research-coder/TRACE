@@ -42,3 +42,33 @@ def read_with_retry(fn: Callable[..., T], *args, **kwargs) -> T:
                 raise DatabaseUnavailable(f"{type(e).__name__}") from e
             time.sleep(RETRY_DELAY_SECONDS)
     raise AssertionError("unreachable")
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+# The pipeline's own database calls (planned item B8). Four on-topic papers were lost in three runs because one dropped connection
+# ("Server disconnected", "EOF occurred in violation of protocol", "ConnectionTerminated") failed a paper read or store that would
+# have worked a moment later. These calls fail with the original error after the last attempt, so the callers' handling is unchanged.
+# ---------------------------------------------------------------------------------------------------------------------------------
+import functools
+
+TRANSIENT_ATTEMPTS = 3
+TRANSIENT_DELAYS = (0.5, 1.5)             # seconds before attempt 2 and 3
+
+
+def retry_transient(fn: Callable[..., T]) -> Callable[..., T]:
+    """Decorator: call `fn`, and on a connection error (httpx.TransportError) try again up to TRANSIENT_ATTEMPTS times in all.
+    Only for idempotent calls: reads, and writes that check for an existing row first. Any other error (a database error answer,
+    a bug) is raised at once; the last connection error is raised as it was."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        for attempt in range(1, TRANSIENT_ATTEMPTS + 1):
+            try:
+                return fn(*args, **kwargs)
+            except httpx.TransportError as e:
+                logger.warning("%s: database connection error (attempt %d/%d): %s: %s",
+                               fn.__name__, attempt, TRANSIENT_ATTEMPTS, type(e).__name__, str(e)[:120])
+                if attempt == TRANSIENT_ATTEMPTS:
+                    raise
+                time.sleep(TRANSIENT_DELAYS[min(attempt - 1, len(TRANSIENT_DELAYS) - 1)])
+        raise AssertionError("unreachable")
+    return wrapper

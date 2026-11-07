@@ -6,6 +6,8 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+from apps.api.services.db_errors import retry_transient
+
 load_dotenv()
 
 _url = os.environ["SUPABASE_URL"]
@@ -118,6 +120,7 @@ def write_web_sources(sources: list) -> None:
     supabase.table("web_sources").insert(strip_nul(rows)).execute()
 
 
+@retry_transient
 def get_retrieved_paper(paper_id: str) -> dict | None:
     """Fetch a single retrieved paper by ID."""
     result = supabase.table("retrieved_papers").select("*").eq("id", paper_id).execute()
@@ -168,6 +171,7 @@ def write_parsed_paper(
         _upsert_parsed(retrieved_paper_id, fields)
 
 
+@retry_transient
 def _upsert_parsed(retrieved_paper_id: str, fields: dict) -> None:
     fields = strip_nul(fields)            # also for callers that do not go through write_parsed_paper
     existing = supabase.table("parsed_papers").select("id").eq("retrieved_paper_id", retrieved_paper_id).execute()
@@ -181,6 +185,7 @@ def _like_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+@retry_transient
 def find_cached_parse(paper: dict, min_version: int, min_chars: int) -> dict | None:
     """An earlier parsed_papers row for the same paper (arXiv id, then DOI, then exact title) under any other
     retrieved_paper, produced by parser version >= min_version and holding at least min_chars of full text.
@@ -218,6 +223,7 @@ def find_cached_parse(paper: dict, min_version: int, min_chars: int) -> dict | N
 STAGE3_MIN_FULL_TEXT_CHARS = 3000      # a paper counts as having full text above this many parsed characters
 
 
+@retry_transient
 def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
     """Relevance-filtered papers for one sub-question with their parsed sections / full_text attached.
 
@@ -255,6 +261,7 @@ def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
     return papers
 
 
+@retry_transient
 def get_web_sources_for_stage3(sub_question_id: str) -> list[dict]:
     """Web sources for one sub-question, best reliability_score first."""
     rows = (
