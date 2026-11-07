@@ -352,7 +352,7 @@ def main() -> int:
                 w(f"| {text[:80]} | {a.get('status')} | {', '.join(a.get('steps') or []) or '-'} | {a.get('covered_by') or '-'} | {b.get('yes', '-')}/{b.get('partial', '-')}/{b.get('no', '-')} |")
             w("\n| Step | Aspects | New sources | New verified findings | Covered | Seconds | Other |\n|---|---|---|---|---|---|---|")
             for s in l2.get("steps") or []:
-                other = ", ".join(f"{k}={v}" for k, v in s.items() if k in ("sources_tried", "parsed", "queries", "new_papers_found", "new_papers_kept", "new_papers_parsed", "new_web_found", "new_web_kept", "note", "error"))
+                other = ", ".join(f"{k}={v}" for k, v in s.items() if k in ("sources_tried", "parsed", "queries", "new_papers_found", "new_papers_kept", "new_papers_parsed", "new_web_found", "new_web_kept", "digest_failed", "note", "error"))
                 w(f"| {s.get('step')} | {len(s.get('aspects') or [])} | {s.get('new_sources')} | {s.get('new_verified')} | {len(s.get('covered') or [])} | {s.get('seconds')} | {other} |")
         w("")
 

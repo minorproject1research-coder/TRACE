@@ -329,3 +329,24 @@ def test_a_real_loop2_failure_keeps_the_stage3_result(monkeypatch):
     cov = {"uncovered_aspects": ["a"]}
     out = sn._run_loop2("q", state, sq, 0, ["a"], [0], ["d"], ["a"], rows, {}, [], [], {}, cov, False, 0)
     assert out is cov and rows == [{"findings": []}]
+
+
+def test_the_ladder_stops_when_every_digest_of_a_step_failed():
+    """Q4, 2026-11-07: all 7 Groq keys were rate limited; the next steps would have failed the same way and cost time."""
+    class Limited(FakeServices):
+        def digest(self, *a, **k):
+            return [], 1
+    svc = Limited()
+    ctx, (cov, _, _, info) = run(svc, uncovered=("alpha topic",))
+    assert [s["step"] for s in info["steps"]] == ["reselect"]
+    assert info["steps"][0]["digest_failed"] == info["steps"][0]["digest_total"] > 0
+    assert info["aspects"]["alpha topic"]["stopped"] == "digests_failed" and info["aspects"]["alpha topic"]["status"] == "known_gap"
+    assert ctx.rows == []
+
+
+def test_a_digest_that_found_nothing_is_not_a_failure():
+    class Empty(FakeServices):
+        def digest(self, *a, **k):
+            return [], 0
+    ctx, (cov, _, _, info) = run(Empty(), uncovered=("alpha topic",))
+    assert [s["step"] for s in info["steps"]] == ["reselect", "pool", "queries"]

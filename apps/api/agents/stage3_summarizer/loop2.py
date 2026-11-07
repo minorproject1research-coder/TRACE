@@ -223,10 +223,11 @@ def _is_covered(cov: dict, text: str) -> bool:
 
 
 # ------------------------------------------------------------------------------------------------------------------ digesting new sources
-def _digest_specs(ctx: SubQuestionContext, specs: list[dict], open_idx: list[int], svc: Services, step: str) -> list[dict]:
-    """Digest rows for new (source, selected chunks) specs. spec = {type, src, selected, weight, level}."""
+def _digest_specs(ctx: SubQuestionContext, specs: list[dict], open_idx: list[int], svc: Services, step: str) -> tuple[list[dict], dict]:
+    """(digest rows, {digest_total, digest_failed}) for new (source, selected chunks) specs. spec = {type, src, selected, weight, level}.
+    A digest that FAILED (Groq rate limit, connection) is counted apart from one that found nothing."""
     if not specs:
-        return []
+        return [], {}
     focus = _env_bool("LOOP2_FOCUS_DIGEST", True)
     aspects_for_prompt = [ctx.aspects[i] for i in open_idx] if focus else ctx.digest_aspects
     main_topic = ctx.cleaned_topic
@@ -239,6 +240,7 @@ def _digest_specs(ctx: SubQuestionContext, specs: list[dict], open_idx: list[int
         results = list(pool.map(one, specs))
 
     rows = []
+    failed = sum(1 for findings, failures in results if failures and not findings)
     for spec, (findings, _failures) in zip(specs, results):
         if not findings:
             continue
@@ -250,7 +252,7 @@ def _digest_specs(ctx: SubQuestionContext, specs: list[dict], open_idx: list[int
         rows.append(digest_generator.digest_row(ctx.query_id, ctx.sq.id, spec["type"], spec["src"], findings, spec["weight"], spec["level"]))
         for cid, text in spec["selected"]:
             ctx.chunk_lookup[f"{spec['src']['id']}:{cid}"] = text
-    return rows
+    return rows, {"digest_total": len(specs), "digest_failed": failed}
 
 
 def _paper_specs(ctx: SubQuestionContext, papers: list[dict], open_idx: list[int]) -> list[dict]:
@@ -283,7 +285,8 @@ def _step_reselect(ctx, open_idx, svc):
         if more:
             ctx.read_chunks[p["id"]].update(i for i, _ in more)
             specs.append({"type": "paper", "src": p, "selected": more, "weight": p.get("combined_score"), "level": "full_text"})
-    return _digest_specs(ctx, specs, open_idx, svc, "reselect"), {"sources_tried": len(specs)}
+    rows, d = _digest_specs(ctx, specs, open_idx, svc, "reselect")
+    return rows, {"sources_tried": len(specs), **d}
 
 
 def _step_pool(ctx, open_idx, svc):
@@ -296,7 +299,8 @@ def _step_pool(ctx, open_idx, svc):
     usable = svc.parse([r["id"] for r in take])
     papers = svc.papers_by_ids(sorted(usable))
     ctx.papers.extend(papers)
-    return _digest_specs(ctx, _paper_specs(ctx, papers, open_idx), open_idx, svc, "pool"), {"sources_tried": len(take), "parsed": len(usable)}
+    rows, d = _digest_specs(ctx, _paper_specs(ctx, papers, open_idx), open_idx, svc, "pool")
+    return rows, {"sources_tried": len(take), "parsed": len(usable), **d}
 
 
 def _step_queries(ctx, open_idx, svc):
@@ -353,7 +357,8 @@ def _step_queries(ctx, open_idx, svc):
     for w in web_rows:
         specs.append({"type": "web", "src": w, "selected": [(0, w.get("snippet") or "")], "weight": w.get("reliability_score"), "level": "web_snippet"})
     stats.update(new_papers_kept=len(ranked), new_papers_parsed=len(usable), new_web_kept=len(web_rows))
-    return _digest_specs(ctx, specs, open_idx, svc, "queries"), stats
+    rows, d = _digest_specs(ctx, specs, open_idx, svc, "queries")
+    return rows, {**stats, **d}
 
 
 STEP_FUNCS: dict[str, Callable] = {"reselect": _step_reselect, "pool": _step_pool, "queries": _step_queries}
@@ -399,6 +404,7 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
             ctx.rows.extend(new_rows)
             candidates, verdicts = svc.judge(ctx)
             cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=candidates)
+        all_failed = bool(stats.get("digest_total")) and stats.get("digest_failed") == stats.get("digest_total")
         newly = [ctx.aspects[i] for i in open_idx if _is_covered(cov, ctx.aspects[i])]
         for text in newly:
             aspects_info[text]["covered_by"] = step
@@ -408,6 +414,12 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
                          "seconds": round(time.monotonic() - t0, 1), **stats})
         logger.info("Loop 2 [%s] %s: %d new source(s), %d of %d aspect(s) now covered (%.0f s)", ctx.sq.main_topic[:40], step,
                     len(new_rows), len(newly), len(open_idx), time.monotonic() - t0)
+        if all_failed:                               # every digest of the step failed (Groq limits): the next step would fail the same way
+            logger.warning("Loop 2 [%s]: every digest of the %s step failed (rate limit?); stopping the ladder for this sub-question", ctx.sq.main_topic[:40], step)
+            for i in open_idx:
+                if not _is_covered(cov, ctx.aspects[i]):
+                    aspects_info[ctx.aspects[i]]["stopped"] = "digests_failed"
+            break
 
     for text, a in aspects_info.items():
         if a["covered_by"] and text in ctx.aspects:       # what covers it now: the claims the judge accepted (shown in the report, checked by hand in tests)
