@@ -120,6 +120,22 @@ def _cached_aspects(detail_questions: list[str], sub_question_id: str, main_topi
     return aspects
 
 
+def _loop2_view(cov: dict) -> Optional[dict]:
+    """What Loop 2 did for this sub-question (stored in judge_stats['loop2']); None when it did not run. knownGaps are the aspects that stay
+    uncovered after the search (or were not searched): the report says "evidence not found" for them instead of hiding them."""
+    info = _as_dict(_as_dict(cov.get("judge_stats")).get("loop2"))
+    if not info:
+        return None
+    aspects = _as_dict(info.get("aspects"))
+    return {"searched": info.get("searched"), "covered": info.get("covered"), "seconds": info.get("seconds"), "triage": info.get("triage"),
+            "steps": [{"step": s.get("step"), "aspects": len(_as_list(s.get("aspects"))), "newSources": s.get("new_sources"),
+                       "newVerifiedFindings": s.get("new_verified"), "covered": len(_as_list(s.get("covered"))), "seconds": s.get("seconds")}
+                      for s in _as_list(info.get("steps")) if isinstance(s, dict)],
+            "aspects": [{"text": t, "status": a.get("status"), "coveredBy": a.get("covered_by"), "steps": _as_list(a.get("steps"))}
+                        for t, a in aspects.items() if isinstance(a, dict)],
+            "knownGaps": [t for t, a in aspects.items() if isinstance(a, dict) and str(a.get("status", "")).startswith("known_gap")]}
+
+
 def _aspect_rows(aspects: Optional[list[str]], cov: dict) -> list[dict]:
     """One row per aspect: text, state, number of judge 'yes' verdicts and of distinct sources behind them."""
     evidence = _as_dict(cov.get("aspect_evidence"))
@@ -151,7 +167,8 @@ def _source_view(digest: dict, papers: dict, webs: dict) -> dict:
                          "judgements": [{"aspect": j.get("aspect"), "verdict": j.get("final"), "quoteSupportsClaim": j.get("quote_supports_claim"),
                                          "answersAspect": j.get("answers_aspect"), "reason": j.get("reason")}
                                         for j in judge.values() if isinstance(j, dict)]})
-    base = {"id": sid, "type": digest.get("source_type"), "title": digest.get("source_title"), "evidenceLevel": digest.get("evidence_level"),
+    loop2_steps = {_as_dict(f.get("loop2")).get("step") for f in _as_list(digest.get("findings")) if f.get("loop2")}
+    base = {"foundByLoop2Step": next(iter(loop2_steps)) if loop2_steps else None, "id": sid, "type": digest.get("source_type"), "title": digest.get("source_title"), "evidenceLevel": digest.get("evidence_level"),
             "weight": digest.get("weight"), "findingsTotal": digest.get("total_count"), "findingsQuoteFound": digest.get("verified_count"),
             "findings": findings}
     if digest.get("source_type") == "paper" and sid in papers:
@@ -191,7 +208,8 @@ def build_report(query_id: str) -> Optional[dict]:
             view["coverage"] = {"sufficient": bool(cov.get("sufficient")), "judgeUsed": cov.get("judge_used"), "sourceCount": cov.get("source_count"),
                                 "fullTextSourceCount": cov.get("full_text_source_count"), "digestFailures": cov.get("digest_failures"),
                                 "aspects": _aspect_rows(aspects, cov), "uncoveredAspects": _as_list(cov.get("uncovered_aspects")),
-                                "unjudgedAspects": _as_list(cov.get("unjudged_aspects")), "fallbackReason": cov.get("fallback_reason")}
+                                "unjudgedAspects": _as_list(cov.get("unjudged_aspects")), "fallbackReason": cov.get("fallback_reason"),
+                                "loop2": _loop2_view(cov)}
             if not cov.get("sufficient"):
                 limitations.append(f"Evidence is not sufficient for: {sq['main_topic']}")
         else:

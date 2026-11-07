@@ -165,3 +165,43 @@ def generate_digest(
             "answers_details": _parse_answers_details(f.get("answers_details"), n_details),
         })
     return findings
+
+def generate_digest_with_retry(sub_question: str, selected: list[tuple[int, str]], *, detail_aspects: list[str] | None,
+                               main_topic: str | None, cache_scope: tuple[str, str] | None) -> tuple[list[dict], int]:
+    """generate_digest with the summarizer's failure handling: one retry on a JSON error, any other error ends the call.
+    Returns (findings, digest_failures); a failed source gives ([], n) and is counted, never raised."""
+    import json
+    failures = 0
+    for attempt in range(2):
+        try:
+            return generate_digest(sub_question, selected, detail_aspects=detail_aspects, main_topic=main_topic,
+                                   cache_scope=cache_scope, strict=True), failures
+        except json.JSONDecodeError as e:
+            failures += 1
+            logger.warning(f"Digest JSON parse failed (attempt {attempt + 1}/2): {e}")
+            if attempt == 0:
+                continue
+            logger.error("Digest generation failed after 2 attempts for sub-question %s", cache_scope[0] if cache_scope else "?")
+            return [], failures
+        except Exception as e:
+            failures += 1                                  # e.g. Groq rate-limit exhaustion or a connection error
+            logger.error(f"Digest generation failed: {e}")
+            return [], failures
+    return [], failures
+
+
+def digest_row(query_id, sub_question_id, source_type, src, findings, weight, evidence_level) -> dict:
+    """The digests table row of one source's findings."""
+    return {
+        "query_id": query_id,
+        "sub_question_id": sub_question_id,
+        "source_type": source_type,
+        "source_id": str(src["id"]),
+        "source_title": src.get("title"),
+        "findings": findings,
+        "verified_count": sum(1 for f in findings if f["verified"]),
+        "total_count": len(findings),
+        "weight": weight,
+        "model": llm_service.MODEL_NAME,
+        "evidence_level": evidence_level,       # full_text | abstract | web_snippet
+    }

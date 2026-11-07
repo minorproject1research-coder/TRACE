@@ -58,10 +58,10 @@ def write_task_plan(plan) -> None:
         supabase.table("queries").insert(query_rows).execute()
 
 
-def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
-    """Store retrieved papers in the database, linked to the research query."""
+def write_retrieved_papers(query_id: str, papers: list[dict]) -> list[dict]:
+    """Store retrieved papers in the database, linked to the research query. Returns the stored rows (with ids)."""
     if not papers:
-        return
+        return []
 
     rows = []
     for paper in papers:
@@ -93,14 +93,14 @@ def write_retrieved_papers(query_id: str, papers: list[dict]) -> None:
             "query_variants_matched": paper.get("query_variant_matched", []),
         })
 
-    supabase.table("retrieved_papers").insert(strip_nul(rows)).execute()
+    return supabase.table("retrieved_papers").insert(strip_nul(rows)).execute().data       # the stored rows, with their ids (Loop 2 parses them)
 
 
-def write_web_sources(sources: list) -> None:
+def write_web_sources(sources: list) -> list[dict]:
     """Store retrieved web sources (from Tavily/Exa/Parallel) in the database,
-    linked to the sub-question and query that found them."""
+    linked to the sub-question and query that found them. Returns the stored rows (with ids)."""
     if not sources:
-        return
+        return []
 
     now = _now_ist()
     rows = [
@@ -117,7 +117,7 @@ def write_web_sources(sources: list) -> None:
         for s in sources
     ]
 
-    supabase.table("web_sources").insert(strip_nul(rows)).execute()
+    return supabase.table("web_sources").insert(strip_nul(rows)).execute().data
 
 
 @retry_transient
@@ -258,6 +258,22 @@ def get_papers_for_stage3(query_id: str, sub_question_id: str) -> list[dict]:
 
     # sorted in Python: Postgres puts NULL scores first on DESC, which would push unscored papers to the top
     papers.sort(key=lambda p: (p["has_full_text"], p.get("combined_score") or 0), reverse=True)
+    return papers
+
+
+@retry_transient
+def get_papers_by_ids(paper_ids: list[str]) -> list[dict]:
+    """The same fields as get_papers_for_stage3 (parsed sections / full_text attached, has_full_text) for specific retrieved papers."""
+    if not paper_ids:
+        return []
+    papers = supabase.table("retrieved_papers").select("id,title,abstract,combined_score,reliability_score").in_("id", list(paper_ids)).execute().data
+    parsed = supabase.table("parsed_papers").select("retrieved_paper_id,sections,full_text").in_("retrieved_paper_id", list(paper_ids)).execute().data
+    by_id = {r["retrieved_paper_id"]: r for r in parsed}
+    for p in papers:
+        r = by_id.get(p["id"], {})
+        p["sections"] = r.get("sections") or []
+        p["full_text"] = r.get("full_text") or ""
+        p["has_full_text"] = len(p["full_text"]) >= STAGE3_MIN_FULL_TEXT_CHARS
     return papers
 
 

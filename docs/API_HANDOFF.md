@@ -101,6 +101,7 @@ The nodes report what they are doing between a stage's start and its end. `data 
 | `summarizer` | `prepare` | choose the passages to read | completed `{jobs, papers, web}` |
 | `summarizer` | `digest` | LLM digest per source, in parallel | `{done, total, failures}`, reported in counting order |
 | `summarizer` | `judge` | independent evidence judge and coverage, per sub-question | `{done, total, sufficient, judgeUsed, sufficientSoFar}`; completed `{sufficientSubQuestions}` |
+| `summarizer` | `loop2` | **only when `LOOP2=true`.** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{step, aspects}` (step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
 | `summarizer` | `store` | digests and coverage saved | completed `{stored}` |
 
 - Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
@@ -143,6 +144,15 @@ type SubQuestionReport = {
     uncoveredAspects: string[]            // texts of the aspects without enough evidence = the known gaps
     unjudgedAspects: string[]
     fallbackReason: string | null
+    loop2: null | {                       // null: Loop 2 (LOOP2=true) did not run for this sub-question
+      searched: number                    // uncovered aspects that were searched again
+      covered: number                     // of those, covered afterwards
+      seconds: number
+      triage: 'r1' | 'all'
+      steps: { step: 'reselect' | 'pool' | 'queries', aspects: number, newSources: number, newVerifiedFindings: number, covered: number, seconds: number }[]
+      aspects: { text: string, status: 'covered' | 'known_gap' | 'known_gap_skipped_triage' | 'known_gap_skipped_cap' | 'unjudged_not_searched', coveredBy: string | null, steps: string[] }[]
+      knownGaps: string[]                 // aspects still uncovered after the search (or not searched): show "evidence not found" for them
+    }
   }
   sources: SourceReport[]                 // ordered by evidence weight, highest first
 }
@@ -156,6 +166,7 @@ type AspectRow = {
 }
 
 type SourceReport = {
+  foundByLoop2Step: null | 'reselect' | 'pool' | 'queries'   // set when this source was added by Loop 2 (a badge such as "found by a second search")
   id: string
   type: 'paper' | 'web'
   title: string | null

@@ -161,3 +161,26 @@ def select_chunks(
         selected_ids = selected_ids[:MAX_CHUNKS_TOTAL]
     
     return [(i, chunks[i]) for i in sorted(selected_ids)]
+
+
+def select_more_chunks(chunks: list[str], queries: list[str], exclude: set[int], per_query: int = 2, *, main_topic: str | None = None) -> list[tuple[int, str]]:
+    """Loop 2, step 1: for each query (an uncovered aspect), the `per_query` best prose chunks that the digest has NOT read yet.
+    exclude = chunk ids already given to a digest of this source. Returns [(chunk_id, text)] sorted by chunk id (deduplicated)."""
+    if not chunks or not queries:
+        return []
+    model = get_embedder()
+    d = embed_chunks(model, chunks)
+    topic = _clean_topic(main_topic) if main_topic else ""
+    picked: set[int] = set()
+    for text in queries:
+        q = model.encode([f"{topic}: {text}" if topic else text], normalize_embeddings=True)[0]
+        sims = d @ q
+        taken = 0
+        for idx in sorted(range(len(chunks)), key=lambda i: sims[i], reverse=True):
+            if taken >= per_query:
+                break
+            if idx in exclude or idx in picked or not _is_prose(chunks[idx]):
+                continue
+            picked.add(idx)
+            taken += 1
+    return [(i, chunks[i]) for i in sorted(picked)]
