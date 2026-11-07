@@ -255,6 +255,11 @@ Warnings in the log: 33; errors: 0.
 
 <!-- MANUAL NOTES (kept when this report is regenerated) -->
 
-## 10. Notes
+## 10. Notes (written by hand)
 
-(write your reading of this run here)
+First full run with Loop 2 on (`LOOP2=true`, `PLAN_CACHE=true`, all steps, triage r1). Same question and plan as the baseline Q3 run (11m 13s, 1 of 3 sufficient). The stored plan, the parse cache and the chunk-embedding cache made the Stage 1 to Stage 3 start fast (Stage 3 preparation 15 s), so the 12m 32s total is mostly Loop 2: **8m 09s inside the judge phase**.
+
+- Loop 2 searched 7 aspects and covered 5: "challenges of quantization" (reselect), "performance" (pool, weak: one of its two claims is about memory), "compatibility" (pool, weak), **"robustness" and "inference speed and latency" (queries)**. Memory, quality, diversity, security and interoperability stayed uncovered; diversity and security were skipped by the triage (0 yes, 0 partial), interoperability by the cap of 4 aspects.
+- Sub-question 1 became sufficient through Loop 2; sub-questions 2 and 3 did not (aspects "representation and computation", "quality", "memory", and the invented ones).
+- The queries step found on-topic papers that the first retrieval did not: "Which Quantization Should I Use?", "What Makes Quantization for LLMs Hard?", "Not All Linguistic Capabilities Degrade Equally Under Quantization". It took 183 s and 221 s.
+- The first attempt of this question (run 18) failed in Loop 2 on a bug (a data key `step` clashed with the progress event's own argument); Loop 2 fell back to the Stage 3 result as designed. Details and all results of Loop 2: `docs/reports/18_loop2.md`.

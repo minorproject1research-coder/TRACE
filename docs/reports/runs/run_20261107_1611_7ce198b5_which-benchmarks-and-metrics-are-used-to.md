@@ -286,6 +286,8 @@ Warnings in the log: 26; errors: 28.
 
 <!-- MANUAL NOTES (kept when this report is regenerated) -->
 
-## 10. Notes
+## 10. Notes (written by hand)
 
-(write your reading of this run here)
+Q4 with Loop 2 on (`LOOP2=true`, `PLAN_CACHE=true`). **1 of 4 sub-questions sufficient** (baseline 0 of 4; the sufficient one, "What is a large language model?", needed no Loop 2). Loop 2 searched 6 aspects and covered 3, all in sub-question 3: "criteria of a good benchmark or metric" (reselect), "how are benchmarks and metrics categorized" (pool), "characteristics of a good benchmark" (queries). The two aspects that are the user's question, "existing benchmarks" and "existing metrics", stayed uncovered (partial verdicts only: the list-aspect problem of limit 3.15 is not a search problem). "Levels of reasoning ability" stayed uncovered after all three steps.
+
+**Groq quota ran out in sub-question 4:** `all 7 Groq key(s) are rate limited for 285s`; every digest of its three steps failed (0 new sources, 0 verified findings, 1 judge pair without verdict, "judge used: False"). The ladder stop for failed digests was added after this run. Total 15m 53s. More in `docs/reports/18_loop2.md`.

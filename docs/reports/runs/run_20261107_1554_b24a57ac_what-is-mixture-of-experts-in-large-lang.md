@@ -287,6 +287,8 @@ Warnings in the log: 19; errors: 3.
 
 <!-- MANUAL NOTES (kept when this report is regenerated) -->
 
-## 10. Notes
+## 10. Notes (written by hand)
 
-(write your reading of this run here)
+Q2 with Loop 2 on (`LOOP2=true`, `PLAN_CACHE=true`). Result **3 of 5 sub-questions sufficient, the same as the baseline**. Sub-questions 1 to 3 were sufficient without Loop 2. Loop 2 searched the three uncovered aspects of sub-questions 4 and 5 with all three steps (151 s and 159 s) and covered **none**: "types of expert routing strategies" (1 yes), "effect of routing on performance and efficiency" (1 yes) and "comparison of routing methods in accuracy, speed and scalability" (0 yes). In the replay on the stored digests of the baseline run the same sub-questions had their "challenges" and "scalability" aspects covered by the reselect and pool steps, so Q2 shows both outcomes: the result of Loop 2 depends on what the first read of the papers happened to miss.
+
+The queries step found 3 new papers and 3 web pages per sub-question (16 and 3 papers found, 24 and 14 web pages found) and 20 and 8 new verified findings, none of which the judge accepted as an answer to these aspects. Groq: 114 parking events and 5633 key-seconds parked, the highest of the series (the quota was running low). More in `docs/reports/18_loop2.md`.
