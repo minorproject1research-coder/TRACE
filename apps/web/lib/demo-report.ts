@@ -1,3 +1,4 @@
+import { type DemoFact, withFactcheckFixtures } from './demo-factcheck'
 import { withLoop2Fixtures } from './demo-loop2'
 import type { Report } from './trace-types'
 
@@ -10,7 +11,7 @@ function baseReport(id: string, question: string, createdAt: string | null): Rep
     id,
     question,
     createdAt,
-    stages: { planner: 'completed', retrieval: 'completed', summarizer: 'completed', factcheck: 'not_built', report: 'not_built' },
+    stages: { planner: 'completed', retrieval: 'completed', summarizer: 'completed', factcheck: 'not_run', report: 'not_built' },
     totals: { subQuestions: 3, subQuestionsSufficient: 1, sources: 5, findings: 9, findingsQuoteFound: 8 },
     limitations: [
       'DEMO DATA: this is a fictional sample report, not the result of a real run.',
@@ -144,7 +145,7 @@ function baseReport(id: string, question: string, createdAt: string | null): Rep
   }
 }
 
-/** The sample report: sub-questions without Loop 2, one that did not finish, and the Loop 2 cases of lib/demo-loop2.ts. */
-export function demoReport(id: string, question: string, createdAt: string | null): Report {
-  return withLoop2Fixtures(baseReport(id, question, createdAt))
+/** The sample report: sub-questions without Loop 2, one that did not finish, the Loop 2 cases of lib/demo-loop2.ts and, with `fact: 'on'`, the Stage 4 cases of lib/demo-factcheck.ts. */
+export function demoReport(id: string, question: string, createdAt: string | null, fact: DemoFact = 'off'): Report {
+  return withFactcheckFixtures(withLoop2Fixtures(baseReport(id, question, createdAt)), fact)
 }

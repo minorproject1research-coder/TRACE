@@ -50,7 +50,7 @@ export function FindingCard({ finding, children }: { finding: Finding; children?
           </ul>
         </details>
       )}
-      <p className="finding-note">A finding is what the source says, not a confirmed fact. Fact checking is not built yet.</p>
+      <p className="finding-note">A finding is what the source says, not a confirmed fact. Only the Cross-check, when it ran, compares claims across sources.</p>
     </article>
   )
 }

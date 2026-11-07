@@ -1,4 +1,5 @@
 import type { PillTone } from '@/components/trace/status-pill'
+import { STAGE_SKIPPED_LABEL } from './factcheck'
 import type { AspectState, EvidenceLevel, RunStatus, StageId, StageState } from './trace-types'
 
 export function formatDateTime(iso: string | null | undefined): string {
@@ -33,12 +34,12 @@ export const stageMeta: Record<StageId, { name: string; detail: string; hint: st
   planner: { name: 'Planner', detail: 'Breaks the question into sub-questions and search queries.', hint: 'usually about 30 seconds' },
   retrieval: { name: 'Retrieval', detail: 'Searches papers and the web in parallel, then reads the sources it keeps.', hint: 'usually 2 to 9 minutes, longer for a new topic' },
   summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'usually 8 to 11 minutes' },
-  factcheck: { name: 'Fact check', detail: 'Will check whether each claim is actually true.', hint: '' },
+  factcheck: { name: 'Fact check', detail: 'Groups the verified findings that state the same thing, looks for a second source for each, and for sources that disagree. It does not decide what is true.', hint: 'about 3 minutes per sub-question' },
   report: { name: 'Written report', detail: 'Will write an answer from the verified evidence.', hint: '' },
 }
 
 export const stageStateLabel: Record<StageState, string> = {
-  pending: 'queued', running: 'running', completed: 'done', failed: 'failed', not_built: 'not built yet', unknown: 'unknown',
+  pending: 'queued', running: 'running', completed: 'done', failed: 'failed', not_built: 'not built yet', not_run: STAGE_SKIPPED_LABEL, unknown: 'unknown',
 }
 
 export const evidenceLevelLabel: Record<EvidenceLevel, { label: string; partial: boolean }> = {

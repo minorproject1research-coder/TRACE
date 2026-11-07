@@ -33,6 +33,13 @@ The run page's **Activity** tab shows the evidence funnel (papers kept → parse
 - *Sources:* a "found by second search" badge and a filter. A source can be listed more than once in a sub-question (read again for another aspect); repeats are marked "read again".
 - Every Loop 2 field is optional and tolerant (older runs carry nulls; status words are open strings). The pure logic is in `lib/loop2.ts` and tested in `tests/loop2.test.ts` (`pnpm test`); demo fixtures are in `lib/demo-loop2.ts`.
 
+**Fact checking across sources (Stage 4, optional).** When the server runs with `FACTCHECK=true`, the UI adds it; with it off (`stages.factcheck = 'not_run'`) the stage shows as "skipped (switched off)" and nothing else changes (`totals.factChecked` and every `factCheck` are null, so no panel or row is drawn).
+
+- *Progress:* a normal stage between the summarizer and the report, with the live line "Checking claims across sources: sub-question 2 of 5 - looking for sources that disagree" and the elapsed time (it takes about 3 minutes per sub-question), plus a Timeline lane. A failed stage does not fail the run: it shows "Fact checking failed; the evidence below is not cross-checked." `judgeFailures > 0` shows "Some checks could not be answered (rate limit); labels are cautious and incomplete."
+- *Report and Verification tab:* a summary row of the totals and a collapsible "Cross-check" panel per sub-question: counts, every claim with its label, "N independent sources" / "M against" and its evidence (quote, full text or snippet, a badge when the independent judge had already checked it), and the disagreements as side-by-side cards. A contradicted or contested claim always shows the disagreeing source next to it.
+- *Wording rules* (from `docs/STAGE4_OUTPUT.md`): "supported" is not "true"; an unverified claim reads "Not yet confirmed by a second source" and is styled as unconfirmed, never as a fact; the confidence is shown as a bar and a word ("evidence strength"), never as a percent, because it is a ranking and not a probability.
+- The pure logic is in `lib/factcheck.ts`, tested in `tests/factcheck.test.ts`; demo fixtures are in `lib/demo-factcheck.ts`. In demo mode a question containing "factcheck" simulates a run with Stage 4, and "factfail" one whose Stage 4 fails; the seeded runs `demo-factcheck` and `demo-factcheck-failed` show the same.
+
 Keyboard: `Ctrl+K` search and jump, `N` new research, `Ctrl+Enter` start a run from the question box.
 
 ## Live mode and demo mode

@@ -2,7 +2,8 @@
 
 export type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
 export type StageId = 'planner' | 'retrieval' | 'summarizer' | 'factcheck' | 'report'
-export type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'unknown'
+/** not_run: the stage exists but was switched off for this run (Stage 4 with FACTCHECK off). not_built: the stage does not exist yet (Stage 5). */
+export type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'not_run' | 'unknown'
 
 export type Session = {
   id: string
@@ -73,6 +74,56 @@ export type Loop2 = {
   knownGaps?: string[]
 }
 
+// ---- Stage 4 (optional fact checking across sources; the server runs it only with FACTCHECK=true). null / absent everywhere when it did not run.
+// Labels and relations are open strings on purpose: an unknown word gets a neutral chip, never a crash.
+
+export type FactCounts = { supported: number; unverified: number; contradicted: number; contested: number }
+
+/** One quote for or against a claim. `via: 'stage3_judge'` = the independent Stage 3 judge had already established that the quote supports the claim. */
+export type FactEvidence = {
+  sourceId: string
+  sourceTitle: string | null
+  quote: string
+  /** 'supports' | 'contradicts' */
+  relation: string
+  reliability?: number | null
+  evidenceLevel?: string | null
+  prob?: number | null
+  via?: string | null
+}
+
+export type FactClaim = {
+  claim: string
+  /** 'supported' | 'unverified' | 'contradicted'. NOT 'true' / 'false': see docs/STAGE4_OUTPUT.md. */
+  label: string
+  /** A ranking number (noisy-or of source weights, at most 0.95; unverified never above 0.5). NOT a probability that the claim is true. */
+  confidence: number | null
+  supportDocCount: number
+  contraDocCount: number
+  /** A supported claim that also has a weaker conflicting source. */
+  contested: boolean
+  evidence: FactEvidence[]
+}
+
+/** Two claims that disagree, each with its quote and source, and the judge's one-sentence reason. */
+export type FactDisagreement = {
+  claimA: string
+  claimB: string
+  sourceATitle: string | null
+  sourceBTitle: string | null
+  quoteA: string
+  quoteB: string
+  prob?: number | null
+  reason: string | null
+}
+
+export type FactCheck = {
+  counts: FactCounts
+  /** Sorted by the server: contradicted first, then supported, then unverified. */
+  claims: FactClaim[]
+  disagreements: FactDisagreement[]
+}
+
 export type Judgement = {
   aspect: string | null
   verdict: 'yes' | 'partial' | 'no' | null
@@ -136,6 +187,8 @@ export type SubQuestionReport = {
   detailQuestions: string[]
   coverage: Coverage | null
   sources: SourceReport[]
+  /** null or absent: Stage 4 did not run (or did not finish) for this sub-question. [] claims = it ran and found nothing to cross-check. */
+  factCheck?: FactCheck | null
 }
 
 export type Report = {
@@ -143,8 +196,10 @@ export type Report = {
   question: string
   createdAt: string | null
   runError?: string
-  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built'>
-  totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number }
+  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built' | 'not_run'>
+  totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number
+            /** null or absent: Stage 4 did not run. */
+            factChecked?: FactCounts | null }
   subQuestions: SubQuestionReport[]
   limitations: string[]
 }

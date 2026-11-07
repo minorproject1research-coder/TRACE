@@ -1,17 +1,19 @@
+import { demoFactDisagreements, demoFactTotals, type DemoFact } from './demo-factcheck'
 import { demoDetail, demoOverview, type DemoStage } from './demo-papers'
 import { demoReport } from './demo-report'
 import { ApiError, TERMINAL_EVENTS, type CreateInput, type EventName, type Report, type RunStatus, type Session, type StageId, type StageState, type TraceApi, type WorkflowEvent } from './trace-types'
 
 // DEMO MODE ONLY. A browser-side simulator of the TRACE API so the whole journey can be exercised without the backend
 // (a real run takes 15-25 minutes). Everything it returns is fictional. A question containing the word "fail" makes the
-// simulated run fail in the summarizer, to exercise the failure states.
+// simulated run fail in the summarizer, to exercise the failure states. A question containing "factcheck" runs Stage 4 (fact check across sources);
+// one containing "factfail" makes Stage 4 fail while the run still completes. Without either word Stage 4 is switched off (stage state 'not_run').
 
 const STORE_KEY = 'trace.demo.sessions.v1'
 const DEMO_PREFIX = 'demo-'
 
 type Beat = { at: number; event: EventName; stage: StageId | null; status: string | null; message: string; data: Record<string, unknown> }
 
-type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed' }
+type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed'; fact?: DemoFact }
 
 const REL = { candidates: 24, shortlisted: 12, judged: 12, passed: 5, backend: 'server' }
 
@@ -22,8 +24,38 @@ function step(at: number, lane: 'papers' | 'web' | 'summarizer', stepId: string,
   return { at, event: 'step', stage: lane === 'summarizer' ? 'summarizer' : 'retrieval', status: state, message, data: { lane, step: stepId, state, ...data } }
 }
 
+/** Stage 4 runs after the summarizer, one sub-question after the other (about 3 minutes each on the real server). 4 sub-questions: the last one has no Stage 3 result. */
+function factcheckBeats(fact: Exclude<DemoFact, 'off'>): Beat[] {
+  const fstep = (at: number, stepId: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}): Beat => ({ at, event: 'step', stage: 'factcheck', status: state, message, data: { lane: 'factcheck', step: stepId, state, ...data } })
+  const out: Beat[] = [
+    { at: 13050, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
+    fstep(13060, 'branch', 'running', 'Checking claims across sources'),                    // a step the page does not know: it must be ignored
+  ]
+  const N = 4
+  for (let i = 1; i <= N; i++) {
+    const at = 13100 + (i - 1) * 700
+    const c = { subQuestion: i, subQuestions: N }
+    out.push(fstep(at, 'claims', 'running', `Reading the claims of ${i + 1} sources`, { ...c, sources: i + 1 }),
+      fstep(at + 150, 'clusters', 'running', 'Grouping the claims that say the same thing', { ...c, claims: 4 + i }),
+      fstep(at + 300, 'support', 'running', 'Checking that the quotes support the grouped claims', { ...c, clusters: 3 + i }),
+      fstep(at + 450, 'conflicts', 'running', 'Looking for sources that disagree', c))
+  }
+  if (fact === 'failed') {
+    out.push(fstep(14400, 'store', 'failed', 'Fact checking failed: ConnectionError'),
+      { at: 14600, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
+    return out
+  }
+  const t = demoFactTotals()
+  const claims = t.supported + t.unverified + t.contradicted
+  out.push(fstep(15950, 'store', 'running', 'Saving the fact-check results', { claims, disagreements: demoFactDisagreements() }),
+    fstep(16050, 'store', 'completed', `${claims} claims checked`, { claims, supported: t.supported, contradicted: t.contradicted, unverified: t.unverified }),
+    { at: 16200, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
+      data: { claims, subQuestions: N, failedSubQuestions: 1, supported: t.supported, unverified: t.unverified, contradicted: t.contradicted, contested: t.contested, disagreements: demoFactDisagreements(), judgeFailures: 3 } })
+  return out
+}
+
 /** The retrieval branches run AT THE SAME TIME (like the real graph); each reports its steps. */
-function timeline(fails: boolean): Beat[] {
+function timeline(fails: boolean, fact: DemoFact = 'off'): Beat[] {
   const beats: Beat[] = [
     { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
     { at: 700, event: 'run_started', stage: null, status: 'running', message: 'Run started', data: {} },
@@ -94,10 +126,9 @@ function timeline(fails: boolean): Beat[] {
     const failure: Beat = { at: 12500, event: 'run_failed', stage: 'summarizer', status: 'failed', message: 'DemoError: simulated failure in the summarizer', data: {} }
     return [...beats.filter(b => b.at < 11000), failure].sort((x, y) => x.at - y.at)
   }
-  beats.push(
-    { at: 13000, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 3 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 3, subQuestions: 3, sufficientSubQuestions: 1 } },
-    { at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } },
-  )
+  beats.push({ at: 13000, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 3 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 3, subQuestions: 3, sufficientSubQuestions: 1 } })
+  if (fact === 'off') beats.push({ at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } })
+  else beats.push(...factcheckBeats(fact), { at: fact === 'on' ? 16300 : 14800, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['report'] } })
   return beats.sort((x, y) => x.at - y.at)
 }
 
@@ -112,6 +143,8 @@ function seeded(): Stored[] {
   return [
     { id: 'demo-completed', question: 'How does the sample method compare with the baseline? (demo)', createdAt: ago(95), fails: false, seed: 'completed' },
     { id: 'demo-interrupted', question: 'What happened to this interrupted demo run?', createdAt: ago(300), fails: true, seed: 'failed' },
+    { id: 'demo-factcheck', question: 'How does the sample method compare with the baseline? (demo, with the cross-check)', createdAt: ago(130), fails: false, seed: 'completed', fact: 'on' },
+    { id: 'demo-factcheck-failed', question: 'How does the sample method scale? (demo, the cross-check failed)', createdAt: ago(160), fails: false, seed: 'completed', fact: 'failed' },
   ]
 }
 function all(): Stored[] {
@@ -122,15 +155,15 @@ function all(): Stored[] {
 function elapsed(s: Stored) { return s.seed ? Infinity : Date.now() - new Date(s.createdAt).getTime() }
 
 function view(s: Stored): Session {
-  const beats = timeline(s.fails)
+  const beats = timeline(s.fails, s.fact)
   const t = elapsed(s)
-  const stages: Record<StageId, StageState> = { planner: 'pending', retrieval: 'pending', summarizer: 'pending', factcheck: 'not_built', report: 'not_built' }
+  const stages: Record<StageId, StageState> = { planner: 'pending', retrieval: 'pending', summarizer: 'pending', factcheck: s.fact ? 'pending' : 'not_run', report: 'not_built' }
   let status: RunStatus = 'pending'
   let error: string | null = null
   for (const b of beats) {
     if (b.at > t) break
     if (b.event === 'run_started') status = 'running'
-    if (b.stage && (b.event === 'stage_started' || b.event === 'stage_completed')) stages[b.stage] = b.event === 'stage_started' ? 'running' : 'completed'
+    if (b.stage && (b.event === 'stage_started' || b.event === 'stage_completed')) stages[b.stage] = b.event === 'stage_started' ? 'running' : b.status === 'failed' ? 'failed' : 'completed'
     if (b.event === 'run_completed') status = 'completed'
     if (b.event === 'run_failed') { status = 'failed'; error = b.message; if (b.stage) stages[b.stage] = 'failed' }
   }
@@ -139,7 +172,7 @@ function view(s: Stored): Session {
     id: s.id, question: s.question, status, createdAt: s.createdAt,
     // like the real API, a run that only exists in storage has no start/finish times
     startedAt: s.seed || status === 'pending' ? null : new Date(new Date(s.createdAt).getTime() + 700).toISOString(),
-    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + 13000).toISOString() : null,
+    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + (s.fact === 'on' ? 16300 : s.fact === 'failed' ? 14800 : 13000)).toISOString() : null,
     error, stages,
   }
 }
@@ -163,7 +196,7 @@ export const demoApi: TraceApi = {
   async list(limit = 20) { await wait(200); return all().slice(0, limit).map(s => { const v = view(s); return { id: v.id, question: v.question, status: v.status, createdAt: v.createdAt } }) },
   async create(input: CreateInput) {
     await wait(300)
-    const s: Stored = { id: `${DEMO_PREFIX}${crypto.randomUUID().slice(0, 8)}`, question: input.question, createdAt: new Date().toISOString(), fails: /\bfail/i.test(input.question) }
+    const s: Stored = { id: `${DEMO_PREFIX}${crypto.randomUUID().slice(0, 8)}`, question: input.question, createdAt: new Date().toISOString(), fails: /\bfail/i.test(input.question), fact: /\bfactfail\b/i.test(input.question) ? 'failed' : /\bfactcheck\b/i.test(input.question) ? 'on' : undefined }
     save([s, ...load()])
     return view(s)
   },
@@ -175,7 +208,7 @@ export const demoApi: TraceApi = {
     const v = view(s)
     if (v.status === 'pending' || v.status === 'running') throw new ApiError('The run is not finished yet; follow /events and read the report after run_completed', 409)
     if (v.status === 'failed' && s.seed === 'failed') throw new ApiError('Research session not found', 404)
-    const report: Report = demoReport(s.id, s.question, s.createdAt)
+    const report: Report = demoReport(s.id, s.question, s.createdAt, s.fact ?? 'off')
     if (v.status === 'failed') report.runError = v.error ?? undefined
     return report
   },
@@ -204,7 +237,7 @@ export const demoApi: TraceApi = {
     if (!s) { setTimeout(() => onStatus('error', 'Research session not found'), 200); return () => {} }
     const timers: ReturnType<typeof setTimeout>[] = []
     let cancelled = false
-    const beats = timeline(s.fails)
+    const beats = timeline(s.fails, s.fact)
     const base = new Date(s.createdAt).getTime()
     const deliver = (b: Beat, seq: number) => {
       if (cancelled) return

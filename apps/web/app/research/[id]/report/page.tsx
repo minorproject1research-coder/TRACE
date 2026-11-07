@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { AlertTriangle, ArrowLeft, Hourglass, ShieldAlert } from 'lucide-react'
 import { CoverageBlock, NoEvidenceTag, SourceCard } from '@/components/trace/evidence'
+import { FactCheckPanel, FactTotals } from '@/components/trace/factcheck-panel'
 import { StatusPill } from '@/components/trace/status-pill'
 import { ErrorState, Skeleton } from '@/components/trace/states'
+import { factCheckRan, factTotals } from '@/lib/factcheck'
 import { formatDateTime } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { useReport } from '@/lib/use-research'
@@ -26,6 +28,8 @@ export default function ReportPage() {
 
   const r = report.data
   const t = r.totals
+  const fact = factTotals(r)               // null: Stage 4 did not run, so nothing about it is shown
+  const ran = factCheckRan(r)
   return (
     <article className="report">
       {back}
@@ -49,9 +53,11 @@ export default function ReportPage() {
         <div><strong>{t.findingsQuoteFound}/{t.findings}</strong><span>quotes found in source</span></div>
       </section>
 
+      {fact && <FactTotals totals={fact} className="rise" />}
+
       <section className="panel rise" style={{ '--i': 3 } as React.CSSProperties} aria-labelledby="lim-title">
         <h2 id="lim-title">Limitations</h2>
-        <ul className="plain-list">{r.limitations.map(l => <li key={l}>{l}</li>)}</ul>
+        <ul className="plain-list">{r.limitations.map((l, i) => <li key={`${i}:${l}`}>{l}</li>)}</ul>
       </section>
 
       <nav className="toc" aria-label="Sub-questions">
@@ -64,6 +70,7 @@ export default function ReportPage() {
           <h2 id={`h-${sq.id}`}>{sq.topic}</h2>
           {sq.detailQuestions.length > 0 && <p className="meta">Also asked: {sq.detailQuestions.join(' · ')}</p>}
           <CoverageBlock sq={sq} />
+          <FactCheckPanel sq={sq} ran={ran} />
           <h3 className="sub-h">Sources ({sq.sources.length})</h3>
           {sq.sources.length === 0 ? <p className="meta">No sources were kept for this sub-question.</p> : <div className="card-list">{sq.sources.map((s, i) => <SourceCard key={`${s.id}:${i}`} source={s} repeat={sq.sources.findIndex(x => x.id === s.id) < i} />)}</div>}
         </section>

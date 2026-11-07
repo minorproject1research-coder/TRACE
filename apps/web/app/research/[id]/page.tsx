@@ -6,11 +6,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ArrowLeft, FileText, Hourglass, ShieldAlert } from 'lucide-react'
 import { ActivityTab } from '@/components/trace/activity-tab'
 import { CoverageBlock, FindingCard, NoEvidenceTag, SourceCard, verificationStats } from '@/components/trace/evidence'
+import { FactCheckPanel, FactTotals } from '@/components/trace/factcheck-panel'
 import { Boundary } from '@/components/trace/boundary'
 import { Pipeline } from '@/components/trace/pipeline'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { StatusPill } from '@/components/trace/status-pill'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
+import { factCheckRan, factTotals, STAGE_FAILED_NOTE } from '@/lib/factcheck'
 import { formatDateTime, formatDuration, num, stanceInfo, statusLabel, statusTone, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
@@ -104,6 +106,11 @@ export default function RunPage() {
           <AlertTriangle size={16} aria-hidden="true" /><p><b>This run did not finish.</b> {s.error ?? 'No reason was recorded.'}{report.data ? ' A partial evidence report was stored and can still be read.' : ''}</p>
         </div>
       )}
+      {s.stages.factcheck === 'failed' && !failedNote && (
+        <div className="banner offline" role="alert" style={{ margin: '0 0 20px', borderRadius: 12 }}>
+          <AlertTriangle size={16} aria-hidden="true" /><p><b>{STAGE_FAILED_NOTE}</b> The run itself finished, so the evidence report can still be read.</p>
+        </div>
+      )}
       {active && (
         <div className="banner running" role="status" style={{ margin: '0 0 20px', borderRadius: 12 }}>
           <Hourglass size={16} aria-hidden="true" /><p><b>{s.status === 'pending' ? 'Queued.' : 'Running.'}</b> {mode === 'live' ? 'A run takes 15 to 25 minutes. You can leave this page: it keeps running and you can reopen it from Research history.' : 'This is a simulated run and takes about 13 seconds.'}</p>
@@ -121,7 +128,7 @@ export default function RunPage() {
             </div>
             <div className="intel-body" id="intel-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
               <Boundary label={tab} resetKey={tab}>
-              {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} />}
+              {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} factcheckState={s.stages.factcheck} />}
               {tab === 'Sources' && <SourcesTab events={stream.events} active={active} report={report} finished={finished} />}
               {tab === 'Evidence' && <EvidenceTab active={active} report={report} finished={finished} />}
               {tab === 'Verification' && <VerificationTab active={active} report={report} finished={finished} />}
@@ -229,11 +236,18 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
   if (gate) return <TabScroll label="Verification results">{gate}</TabScroll>
   if (!report.data || !stats) return null
   const r = report.data
+  const fact = factTotals(r)
+  const ran = factCheckRan(r)
   const found = r.totals.findingsQuoteFound
   const total = r.totals.findings
   return (
     <TabScroll label="Verification results"><div className="intel-content">
-      <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking is not built yet</b><p>Stage 4 would check whether each claim is true. Today TRACE only checks that the quote exists in the source, and has an independent model judge the finding against the aspect it should answer.</p></div></div>
+      {ran
+        ? <div className="callout-box lav" role="note"><ShieldAlert size={18} aria-hidden="true" /><div><b>Cross-checked, not proven</b><p>Stage 4 compared the claims across sources. “Supported” means at least two independent sources state a claim; “not yet confirmed” means only one does, which says nothing about whether it is false. Neither means a claim is true.</p></div></div>
+        : r.stages.factcheck === 'not_run'
+          ? <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking was switched off for this run</b><p>Stage 4 compares claims across sources. It did not run, so nothing here is cross-checked. TRACE only checked that each quote exists in its source, and had an independent model judge the finding against the aspect it should answer.</p></div></div>
+          : <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking is not built yet</b><p>Stage 4 would check whether each claim is true. Today TRACE only checks that the quote exists in the source, and has an independent model judge the finding against the aspect it should answer.</p></div></div>}
+      {fact && <FactTotals totals={fact} />}
       <div className="metrics">
         <div><strong>{found}/{total}</strong><span>quotes found in source</span></div>
         <div><strong>{r.totals.subQuestionsSufficient}/{r.totals.subQuestions}</strong><span>sub-questions sufficient</span></div>
@@ -246,7 +260,7 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
         </div>
         <p className="meta">yes {stats.verdicts.yes} · partial {stats.verdicts.partial} · no {stats.verdicts.no}</p></div>
 
-      {r.subQuestions.map(sq => <details key={sq.id} className="sq-group"><summary><span>{sq.topic}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}<NoEvidenceTag coverage={sq.coverage} /></summary><CoverageBlock sq={sq} /></details>)}
+      {r.subQuestions.map(sq => <details key={sq.id} className="sq-group"><summary><span>{sq.topic}</span>{!sq.coverage ? <StatusPill tone="coral">Not finished</StatusPill> : !sq.coverage.sufficient ? <StatusPill tone="amber">Not sufficient</StatusPill> : <StatusPill tone="mint">Sufficient</StatusPill>}<NoEvidenceTag coverage={sq.coverage} /></summary><CoverageBlock sq={sq} /><FactCheckPanel sq={sq} ran={ran} /></details>)}
 
       <h2 className="sub-h">Contradicting or challenging findings ({stats.contradicting.length})</h2>
       {stats.contradicting.length === 0 ? <p className="meta">No finding is marked as contradicting or challenging.</p> : stats.contradicting.map(({ f, s }, i) => <div key={i} className="finding-wrap"><p className="meta from">From {s.title ?? 'untitled source'}</p><FindingCard finding={f} /></div>)}

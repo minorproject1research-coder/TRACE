@@ -715,6 +715,51 @@ mark.active { background: #3fe0f240; box-shadow: inset 0 -2px 0 var(--cyan), 0 0
 .loop2-panel .table-wrap th[scope='row'] { background: transparent; color: var(--text-1); font-weight: 500; min-width: 170px; }
 .loop2-panel .table-wrap td { font-family: var(--font-code); white-space: nowrap; }
 .loop2-aspects li .aspect-text { overflow-wrap: anywhere; }
+/* ---------- Stage 4: cross-check ---------------------------------------- */
+.stage.not_run { opacity: .75; } .stage.not_run .stage-marker { border-style: dashed; background: transparent; } .stage.not_run .stage-title b { color: var(--text-3); } .stage.not_run .stage-title span { color: var(--lav); }
+.stage-note { margin-top: 8px; padding: 8px 10px; border: 1px solid #6b5320; border-radius: 8px; background: #ffd07a0d; color: var(--amber); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.stage-note.bad { border-color: #7a3548; background: #ff7f970d; color: var(--coral); }
+.stage .live-line { margin-top: 6px; color: var(--cyan); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; } .stage .live-line b { font-weight: 600; } .stage .live-line .elapsed { margin-left: 6px; color: var(--text-2); font: 12px var(--font-code); white-space: nowrap; }
+.fc-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.factcheck-panel { margin-top: 10px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: #0b1630aa; }
+.factcheck-panel > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 11px 14px; cursor: pointer; list-style: none; }
+.factcheck-panel > summary::-webkit-details-marker { display: none; }
+.fc-title { color: var(--cyan); font-size: 13.5px; font-weight: 600; }
+.factcheck-panel .chev { margin-left: auto; transition: transform .25s var(--ease); color: var(--text-3); } .factcheck-panel[open] > summary .chev { transform: rotate(180deg); }
+.factcheck-panel[open] > summary { border-bottom: 1px solid var(--line-1); }
+.fc-body { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; min-width: 0; }
+.fc-claims, .fc-ev-list, .fc-disagree-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fc-claim { min-width: 0; padding: 12px 14px; border: 1px solid var(--line-2); border-left: 3px solid var(--mint); border-radius: 10px; background: var(--ink-900); }
+.fc-claim.contradicted { border-left-color: var(--coral); background: #1a0d14; }
+.fc-claim.contested { border-left-color: var(--amber); }
+/* An unverified claim is never styled like a fact: dashed, muted, no accent colour. */
+.fc-claim.unverified { border: 1px dashed var(--line-3); border-left: 3px dashed var(--line-3); background: transparent; }
+.fc-claim.unverified .fc-claim-text { color: var(--text-2); font-style: italic; }
+.fc-claim.other { border-left-color: var(--line-3); }
+.fc-claim-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.fc-claim-text { margin: 8px 0 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.fc-counts { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; } .fc-counts .against { color: var(--coral); }
+.fc-strength { display: inline-flex; align-items: center; gap: 8px; color: var(--text-3); font: 11.5px var(--font-code); cursor: help; }
+.fc-bar { display: inline-block; width: 64px; height: 6px; border-radius: 999px; background: var(--line-2); overflow: hidden; } .fc-bar i { display: block; height: 100%; background: var(--text-3); }
+.fc-strength.medium .fc-bar i { background: var(--cyan); } .fc-strength.high .fc-bar i { background: var(--blue); }
+.fc-against { margin-top: 10px; padding: 10px 12px; border: 1px solid #7a3548; border-radius: 10px; background: #ff7f970d; }
+.fc-against-head { display: flex; align-items: center; gap: 8px; color: var(--coral); font-size: 13px; }
+.fc-against .meta { margin-top: 8px; }
+.fc-evidence { margin-top: 10px; } .fc-evidence > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-2); font-size: 13px; list-style: none; } .fc-evidence > summary::-webkit-details-marker { display: none; }
+.fc-evidence .chev { transition: transform .25s var(--ease); color: var(--text-3); } .fc-evidence[open] .chev { transform: rotate(180deg); }
+.fc-evidence .fc-ev-list { margin-top: 10px; }
+.fc-ev { min-width: 0; } .fc-ev-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; } .fc-ev-title { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.fc-body .quote { min-width: 0; overflow-wrap: anywhere; } .fc-body .quote span { min-width: 0; }
+.fc-sub { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--text-1); font-size: 13.5px; font-weight: 600; }
+.fc-disagree { padding: 12px 14px; border: 1px solid #7a3548; border-radius: 10px; background: #ff7f970a; }
+.fc-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fc-side { min-width: 0; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--ink-900); } .fc-side .eyebrow { margin: 0; }
+.fc-source { margin-top: 8px; overflow-wrap: anywhere; }
+.fc-reason { margin: 10px 0 0; color: var(--text-2); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; } .fc-reason b { color: var(--text-1); }
+.fc-empty { padding: 10px 12px; border: 1px dashed var(--line-3); border-radius: 8px; }
+.fc-missing { margin-top: 10px; }
+.fc-totals { margin-top: 18px; }
+@media (max-width: 720px) { .fc-sides { grid-template-columns: minmax(0, 1fr); } }
 @keyframes sheen { to { background-position: -200% 0, 0 0; } }
 @keyframes markpulse { 0% { box-shadow: inset 0 -2px 0 var(--cyan), 0 0 0 0 #3fe0f266; } 100% { box-shadow: inset 0 -2px 0 var(--cyan), 0 0 0 10px #3fe0f200; } }
 @keyframes shimmer { to { background-position: -220% 0; } }

@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, Globe, BookOpen, Brain, ListChecks, MinusCircle, X } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, Globe, BookOpen, Brain, ListChecks, MinusCircle, ShieldCheck, X } from 'lucide-react'
 import { ActivityLog } from '@/components/trace/activity-log'
 import { StatusPill } from '@/components/trace/status-pill'
+import { STAGE_FAILED_NOTE, STAGE_SKIPPED_LABEL } from '@/lib/factcheck'
 import { formatDuration } from '@/lib/format'
 import { buildTimeline, type LaneView, type StepView, type TimelineModel } from '@/lib/timeline'
-import type { PapersOverview, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
+import type { PapersOverview, StageState, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
 
 function useNow(active: boolean) {
   const [now, setNow] = useState(() => Date.now())
@@ -21,7 +22,7 @@ function useNow(active: boolean) {
 const ms = (iso: string | null) => (iso ? new Date(iso).getTime() : null)
 const nowIso = (now: number) => new Date(now).toISOString()
 
-const laneIcon = { papers: BookOpen, web: Globe, summarizer: Brain } as const
+const laneIcon = { papers: BookOpen, web: Globe, summarizer: Brain, factcheck: ShieldCheck } as const
 const laneTone = { pending: 'neutral', running: 'blue', completed: 'mint', failed: 'coral' } as const
 const laneText = { pending: 'Waiting', running: 'Running', completed: 'Done', failed: 'Failed' } as const
 
@@ -103,12 +104,13 @@ function Gantt({ lanes, from, to }: { lanes: LaneView[]; from: string | null; to
   )
 }
 
-export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverview | null; streamStatus: StreamStatus; streamDetail?: string; running: boolean }) {
-  const { events, overview, streamStatus, streamDetail, running } = props
+export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverview | null; streamStatus: StreamStatus; streamDetail?: string; running: boolean; factcheckState?: StageState }) {
+  const { events, overview, streamStatus, streamDetail, running, factcheckState } = props
   const model: TimelineModel = useMemo(() => buildTimeline(events, overview), [events, overview])
   const now = useNow(running)
   const [papers, web] = model.retrieval.lanes
-  const anyRunning = papers.status === 'running' || web.status === 'running' || model.summarizer.status === 'running' || model.planner.status === 'running'
+  const fact = model.factcheck
+  const anyRunning = papers.status === 'running' || web.status === 'running' || model.summarizer.status === 'running' || model.planner.status === 'running' || fact?.status === 'running'
   const axisEnd = model.retrieval.endedAt ?? (papers.status === 'running' || web.status === 'running' ? nowIso(now) : [papers.endedAt, web.endedAt].filter(Boolean).sort().pop() ?? null)
   const plannerTook = model.planner.startedAt && model.planner.endedAt ? formatDuration(model.planner.startedAt, model.planner.endedAt) : null
   const took = useMemo(() => {
@@ -152,11 +154,14 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
         <div className="lanes"><Lane lane={papers} now={now} /><Lane lane={web} now={now} /></div>
       </div>
 
-      <div className="tl-after"><Lane lane={model.summarizer} now={now} /></div>
+      <div className="tl-after"><Lane lane={model.summarizer} now={now} />{fact && <Lane lane={fact} now={now} />}</div>
+      {fact?.status === 'failed' && <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>{STAGE_FAILED_NOTE}</b><p>The run itself finished. Only the cross-check is missing.</p></div></div>}
 
-      <section className="tl-notbuilt" aria-label="Not built yet">
-        <span className="tag">not built yet</span> Fact check (Stage 4) and the written report (Stage 5) are not part of the pipeline.
-      </section>
+      {fact
+        ? <section className="tl-notbuilt" aria-label="Not built yet"><span className="tag">not built yet</span> The written report (Stage 5) is not part of the pipeline.</section>
+        : factcheckState === 'not_run'
+          ? <section className="tl-notbuilt" aria-label="Not run or not built"><span className="tag">{STAGE_SKIPPED_LABEL}</span> Fact check (Stage 4) was switched off for this run. The written report (Stage 5) is not part of the pipeline.</section>
+          : <section className="tl-notbuilt" aria-label="Not built yet"><span className="tag">not built yet</span> Fact check (Stage 4) and the written report (Stage 5) are not part of the pipeline.</section>}
 
       {model.planner.status === 'failed' || papers.status === 'failed' || web.status === 'failed' || model.summarizer.status === 'failed'
         ? <div className="callout-box coral" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>The run stopped</b><p>The step that was running when it failed is marked above. The error is shown at the top of the page.</p></div></div> : null}

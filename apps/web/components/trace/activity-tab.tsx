@@ -8,7 +8,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { num } from '@/lib/format'
 import { radioGroupKeys } from '@/lib/radio-keys'
-import type { PapersOverview, PaperSummary, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
+import type { PapersOverview, PaperSummary, StageState, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
 import type { Async } from '@/lib/use-research'
 
 type View = 'timeline' | 'plan' | 'papers' | 'web'
@@ -26,9 +26,9 @@ function Step({ value, label, hint, onClick, active, pending }: { value: number 
 }
 
 export function ActivityTab(props: {
-  runId: string; events: WorkflowEvent[]; streamStatus: StreamStatus; streamDetail?: string; running: boolean; papers: Async<PapersOverview>; mode: 'live' | 'demo'
+  runId: string; events: WorkflowEvent[]; streamStatus: StreamStatus; streamDetail?: string; running: boolean; papers: Async<PapersOverview>; mode: 'live' | 'demo'; factcheckState?: StageState
 }) {
-  const { runId, events, streamStatus, streamDetail, running, papers, mode } = props
+  const { runId, events, streamStatus, streamDetail, running, papers, mode, factcheckState } = props
   const ov = papers.data
   const [view, setView] = useState<View>('timeline')
   const [filter, setFilter] = useState<PaperFilter>('all')
@@ -131,7 +131,7 @@ export function ActivityTab(props: {
       </TabFixed>
 
       <TabScroll label={`${VIEW_LABEL[view]} list`} scrollRef={scroller}>
-          {view === 'timeline' && <Timeline events={events} overview={ov} streamStatus={streamStatus} streamDetail={streamDetail} running={running} />}
+          {view === 'timeline' && <Timeline events={events} overview={ov} streamStatus={streamStatus} streamDetail={streamDetail} running={running} factcheckState={factcheckState} />}
 
           {view === 'plan' && (
             <div className="view-body">

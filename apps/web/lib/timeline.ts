@@ -1,10 +1,11 @@
+import { factProgress } from './factcheck'
 import { ladderLabel, SUBSTEP_TITLE } from './loop2'
 import type { PapersOverview, StepState, WorkflowEvent } from './trace-types'
 
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
 // steps, from the timestamps of the rows it wrote to the database (approximate, and labelled as such).
 
-export type LaneId = 'papers' | 'web' | 'summarizer'
+export type LaneId = 'papers' | 'web' | 'summarizer' | 'factcheck'
 export type StepStatus = StepState | 'pending' | 'unreported'
 
 export type StepView = {
@@ -35,6 +36,8 @@ export type TimelineModel = {
   planner: { status: 'pending' | 'running' | 'completed' | 'failed'; startedAt: string | null; endedAt: string | null; subQuestions: number | null; queries: number | null; anchor: string | null; topics: string[] }
   retrieval: { startedAt: string | null; endedAt: string | null; lanes: [LaneView, LaneView] }
   summarizer: LaneView
+  /** Stage 4. null unless a fact-check event arrived, so a run without it looks as before. */
+  factcheck: LaneView | null
 }
 
 const DEFS: Record<LaneId, { id: string; label: string }[]> = {
@@ -58,6 +61,14 @@ const DEFS: Record<LaneId, { id: string; label: string }[]> = {
     // Only when the server runs Loop 2 (LOOP2=true). Left out of the lane when no such event arrives, so a run without it looks as before.
     { id: 'loop2', label: SUBSTEP_TITLE },
     { id: 'store', label: 'Save digests and coverage' },
+  ],
+  // Stage 4. These steps repeat for every sub-question (about 3 minutes each).
+  factcheck: [
+    { id: 'claims', label: 'Read the claims of each source' },
+    { id: 'clusters', label: 'Group the claims that say the same thing' },
+    { id: 'support', label: 'Check that each quote supports its claim' },
+    { id: 'conflicts', label: 'Look for sources that disagree' },
+    { id: 'store', label: 'Save the results' },
   ],
 }
 
@@ -83,6 +94,12 @@ function chipsFor(lane: LaneId, step: string, d: Record<string, unknown>, done: 
     if (step === 'search') add(n(d, 'found'), v => `${v} sources found`)
     if (step === 'scoring') add(n(d, 'scored'), v => `${v} scored`)
     if (step === 'store') add(n(d, 'stored'), v => `${v} saved`)
+  } else if (lane === 'factcheck') {
+    // the counts the step carried for the sub-question it is working on now
+    if (step === 'claims') add(n(d, 'sources'), v => `${v} sources`)
+    if (step === 'clusters') add(n(d, 'claims'), v => `${v} claims`)
+    if (step === 'support') add(n(d, 'clusters'), v => `${v} grouped claims`)
+    if (step === 'store') { add(n(d, 'claims'), v => `${v} claims checked`); add(n(d, 'disagreements'), v => (v > 0 ? `${v} disagreements` : '')) }
   } else {
     if (step === 'prepare') { add(n(d, 'jobs'), v => `${v} sources to read`); add(n(d, 'papers'), v => `${v} papers`); add(n(d, 'web'), v => `${v} web`) }
     if (step === 'digest') { add(n(d, 'done'), v => `${v} read`); add(n(d, 'failures'), v => (v > 0 ? `${v} failed` : '')) }
@@ -157,6 +174,37 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
 const PAPERS_TITLE: [string, string] = ['Paper retrieval', 'OpenAlex, Scopus, arXiv · relevance judge · scoring · PDF parsing']
 const WEB_TITLE: [string, string] = ['Web search', 'search providers · reliability scoring']
 const SUM_TITLE: [string, string] = ['Evidence digest and judging', 'LLM reads each source, then an independent judge checks the findings']
+const FACT_TITLE: [string, string] = ['Fact check across sources', 'groups the claims that say the same thing · looks for sources that disagree']
+
+/** Stage 4 as a lane. null when no fact-check event exists. The pipeline reports only "running" for the repeating steps, so a step that is not the
+ *  latest one is shown as done (it moved on to the next), and a step that never reported is pending. A failed stage does not fail the run. */
+function factLane(events: WorkflowEvent[]): LaneView | null {
+  const p = factProgress(events)
+  if (!p) return null
+  const mine = events.filter(e => e.event === 'step' && e.data.lane === 'factcheck' && DEFS.factcheck.some(d => d.id === e.data.step))
+  const steps: StepView[] = DEFS.factcheck.map(def => {
+    const evs = mine.filter(e => e.data.step === def.id)
+    if (evs.length === 0) return { id: def.id, label: def.label, status: (p.state === 'completed' ? 'unreported' : 'pending') as StepStatus, startedAt: null, endedAt: null, message: '', chips: [], progress: null, approx: false }
+    const last = evs[evs.length - 1]
+    const own = String(last.data.state ?? 'running') as StepState
+    // a stage that failed stopped in the step that reported last
+    let status: StepState = def.id === 'store' ? own : p.step === def.id && p.state !== 'completed' ? (p.state === 'failed' ? 'failed' : 'running') : 'completed'
+    if (p.state === 'failed' && status === 'running') status = 'failed'
+    const current = status === 'running'
+    const chips = chipsFor('factcheck', def.id, last.data, !current)
+    const sub = n(last.data, 'subQuestion'); const total = n(last.data, 'subQuestions')
+    if (current && sub != null && total != null) chips.unshift(`sub-question ${sub} of ${total}`)
+    return {
+      id: def.id, label: def.label, status,
+      startedAt: current ? last.timestamp : def.id === 'store' ? evs[0].timestamp : null, endedAt: def.id === 'store' && status !== 'running' ? last.timestamp : null,
+      message: current ? p.line : '', chips, progress: null, approx: false,
+    }
+  })
+  const r = p.result
+  const summary = p.state === 'running' && p.subQuestion != null && p.subQuestions != null ? `sub-question ${p.subQuestion} of ${p.subQuestions} · about 3 minutes per sub-question`
+    : r && r.claims != null ? `${r.claims} claims checked` : ''
+  return { id: 'factcheck', title: FACT_TITLE[0], subtitle: FACT_TITLE[1], status: p.state, startedAt: p.startedAt, endedAt: p.endedAt, summary, steps }
+}
 
 export function buildTimeline(events: WorkflowEvent[], overview: PapersOverview | null): TimelineModel {
   const runFailed = events.some(e => e.event === 'run_failed')
@@ -180,14 +228,14 @@ export function buildTimeline(events: WorkflowEvent[], overview: PapersOverview 
     papers.summary = c ? `${c.papersKept} kept · ${c.papersParsed} parsed` : ''
     web.summary = c ? `${c.webFound} sources` : ''
     summarizer.summary = c ? `${c.papersUsedAsEvidence} papers and ${c.webUsedAsEvidence} web sources used` : ''
-    return { source: 'events', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [papers, web] }, summarizer }
+    return { source: 'events', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [papers, web] }, summarizer, factcheck: factLane(events) }
   }
 
   const t = overview?.timing
   if (overview && t && (t.papersStoredAt || t.webStoredAt || t.digestsFirstAt)) return reconstruct(overview, planner)
 
   const empty = (id: LaneId, title: string, subtitle: string): LaneView => ({ id, title, subtitle, status: 'pending', startedAt: null, endedAt: null, summary: '', steps: [] })
-  return { source: 'none', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [empty('papers', ...PAPERS_TITLE), empty('web', ...WEB_TITLE)] }, summarizer: empty('summarizer', ...SUM_TITLE) }
+  return { source: 'none', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [empty('papers', ...PAPERS_TITLE), empty('web', ...WEB_TITLE)] }, summarizer: empty('summarizer', ...SUM_TITLE), factcheck: factLane(events) }
 }
 
 /** A finished run without step events: rows were stamped when they were written, so each step shows the moment its result was saved. */
@@ -227,5 +275,6 @@ function reconstruct(ov: PapersOverview, planner: TimelineModel['planner']): Tim
       lane('web', WEB_TITLE, plannedAt, t.webStoredAt ?? null, webSteps, `${c.webFound} sources`),
     ] },
     summarizer: lane('summarizer', SUM_TITLE, retrievalEnd, sumEnd, sumSteps, `${c.papersUsedAsEvidence} papers and ${c.webUsedAsEvidence} web sources used`),
+    factcheck: null,
   }
 }
