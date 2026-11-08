@@ -6,7 +6,7 @@ Related files: the contract for readers of the results is `docs/STAGE4_OUTPUT.md
 
 ## 1. Where it sits
 planner -> retrieval -> Stage 3 (digests, judge, Loop 2) -> **Stage 4** -> Stage 5 (not built).
-It runs after the summarizer, once per sub-question, only when `FACTCHECK=true`. It never fails a run: a sub-question that raises an error is reported as `{"error": ...}` in the summary and skipped; the Stage 3 evidence is already stored.
+It runs once per sub-question, only when `FACTCHECK=true`, and with `STAGE4_OVERLAP` (default) a sub-question is checked while Stage 3 is still busy with the next ones (section 11). It never fails a run: a sub-question that raises an error is reported as `{"error": ...}` in the summary and skipped; the Stage 3 evidence is already stored.
 
 ## 2. Steps for one sub-question (`apps/api/graph/nodes/factcheck_node.py`)
 | # | Step | Code | What happens | Model |
@@ -44,8 +44,10 @@ Infrastructure: all judge answers are cached on disk (`.cache/stage4_judge`, a f
 |---|---|---|
 | `FACTCHECK` | false | switch for the whole stage |
 | `STAGE4_WORKERS` | 4 | judge calls in parallel |
+| `STAGE4_OVERLAP` | true | (with `FACTCHECK=true`) Stage 4 of a sub-question starts as soon as Stage 3 has stored its digests and coverage, on one background worker, while Stage 3 judges the next sub-question; `false` = Stage 4 starts after the whole of Stage 3 (the old behaviour). See section 11 |
 | `STAGE4_CACHE`, `STAGE4_CACHE_DIR` | true, `.cache/stage4_judge` | judge answer cache |
 | `STAGE4_MAX_MERGE_JUDGE` / `STAGE4_MAX_SUPPORT_JUDGE` / `STAGE4_MAX_JUDGE` / `STAGE4_MAX_PAIRS` | 300 / 150 / 40 / 80 | caps per sub-question |
+| `STAGE4_PARALLEL_STEPS` | true | inside one sub-question the near-match judge (Groq) runs while the conflict NLI (CPU) computes; they read the same clusters and write different fields. The NLI model is also loaded in the background at the start of a run that has Stage 4 on |
 | `STAGE4_NEAR` | true | the `partially_supported` label |
 | `STAGE4_NEAR_MIN_SIM`, `STAGE4_NEAR_CANDIDATES`, `STAGE4_MAX_NEAR_JUDGE` | 0.70, 1, 120 | near-match candidates and cap |
 | `STAGE4_RATE_WAIT_MAX`, `STAGE4_RATE_RETRIES` | 300, 2 | when every Groq key is parked for at most this many seconds (the per-minute limit; seen 124 to 171 s) a judge call waits and asks again, up to this many times, instead of failing closed; a longer limit (a daily one) opens the 5-minute breaker at once |
@@ -78,3 +80,12 @@ On the stored digests of that run (no NLI, every member counted as supported by 
 - Evaluation of the judges on the labeled sets: `venv/Scripts/python.exe tests/stage4_eval.py [--nli]` (uses Groq).
 - Tests: `venv/Scripts/python.exe -m pytest tests/test_factcheck_stage4.py` (offline, fake judges).
 - Report of a run: `venv/Scripts/python.exe scripts/pipeline_run_report.py --run N` (section 7b is Stage 4).
+
+## 11. Overlap with Stage 3 (`STAGE4_OVERLAP`)
+- **What happens:** `summarizer_node` stores the digests and the coverage of each sub-question as soon as it is finished (judge, coverage, Loop 2) and hands the sub-question to `factcheck_node.start_in_background`. One process-wide worker thread runs `_check_sub_question` for the queued sub-questions in order, while Stage 3 goes on with the next sub-question. `factcheck_node` then only waits (`collect`), checks any sub-question that was not started early (for example when the queueing failed), and writes `fact_claims` and `contradictions` exactly as before. The result and the summary have the same shape and the same order.
+- **Database:** `digests` and `coverage_results` are append-only, so a per-sub-question write does not touch the rows of the others; `get_digests_for_stage4` picks the newest 180 s window per sub-question, and one sub-question is written in one call, so it is read correctly. A rerun of Stage 3 for the same query writes newer rows and the older ones are ignored, as before. With the switch off, both tables are written once at the end of Stage 3.
+- **One worker:** the NLI model uses all CPU cores, so one sub-question at a time is right. It also keeps the per-sub-question judge counters (differences of the process-wide `judge.stats()`) exact, because Stage 3 does not use the Stage 4 judges.
+- **Progress:** steps that Stage 4 reports while Stage 3 still runs are held back and released, in order, when the `factcheck` node starts (after the `branch` event). The UI therefore still sees `stage_started factcheck`, then the steps, then `stage_completed` once.
+- **Groq:** Loop 2 digests of the next sub-question and the Stage 4 judges now run at the same time and share the per-minute token limit. The pool and the judge wait (`STAGE4_RATE_WAIT_MAX`) handle a 429; a heavier overlap can mean more waiting, not wrong answers (a judge call still fails closed).
+- **Failure:** a Stage 4 error never reaches Stage 3. If Stage 3 itself fails, the queued sub-questions that have not started are cancelled.
+- Stage 3 preparation also runs the sub-questions side by side (`STAGE3_PREP_WORKERS`, default 4; 1 = one after the other); the embedding model is shared and its `encode` is serialised.

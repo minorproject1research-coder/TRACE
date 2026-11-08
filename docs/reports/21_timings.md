@@ -44,6 +44,11 @@ Nothing quality-neutral makes the first NLI computation faster on this CPU. The 
 | **NLI answers cached on disk** (`apps/api/agents/stage4_factcheck/common.py`; the model is deterministic) | measured: Stage 4 of run 30 sub-question 1 on the same claims: **124 s -> 2 s**, identical labels (3 supported, 10 partially supported, 21 unverified). A repeated test question (a rerun from the web app, `stage4_on_stored.py`) no longer pays the 6 minutes of NLI. First runs are not faster. |
 | **Judge calls wait out a short Groq limit** (`STAGE4_RATE_WAIT_MAX` 300 s, `STAGE4_RATE_RETRIES` 2) instead of failing closed | fixes the 37 lost judge answers of run 30; costs wall time only when all 7 keys are parked (it waits the 124 to 171 s seen) |
 | Per-judge token tags (`stage4_merge`, `stage4_support`, `stage4_near`, `stage4_conflict`) | the next run shows which judge costs what |
+| **Parallel work, built by four helpers on 2026-11-08, none of it timed in a full run yet** | |
+| near-match judge beside the conflict NLI in one sub-question (`STAGE4_PARALLEL_STEPS`, default on) and the NLI model preloaded at the start of the run | expected: the Groq-bound near step hides behind the CPU-bound NLI step |
+| Stage 4 of a sub-question starts when Stage 3 has stored it (`STAGE4_OVERLAP`, default on, one background worker) and the Stage 3 preparation per sub-question runs in parallel (`STAGE3_PREP_WORKERS` 4) | expected: part of Stage 3's judge/Loop 2 time (1.9 to 5.4 min) is hidden behind Stage 4 |
+| relevance filter for several sub-questions at once (`RELEVANCE_WORKERS`, default 2; 4 would mean 32 judge requests at once, not tested) | expected 30 to 45 s |
+| judge batches in parallel (`JUDGE_PARALLEL`, default 2; measured on the host: 2 concurrent 8-item batches took 8.0 s wall against about 18 s one after another, 3 took 11.9 s against about 27 s, same verdicts, no 429; 32-item batches not measured) | expected 30 to 70 s |
 
 ## 5. Not built, with the numbers
 | Idea | Expected saving per run | Risk / why not yet |
@@ -53,7 +58,7 @@ Nothing quality-neutral makes the first NLI computation faster on this CPU. The 
 | **Loop 2 without the `queries` step** (`LOOP2_STEPS=reselect,pool`) | 100 to 224 s per time the step runs (9 times in the logs; 140 s in run 30 for an aspect that stayed a gap) | it covered 4 of the 14 aspects that reached it (29%); the earlier measurement (report 18) gave 5 of 8 covered aspects at 17% of the time without it |
 | A rule "skip `queries` for aspects with no yes verdict" | would have saved the 140 s of run 30 | **refuted by the data**: of 14 aspects that reached the queries step, the 4 that it covered had 0, 0, 0 and 1 yes verdicts before it; the rule would have blocked 3 of the 4 successes. Not built |
 | Relevance filter for the sub-questions in parallel (now one after the other: about 17 s embeddings + 11 s host judge each) | 30 to 45 s | the embedding is CPU-bound, so only the judge wait overlaps |
-| Judge batches of Stage 3 in parallel (now sequential, 5 to 28 s each, 14 batches in run 30) | 30 to 70 s | depends on whether the host handles two judge requests at once without slowing both; not tested (the host GPU is nearly full) |
+| **Judge batches of Stage 3 in parallel** (was sequential, 5 to 28 s each, 14 batches in run 30) | 30 to 70 s | **built, `JUDGE_PARALLEL` (default 2; 1 = old behaviour).** Measured on the host with 8-item batches (12 requests): alone 9.4 s and 8.6 s; two at once 8.0 s wall; three at once 11.9 s wall (sequential would be about 27 s). Final verdicts identical in all 8 items of each compared batch; the free-text `reason` differs slightly even between two identical single requests. Not measured with full 32-item batches; a full run has not been timed |
 | Citation enrichment: stop after the first batch that gives up | 26 to 68 s on days when Semantic Scholar answers 429 | small; also loses the counts for the papers of the later batches |
 | Parsing 146 to 252 s when papers are new | not reducible here | Docling runs on the host; repeat questions already hit the parse cache |
 

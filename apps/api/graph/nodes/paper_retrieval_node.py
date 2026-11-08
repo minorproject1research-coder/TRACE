@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import DOWNLOADER_VERSION, PDF_FAILURE_TTL_DAYS, PaperRetrievalAgent
@@ -41,30 +42,8 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
 
     progress.report(qid, "papers", "relevance_filter", "running", "Judging relevance (embedding shortlist, then the LLM judge)",
                     candidates=candidates, done=0, total=len(sub_questions))
-    totals = {"candidates": 0, "shortlisted": 0, "judged": 0, "passed": 0, "judgeUnavailable": 0}
-    judge_backend = None
-    all_papers: list[dict] = []
-    for done, (sq, result) in enumerate(zip(sub_questions, results), start=1):
-        if isinstance(result, Exception):
-            logger.error("Retrieval failed for sub-question '%s': %s", sq.main_topic, result)
-            sq.papers = []
-            continue
-
-        for paper in result:
-            paper["sub_question_id"] = sq.id
-
-        # relevance filter — only keeps papers relevant to this sub-question
-        stats: dict = {}
-        relevant_papers = relevance_filter.filter_relevant(sq.main_topic, result, anchor=state.task_plan.domain_anchor,
-                                                           context=state.task_plan.domain_context, stats=stats)
-        for k in totals:
-            totals[k] += stats.get(k, 0)
-        judge_backend = stats.get("backend", judge_backend)
-        progress.report(qid, "papers", "relevance_filter", "running", f"Judged sub-question {done} of {len(sub_questions)}",
-                        done=done, total=len(sub_questions), backend=judge_backend, **totals)
-
-        sq.papers = relevant_papers
-        all_papers.extend(relevant_papers)
+    totals, judge_backend, all_papers = _filter_all_subquestions(
+        qid, sub_questions, results, anchor=state.task_plan.domain_anchor, context=state.task_plan.domain_context)
     progress.report(qid, "papers", "relevance_filter", "completed",
                     f"{totals['passed']} of {candidates} candidates passed ({totals['judged']} judge calls)", backend=judge_backend, **totals)
 
@@ -99,6 +78,82 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
     asyncio.run(_parse_relevant_papers(agent, state.task_plan.query_id, all_papers))
 
     return {"paper_results": all_papers}
+
+
+def _relevance_workers() -> int:
+    """Sub-questions filtered at the same time (RELEVANCE_WORKERS, default 2). 1 = one after the other, as before."""
+    try:
+        return max(1, int(os.getenv("RELEVANCE_WORKERS", "2")))
+    except ValueError:
+        return 2
+
+
+def _filter_one(sq, result: list[dict], anchor: str, context: str) -> tuple[list[dict], dict]:
+    """The relevance filter for one sub-question (runs in a worker thread). Returns (kept papers, stats)."""
+    for paper in result:
+        paper["sub_question_id"] = sq.id
+    stats: dict = {}
+    relevant_papers = relevance_filter.filter_relevant(sq.main_topic, result, anchor=anchor, context=context, stats=stats)
+    return relevant_papers, stats
+
+
+def _filter_all_subquestions(qid: str, sub_questions: list, results: list, anchor: str, context: str) -> tuple[dict, str | None, list[dict]]:
+    """Runs the relevance filter for every sub-question whose retrieval worked, up to RELEVANCE_WORKERS at a time, and sets
+    sq.papers. The result does not depend on the number of workers: papers per sub-question, the order of all_papers (the
+    sub-question order), the totals and the backend are assembled in sub-question order after all filters have finished.
+    Only the progress events follow the order in which the sub-questions finish (done = finished sub-questions).
+    A sub-question whose retrieval raised gets sq.papers = [] and is logged, without a progress event."""
+    total = len(sub_questions)
+    outcomes: dict[int, tuple[list[dict], dict]] = {}
+    running = {"candidates": 0, "shortlisted": 0, "judged": 0, "passed": 0, "judgeUnavailable": 0}
+    running_backend = None
+    finished = 0
+
+    def finish(index: int, outcome: tuple[list[dict], dict]):
+        """Main thread only: store a finished sub-question and report the running totals."""
+        nonlocal running_backend, finished
+        finished += 1
+        outcomes[index] = outcome
+        stats = outcome[1]
+        for k in running:
+            running[k] += stats.get(k, 0)
+        running_backend = stats.get("backend", running_backend)
+        progress.report(qid, "papers", "relevance_filter", "running", f"Judged sub-question {finished} of {total}",
+                        done=finished, total=total, backend=running_backend, **running)
+
+    jobs = []
+    for index, (sq, result) in enumerate(zip(sub_questions, results)):
+        if isinstance(result, Exception):
+            logger.error("Retrieval failed for sub-question '%s': %s", sq.main_topic, result)
+            sq.papers = []
+            finished += 1
+        else:
+            jobs.append(index)
+
+    workers = min(_relevance_workers(), len(jobs))
+    if workers <= 1:
+        for index in jobs:
+            finish(index, _filter_one(sub_questions[index], results[index], anchor, context))
+    else:
+        pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="relevance")
+        try:
+            futures = {pool.submit(_filter_one, sub_questions[i], results[i], anchor, context): i for i in jobs}
+            for future in as_completed(futures):
+                finish(futures[future], future.result())          # a failure inside the filter propagates, as it did before
+        finally:
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    totals = {"candidates": 0, "shortlisted": 0, "judged": 0, "passed": 0, "judgeUnavailable": 0}
+    judge_backend = None
+    all_papers: list[dict] = []
+    for index in sorted(outcomes):
+        relevant_papers, stats = outcomes[index]
+        for k in totals:
+            totals[k] += stats.get(k, 0)
+        judge_backend = stats.get("backend", judge_backend)
+        sub_questions[index].papers = relevant_papers
+        all_papers.extend(relevant_papers)
+    return totals, judge_backend, all_papers
 
 
 def _parse_priority(row: dict, failed_keys: frozenset = frozenset()) -> tuple:

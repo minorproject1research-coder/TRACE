@@ -4,12 +4,16 @@ from apps.api.graph.state import SharedResearchState
 from apps.api.models.task_plan import TaskPlan
 from apps.api.agents.stage1_planner import domain_anchor, question_generator, query_expansion
 from apps.api.services import db_service
+from apps.api import config
 
 logger = logging.getLogger("apps.api.agents.stage1_planner")
 
 
 def planner_node(state: SharedResearchState) -> dict:
     logger.info("Starting planner for query: %s", state.raw_query[:100])
+    if config.factcheck_enabled():          # the NLI model takes a while to load; let it load while retrieval and Stage 3 run
+        from apps.api.agents.stage4_factcheck import common as stage4_common
+        stage4_common.preload_nli()
 
     sub_questions = question_generator.generate(state.raw_query)
     logger.info("Generated %d sub-questions", len(sub_questions))

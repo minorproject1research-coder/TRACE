@@ -3,6 +3,7 @@ import json
 import os
 import re
 import tempfile
+import threading
 import unicodedata
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from sentence_transformers import CrossEncoder
 
 NLI_MODEL = os.getenv("NLI_MODEL", "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli")
 _nli = None
+_nli_lock = threading.Lock()
 
 
 def clean_text(t: str) -> str:
@@ -23,8 +25,22 @@ def clean_text(t: str) -> str:
 def _model():
     global _nli
     if _nli is None:
-        _nli = CrossEncoder(NLI_MODEL)
+        with _nli_lock:                         # two threads (the preload and Stage 4) must not both load 1.7 GB
+            if _nli is None:
+                _nli = CrossEncoder(NLI_MODEL)
     return _nli
+
+
+def preload_nli() -> None:
+    """Load the NLI model in a background thread (it takes 10 to 60 s) so that it is ready when Stage 4 starts; called at the start of a run
+    that has Stage 4 switched on. A failure here is ignored: Stage 4 loads the model itself and reports its own error."""
+    def load():
+        try:
+            _model()
+        except Exception:
+            pass
+    if _nli is None:
+        threading.Thread(target=load, name="nli-preload", daemon=True).start()
 
 
 def _label_index(m) -> dict:

@@ -5,6 +5,7 @@ import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+from apps.api import config
 from apps.api.graph.state import SharedResearchState
 import time
 
@@ -40,6 +41,19 @@ def _workers() -> int:
     if configured:
         return max(1, int(configured))
     return max(1, groq_pool.key_count()) if llm_service.BACKEND == "groq" else 1
+
+
+def _prep_workers() -> int:
+    """Sub-questions prepared at the same time (aspect split = a Groq call, chunking, embeddings). STAGE3_PREP_WORKERS, default 4; 1 = one by one."""
+    try:
+        return max(1, int(os.getenv("STAGE3_PREP_WORKERS", "").strip() or 4))
+    except ValueError:
+        return 4
+
+
+def _overlap_enabled() -> bool:
+    """STAGE4_OVERLAP (default true) with FACTCHECK=true: Stage 4 of a sub-question starts as soon as Stage 3 has stored it."""
+    return config.factcheck_enabled() and os.getenv("STAGE4_OVERLAP", "true").strip().lower() not in ("0", "false", "no", "off")
 
 
 _row = digest_generator.digest_row
@@ -81,44 +95,96 @@ def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_covera
     return cov
 
 
+def _prepare_subquestion(qid, si, sq):
+    """Step 1 for ONE sub-question: the aspects (a Groq call per detail question, cached) and the digest jobs with their selected chunks
+    (chunking + embeddings). Independent of the other sub-questions, so they can run side by side. Returns (aspects, jobs of this sub-question)."""
+    jobs = []
+    cleaned_topic = _clean_topic(sq.main_topic)
+    original_details = sq.detail_questions
+
+    # Split details into aspects
+    aspects, aspect_to_detail = detail_aspects.flatten_aspects(
+        original_details, sq.id, cleaned_topic
+    )
+    aspects, aspect_to_detail, original_details = detail_aspects.with_topic_aspect(
+        aspects, aspect_to_detail, original_details, sq.main_topic)     # the sub-question itself is judged too (TOPIC_ASPECT)
+    logger.info(
+        "Sub-question '%s': %d original details -> %d aspects",
+        sq.main_topic[:50], len(original_details), len(aspects)
+    )
+
+    for p in db_service.get_papers_for_stage3(qid, sq.id)[:MAX_PAPERS]:
+        selected = chunk_selector.select_chunks(
+            sq.main_topic,
+            chunk_selector.build_chunks(p),
+            detail_questions=aspects,
+            main_topic=cleaned_topic,
+        )
+        level = "full_text" if p.get("has_full_text") else "abstract"
+        jobs.append((si, "paper", p, selected, p.get("combined_score"), level, aspects, original_details, aspect_to_detail))
+    for w in db_service.get_web_sources_for_stage3(sq.id)[:MAX_WEB]:
+        snippet = w.get("snippet") or ""
+        if len(snippet) < 200:
+            continue
+        jobs.append((si, "web", w, [(0, snippet)], w.get("reliability_score"), "web_snippet", aspects, original_details, aspect_to_detail))
+    return list(aspects), jobs
+
+
+def _store_subquestion(qid, sq, si, total, rows, cov_row):
+    """STAGE4_OVERLAP: store the digests and the coverage of ONE finished sub-question now (the rows of the other sub-questions are not
+    touched: the tables are append-only and Stage 4 reads the newest rows of each sub-question), then queue its Stage 4 check on the
+    background worker. A failed write raises as it did at the end of the node; a failure to START Stage 4 never does (factcheck_node
+    checks a sub-question that was not started)."""
+    db_service.write_digests(rows)
+    db_service.write_coverage([cov_row])
+    try:
+        from apps.api.graph.nodes import factcheck_node
+        if factcheck_node.start_in_background(qid, sq, si + 1, total):
+            logger.info("Stage 4 queued for sub-question '%s' while Stage 3 goes on", sq.main_topic[:50])
+    except Exception:
+        logger.exception("Stage 4 could not be queued early for sub-question '%s'; it will be checked after Stage 3", sq.main_topic[:50])
+
+
 def summarizer_node(state: SharedResearchState) -> dict:
+    qid = state.task_plan.query_id
+    try:
+        return _summarize(state)
+    except BaseException:
+        if _overlap_enabled():                      # Stage 3 failed: the Stage 4 jobs that were queued early are not wanted
+            try:
+                from apps.api.graph.nodes import factcheck_node
+                factcheck_node.discard(qid)
+            except Exception:
+                logger.exception("could not cancel the early Stage 4 jobs")
+        raise
+
+
+def _summarize(state: SharedResearchState) -> dict:
     qid = state.task_plan.query_id
     sub_questions = state.task_plan.sub_questions
     progress.report(qid, "summarizer", "prepare", "running", "Selecting the passages to read (chunking, embeddings)", subQuestions=len(sub_questions))
+    overlap = _overlap_enabled()
+    if overlap:
+        try:
+            from apps.api.graph.nodes import factcheck_node
+            factcheck_node.discard(qid)             # nothing left over from an earlier run of this query
+        except Exception:
+            logger.exception("Stage 4 overlap is not available; Stage 4 will run after Stage 3")
+            overlap = False
 
-    # 1. Prepare every digest job locally (chunking and embedding are fast); no model call yet.
+    # 1. Prepare every digest job locally (chunking and embedding are fast); no model call yet. The sub-questions are independent, so
+    #    they are prepared in a small thread pool; pool.map keeps their order, so the jobs list is the same as in a plain loop.
     jobs = []           # (sub_question index, source_type, source, selected chunks, weight, evidence level)
     digest_aspects_by_sq = {}       # what the first digest prompt saw, per sub-question (Loop 2 needs it)
-    for si, sq in enumerate(sub_questions):
-        cleaned_topic = _clean_topic(sq.main_topic)
-        original_details = sq.detail_questions
-        
-        # Split details into aspects
-        aspects, aspect_to_detail = detail_aspects.flatten_aspects(
-            original_details, sq.id, cleaned_topic
-        )
-        aspects, aspect_to_detail, original_details = detail_aspects.with_topic_aspect(
-            aspects, aspect_to_detail, original_details, sq.main_topic)     # the sub-question itself is judged too (TOPIC_ASPECT)
-        logger.info(
-            "Sub-question '%s': %d original details -> %d aspects",
-            sq.main_topic[:50], len(original_details), len(aspects)
-        )
-        digest_aspects_by_sq[si] = list(aspects)
-        
-        for p in db_service.get_papers_for_stage3(qid, sq.id)[:MAX_PAPERS]:
-            selected = chunk_selector.select_chunks(
-                sq.main_topic,
-                chunk_selector.build_chunks(p),
-                detail_questions=aspects,
-                main_topic=cleaned_topic,
-            )
-            level = "full_text" if p.get("has_full_text") else "abstract"
-            jobs.append((si, "paper", p, selected, p.get("combined_score"), level, aspects, original_details, aspect_to_detail))
-        for w in db_service.get_web_sources_for_stage3(sq.id)[:MAX_WEB]:
-            snippet = w.get("snippet") or ""
-            if len(snippet) < 200:
-                continue
-            jobs.append((si, "web", w, [(0, snippet)], w.get("reliability_score"), "web_snippet", aspects, original_details, aspect_to_detail))
+    prep_workers = min(_prep_workers(), len(sub_questions))
+    if prep_workers > 1:
+        with ThreadPoolExecutor(max_workers=prep_workers, thread_name_prefix="stage3-prep") as prep_pool:
+            prepared = list(prep_pool.map(lambda item: _prepare_subquestion(qid, item[0], item[1]), enumerate(sub_questions)))
+    else:
+        prepared = [_prepare_subquestion(qid, si, sq) for si, sq in enumerate(sub_questions)]
+    for si, (sq_aspects, sq_jobs) in enumerate(prepared):
+        digest_aspects_by_sq[si] = sq_aspects
+        jobs.extend(sq_jobs)
 
     progress.report(qid, "summarizer", "prepare", "completed", f"{len(jobs)} sources to read", jobs=len(jobs),
                     papers=sum(1 for j in jobs if j[1] == "paper"), web=sum(1 for j in jobs if j[1] == "web"))
@@ -208,8 +274,11 @@ def summarizer_node(state: SharedResearchState) -> dict:
         coverage[sq.id] = cov
         progress.report(qid, "summarizer", "judge", "running", f"Judged sub-question {si + 1} of {len(sub_questions)}", done=si + 1, total=len(sub_questions),
                         sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=sum(1 for c in coverage.values() if c.get("sufficient")))
-        cov_rows.append({"query_id": qid, "sub_question_id": sq.id, **cov})
+        cov_row = {"query_id": qid, "sub_question_id": sq.id, **cov}
+        cov_rows.append(cov_row)
         all_rows.extend(rows)
+        if overlap:
+            _store_subquestion(qid, sq, si, len(sub_questions), rows, cov_row)
 
         logger.info("Sub-question '%s': %d digests (%d from full text), %d verified findings, coverage sufficient=%s",
                     sq.main_topic[:50], len(rows),
@@ -229,7 +298,8 @@ def summarizer_node(state: SharedResearchState) -> dict:
     progress.report(qid, "summarizer", "judge", "completed", f"{sum(1 for c in coverage.values() if c.get('sufficient'))} of {len(sub_questions)} sub-questions have enough evidence",
                     done=len(sub_questions), total=len(sub_questions), sufficientSubQuestions=sum(1 for c in coverage.values() if c.get("sufficient")))
     progress.report(qid, "summarizer", "store", "running", "Saving the digests and coverage", digests=len(all_rows))
-    db_service.write_digests(all_rows)
-    db_service.write_coverage(cov_rows)
+    if not overlap:                                 # with STAGE4_OVERLAP every sub-question was stored as soon as it was finished
+        db_service.write_digests(all_rows)
+        db_service.write_coverage(cov_rows)
     progress.report(qid, "summarizer", "store", "completed", f"Saved {len(all_rows)} digests", stored=len(all_rows))
     return {"digests": all_rows, "coverage": coverage}

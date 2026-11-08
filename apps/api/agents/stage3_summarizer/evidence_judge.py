@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -20,6 +21,17 @@ from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 from apps.api.services import trace_llm_service
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.evidence_judge")
+
+DEFAULT_JUDGE_PARALLEL = "2"
+
+
+def _parallel_setting(value: Any) -> int:
+    """JUDGE_PARALLEL as an int >= 1; an unreadable value means 1 (sequential, the safe behaviour)."""
+    try:
+        return max(1, int(str(value).strip()))
+    except (TypeError, ValueError):
+        return 1
+
 
 # --- Configuration constants (env-overridable, read at runtime) ---
 def _get_config():
@@ -34,6 +46,8 @@ def _get_config():
         "JUDGE_BATCH_SIZE": int(os.getenv("JUDGE_BATCH_SIZE", "32")),
         "JUDGE_TIMEOUT_S": int(os.getenv("JUDGE_TIMEOUT_S", "120")),
         "JUDGE_RETRIES": int(os.getenv("JUDGE_RETRIES", "2")),
+        # batches sent to the judge server at the same time (1 = one after the other)
+        "JUDGE_PARALLEL": _parallel_setting(os.getenv("JUDGE_PARALLEL", DEFAULT_JUDGE_PARALLEL)),
         "MAX_JUDGE_ITEMS_PER_SUBQ": int(os.getenv("MAX_JUDGE_ITEMS_PER_SUBQ", "60")),
         "CONTEXT_CHARS": int(os.getenv("JUDGE_CONTEXT_CHARS", "1200")),
         "NEAR_DUP_ASPECT_SIM": float(os.getenv("NEAR_DUP_ASPECT_SIM", "0.92")),
@@ -398,63 +412,77 @@ def judge_candidates(
     if cache_hits:
         logger.info(f"Judge cache hits: {cache_hits}/{len(items)}")
 
-    # Process in batches
-    for i in range(0, len(to_judge), batch_size):
-        batch = to_judge[i:i + batch_size]
-        batch_items = [b[0] for b in batch]
+    # Process in batches. Each batch has its own retry loop; with JUDGE_PARALLEL > 1 several batches are in flight at once,
+    # but the results are always processed in the original batch order, so the output equals the sequential one.
+    batches = [to_judge[i:i + batch_size] for i in range(0, len(to_judge), batch_size)]
 
-        last_error = None
+    def _judge_batch_with_retries(batch: List[Tuple]) -> List[Dict]:
+        batch_items = [b[0] for b in batch]
         for attempt in range(retries + 1):
             try:
-                results = _call_judge_batch(batch_items, judge_url, api_key, timeout)
-                break
+                return _call_judge_batch(batch_items, judge_url, api_key, timeout)
             except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as e:
-                last_error = e
                 if attempt < retries:
                     wait = 2 ** attempt
                     logger.warning(f"Judge call failed (attempt {attempt + 1}/{retries + 1}): {e}. Retrying in {wait}s...")
                     time.sleep(wait)
                 else:
                     logger.error(f"Judge call failed after {retries + 1} attempts: {e}")
-                    results = [{"error": str(e), "verdict": None, "raw_output": ""}] * len(batch_items)
+                    return [{"error": str(e), "verdict": None, "raw_output": ""}] * len(batch_items)
+        return []  # unreachable: the loop returns on success and on the last failed attempt
 
-        # Process results. A server that returns fewer results than items must not make the rest vanish without a trace.
-        if len(results) != len(batch):
-            logger.warning("Judge returned %d result(s) for %d item(s); the missing ones are recorded as errors", len(results), len(batch))
-            results = list(results) + [{"verdict": None, "error": "the server returned no result for this item", "raw_output": ""}] * (len(batch) - len(results))
-        failed_in_batch = 0
-        for (item, aspect_idx, source_id, claim_hash, cache_key), result in zip(batch, results):
-            verdict = result.get("verdict")
-            if verdict is None:
-                failed_in_batch += 1
-                # `error` can be present but empty/null; never store an empty reason (that made a failure impossible to diagnose)
-                raw = (result.get("raw_output") or "").strip().replace("\n", " ")
-                why = result.get("error") or "the judge returned no verdict and gave no error text"
-                if raw:
-                    why = f"{why} | raw output: {raw[:160]}"
-                logger.warning("Judge verdict failed: aspect %d, source %s, claim '%s': %s",
-                               aspect_idx + 1, str(source_id)[:12], item["claim"][:70], why)
-                verdict = {
-                    "final": "error",
-                    "quote_supports_claim": "error",
-                    "answers_aspect": "error",
-                    "reason": why,
-                }
-                verdicts[(aspect_idx, source_id, claim_hash)] = {
-                    "verdict": verdict,
-                    "raw_output": result.get("raw_output", ""),
-                    "error": result.get("error") or why,
-                }
-            else:
-                verdicts[(aspect_idx, source_id, claim_hash)] = {
-                    "verdict": verdict,
-                    "raw_output": result.get("raw_output", ""),
-                    "error": result.get("error"),
-                }
-                # Cache successful verdicts
-                cache[cache_key] = verdicts[(aspect_idx, source_id, claim_hash)]
-        if failed_in_batch:
-            logger.warning("Judge: %d of %d item(s) in this batch failed", failed_in_batch, len(batch))
+    workers = min(config["JUDGE_PARALLEL"], len(batches))
+    executor = None
+    if workers > 1:
+        logger.info("Judge: %d batch(es) of up to %d item(s), %d at a time", len(batches), batch_size, workers)
+        executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="judge")
+        futures = [executor.submit(_judge_batch_with_retries, b) for b in batches]
+        batch_results = (f.result() for f in futures)
+    else:
+        batch_results = (_judge_batch_with_retries(b) for b in batches)
+
+    try:
+        for batch, results in zip(batches, batch_results):
+            # Process results. A server that returns fewer results than items must not make the rest vanish without a trace.
+            if len(results) != len(batch):
+                logger.warning("Judge returned %d result(s) for %d item(s); the missing ones are recorded as errors", len(results), len(batch))
+                results = list(results) + [{"verdict": None, "error": "the server returned no result for this item", "raw_output": ""}] * (len(batch) - len(results))
+            failed_in_batch = 0
+            for (item, aspect_idx, source_id, claim_hash, cache_key), result in zip(batch, results):
+                verdict = result.get("verdict")
+                if verdict is None:
+                    failed_in_batch += 1
+                    # `error` can be present but empty/null; never store an empty reason (that made a failure impossible to diagnose)
+                    raw = (result.get("raw_output") or "").strip().replace("\n", " ")
+                    why = result.get("error") or "the judge returned no verdict and gave no error text"
+                    if raw:
+                        why = f"{why} | raw output: {raw[:160]}"
+                    logger.warning("Judge verdict failed: aspect %d, source %s, claim '%s': %s",
+                                   aspect_idx + 1, str(source_id)[:12], item["claim"][:70], why)
+                    verdict = {
+                        "final": "error",
+                        "quote_supports_claim": "error",
+                        "answers_aspect": "error",
+                        "reason": why,
+                    }
+                    verdicts[(aspect_idx, source_id, claim_hash)] = {
+                        "verdict": verdict,
+                        "raw_output": result.get("raw_output", ""),
+                        "error": result.get("error") or why,
+                    }
+                else:
+                    verdicts[(aspect_idx, source_id, claim_hash)] = {
+                        "verdict": verdict,
+                        "raw_output": result.get("raw_output", ""),
+                        "error": result.get("error"),
+                    }
+                    # Cache successful verdicts
+                    cache[cache_key] = verdicts[(aspect_idx, source_id, claim_hash)]
+            if failed_in_batch:
+                logger.warning("Judge: %d of %d item(s) in this batch failed", failed_in_batch, len(batch))
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     # Save updated cache
     _save_judge_cache(cache)

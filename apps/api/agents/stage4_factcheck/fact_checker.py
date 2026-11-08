@@ -198,7 +198,8 @@ def find_near_matches(clusters: list[dict]) -> list[dict]:
     answers = run_parallel(judge_near_match, [(clusters[ci]["claim"], clusters[oi]["claim"], best["quote"]) for ci, oi, best in jobs])
     for (ci, oi, best), yes in zip(jobs, answers):          # jobs are in cluster order, so the first yes of a claim is its most similar candidate
         if yes and "near" not in clusters[ci]:
-            clusters[ci]["near"] = {**best, "relation": "near_match", "via": "near_judge", "near_claim": clusters[oi]["claim"], "prob": 0.0}
+            clusters[ci]["near"] = {k: best.get(k) for k in ("source_id", "source_title", "quote", "reliability", "evidence_level", "ev", "weight", "doc")} | {
+                "relation": "near_match", "via": "near_judge", "near_claim": clusters[oi]["claim"], "prob": 0.0}
     if skipped:
         logger.warning("Stage 4: the near-match judge budget (%d) ran out; %d candidate pair(s) were not judged", MAX_NEAR_JUDGE, skipped)
     return clusters

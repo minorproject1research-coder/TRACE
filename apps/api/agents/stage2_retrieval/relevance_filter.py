@@ -2,6 +2,7 @@
 import os
 import json
 import logging
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
@@ -13,6 +14,11 @@ load_dotenv()
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
 
 _embedder = None
+# Sub-questions are filtered in parallel threads (RELEVANCE_WORKERS). Loading the model must happen once, and encode() is
+# serialised: the fast tokenizer can fail with "Already borrowed" when used from several threads at once, and the CPU matrix
+# work already uses all cores, so overlapping two encodes would not be faster anyway. The judge calls are not behind this lock.
+_embedder_lock = threading.Lock()
+_encode_lock = threading.Lock()
 
 # Toggle: get value from environment variable (default: false) — only the fast embedding filter runs.
 USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "false").lower() == "true"
@@ -34,16 +40,35 @@ GROQ_JUDGE_MODEL = os.environ.get("GROQ_JUDGE_MODEL", "openai/gpt-oss-120b")
 JUDGE_ABSTRACT_CHAR_LIMIT = 2500
 
 
+class _SerializedEmbedder:
+    """The shared embedding model with encode() behind a lock. The summarizer (Stage 3) and the fact checker (Stage 4, STAGE4_OVERLAP) use
+    this one model from different threads at the same time, and the fast tokenizer can fail with "Already borrowed" when two threads use it
+    at once. Everything else is passed through to the real model. Re-entrant, and separate from the lock of embedding_prefilter."""
+    def __init__(self, model):
+        self._model = model
+        self._lock = threading.RLock()
+
+    def encode(self, *args, **kwargs):
+        with self._lock:
+            return self._model.encode(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._model, name)
+
+
 def get_embedder():
     """Lazy-loads the embedding model once, reused across all calls."""
     global _embedder
     if _embedder is None:
-        logger.info("Loading embedding model BAAI/bge-base-en-v1.5")
-        try:
-            # the model is on disk after the first run; asking the Hub about it anyway cost 13 s normally and 2 minutes on a slow network
-            _embedder = SentenceTransformer("BAAI/bge-base-en-v1.5", local_files_only=True)
-        except Exception:                                   # not downloaded yet (first run) or an old library: the normal path
-            _embedder = SentenceTransformer("BAAI/bge-base-en-v1.5")
+        with _embedder_lock:
+            if _embedder is None:
+                logger.info("Loading embedding model BAAI/bge-base-en-v1.5")
+                try:
+                    # the model is on disk after the first run; asking the Hub about it anyway cost 13 s normally and 2 minutes on a slow network
+                    model = SentenceTransformer("BAAI/bge-base-en-v1.5", local_files_only=True)
+                except Exception:                           # not downloaded yet (first run) or an old library: the normal path
+                    model = SentenceTransformer("BAAI/bge-base-en-v1.5")
+                _embedder = _SerializedEmbedder(model)
     return _embedder
 
 
@@ -59,8 +84,9 @@ def embedding_prefilter(sub_question: str, papers: list[dict],
     model = get_embedder()
     texts = [p.get("abstract") or p.get("title", "") for p in papers]
 
-    query_emb = model.encode([sub_question], normalize_embeddings=True)[0]
-    doc_embs = model.encode(texts, normalize_embeddings=True)
+    with _encode_lock:
+        query_emb = model.encode([sub_question], normalize_embeddings=True)[0]
+        doc_embs = model.encode(texts, normalize_embeddings=True)
 
     similarities = doc_embs @ query_emb
 
