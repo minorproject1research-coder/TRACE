@@ -436,6 +436,45 @@ def test_the_judge_stops_asking_after_a_daily_limit_and_fails_closed_fast(monkey
     judge.reset_breaker()
 
 
+def test_a_short_pool_wide_limit_is_waited_out_and_the_answer_is_not_lost(monkeypatch):
+    slept = []
+    monkeypatch.setattr(judge.time, "sleep", lambda s: slept.append(s))
+    replies = iter([RuntimeError("all 7 Groq key(s) are rate limited for 124s"), {"same": True}])
+
+    def flaky(prompt, **_):
+        r = next(replies)
+        if isinstance(r, Exception):
+            raise r
+        return r
+    monkeypatch.setattr(judge, "squeezer_json", flaky)
+    judge.reset_breaker()
+    s0 = judge.stats()
+    assert judge.judge_same_claim("a", "b") is True
+    s1 = judge.stats()
+    assert slept == [125.0] and s1["waits"] - s0["waits"] == 1 and s1["failures"] == s0["failures"]
+
+
+def test_the_wait_is_limited_in_time_and_in_number_and_then_the_breaker_opens(monkeypatch):
+    slept = []
+    monkeypatch.setattr(judge.time, "sleep", lambda s: slept.append(s))
+    calls = []
+
+    def limited(prompt, **_):
+        calls.append(prompt)
+        raise RuntimeError("all 7 Groq key(s) are rate limited for 100s")
+    monkeypatch.setattr(judge, "squeezer_json", limited)
+    judge.reset_breaker()
+    assert judge.judge_same_claim("a", "b") is False
+    assert len(calls) == 1 + judge.RATE_RETRIES and len(slept) == judge.RATE_RETRIES          # waited, asked again, gave up
+    assert judge.judge_same_claim("c", "d") is False and len(calls) == 1 + judge.RATE_RETRIES   # breaker open: not asked
+    judge.reset_breaker()
+    slept.clear()
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: (_ for _ in ()).throw(RuntimeError("all 7 Groq key(s) are rate limited for 900s")))
+    judge.judge_same_claim("e", "f")
+    assert slept == []                                                  # a daily-size limit is never waited for
+    judge.reset_breaker()
+
+
 def test_an_ordinary_failure_does_not_trip_the_breaker(monkeypatch):
     monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: (_ for _ in ()).throw(ValueError("bad json")))
     judge.reset_breaker()

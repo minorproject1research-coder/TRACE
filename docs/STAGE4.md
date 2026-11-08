@@ -34,7 +34,7 @@ Every judge **fails closed**: any error means "no conflict", "does not support",
 |---|---|---|
 | same claim (`SAME_PROMPT`) | do two claims make the same specific assertion? | no if one has a mechanism, number, condition or scope the other lacks |
 | support (`SUPPORT_PROMPT`) | does the quote support the claim? | no if the claim adds a fact the quote lacks; ignores formatting noise |
-| conflict (`PROMPT` + `CONFIRM_PROMPT`) | could both statements be true together? | hedges ("can", "may"), aims versus results, different models, datasets or settings are not conflicts; a conflict needs the first reading to say yes and a second reading that tries to reconcile them to fail |
+| conflict (`PROMPT` + `CONFIRM_PROMPT`) | could both statements be true together? | hedges ("can", "may"), aims versus results, different models, datasets or settings are not conflicts; a conflict needs the first reading to say yes and a second reading that tries to reconcile them (using only words that are really in the texts) to fail. On 41 labeled pairs: precision 0.71, recall 0.56 |
 | near match (`NEAR_PROMPT`) | does source 2 make the main point of claim 1, more generally or more specifically? | the judge must first write the shared point in a sentence; "none" or an empty point turns a yes into a no |
 
 Infrastructure: all judge answers are cached on disk (`.cache/stage4_judge`, a failure is never cached), so rerunning Stage 4 on the same claims costs no Groq tokens and gives the same labels; judge calls run side by side (`STAGE4_WORKERS`, default 4) with results in input order; after a "rate limited for good" answer the judge is not asked again for 5 minutes (the circuit breaker); every cap logs a warning when it bites.
@@ -48,6 +48,7 @@ Infrastructure: all judge answers are cached on disk (`.cache/stage4_judge`, a f
 | `STAGE4_MAX_MERGE_JUDGE` / `STAGE4_MAX_SUPPORT_JUDGE` / `STAGE4_MAX_JUDGE` / `STAGE4_MAX_PAIRS` | 300 / 150 / 40 / 80 | caps per sub-question |
 | `STAGE4_NEAR` | true | the `partially_supported` label |
 | `STAGE4_NEAR_MIN_SIM`, `STAGE4_NEAR_CANDIDATES`, `STAGE4_MAX_NEAR_JUDGE` | 0.70, 1, 120 | near-match candidates and cap |
+| `STAGE4_RATE_WAIT_MAX`, `STAGE4_RATE_RETRIES` | 300, 2 | when every Groq key is parked for at most this many seconds (the per-minute limit; seen 124 to 171 s) a judge call waits and asks again, up to this many times, instead of failing closed; a longer limit (a daily one) opens the 5-minute breaker at once |
 | `NLI_MODEL` | `MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli` | NLI model (1.7 GB, downloaded on first use) |
 
 ## 6. Output
@@ -66,7 +67,7 @@ On the stored digests of that run (no NLI, every member counted as supported by 
 ## 9. Limits (details and fixes in `docs/KNOWN_LIMITS.md`)
 - **Slow on the CPU** (4.10): moving NLI to the host needs an endpoint there; the 80-pair cap means a true conflict outside the 80 most similar pairs is never looked at.
 - **Little corroboration** (4.11): `supported` needs the same specific claim in two documents (about 3.5% of claims in the Q2 run); `partially_supported` is the answer to that, with the precision limit above.
-- **No real conflict between sources has been found yet** (4.12); the conflict judge was measured on constructed positives, and the hardened version is not yet evaluated on the labeled set (Groq limit).
+- **No real conflict between sources has been found yet** (4.12); the conflict judge on the 41-pair labeled set has precision 0.71 and recall 0.56 (see 4.12), and one of the two conflicts of run 30 was false.
 - The labeled sets (30 merge, 16 support, 40 conflict pairs) were written by an LLM, not by people.
 - `needs_replan` is only recorded; the replan loop (Loop 3) is not built.
 

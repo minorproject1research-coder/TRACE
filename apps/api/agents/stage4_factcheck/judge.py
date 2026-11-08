@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import tempfile
 import threading
 import time
@@ -30,7 +31,7 @@ class JudgeUnavailable(Exception):
 
 
 _lock = threading.Lock()
-_stats = {"calls": 0, "cache_hits": 0, "failures": 0, "skipped": 0}
+_stats = {"calls": 0, "cache_hits": 0, "failures": 0, "skipped": 0, "waits": 0}
 _breaker_until = 0.0
 BREAKER_SECONDS = 300.0
 
@@ -50,6 +51,17 @@ def reset_breaker() -> None:
 def _bump(key: str) -> None:
     with _lock:
         _stats[key] += 1
+
+
+RATE_WAIT_MAX = float(os.getenv("STAGE4_RATE_WAIT_MAX", "300"))     # a pool-wide limit of at most this many seconds is waited out, not failed
+RATE_RETRIES = int(os.getenv("STAGE4_RATE_RETRIES", "2"))           # how many times a call waits and tries again
+
+
+def _rate_wait_seconds(e: Exception) -> float | None:
+    """'all 7 Groq key(s) are rate limited for 124s' -> 124.0: every key is parked for that long (the per-minute token limit), which is worth
+    waiting for. None for anything else, including 'gave up after 300s of rate limits'."""
+    m = re.search(r"rate limited for (\d+)s", str(e))
+    return float(m.group(1)) if m else None
 
 
 def _rate_limited_for_good(e: Exception) -> bool:
@@ -76,8 +88,10 @@ def workers() -> int:
 
 def ask(prompt: str, purpose: str = "stage4_judge") -> dict:
     """squeezer_json with the disk cache. Raises on failure (callers turn that into their fail-closed answer).
-    After a rate-limit-for-good failure the model is not asked again for BREAKER_SECONDS (cached answers still work): a sub-question would
-    otherwise wait on hundreds of calls that all fail, and every one of them fails closed anyway."""
+    When every Groq key is parked for at most STAGE4_RATE_WAIT_MAX seconds (the per-minute token limit; seen: 124 to 171 s) the call waits that
+    long and asks again, up to STAGE4_RATE_RETRIES times: the first diffusion run lost 37 judge answers by failing closed at that point.
+    After a longer limit (a daily one) or when the retries are used up, the model is not asked again for BREAKER_SECONDS (cached answers still
+    work): a sub-question would otherwise wait on hundreds of calls that all fail, and every one of them fails closed anyway."""
     global _breaker_until
     path = None
     if _cache_on():
@@ -97,15 +111,25 @@ def ask(prompt: str, purpose: str = "stage4_judge") -> dict:
         _bump("skipped")
         raise JudgeUnavailable("the judge model is rate limited; not asked again for a few minutes")
     _bump("calls")
-    try:
-        value = squeezer_json(prompt, purpose=purpose)
-    except Exception as e:
-        _bump("failures")
-        if _rate_limited_for_good(e):
-            with _lock:
-                _breaker_until = time.monotonic() + BREAKER_SECONDS
-            logger.warning("Stage 4: the judge model is rate limited (%s); judge calls fail closed for the next %.0f s", str(e)[:100], BREAKER_SECONDS)
-        raise
+    attempt = 0
+    while True:
+        try:
+            value = squeezer_json(prompt, purpose=purpose)
+            break
+        except Exception as e:
+            wait = _rate_wait_seconds(e)
+            if wait is not None and wait <= RATE_WAIT_MAX and attempt < RATE_RETRIES:
+                attempt += 1
+                _bump("waits")
+                logger.info("Stage 4: every Groq key is parked for %.0f s; waiting and asking again (%d of %d)", wait, attempt, RATE_RETRIES)
+                time.sleep(wait + 1.0)
+                continue
+            _bump("failures")
+            if _rate_limited_for_good(e):
+                with _lock:
+                    _breaker_until = time.monotonic() + BREAKER_SECONDS
+                logger.warning("Stage 4: the judge model is rate limited (%s); judge calls fail closed for the next %.0f s", str(e)[:100], BREAKER_SECONDS)
+            raise
     if path is not None and isinstance(value, dict):
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -155,14 +179,15 @@ Return ONLY JSON: {{"same_aspect": true, "conflicts": true, "confidence": 0.0, "
 CONFIRM_PROMPT = """Statement A: {claim}
 Evidence from another source: "{quote}"
 
-A second reader says these two DIRECTLY CONTRADICT each other. Try to prove them wrong.
-Can both be true at the same time under any reasonable reading? Check each of these:
-- hedging (can, may, potentially, often, usually, in some cases) on either side
+A second reader says these two DIRECTLY CONTRADICT each other. Check whether that is right.
+Look for a reason, in the ACTUAL WORDS of A and of the evidence, why both could be true at the same time:
+- a hedging word that is really there (can, may, potentially, often, usually, in some cases) on either side
 - an aim or intention on one side and a measured result on the other
-- different models, datasets, methods, metrics, scale or conditions
+- different models, datasets, methods, metrics, scale or conditions that the texts themselves name
 - one side is more specific, or only partly overlaps the other
-If any of them makes both statements possible together, answer both_can_be_true=true.
-Answer false only if the evidence plainly asserts the opposite of A about the same thing in the same setting.
+- one side only adds to, complements or extends the other and does not deny it
+Do NOT invent hedges, conditions or settings that are not in the texts: "if A were hedged" or "it might depend on the dataset" is not a reason.
+If A and the evidence assert opposite things about the same subject and none of the reasons above is in the words, answer both_can_be_true=false.
 
 Return ONLY JSON: {{"both_can_be_true": true, "reason": "one sentence"}}"""
 

@@ -21,6 +21,11 @@ from apps.api.agents.stage4_factcheck import contradiction_detector as cd, fact_
 
 DATA = json.loads((ROOT / "reports" / "stage4_eval_set.json").read_text(encoding="utf-8"))
 NLI = "--nli" in sys.argv
+ONLY = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None      # --only conflict: skip the other two sets (saves Groq calls)
+if ONLY:
+    for _k in ("merge", "support", "conflict"):
+        if _k != ONLY:
+            DATA[_k] = []
 
 
 def prf(rows, pred_key="pred", label_key="label"):

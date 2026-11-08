@@ -61,6 +61,7 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
         "disagreements": len(disagreements),
         "judge_calls": judge.stats()["calls"] - j0["calls"],
         "judge_cache_hits": judge.stats()["cache_hits"] - j0["cache_hits"],
+        "judge_waits": judge.stats()["waits"] - j0["waits"],
         "judge_failures": judge.stats()["failures"] - j0["failures"] + judge.stats()["skipped"] - j0["skipped"],
         "support_from_stage3": sum(1 for r in labeled for e in r["evidence"] if e.get("via") == "stage3_judge"),
         "missing_evidence": db_service.get_missing_evidence(sq.id),
