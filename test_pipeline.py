@@ -29,11 +29,16 @@ for logger_name, filename in stage_files.items():
 from apps.api.graph.build_graph import build_graph
 from apps.api.graph.state import SharedResearchState
 
+from apps.api.services import groq_pool
+
 app = build_graph()
+_usage_before = groq_pool.meter.snapshot()
 # python test_pipeline.py "your question"  runs that question; without an argument it runs the default below
 DEFAULT_QUERY = "How do state space models like Mamba compare with transformers in training efficiency and long-sequence performance?"
 raw_query = " ".join(sys.argv[1:]).strip() or DEFAULT_QUERY
 result = app.invoke(SharedResearchState(raw_query=raw_query))
+logging.getLogger("apps.api.services.groq_pool").info(groq_pool.usage_text(groq_pool.meter.since(_usage_before)))
+print("\n" + groq_pool.usage_text(groq_pool.meter.since(_usage_before)))
 
 print("\n=== TASK PLAN ===")
 # print(result["task_plan"])
