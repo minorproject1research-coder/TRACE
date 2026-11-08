@@ -7,13 +7,17 @@ import { ApiError, TERMINAL_EVENTS, type CreateInput, type EventName, type Repor
 // (a real run takes 15-25 minutes). Everything it returns is fictional. A question containing the word "fail" makes the
 // simulated run fail in the summarizer, to exercise the failure states. A question containing "factcheck" runs Stage 4 (fact check across sources);
 // one containing "factfail" makes Stage 4 fail while the run still completes. Without either word Stage 4 is switched off (stage state 'not_run').
+// A new run simulates the PARALLEL pipeline (judges interleaved, concurrent Loop 2, near step, replayed burst with occurredAt); a question containing "oldstyle"
+// simulates the pipeline before it, to prove that old runs still render.
 
 const STORE_KEY = 'trace.demo.sessions.v1'
 const DEMO_PREFIX = 'demo-'
 
-type Beat = { at: number; event: EventName; stage: StageId | null; status: string | null; message: string; data: Record<string, unknown> }
+/** `occ`: when the event really happened, if that is earlier than `at` (a held event that was replayed). It is sent as data.occurredAt. */
+type Beat = { at: number; occ?: number; event: EventName; stage: StageId | null; status: string | null; message: string; data: Record<string, unknown> }
 
-type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed'; fact?: DemoFact }
+/** `old`: the pipeline before the parallel work (no subQuestionIndex, no occurredAt, no near step): proves that old runs still render. */
+type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed'; fact?: DemoFact; old?: boolean }
 
 const REL = { candidates: 24, shortlisted: 12, judged: 12, passed: 5, backend: 'server' }
 
@@ -25,7 +29,7 @@ function step(at: number, lane: 'papers' | 'web' | 'summarizer', stepId: string,
 }
 
 /** Stage 4 runs after the summarizer, one sub-question after the other (about 3 minutes each on the real server). 5 sub-questions: the third has no Stage 3 result. */
-function factcheckBeats(fact: Exclude<DemoFact, 'off'>): Beat[] {
+function factcheckBeatsOld(fact: Exclude<DemoFact, 'off'>): Beat[] {
   const fstep = (at: number, stepId: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}): Beat => ({ at, event: 'step', stage: 'factcheck', status: state, message, data: { lane: 'factcheck', step: stepId, state, ...data } })
   const out: Beat[] = [
     { at: 13050, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
@@ -56,7 +60,7 @@ function factcheckBeats(fact: Exclude<DemoFact, 'off'>): Beat[] {
 }
 
 /** The retrieval branches run AT THE SAME TIME (like the real graph); each reports its steps. */
-function timeline(fails: boolean, fact: DemoFact = 'off'): Beat[] {
+function timelineOld(fails: boolean, fact: DemoFact = 'off'): Beat[] {
   const beats: Beat[] = [
     { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
     { at: 700, event: 'run_started', stage: null, status: 'running', message: 'Run started', data: {} },
@@ -128,9 +132,219 @@ function timeline(fails: boolean, fact: DemoFact = 'off'): Beat[] {
     return [...beats.filter(b => b.at < 11000), failure].sort((x, y) => x.at - y.at)
   }
   beats.push({ at: 13000, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 3 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 3, subQuestions: 3, sufficientSubQuestions: 1 } })
-  if (fact === 'off') beats.push({ at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } })
-  else beats.push(...factcheckBeats(fact), { at: fact === 'on' ? 16500 : 14800, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['report'] } })
+  if (fact === 'off') beats.push({ at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'], ...oldUsage('off') } })
+  else beats.push(...factcheckBeatsOld(fact), { at: fact === 'on' ? 16500 : 14800, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['report'], ...oldUsage(fact) } })
   return beats.sort((x, y) => x.at - y.at)
+}
+
+// ------------------------------------------------------------------------------------------------------------------------ the parallel pipeline (2026-11-08)
+// What the real stream looks like now (docs/API_HANDOFF.md, "Work that now runs at the same time"):
+//  - 5 sub-questions, judged two at a time, each as soon as its own digests are done, so the judge events of different sub-questions interleave and
+//    finish in any order; every judge and loop2 event carries subQuestionIndex; `done` counts finished sub-questions
+//  - the judge and loop2 events that happened before the digest step ended are held and replayed right after it, each with data.occurredAt
+//  - Stage 4 starts during Stage 3, one sub-question at a time in the order they were stored (2, 3, 1, 5, 4 here), with near and conflicts side by side;
+//    its events are held until stage_started and then replayed as a burst, each with occurredAt; the rest arrive live
+//  - the fact-check stage_completed has judgeWaits, and run_completed has the new Groq token purposes
+
+const NEW_N = 5
+const NEW_TOPICS = [
+  'What is the sample method and how does it work?', 'How does the sample method scale to long inputs?', 'What are the open problems of the sample method?',
+  'Which training settings does the sample method prefer?', 'How does the sample method compare with its baselines?',
+]
+const NEW_TOKENS = { digest: 41200, digest_loop2: 9600, aspect_split: 3300, query_expansion: 2500, stage4_merge: 18400, stage4_support: 22100, stage4_near: 9300, stage4_conflict: 14700, rerank_probe: 700 }
+const OLD_TOKENS = { digest: 41200, digest_loop2: 8800, aspect_split: 3100, query_expansion: 2400 }
+const sumOf = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0)
+
+/** Both retrieval branches for n sub-questions (the same shape as the old timeline, with the counts spread over n). */
+function retrievalBeats(n: number): Beat[] {
+  const candidates = 8 * n
+  const rel = { candidates, shortlisted: 4 * n, judged: 4 * n, passed: 8, backend: 'server' }
+  const out: Beat[] = [
+    branch(3600, 'papers'),
+    step(3650, 'papers', 'search', 'running', 'Searching OpenAlex, Scopus and arXiv', { subQuestions: n, queries: 3 * n }),
+    step(4600, 'papers', 'search', 'completed', `Found ${candidates} candidate papers`, { candidates }),
+    step(4650, 'papers', 'relevance_filter', 'running', 'Judging relevance (embedding shortlist, then the LLM judge)', { candidates, done: 0, total: n }),
+  ]
+  for (let i = 1; i <= n; i++) {
+    out.push(step(Math.round(5100 + (i - 1) * (1000 / (n - 1))), 'papers', 'relevance_filter', 'running', `Judged sub-question ${i} of ${n}`,
+      i === n ? { done: i, total: n, ...rel } : { done: i, total: n, candidates: 8 * i, shortlisted: 4 * i, judged: 4 * i, passed: Math.round((8 * i) / n), backend: 'server' }))
+  }
+  out.push(
+    step(6150, 'papers', 'relevance_filter', 'completed', `8 of ${candidates} candidates passed (${4 * n} judge calls)`, rel),
+    step(6200, 'papers', 'citations', 'running', 'Fetching citation counts for the papers that passed', { papers: 8 }),
+    step(6350, 'papers', 'citations', 'completed', '8 papers kept', { kept: 8 }),
+    step(6400, 'papers', 'scoring', 'running', 'Scoring reliability and ranking', { papers: 8 }),
+    step(6500, 'papers', 'scoring', 'completed', 'Scored 8 papers', { scored: 8 }),
+    step(6550, 'papers', 'store', 'running', 'Saving the papers', { papers: 8 }),
+    step(6650, 'papers', 'store', 'completed', 'Saved 8 papers', { stored: 8 }),
+    step(6700, 'papers', 'parsing', 'running', 'Parsing the best 3 papers (PDF to text)', { target: 3, attempted: 0, usable: 0, papers: 8 }),
+    step(7300, 'papers', 'parsing', 'running', 'Parsed 1 of 3 papers', { target: 3, attempted: 1, usable: 1 }),
+    step(8000, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 2, usable: 2 }),
+    step(8700, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 3, usable: 2 }),
+    step(9000, 'papers', 'parsing', 'completed', '2 of 3 papers parsed', { target: 3, attempted: 3, usable: 2 }),
+    { at: 9100, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Kept 8 papers', data: { branch: 'papers', papers: 8 } },
+    branch(3600, 'web'),
+    step(3650, 'web', 'search', 'running', 'Searching the web', { subQuestions: n, queries: 3 * n, done: 0, total: n }),
+  )
+  for (let i = 1; i <= n; i++) out.push(step(Math.round(4200 + (i - 1) * (1200 / (n - 1))), 'web', 'search', 'running', `Searched sub-question ${i} of ${n}`, { done: i, total: n, found: i }))
+  out.push(
+    step(5500, 'web', 'search', 'completed', `Found ${n} web sources`, { found: n }),
+    step(5550, 'web', 'scoring', 'running', 'Scoring source reliability', { sources: n }),
+    step(5650, 'web', 'scoring', 'completed', `Scored ${n} sources`, { scored: n }),
+    step(5700, 'web', 'store', 'running', 'Saving the web sources', { sources: n }),
+    step(5800, 'web', 'store', 'completed', `Saved ${n} web sources`, { stored: n }),
+    { at: 5900, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: `Found ${n} web sources`, data: { branch: 'web', webSources: n } },
+  )
+  return out
+}
+
+/** A held event of the summarizer: emitted at `at`, but it happened at `occ`. Without `occ` it is live. */
+function held(occ: number | null, at: number, stepId: 'judge' | 'loop2', message: string, data: Record<string, unknown>): Beat {
+  return { ...step(at, 'summarizer', stepId, 'running', message, { ...data }), ...(occ != null ? { occ } : {}) }
+}
+
+function summarizerBeatsNew(): Beat[] {
+  const N = NEW_N
+  const sq = (i: number) => ({ subQuestion: NEW_TOPICS[i - 1], subQuestionIndex: i, subQuestions: N })
+  const start = (occ: number | null, at: number, i: number, done: number) => held(occ, at, 'judge', `Judging the evidence for sub-question ${i} of ${N}`, { ...sq(i), done, total: N })
+  const finish = (occ: number | null, at: number, i: number, done: number, sufficient: boolean, soFar: number) =>
+    held(occ, at, 'judge', `Judged sub-question ${i} of ${N}`, { done, total: N, subQuestionIndex: i, subQuestions: N, sufficient, judgeUsed: true, sufficientSoFar: soFar })
+  const rung = (occ: number | null, at: number, i: number, r: 'reselect' | 'pool' | 'queries', aspects: number) =>
+    held(occ, at, 'loop2', `Loop 2 (${r}): ${aspects} aspect(s) of '${NEW_TOPICS[i - 1]}'`, { loop2Step: r, aspects, subQuestionIndex: i, subQuestions: N })
+  const loop2Done = (occ: number | null, at: number, i: number, searched: number, covered: number) =>
+    held(occ, at, 'loop2', `Loop 2 done for sub-question ${i}`, { ...sq(i), searched, covered })
+
+  const beats: Beat[] = [
+    { at: 9400, event: 'stage_started', stage: 'summarizer', status: 'running', message: 'Reading sources and checking evidence', data: {} },
+    step(9450, 'summarizer', 'prepare', 'running', 'Selecting the passages to read (chunking, embeddings)', { subQuestions: N }),
+    step(9700, 'summarizer', 'prepare', 'completed', '10 sources to read', { jobs: 10, papers: 6, web: 4 }),
+    step(9800, 'summarizer', 'digest', 'running', 'Reading 10 sources with the LLM', { done: 0, total: 10, failures: 0 }),
+  ]
+  for (let k = 1; k <= 10; k++) beats.push(step(9800 + k * 190, 'summarizer', 'digest', 'running', `Read ${k} of 10 sources`, { done: k, total: 10, failures: k > 7 ? 1 : 0 }))
+  beats.push(step(11950, 'summarizer', 'digest', 'completed', 'Read 10 sources', { done: 10, total: 10, failures: 1 }))
+
+  // The judge and Loop 2 events from before 11950, in the order they happened, replayed right after the digest step ended (each with occurredAt).
+  const earlier: [number, (at: number) => Beat][] = [
+    [10200, at => start(10200, at, 1, 0)],
+    [10500, at => start(10500, at, 2, 0)],
+    [10800, at => rung(10800, at, 1, 'reselect', 2)],
+    [11400, at => finish(11400, at, 2, 1, true, 1)],
+    [11410, at => start(11410, at, 3, 1)],
+    [11450, at => rung(11450, at, 1, 'pool', 1)],
+    [11700, at => rung(11700, at, 3, 'reselect', 1)],
+  ]
+  earlier.forEach(([, make], k) => beats.push(make(11960 + k * 15)))
+
+  // After the gate opened the events are live. Two judges finish within 10 ms and reach the stream in the other order: done=5 before done=4.
+  beats.push(
+    rung(null, 12100, 1, 'queries', 1),
+    loop2Done(null, 12150, 3, 1, 1),
+    finish(null, 12200, 3, 2, false, 1),
+    start(null, 12205, 4, 2),
+    loop2Done(null, 12500, 1, 2, 1),
+    finish(null, 12550, 1, 3, true, 2),
+    start(null, 12555, 5, 3),
+    finish(null, 12850, 5, 5, true, 3),
+    finish(null, 12860, 4, 4, false, 2),
+    step(12880, 'summarizer', 'loop2', 'completed', 'Loop 2 finished: 3 aspect(s) searched again, 2 covered', { searched: 3, covered: 2 }),
+    step(12900, 'summarizer', 'judge', 'completed', '3 of 5 sub-questions have enough evidence', { done: N, total: N, sufficientSubQuestions: 3 }),
+    step(12950, 'summarizer', 'store', 'running', 'Saving the digests and coverage', { digests: 10 }),
+    step(13000, 'summarizer', 'store', 'completed', 'Saved 10 digests', { stored: 10 }),
+    { at: 13050, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 10 sources; 3 of 5 sub-questions have sufficient evidence', data: { digests: 10, subQuestions: N, sufficientSubQuestions: 3 } },
+  )
+  return beats
+}
+
+/** Stage 4 in the order the sub-questions were stored: 2, 3, 1, 5, 4. The first three were (partly) checked before stage_started and arrive as a burst. */
+function factcheckBeatsNew(fact: Exclude<DemoFact, 'off'>): Beat[] {
+  const fstep = (at: number, stepId: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}, occ?: number): Beat =>
+    ({ at, event: 'step', stage: 'factcheck', status: state, message, data: { lane: 'factcheck', step: stepId, state, ...data }, ...(occ != null ? { occ } : {}) })
+  const N = NEW_N
+  // one sub-question: the five steps, near and conflicts at the same moment. `at` is when it is emitted, `occ` when it happened (a replayed event).
+  const sqSteps = (i: number, t: number, opts: { replay: boolean; upTo?: number; emitFrom?: number }): Beat[] => {
+    const c = { subQuestion: i, subQuestions: N }
+    const list: [number, string, string, Record<string, unknown>][] = [
+      [0, 'claims', `Reading the claims of ${i + 1} sources`, { sources: i + 1 }],
+      [150, 'clusters', `Grouping ${4 + i} claims that say the same thing`, { claims: 4 + i }],
+      [300, 'support', `Checking that the quotes support ${3 + i} grouped claims`, { clusters: 3 + i }],
+      [450, 'near', 'Looking for close variants of single-source claims in other documents', {}],
+      [450, 'conflicts', 'Looking for sources that disagree', {}],
+    ]
+    return list.slice(0, opts.upTo ?? 5).map(([dt, id, msg, extra]) => fstep(t + dt, id, 'running', msg, { ...c, ...extra }, opts.replay ? t + dt : undefined))
+  }
+  const out: Beat[] = [
+    { at: 13100, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
+    fstep(13102, 'branch', 'running', 'Checking claims across sources'),                    // a step the page does not know: it must be ignored
+  ]
+  // held (occurred before stage_started), replayed in order: sq 2 (11450), sq 3 (12200), and the first three steps of sq 1 (12800)
+  const burst = [...sqSteps(2, 11450, { replay: true }), ...sqSteps(3, 12200, { replay: true }), ...sqSteps(1, 12800, { replay: true, upTo: 3 })]
+  burst.forEach((b, k) => out.push({ ...b, at: 13110 + k * 10 }))
+  // live from here on
+  out.push(...sqSteps(1, 12800, { replay: false }).slice(3))
+  out.push(...sqSteps(5, 13450, { replay: false }))
+  if (fact === 'failed') {
+    const cut = out.filter(b => b.at <= 13600)
+    cut.push(fstep(13700, 'store', 'failed', 'Fact checking failed: ConnectionError'),
+      { at: 13800, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
+    return cut
+  }
+  out.push(...sqSteps(4, 14050, { replay: false }))
+  const t = demoFactTotals()
+  const claims = t.supported + t.partially_supported + t.unverified + t.contradicted
+  out.push(fstep(14700, 'store', 'running', 'Saving the fact-check results', { claims, disagreements: demoFactDisagreements() }),
+    fstep(14800, 'store', 'completed', `${claims} claims checked`, { claims, supported: t.supported, partially_supported: t.partially_supported, contradicted: t.contradicted, unverified: t.unverified }),
+    { at: 14900, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.partially_supported} partially supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
+      data: { claims, subQuestions: N, failedSubQuestions: 1, supported: t.supported, partially_supported: t.partially_supported, unverified: t.unverified, contradicted: t.contradicted, contested: t.contested, disagreements: demoFactDisagreements(), judgeFailures: 1, judgeWaits: 2 } })
+  return out
+}
+
+function timelineNew(fails: boolean, fact: DemoFact): Beat[] {
+  const N = NEW_N
+  const beats: Beat[] = [
+    { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
+    { at: 700, event: 'run_started', stage: null, status: 'running', message: 'Run started', data: {} },
+    { at: 900, event: 'stage_started', stage: 'planner', status: 'running', message: 'Planner started', data: {} },
+    { at: 3200, event: 'stage_completed', stage: 'planner', status: 'completed', message: `Planned ${N} sub-questions and ${3 * N} search queries`, data: { subQuestions: N, queries: 3 * N, domainAnchor: 'sample research field', topics: NEW_TOPICS } },
+    { at: 3500, event: 'stage_started', stage: 'retrieval', status: 'running', message: 'Retrieval started', data: {} },
+    ...retrievalBeats(N),
+    { at: 9200, event: 'stage_completed', stage: 'retrieval', status: 'completed', message: 'Retrieval finished', data: {} },
+    ...summarizerBeatsNew(),
+  ]
+  if (fails) {
+    // the summarizer stops while it is reading sources: the held judge events never appear
+    const failure: Beat = { at: 11000, event: 'run_failed', stage: 'summarizer', status: 'failed', message: 'DemoError: simulated failure in the summarizer', data: {} }
+    return [...beats.filter(b => b.at < 10800), failure].sort((x, y) => x.at - y.at)
+  }
+  const done = (extra: Record<string, unknown>, notRun: string[]): Beat => ({ at: 0, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: notRun, ...extra } })
+  const usage = (tokens: Record<string, number>) => ({ groqTokens: sumOf(tokens), groqCalls: Math.round(sumOf(tokens) / 520), groqTokensByPurpose: tokens })
+  if (fact === 'off') {
+    const t = { digest: NEW_TOKENS.digest, digest_loop2: NEW_TOKENS.digest_loop2, aspect_split: NEW_TOKENS.aspect_split, query_expansion: NEW_TOKENS.query_expansion }
+    beats.push({ ...done(usage(t), ['factcheck', 'report']), at: 13500 })
+  } else {
+    beats.push(...factcheckBeatsNew(fact))
+    const last = Math.max(...beats.map(b => b.at))
+    const t: Record<string, number> = fact === 'failed' ? { ...NEW_TOKENS, stage4_merge: 6100, stage4_support: 5200, stage4_near: 0, stage4_conflict: 0, rerank_probe: 0 } : NEW_TOKENS
+    beats.push({ ...done(usage(t), ['report']), at: last + 200 })
+  }
+  return slowDown(beats.sort((x, y) => x.at - y.at))
+}
+
+/** The real pipeline judges for minutes, the demo for seconds. Everything after the digest step ended is stretched, so the chips can be watched: two
+ *  judging at once, Loop 2 on two sub-questions, the burst. The mapping is monotone, so the order of events, and of when things really happened, is kept. */
+const GATE = 11950
+const SLOW = 3
+const stretch = (t: number) => (t <= GATE ? t : Math.round(GATE + (t - GATE) * SLOW))
+const slowDown = (beats: Beat[]): Beat[] => beats.map(b => ({ ...b, at: stretch(b.at), ...(b.occ != null ? { occ: stretch(b.occ) } : {}) }))
+
+/** Everything the old pipeline sent, and nothing it did not: no subQuestionIndex, no occurredAt, no near step, no judgeWaits, one stage4_judge purpose. */
+const oldUsage = (fact: DemoFact) => {
+  const t: Record<string, number> = fact === 'off' ? OLD_TOKENS : { ...OLD_TOKENS, stage4_judge: 61800 }
+  return { groqTokens: sumOf(t), groqCalls: Math.round(sumOf(t) / 520), groqTokensByPurpose: t }
+}
+
+/** The timeline of a stored run: the parallel pipeline, or (old: true) the one before it. */
+function timeline(s: Pick<Stored, 'fails' | 'fact' | 'old'>): Beat[] {
+  return s.old ? timelineOld(s.fails, s.fact ?? 'off') : timelineNew(s.fails, s.fact ?? 'off')
 }
 
 function load(): Stored[] {
@@ -142,9 +356,10 @@ function save(items: Stored[]) { try { localStorage.setItem(STORE_KEY, JSON.stri
 function seeded(): Stored[] {
   const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString()
   return [
-    { id: 'demo-completed', question: 'How does the sample method compare with the baseline? (demo)', createdAt: ago(95), fails: false, seed: 'completed' },
+    { id: 'demo-completed', question: 'How does the sample method compare with the baseline? (demo, old-style events)', createdAt: ago(95), fails: false, seed: 'completed', old: true },
     { id: 'demo-interrupted', question: 'What happened to this interrupted demo run?', createdAt: ago(300), fails: true, seed: 'failed' },
     { id: 'demo-factcheck', question: 'How does the sample method compare with the baseline? (demo, with the cross-check)', createdAt: ago(130), fails: false, seed: 'completed', fact: 'on' },
+    { id: 'demo-factcheck-old', question: 'How does the sample method compare with the baseline? (demo, cross-check, old-style events)', createdAt: ago(145), fails: false, seed: 'completed', fact: 'on', old: true },
     { id: 'demo-factcheck-failed', question: 'How does the sample method scale? (demo, the cross-check failed)', createdAt: ago(160), fails: false, seed: 'completed', fact: 'failed' },
   ]
 }
@@ -156,7 +371,7 @@ function all(): Stored[] {
 function elapsed(s: Stored) { return s.seed ? Infinity : Date.now() - new Date(s.createdAt).getTime() }
 
 function view(s: Stored): Session {
-  const beats = timeline(s.fails, s.fact)
+  const beats = timeline(s)
   const t = elapsed(s)
   const stages: Record<StageId, StageState> = { planner: 'pending', retrieval: 'pending', summarizer: 'pending', factcheck: s.fact ? 'pending' : 'not_run', report: 'not_built' }
   let status: RunStatus = 'pending'
@@ -173,7 +388,7 @@ function view(s: Stored): Session {
     id: s.id, question: s.question, status, createdAt: s.createdAt,
     // like the real API, a run that only exists in storage has no start/finish times
     startedAt: s.seed || status === 'pending' ? null : new Date(new Date(s.createdAt).getTime() + 700).toISOString(),
-    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + (s.fact === 'on' ? 16500 : s.fact === 'failed' ? 14800 : 13000)).toISOString() : null,
+    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + beats[beats.length - 1].at).toISOString() : null,
     error, stages,
   }
 }
@@ -184,8 +399,21 @@ function stageOf(s: Stored): DemoStage | null {
   if (s.seed) return s.seed === 'completed' ? 'evidence' : 'parsed'
   if (t < 6650) return null                     // the papers are saved at 6.65 s (see timeline())
   if (t < 7300) return 'kept'
-  if (t < 12900 || s.fails) return 'parsed'
+  const saved = timeline(s).find(b => b.data.lane === 'summarizer' && b.data.step === 'store' && b.data.state === 'completed')?.at ?? 12900
+  if (t < saved || s.fails) return 'parsed'
   return 'evidence'
+}
+
+function toEvent(b: Beat, seq: number, base: number, id: string): WorkflowEvent {
+  return {
+    seq, event: b.event, stage: b.stage, status: b.status, message: b.message, timestamp: new Date(base + b.at).toISOString(),
+    data: { ...b.data, ...(b.event === 'run_completed' ? { reportUrl: `/api/research/${id}/report` } : {}), ...(b.occ != null ? { occurredAt: new Date(base + b.occ).toISOString() } : {}) },
+  }
+}
+
+/** The whole event list of a simulated run, as the stream would deliver it (for the tests and for reading the scenarios). */
+export function demoEvents(opts: { fails?: boolean; fact?: DemoFact; old?: boolean }, base = Date.parse('2026-11-08T10:00:00Z')): WorkflowEvent[] {
+  return timeline({ fails: !!opts.fails, fact: opts.fact, old: opts.old }).map((b, seq) => toEvent(b, seq, base, 'demo-test'))
 }
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -197,7 +425,7 @@ export const demoApi: TraceApi = {
   async list(limit = 20) { await wait(200); return all().slice(0, limit).map(s => { const v = view(s); return { id: v.id, question: v.question, status: v.status, createdAt: v.createdAt } }) },
   async create(input: CreateInput) {
     await wait(300)
-    const s: Stored = { id: `${DEMO_PREFIX}${crypto.randomUUID().slice(0, 8)}`, question: input.question, createdAt: new Date().toISOString(), fails: /\bfail/i.test(input.question), fact: /\bfactfail\b/i.test(input.question) ? 'failed' : /\bfactcheck\b/i.test(input.question) ? 'on' : undefined }
+    const s: Stored = { id: `${DEMO_PREFIX}${crypto.randomUUID().slice(0, 8)}`, question: input.question, createdAt: new Date().toISOString(), fails: /\bfail/i.test(input.question), old: /\boldstyle\b/i.test(input.question) || undefined, fact: /\bfactfail\b/i.test(input.question) ? 'failed' : /\bfactcheck\b/i.test(input.question) ? 'on' : undefined }
     save([s, ...load()])
     return view(s)
   },
@@ -238,11 +466,11 @@ export const demoApi: TraceApi = {
     if (!s) { setTimeout(() => onStatus('error', 'Research session not found'), 200); return () => {} }
     const timers: ReturnType<typeof setTimeout>[] = []
     let cancelled = false
-    const beats = timeline(s.fails, s.fact)
+    const beats = timeline(s)
     const base = new Date(s.createdAt).getTime()
     const deliver = (b: Beat, seq: number) => {
       if (cancelled) return
-      const ev: WorkflowEvent = { seq, event: b.event, stage: b.stage, status: b.status, message: b.message, data: b.event === 'run_completed' ? { ...b.data, reportUrl: `/api/research/${id}/report` } : b.data, timestamp: new Date(base + b.at).toISOString() }
+      const ev = toEvent(b, seq, base, id)
       onEvent(ev)
       if (TERMINAL_EVENTS.includes(b.event)) onStatus('closed')
     }

@@ -2,12 +2,13 @@
 
 import { FlaskConical, Radio } from 'lucide-react'
 import { StatusPill } from '@/components/trace/status-pill'
+import { FULL_RUN_ETA } from '@/lib/format'
 import { useMode, type Mode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
 
 const options: { value: Mode; title: string; icon: React.ReactNode; body: string }[] = [
-  { value: 'live', title: 'Live', icon: <Radio size={20} />, body: 'Talks to the real TRACE FastAPI backend. A run takes 15 to 25 minutes and uses the model server and external APIs.' },
-  { value: 'demo', title: 'Demo', icon: <FlaskConical size={20} />, body: 'A browser-side simulator with fictional sample data. Runs finish in about 13 seconds. Nothing reaches the backend or the database.' },
+  { value: 'live', title: 'Live', icon: <Radio size={20} />, body: `Talks to the real TRACE FastAPI backend. A full run is expected to take ${FULL_RUN_ETA} (an estimate, not yet timed on a real run) and uses the model server and external APIs.` },
+  { value: 'demo', title: 'Demo', icon: <FlaskConical size={20} />, body: 'A browser-side simulator with fictional sample data. Runs finish in about 20 seconds. Nothing reaches the backend or the database.' },
 ]
 
 export default function SettingsPage() {

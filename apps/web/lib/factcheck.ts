@@ -1,4 +1,5 @@
 import type { PillTone } from '@/components/trace/status-pill'
+import { factModel, FACT_STEPS, mergeBySeq, type FactModel } from './stream'
 import type { FactCheck, FactClaim, FactCounts, FactEvidence, Report, StageState, WorkflowEvent } from './trace-types'
 
 /** Every count of a fact check as a number: a missing partially_supported (old reports and events) is 0. */
@@ -16,7 +17,6 @@ export type FactCountsFull = Required<FactCounts>
 
 export const STAGE_SKIPPED_LABEL = 'skipped (switched off)'
 export const STAGE_FAILED_NOTE = 'Fact checking failed; the evidence below is not cross-checked.'
-export const JUDGE_FAILURES_NOTE = 'Some checks could not be answered (rate limit); labels are cautious and incomplete.'
 export const NOT_CROSS_CHECKED_NOTE = 'Not cross-checked: Stage 4 did not finish for this sub-question.'
 export const EMPTY_STATE = 'No claim could be cross-checked for this sub-question.'
 export const PANEL_TITLE = 'Cross-check'
@@ -31,7 +31,8 @@ export const PARTIAL_HINT = 'One source states this; another source states a clo
 export const NEAR_HEADING = 'Close variant in another source'
 export const NEAR_HINT = 'A different document says something close to this, in its own words. It is not the same claim, so it does not confirm it.'
 export const CHECKING_WORDS = 'Checking claims across sources'
-export const TIME_HINT = 'about 3 minutes per sub-question'
+export const TIME_HINT = 'about 3 minutes per sub-question, partly during the evidence stage (an estimate)'
+export const OVERLAP_TAG = 'overlapped with Stage 3'
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 const count = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0)
@@ -136,73 +137,106 @@ export const FACT_STEP_LABEL: Record<string, string> = {
   claims: 'reading the claims of each source',
   clusters: 'grouping claims that say the same thing',
   support: 'checking that each quote supports its claim',
+  near: 'looking for close variants in other sources',
   conflicts: 'looking for sources that disagree',
   store: 'saving the results',
 }
-export const FACT_STEP_ORDER = ['claims', 'clusters', 'support', 'conflicts', 'store'] as const
+/** The same labels as a heading ("Looking for close variants in other sources"). */
+export const FACT_STEP_HEADING: Record<string, string> = Object.fromEntries(Object.entries(FACT_STEP_LABEL).map(([k, v]) => [k, v[0].toUpperCase() + v.slice(1)]))
+/** The short names on the per-sub-question row. */
+export const FACT_STEP_SHORT: Record<string, string> = { claims: 'Claims', clusters: 'Group', support: 'Quotes', near: 'Close variants', conflicts: 'Disagreements', store: 'Save' }
+export const FACT_STEP_ORDER: readonly string[] = FACT_STEPS
 
 export type FactResult = {
   claims: number | null; subQuestions: number | null; failedSubQuestions: number | null
   supported: number | null; partiallySupported: number | null; unverified: number | null; contradicted: number | null; contested: number | null
-  disagreements: number | null; judgeFailures: number | null
+  disagreements: number | null; judgeFailures: number | null; judgeWaits: number | null
 }
 
 export type FactProgress = {
   state: 'running' | 'completed' | 'failed'
+  /** The REAL start of the stage work: the earliest time of any of its steps (a replayed step carries occurredAt), not only stage_started. */
   startedAt: string | null
   endedAt: string | null
-  /** The step reported last (one of FACT_STEP_ORDER), and the 1-based sub-question counters it carried. */
+  /** The step reported last, and the 1-based sub-question counters of the sub-question that reported last. */
   step: string | null
   subQuestion: number | null
   subQuestions: number | null
+  /** The steps running now for that sub-question; near and conflicts can both be in it. */
+  activeSteps: string[]
   /** "Checking claims across sources: sub-question 2 of 5 - looking for sources that disagree" */
   line: string
   result: FactResult | null
   error: string | null
   judgeFailures: number
+  judgeWaits: number
   failedSubQuestions: number
+  /** How many sub-questions were checked while Stage 3 was still running (0 for runs before the overlap). */
+  overlapped: number
+  total: number | null
 }
 
 /** The progress line for a step. Counters that are missing are left out; an unknown step gives just the first part. */
 export function progressLine(step: string | null, sub: number | null, total: number | null): string {
+  return progressLineFor(step ? [step] : [], sub, total)
+}
+
+/** The same for several steps at once: "... - looking for close variants in other sources and for sources that disagree". */
+export function progressLineFor(steps: string[], sub: number | null, total: number | null): string {
   const where = sub != null && total != null && total > 0 ? `${CHECKING_WORDS}: sub-question ${Math.min(sub, total)} of ${total}` : CHECKING_WORDS
-  const what = step ? FACT_STEP_LABEL[step] : null
-  return what ? `${where} - ${what}` : where
+  const labels = steps.filter(s => Object.prototype.hasOwnProperty.call(FACT_STEP_LABEL, s)).map(s => FACT_STEP_LABEL[s])
+  if (labels.length === 0) return where
+  const tail = labels.map((l, i) => (i > 0 && l.startsWith('looking for ') && labels[i - 1].startsWith('looking for ') ? l.slice('looking '.length) : l))
+  return `${where} - ${tail.length > 1 ? `${tail.slice(0, -1).join(', ')} and ${tail[tail.length - 1]}` : tail[0]}`
+}
+
+/** The small note for a run whose Stage 4 work began during Stage 3. */
+export function overlapNote(overlapped: number, total: number | null): string | null {
+  if (!(overlapped > 0)) return null
+  const of = total != null && total >= overlapped ? ` of ${total}` : ''
+  return `Overlapped with Stage 3: ${overlapped}${of} sub-question${overlapped === 1 ? ' was' : 's were'} checked while the evidence stage was still running, so the time of this stage alone is shorter than the work it did.`
 }
 
 /** Reads the fact-check stage from the run's events. null: no event mentions it (Stage 4 is off, or has not started). Unknown steps and malformed data are ignored. */
 export function factProgress(events: WorkflowEvent[]): FactProgress | null {
-  const started = events.find(e => e.event === 'stage_started' && e.stage === 'factcheck')
-  const closed = events.find(e => e.event === 'stage_completed' && e.stage === 'factcheck')
-  const runFailedHere = events.find(e => e.event === 'run_failed' && e.stage === 'factcheck')
-  if (!started && !closed && !runFailedHere) return null
-
-  const steps = events.filter(e => e.event === 'step' && e.data?.lane === 'factcheck' && typeof e.data.step === 'string' && e.data.step in FACT_STEP_LABEL)
-  const last = steps[steps.length - 1]
-  const failed = !!runFailedHere || (!!closed && (closed.status === 'failed' || str(closed.data?.error) != null))
-  const state: FactProgress['state'] = failed ? 'failed' : closed ? 'completed' : 'running'
-  const sub = last ? num(last.data, 'subQuestion') : null
-  const total = last ? num(last.data, 'subQuestions') : null
+  const m: FactModel = factModel(events)
+  if (!m.hasStage || !m.stage) return null
+  const ev = mergeBySeq(events)
+  const closed = ev.find(e => e.event === 'stage_completed' && e.stage === 'factcheck')
+  const runFailedHere = ev.find(e => e.event === 'run_failed' && e.stage === 'factcheck')
+  const failed = m.stage === 'failed'
+  const newest = m.newest
+  const storing = m.lastStep === 'store'
+  const sub = storing || !newest || newest.index < 1 ? null : newest.index
+  const total = storing ? null : (newest?.totalSeen ?? m.total)
+  const steps = storing ? ['store'] : newest && newest.active.length ? newest.active : m.lastStep ? [m.lastStep] : []
   const d = closed?.data ?? {}
   const result: FactResult | null = closed && !failed
     ? { claims: num(d, 'claims'), subQuestions: num(d, 'subQuestions'), failedSubQuestions: num(d, 'failedSubQuestions'), supported: num(d, 'supported'), partiallySupported: num(d, 'partially_supported'), unverified: num(d, 'unverified'),
-        contradicted: num(d, 'contradicted'), contested: num(d, 'contested'), disagreements: num(d, 'disagreements'), judgeFailures: num(d, 'judgeFailures') }
+        contradicted: num(d, 'contradicted'), contested: num(d, 'contested'), disagreements: num(d, 'disagreements'), judgeFailures: num(d, 'judgeFailures'), judgeWaits: num(d, 'judgeWaits') }
     : null
   return {
-    state, startedAt: started?.timestamp ?? null, endedAt: (closed ?? runFailedHere)?.timestamp ?? null,
-    step: last ? String(last.data.step) : null, subQuestion: sub, subQuestions: total,
-    line: progressLine(last ? String(last.data.step) : null, sub, total),
+    state: m.stage, startedAt: m.startedAt, endedAt: m.endedAt,
+    step: m.lastStep, subQuestion: sub, subQuestions: total, activeSteps: steps,
+    line: progressLineFor(steps, sub, total),
     result, error: failed ? (str(closed?.data?.error) ?? runFailedHere?.message ?? closed?.message ?? null) : null,
-    judgeFailures: count(result?.judgeFailures), failedSubQuestions: count(result?.failedSubQuestions),
+    judgeFailures: count(result?.judgeFailures), judgeWaits: count(result?.judgeWaits), failedSubQuestions: count(result?.failedSubQuestions),
+    overlapped: m.overlapped, total: m.total,
   }
 }
 
-export const judgeFailuresNote = (p: Pick<FactProgress, 'judgeFailures'> | null | undefined): string | null => (p && p.judgeFailures > 0 ? JUDGE_FAILURES_NOTE : null)
+/** "4 judge answers failed; labels for that part are conservative." Shown when the stage reports judgeFailures > 0. */
+export const judgeFailuresNote = (p: Pick<FactProgress, 'judgeFailures'> | null | undefined): string | null =>
+  p && p.judgeFailures > 0 ? `${plural(p.judgeFailures, 'judge answer', 'judge answers')} failed; labels for that part are conservative.` : null
+
+/** Not an alarm: a judge call that waited out a Groq rate limit instead of failing. It only costs time. */
+export const judgeWaitsNote = (p: Pick<FactProgress, 'judgeWaits'> | null | undefined): string | null =>
+  p && p.judgeWaits > 0 ? `${plural(p.judgeWaits, 'judge call', 'judge calls')} waited for a Groq rate limit. This only made the run slower.` : null
 
 export const failedSubQuestionsNote = (p: Pick<FactProgress, 'failedSubQuestions' | 'result'> | null | undefined): string | null =>
   p && p.failedSubQuestions > 0 ? `Fact checking failed for ${p.failedSubQuestions} of ${p.result?.subQuestions ?? '?'} sub-questions; their claims are not cross-checked.` : null
 
-/** "4 min 12 s" for a running stage. The stage takes about 3 minutes per sub-question, so the time is shown and not a progress bar. */
+/** "4 min 12 s" for a running stage. The time is shown and not a progress bar: how long the stage takes depends on how much of it ran during Stage 3. */
 export function elapsedLabel(from: string | null, nowMs: number): string | null {
   if (!from) return null
   const t = new Date(from).getTime()

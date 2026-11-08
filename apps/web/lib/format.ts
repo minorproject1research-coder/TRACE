@@ -30,11 +30,17 @@ export function formatDuration(from: string | null, to: string | null): string |
 export const statusLabel: Record<RunStatus, string> = { pending: 'Queued', running: 'Running', completed: 'Completed', failed: 'Failed' }
 export const statusTone: Record<RunStatus, PillTone> = { pending: 'amber', running: 'blue', completed: 'mint', failed: 'coral' }
 
+/** How long a full live run is expected to take. An ESTIMATE: the pipeline now overlaps several stages and has not been timed on a real run yet.
+ *  The one place the number lives, so the composer, the run page and Settings never disagree. */
+export const FULL_RUN_ETA = 'roughly 20 to 30 minutes'
+export const ETA_ESTIMATE_NOTE = 'This is an estimate: the current pipeline has not been timed on a real run yet.'
+export const LIVE_RUN_EXPECTATION = `A full run is expected to take ${FULL_RUN_ETA}. ${ETA_ESTIMATE_NOTE}`
+
 export const stageMeta: Record<StageId, { name: string; detail: string; hint: string }> = {
   planner: { name: 'Planner', detail: 'Breaks the question into sub-questions and search queries.', hint: 'usually about 30 seconds' },
   retrieval: { name: 'Retrieval', detail: 'Searches papers and the web in parallel, then reads the sources it keeps.', hint: 'usually 2 to 9 minutes, longer for a new topic' },
-  summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'usually 8 to 11 minutes' },
-  factcheck: { name: 'Fact check', detail: 'Groups the verified findings that state the same thing, looks for a second source for each, and for sources that disagree. It does not decide what is true.', hint: 'about 3 minutes per sub-question' },
+  summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'usually 8 to 11 minutes (an estimate); the fact check starts during this stage' },
+  factcheck: { name: 'Fact check', detail: 'Groups the verified findings that state the same thing, looks for a second source for each, and for sources that disagree. It does not decide what is true.', hint: 'about 3 minutes per sub-question, but most of it now runs during the evidence stage (an estimate)' },
   report: { name: 'Written report', detail: 'Will write an answer from the verified evidence.', hint: '' },
 }
 

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { elapsedLabel, factProgress, failedSubQuestionsNote, judgeFailuresNote, STAGE_FAILED_NOTE, TIME_HINT, type FactProgress } from '@/lib/factcheck'
+import { elapsedLabel, factProgress, failedSubQuestionsNote, judgeFailuresNote, judgeWaitsNote, OVERLAP_TAG, overlapNote, STAGE_FAILED_NOTE, TIME_HINT, type FactProgress } from '@/lib/factcheck'
 import { formatClock, num, stageMeta, stageStateLabel } from '@/lib/format'
+import { stageStartedAt } from '@/lib/stream'
 import type { StageId, StageState, WorkflowEvent } from '@/lib/trace-types'
 
 const ORDER: StageId[] = ['planner', 'retrieval', 'summarizer', 'factcheck', 'report']
@@ -49,7 +50,9 @@ function useNow(active: boolean) {
 function FactcheckStatus({ state, progress }: { state: StageState; progress: FactProgress | null }) {
   const now = useNow(state === 'running')
   const judge = judgeFailuresNote(progress)
+  const waits = judgeWaitsNote(progress)
   const partial = failedSubQuestionsNote(progress)
+  const overlap = overlapNote(progress?.overlapped ?? 0, progress?.total ?? null)
   const took = state === 'running' ? elapsedLabel(progress?.startedAt ?? null, now) : null
   return (
     <>
@@ -61,6 +64,8 @@ function FactcheckStatus({ state, progress }: { state: StageState; progress: Fac
         </p>
       )}
       {state === 'failed' && <p className="stage-note bad" role="alert"><b>{STAGE_FAILED_NOTE}</b>{progress?.error ? <> <code>{progress.error}</code></> : null}</p>}
+      {overlap && state !== 'failed' && <p className="stage-info-note" role="note"><span className="tag">{OVERLAP_TAG}</span> {overlap}</p>}
+      {state === 'completed' && waits && <p className="stage-info-note" role="note">{waits}</p>}
       {state === 'completed' && judge && <p className="stage-note" role="note">{judge}</p>}
       {state === 'completed' && partial && <p className="stage-note" role="note">{partial}</p>}
     </>
@@ -68,6 +73,8 @@ function FactcheckStatus({ state, progress }: { state: StageState; progress: Fac
 }
 
 function when(stage: StageId, events: WorkflowEvent[], kind: 'stage_started' | 'stage_completed') {
+  // The fact check began earlier than its stage_started: its first sub-questions were checked during Stage 3 and replayed when the stage started.
+  if (kind === 'stage_started') return stageStartedAt(events, stage)
   return events.find(e => e.stage === stage && e.event === kind)?.timestamp ?? null
 }
 
@@ -75,7 +82,7 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
   const observed = ORDER.filter(s => stages[s] === 'completed').length
   const buildable = ORDER.filter(s => stages[s] !== 'not_built' && stages[s] !== 'not_run').length          // a stage that is switched off is not counted
   return (
-    <div className="workflow">
+    <div className="workflow" role="region" aria-label="Execution pipeline" tabIndex={0}>
       <div className="workflow-head"><span>EXECUTION PIPELINE</span><span>{observed} / {buildable} stages done</span></div>
       <ol className="stage-list" aria-label="Pipeline stages">
         {ORDER.map((id, i) => {
@@ -94,7 +101,7 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
                   <div className="stage-title"><b>{meta.name}</b><span>{stageStateLabel[state]}</span></div>
                   <p>{detailOf(id, state)}</p>
                   {id === 'factcheck' && <FactcheckStatus state={state} progress={fact} />}
-                  {state === 'running' && id !== 'factcheck' && meta.hint && <p className="hint">In progress, {meta.hint}. No progress is reported inside a stage.</p>}
+                  {state === 'running' && id !== 'factcheck' && meta.hint && <p className="hint">In progress, {meta.hint}. The Timeline tab shows its steps.</p>}
                   {(f.length > 0 || t) && <div className="stage-detail">{f.map(x => <span key={x}>{x}</span>)}{t && <code>{formatClock(t)}</code>}</div>}
                 </div>
               </div>

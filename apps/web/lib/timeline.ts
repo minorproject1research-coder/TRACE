@@ -1,5 +1,6 @@
-import { factProgress } from './factcheck'
+import { factProgress, overlapNote, TIME_HINT } from './factcheck'
 import { ladderLabel, SUBSTEP_TITLE } from './loop2'
+import { eventIso, factModel, FACT_RANK, FACT_STEPS, judgeModel, loop2Model, mergeBySeq, mergedData, posInt, spanOf, type FactSq, type FactStepId, type JudgeModel, type Loop2Model } from './stream'
 import type { PapersOverview, StepState, WorkflowEvent } from './trace-types'
 
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
@@ -7,6 +8,9 @@ import type { PapersOverview, StepState, WorkflowEvent } from './trace-types'
 
 export type LaneId = 'papers' | 'web' | 'summarizer' | 'factcheck'
 export type StepStatus = StepState | 'pending' | 'unreported'
+
+/** One sub-question inside a step that works on several at once (the judge, the second search). */
+export type SubView = { key: string; label: string; state: 'waiting' | 'active' | 'done' | 'failed'; text: string; tone: 'neutral' | 'blue' | 'mint' | 'amber' }
 
 export type StepView = {
   id: string
@@ -18,6 +22,20 @@ export type StepView = {
   chips: string[]
   progress: { done: number; total: number } | null
   approx: boolean
+  /** Per-sub-question chips. Only when the events carry the sub-question index; old events give none and the step looks as before. */
+  subs?: SubView[]
+}
+
+export type RowStepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'unreported'
+
+/** One sub-question of the fact check with its steps. near and conflicts can both be running. */
+export type FactRowView = {
+  index: number
+  label: string
+  status: FactSq['status']
+  statusText: string
+  steps: { id: string; label: string; status: RowStepStatus }[]
+  chips: string[]
 }
 
 export type LaneView = {
@@ -29,6 +47,10 @@ export type LaneView = {
   endedAt: string | null
   summary: string
   steps: StepView[]
+  /** Stage 4 only: one row per sub-question. */
+  rows?: FactRowView[]
+  /** A small note under the lane (Stage 4: part of it ran during Stage 3). */
+  note?: string | null
 }
 
 export type TimelineModel = {
@@ -67,6 +89,8 @@ const DEFS: Record<LaneId, { id: string; label: string }[]> = {
     { id: 'claims', label: 'Read the claims of each source' },
     { id: 'clusters', label: 'Group the claims that say the same thing' },
     { id: 'support', label: 'Check that each quote supports its claim' },
+    // Added with the parallel Stage 4: near and conflicts run side by side. Left out of the lane when no such event arrives (an older server).
+    { id: 'near', label: 'Look for close variants in other sources' },
     { id: 'conflicts', label: 'Look for sources that disagree' },
     { id: 'store', label: 'Save the results' },
   ],
@@ -110,11 +134,12 @@ function chipsFor(lane: LaneId, step: string, d: Record<string, unknown>, done: 
 }
 
 /** Loop 2 reports in two shapes: {loop2Step, aspects} when it climbs a rung of the ladder, and {subQuestion, searched, covered} per sub-question searched
- *  again; the last event (completed) carries the totals. Unknown or malformed data is ignored. */
-function loop2Chips(evs: WorkflowEvent[], done: boolean): string[] {
+ *  again; the last event (completed) carries the totals. Unknown or malformed data is ignored.
+ *  `withNow` is false when the events carry subQuestionIndex: two sub-questions can then be on different rungs, so each gets its own line (loop2Subs). */
+function loop2Chips(evs: WorkflowEvent[], done: boolean, withNow = true): string[] {
   const out: string[] = []
   const rung = [...evs].reverse().find(e => typeof e.data.loop2Step === 'string')
-  if (rung && !done) {
+  if (rung && !done && withNow) {
     const a = n(rung.data, 'aspects')
     out.push(`now: ${ladderLabel(String(rung.data.loop2Step))}${a != null ? ` (${a} aspect${a === 1 ? '' : 's'})` : ''}`)
   }
@@ -124,10 +149,11 @@ function loop2Chips(evs: WorkflowEvent[], done: boolean): string[] {
   if (searched == null || covered == null) {                       // still running: add up the latest report of each sub-question
     const per = new Map<string, { searched: number; covered: number }>()
     for (const e of evs) {
-      const sq = s(e.data, 'subQuestion')
+      const idx = posInt(e.data.subQuestionIndex)
+      const sq = idx != null ? `#${idx}` : s(e.data, 'subQuestion')
       const a = n(e.data, 'searched')
       const c = n(e.data, 'covered')
-      if (sq && a != null && c != null) per.set(sq, { searched: a, covered: c })
+      if (sq && a != null && c != null) { const old = per.get(sq); per.set(sq, { searched: Math.max(a, old?.searched ?? 0), covered: Math.max(c, old?.covered ?? 0) }) }
     }
     if (per.size > 0) { searched = [...per.values()].reduce((x, y) => x + y.searched, 0); covered = [...per.values()].reduce((x, y) => x + y.covered, 0) }
   }
@@ -141,23 +167,65 @@ function progressFor(step: string, d: Record<string, unknown>): { done: number; 
   return a != null && b != null && b > 0 ? { done: Math.min(a, b), total: b } : null
 }
 
+const sqLabel = (i: number) => `Sub-question ${i}`
+const plural = (v: number, one: string, many: string) => `${v} ${v === 1 ? one : many}`
+
+/** One chip per sub-question for the judge: waiting, judging (two can be judging at once), or done with the verdict on sufficiency. */
+function judgeSubs(jm: JudgeModel, lm: Loop2Model, stopped: boolean): SubView[] {
+  return jm.sqs.map(sq => {
+    const second = lm.sqs.find(x => x.index === sq.index)
+    const secondActive = !!second && !second.done
+    if (sq.phase === 'done') {
+      return sq.sufficient === true ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done · enough evidence', tone: 'mint' as const }
+        : sq.sufficient === false ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done · not enough evidence', tone: 'amber' as const }
+          : { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done', tone: 'neutral' as const }
+    }
+    if (sq.phase === 'active') {
+      return stopped ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
+        : { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'active' as const, text: secondActive ? 'judging · second search' : 'judging', tone: 'blue' as const }
+    }
+    return { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'waiting' as const, text: 'waiting', tone: 'neutral' as const }
+  })
+}
+
+/** The second search per sub-question: the rung each one is on now, or what it found. */
+function loop2Subs(lm: Loop2Model, stopped: boolean): SubView[] {
+  return lm.sqs.map(sq => {
+    if (sq.done) return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: `searched ${plural(sq.searched ?? 0, 'aspect', 'aspects')}, ${sq.covered ?? 0} covered`, tone: 'neutral' as const }
+    if (stopped) return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
+    return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'active' as const, tone: 'blue' as const,
+      text: sq.rung ? `now: ${ladderLabel(sq.rung)}${sq.aspects != null ? ` (${plural(sq.aspects, 'aspect', 'aspects')})` : ''}` : 'second search started' }
+  })
+}
+
 function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, subtitle: string, runFailed: boolean): LaneView {
   const mine = events.filter(e => (e.event === 'step' && e.data.lane === lane) || (e.event === 'branch_started' && e.data.branch === lane))
   const hasLoop2 = lane === 'summarizer' && mine.some(e => e.event === 'step' && e.data.step === 'loop2')
+  const jm = lane === 'summarizer' ? judgeModel(events) : null
+  const lm = lane === 'summarizer' ? loop2Model(events) : null
   const steps: StepView[] = DEFS[lane].filter(def => def.id !== 'loop2' || hasLoop2).map(def => {
     const evs = mine.filter(e => e.event === 'step' && e.data.step === def.id)
     if (evs.length === 0) return { id: def.id, label: def.label, status: 'pending' as StepStatus, startedAt: null, endedAt: null, message: '', chips: [], progress: null, approx: false }
     const last = evs[evs.length - 1]
     const status = String(last.data.state ?? 'running') as StepState
     const closed = status !== 'running'
-    let chips = def.id === 'loop2' ? loop2Chips(evs, status === 'completed') : chipsFor(lane, def.id, last.data, status === 'completed')
+    const data = mergedData(evs)                                   // counters never go back, whatever order the events reached the page
+    const span = spanOf(evs)                                       // real times: a replayed event carries occurredAt
+    const indexedJudge = def.id === 'judge' && !!jm?.indexed
+    const indexedLoop2 = def.id === 'loop2' && !!lm?.indexed
+    let chips = def.id === 'loop2' ? loop2Chips(evs, status === 'completed', !indexedLoop2) : chipsFor(lane, def.id, data, status === 'completed')
+    if (indexedJudge && jm!.judging > 0 && !closed) chips = [...chips, `${jm!.judging} judging at once`]
     if (def.id === 'judge' && hasLoop2) chips = [...chips, 'includes the second search']          // loop2 runs between the judge events, inside its span
+    let progress = closed || def.id === 'loop2' ? null : progressFor(def.id, data)
+    if (indexedJudge && !closed && jm!.total) progress = { done: Math.min(jm!.done, jm!.total), total: jm!.total }
+    const subs = indexedJudge ? judgeSubs(jm!, lm!, false) : indexedLoop2 ? loop2Subs(lm!, false) : undefined
     return {
-      id: def.id, label: def.label, status, startedAt: evs[0].timestamp, endedAt: closed ? last.timestamp : null, message: last.message,
-      chips, progress: closed || def.id === 'loop2' ? null : progressFor(def.id, last.data), approx: false,
+      id: def.id, label: def.label, status, startedAt: span.from,
+      endedAt: closed ? span.to : null, message: last.message,
+      chips, progress, approx: false, ...(subs && subs.length ? { subs } : {}),
     }
   })
-  const started = mine[0]?.timestamp ?? null
+  const started = mine[0] ? eventIso(mine[0]) : null
   const completedEv = lane === 'summarizer'
     ? events.find(e => e.event === 'stage_completed' && e.stage === 'summarizer')
     : events.find(e => e.event === 'branch_completed' && e.data.branch === lane)
@@ -166,7 +234,7 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
   if (status === 'completed') for (const st of steps) if (st.status === 'pending') st.status = 'unreported'
   if (status === 'failed') {                      // the step that was running when the run failed
     const failedAt = events.find(e => e.event === 'run_failed')?.timestamp ?? null
-    for (const st of steps) if (st.status === 'running') { st.status = 'failed'; st.endedAt = failedAt; st.progress = null }
+    for (const st of steps) if (st.status === 'running') { st.status = 'failed'; st.endedAt = failedAt; st.progress = null; st.subs = st.subs?.map(x => (x.state === 'active' ? { ...x, state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const } : x)) }
   }
   return { id: lane, title, subtitle, status, startedAt: startedLane, endedAt: completedEv?.timestamp ?? null, summary: '', steps }
 }
@@ -174,39 +242,77 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
 const PAPERS_TITLE: [string, string] = ['Paper retrieval', 'OpenAlex, Scopus, arXiv · relevance judge · scoring · PDF parsing']
 const WEB_TITLE: [string, string] = ['Web search', 'search providers · reliability scoring']
 const SUM_TITLE: [string, string] = ['Evidence digest and judging', 'LLM reads each source, then an independent judge checks the findings']
-const FACT_TITLE: [string, string] = ['Fact check across sources', 'groups the claims that say the same thing · looks for sources that disagree']
+const FACT_TITLE: [string, string] = ['Fact check across sources', 'groups the claims that say the same thing · looks for close variants and for sources that disagree']
 
-/** Stage 4 as a lane. null when no fact-check event exists. The pipeline reports only "running" for the repeating steps, so a step that is not the
- *  latest one is shown as done (it moved on to the next), and a step that never reported is pending. A failed stage does not fail the run. */
+const ROW_TEXT: Record<FactSq['status'], string> = { waiting: 'waiting', running: 'checking', done: 'checked', failed: 'stopped', not_reported: 'no result' }
+
+/** One sub-question's six steps. A step reports only when it starts, so a step before the latest one reached is done, and near and conflicts (same rank) are both running. */
+function factRow(sq: FactSq, hasNear: boolean, store: { state: string | null } | null): FactRowView {
+  const maxRank = sq.reported.reduce((m, id) => Math.max(m, FACT_RANK[id]), -1)
+  const steps = FACT_STEPS.filter(id => id !== 'near' || hasNear).map(id => {
+    let status: RowStepStatus
+    if (id === 'store') {
+      status = sq.status === 'not_reported' ? 'unreported' : store == null ? 'pending' : store.state === 'completed' ? 'completed' : store.state === 'failed' ? 'failed' : 'running'
+    } else {
+      const reported = sq.reported.includes(id as FactStepId)
+      if (sq.status === 'waiting') status = 'pending'
+      else if (sq.status === 'not_reported') status = 'unreported'
+      else if (sq.status === 'done') status = reported ? 'completed' : 'unreported'
+      else if (sq.active.includes(id as FactStepId)) status = sq.status === 'failed' ? 'failed' : 'running'
+      else status = reported ? 'completed' : FACT_RANK[id as FactStepId] < maxRank ? 'unreported' : 'pending'
+    }
+    return { id, label: STEP_LABEL[id], status }
+  })
+  const chips: string[] = []
+  if (sq.sources != null) chips.push(plural(sq.sources, 'source', 'sources'))
+  if (sq.claims != null) chips.push(plural(sq.claims, 'claim', 'claims'))
+  if (sq.clusters != null) chips.push(`${sq.clusters} grouped`)
+  if (sq.early) chips.push('during Stage 3')
+  return { index: sq.index, label: sq.index > 0 ? sqLabel(sq.index) : 'Sub-question (number not reported)', status: sq.status, statusText: ROW_TEXT[sq.status], steps, chips }
+}
+
+const STEP_LABEL: Record<string, string> = { claims: 'Claims', clusters: 'Group', support: 'Quotes', near: 'Close variants', conflicts: 'Disagreements', store: 'Save' }
+
+/** Stage 4 as a lane. null when no fact-check event exists. The pipeline reports a step only when it starts, so the steps of every sub-question are read
+ *  per sub-question (stream.ts factModel): a step before the latest one reached is done, near and conflicts can both be running, a step nobody reached is
+ *  pending. A failed stage does not fail the run. The time runs from the earliest real time of its steps, not from stage_started. */
 function factLane(events: WorkflowEvent[]): LaneView | null {
   const p = factProgress(events)
   if (!p) return null
-  const mine = events.filter(e => e.event === 'step' && e.data.lane === 'factcheck' && DEFS.factcheck.some(d => d.id === e.data.step))
-  const steps: StepView[] = DEFS.factcheck.map(def => {
+  const m = factModel(events)
+  const mine = events.filter(e => e.event === 'step' && e.data?.lane === 'factcheck' && (FACT_STEPS as string[]).includes(String(e.data.step)))
+  const steps: StepView[] = DEFS.factcheck.filter(def => def.id !== 'near' || m.hasNear).map(def => {
     const evs = mine.filter(e => e.data.step === def.id)
     if (evs.length === 0) return { id: def.id, label: def.label, status: (p.state === 'completed' ? 'unreported' : 'pending') as StepStatus, startedAt: null, endedAt: null, message: '', chips: [], progress: null, approx: false }
     const last = evs[evs.length - 1]
     const own = String(last.data.state ?? 'running') as StepState
-    // a stage that failed stopped in the step that reported last
-    let status: StepState = def.id === 'store' ? own : p.step === def.id && p.state !== 'completed' ? (p.state === 'failed' ? 'failed' : 'running') : 'completed'
+    const live = m.sqs.filter(sq => sq.status === 'running' && sq.active.includes(def.id as FactStepId))
+    const dead = m.sqs.filter(sq => sq.status === 'failed' && sq.active.includes(def.id as FactStepId))
+    let status: StepState = def.id === 'store' ? own : live.length ? 'running' : dead.length ? 'failed' : 'completed'
     if (p.state === 'failed' && status === 'running') status = 'failed'
     const current = status === 'running'
     const chips = chipsFor('factcheck', def.id, last.data, !current)
-    const sub = n(last.data, 'subQuestion'); const total = n(last.data, 'subQuestions')
-    if (current && sub != null && total != null) chips.unshift(`sub-question ${sub} of ${total}`)
+    if (current) {
+      const where = live.filter(sq => sq.index > 0).map(sq => (sq.totalSeen ?? m.total) != null ? `sub-question ${sq.index} of ${sq.totalSeen ?? m.total}` : `sub-question ${sq.index}`)
+      chips.unshift(...where)
+    }
     return {
       id: def.id, label: def.label, status,
-      startedAt: current ? last.timestamp : def.id === 'store' ? evs[0].timestamp : null, endedAt: def.id === 'store' && status !== 'running' ? last.timestamp : null,
+      startedAt: current ? eventIso(last) : def.id === 'store' ? eventIso(evs[0]) : null, endedAt: def.id === 'store' && status !== 'running' ? eventIso(last) : null,
       message: current ? p.line : '', chips, progress: null, approx: false,
     }
   })
   const r = p.result
-  const summary = p.state === 'running' && p.subQuestion != null && p.subQuestions != null ? `sub-question ${p.subQuestion} of ${p.subQuestions} · about 3 minutes per sub-question`
+  const checked = m.sqs.filter(sq => sq.status === 'done').length
+  const summary = p.state === 'running' && m.total != null ? `${checked} of ${m.total} sub-questions checked · ${TIME_HINT}`
     : r && r.claims != null ? `${r.claims} claims checked` : ''
-  return { id: 'factcheck', title: FACT_TITLE[0], subtitle: FACT_TITLE[1], status: p.state, startedAt: p.startedAt, endedAt: p.endedAt, summary, steps }
+  // The per-sub-question rows belong to the parallel Stage 4 (the one with the near step). Events of the older one render as before: the lane steps only.
+  const rows = m.hasNear ? m.sqs.map(sq => factRow(sq, m.hasNear, m.store)) : []
+  return { id: 'factcheck', title: FACT_TITLE[0], subtitle: FACT_TITLE[1], status: p.state, startedAt: p.startedAt, endedAt: p.endedAt, summary, steps, rows: rows.length ? rows : undefined, note: overlapNote(p.overlapped, p.total) }
 }
 
-export function buildTimeline(events: WorkflowEvent[], overview: PapersOverview | null): TimelineModel {
+export function buildTimeline(input: WorkflowEvent[], overview: PapersOverview | null): TimelineModel {
+  const events = mergeBySeq(input)                                        // seq order, each seq once, whatever order the events reached the page
   const runFailed = events.some(e => e.event === 'run_failed')
   const hasSteps = events.some(e => e.event === 'step' || e.event === 'branch_started')
 

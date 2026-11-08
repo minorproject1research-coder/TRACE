@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { ArrowUpRight, Play, Sparkles } from 'lucide-react'
+import { LIVE_RUN_EXPECTATION } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { ApiError } from '@/lib/trace-types'
 import { ErrorState } from './states'
@@ -74,7 +75,7 @@ export function Composer() {
       <div className="suggestions"><span>Try an example</span>{examples.map(item => <button type="button" className="chip" key={item} onClick={() => { setQuestion(item); setTouched(false); area.current?.focus() }}>{item}<ArrowUpRight size={13} /></button>)}</div>
 
       <div className="composer-controls">
-        <p className="run-expectation">{mode === 'live' ? 'A real run takes about 15 to 25 minutes. You can leave the page and come back from Research history.' : 'A demo run takes about 13 seconds and produces fictional sample results.'}</p>
+        <p className="run-expectation">{mode === 'live' ? `${LIVE_RUN_EXPECTATION} You can leave the page and come back from Research history.` : 'A demo run takes about 20 seconds and produces fictional sample results.'}</p>
         <button type="button" className="start-button push" onClick={() => void submit()} disabled={submitting}>
           {submitting ? <span className="spinner dark" aria-hidden="true" /> : <Play size={15} fill="currentColor" />}
           {submitting ? 'Starting…' : 'Start research'}<span className="arrow" aria-hidden="true">↗</span>

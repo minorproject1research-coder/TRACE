@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  checkedByJudge, countsOf, elapsedLabel, EMPTY_STATE, factCheckRan, factProgress, factSummaryLine, factTotals, failedSubQuestionsNote, JUDGE_FAILURES_NOTE, judgeFailuresNote,
+  checkedByJudge, countsOf, elapsedLabel, EMPTY_STATE, factCheckRan, factProgress, factSummaryLine, factTotals, failedSubQuestionsNote, judgeFailuresNote,
   labelView, mustShowDisagreement, NEAR_HEADING, PARTIAL_HINT, progressLine, sourcesLine, splitEvidence, STAGE_FAILED_NOTE, STAGE_SKIPPED_LABEL, STRENGTH_TOOLTIP, strengthOf,
 } from '../lib/factcheck'
 import { stageStateLabel } from '../lib/format'
@@ -193,8 +193,7 @@ test('completed: the totals, the judge-failure warning and the sub-questions tha
   assert.equal(p.state, 'completed')
   assert.deepEqual([p.result!.claims, p.result!.supported, p.result!.unverified, p.result!.contradicted, p.result!.contested, p.result!.disagreements], [12, 3, 7, 2, 1, 2])
   assert.equal(p.result!.partiallySupported, 2)
-  assert.equal(judgeFailuresNote(p), 'Some checks could not be answered (rate limit); labels are cautious and incomplete.')
-  assert.equal(JUDGE_FAILURES_NOTE, judgeFailuresNote(p))
+  assert.equal(judgeFailuresNote(p), '4 judge answers failed; labels for that part are conservative.')
   assert.equal(failedSubQuestionsNote(p), 'Fact checking failed for 1 of 5 sub-questions; their claims are not cross-checked.')
   assert.equal(buildTimeline(events, null).factcheck!.status, 'completed')
   // judgeFailures 0 or missing: no warning

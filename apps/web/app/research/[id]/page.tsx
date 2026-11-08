@@ -13,7 +13,7 @@ import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { StatusPill } from '@/components/trace/status-pill'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
 import { factCheckRan, factTotals, STAGE_FAILED_NOTE } from '@/lib/factcheck'
-import { formatDateTime, formatDuration, num, stanceInfo, statusLabel, statusTone, type StanceGroup } from '@/lib/format'
+import { formatDateTime, formatDuration, LIVE_RUN_EXPECTATION, num, stanceInfo, statusLabel, statusTone, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
 import type { Report, WorkflowEvent } from '@/lib/trace-types'
@@ -113,7 +113,7 @@ export default function RunPage() {
       )}
       {active && (
         <div className="banner running" role="status" style={{ margin: '0 0 20px', borderRadius: 12 }}>
-          <Hourglass size={16} aria-hidden="true" /><p><b>{s.status === 'pending' ? 'Queued.' : 'Running.'}</b> {mode === 'live' ? 'A run takes 15 to 25 minutes. You can leave this page: it keeps running and you can reopen it from Research history.' : 'This is a simulated run and takes about 13 seconds.'}</p>
+          <Hourglass size={16} aria-hidden="true" /><p><b>{s.status === 'pending' ? 'Queued.' : 'Running.'}</b> {mode === 'live' ? `${LIVE_RUN_EXPECTATION} You can leave this page: it keeps running and you can reopen it from Research history.` : 'This is a simulated run and takes about 20 seconds.'}</p>
         </div>
       )}
 
