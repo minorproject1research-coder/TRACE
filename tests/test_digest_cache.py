@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from apps.api.agents.stage3_summarizer import digest_generator as dg  # noqa: E402
+from apps.api.agents.stage3_summarizer import digest_cache, digest_generator as dg  # noqa: E402
 
 CHUNKS = [(0, "Speculative decoding drafts several tokens and verifies them in one pass of the large model.")]
 REPLY = {"findings": [{"claim": "It drafts tokens.", "quote": "Speculative decoding drafts several tokens", "chunk_id": 0,
@@ -97,3 +97,39 @@ def test_corrupt_cache_file_is_regenerated(fake_llm, tmp_path):
     for f in (tmp_path / "cache").glob("*.json"):
         f.write_text("{not json", encoding="utf-8")
     assert len(run()) == 1 and len(calls) == 2
+
+
+# ---------------------------------------------------------------- the scope comes from content, so a new run of the same question hits the cache
+def test_the_scope_is_the_same_for_the_same_paper_and_question_under_new_database_ids():
+    paper_run1 = {"id": "uuid-run-1", "title": "A Survey of GANs", "arxiv_id": "2001.00001v2"}
+    paper_run2 = {"id": "uuid-run-2", "title": "A Survey of GANs", "arxiv_id": "2001.00001v3"}                 # same paper, new row id, newer arXiv version
+    a = digest_cache.content_scope("What are  GANs?", "paper", paper_run1, ids=("sq-1", "uuid-run-1"))
+    b = digest_cache.content_scope("what are gans?", "paper", paper_run2, ids=("sq-2", "uuid-run-2"))
+    assert a == b == ("what are gans?", "arxiv:2001.00001")
+    assert digest_cache.content_scope("q", "paper", paper_run1, suffix="#loop2-reselect")[1].endswith("#loop2-reselect")
+
+
+def test_a_different_paper_or_question_gets_another_scope_and_web_pages_are_told_by_url():
+    p1, p2 = {"id": "1", "title": "Paper One"}, {"id": "2", "title": "Paper Two"}
+    assert digest_cache.content_scope("q", "paper", p1) != digest_cache.content_scope("q", "paper", p2)
+    assert digest_cache.content_scope("q1", "paper", p1) != digest_cache.content_scope("q2", "paper", p1)
+    w1, w2 = {"id": "w-a", "url": "https://x.org/a", "title": "T"}, {"id": "w-b", "url": "https://x.org/a", "title": "T"}
+    assert digest_cache.content_scope("q", "web", w1) == digest_cache.content_scope("q", "web", w2) == ("q", "web:https://x.org/a")
+
+
+def test_the_old_id_scope_can_be_switched_back_on(monkeypatch):
+    monkeypatch.setenv("DIGEST_CACHE_SCOPE", "id")
+    assert digest_cache.content_scope("q", "paper", {"id": "u", "title": "T"}, suffix="#x", ids=("sq-1", "u")) == ("sq-1", "u#x")
+
+
+def test_a_second_run_with_new_ids_reuses_the_stored_digest(monkeypatch, tmp_path):
+    monkeypatch.setenv("DIGEST_CACHE_DIR", str(tmp_path / "dc"))
+    calls = []
+    monkeypatch.setattr(dg, "squeezer_json", lambda prompt, **kw: calls.append(prompt) or {"findings": []})
+    chunks = [(0, "Some chunk text about GANs.")]
+    paper1, paper2 = {"id": "u1", "title": "T", "arxiv_id": "2001.00001"}, {"id": "u2", "title": "T", "arxiv_id": "2001.00001"}
+    s1 = digest_cache.content_scope("What are GANs?", "paper", paper1, ids=("sq-1", "u1"))
+    s2 = digest_cache.content_scope("What are GANs?", "paper", paper2, ids=("sq-2", "u2"))
+    dg.generate_digest("What are GANs?", chunks, detail_aspects=["a"], main_topic="GANs", cache_scope=s1)
+    dg.generate_digest("What are GANs?", chunks, detail_aspects=["a"], main_topic="GANs", cache_scope=s2)
+    assert len(calls) == 1                                                  # the second run asked no model

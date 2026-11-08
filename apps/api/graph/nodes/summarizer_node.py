@@ -249,7 +249,7 @@ def _summarize(state: SharedResearchState) -> dict:
             return [], 0
         return digest_generator.generate_digest_with_retry(
             sub_questions[si].main_topic, selected, detail_aspects=aspects, main_topic=_clean_topic(sub_questions[si].main_topic),
-            cache_scope=(str(sub_questions[si].id), str(src["id"])))
+            cache_scope=digest_generator.digest_cache.content_scope(sub_questions[si].main_topic, job[1], src, ids=(sub_questions[si].id, src["id"])))
 
     workers = _workers()
     logger.info("Stage 3: %d digests for %d sub-questions, %d worker(s), %d Groq key(s)",

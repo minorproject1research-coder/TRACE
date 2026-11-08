@@ -299,7 +299,7 @@ def test_parallel_preparation_gives_the_same_jobs_in_the_same_order(monkeypatch,
         return captured
     sequential, parallel = jobs_of(1), jobs_of(4)
     assert len(sequential) == 12 and sequential == parallel
-    assert [c[1][0] for c in sequential] == ["s1"] * 3 + ["s2"] * 3 + ["s3"] * 3 + ["s4"] * 3
+    assert [c[1][0] for c in sequential] == ["topic 1?"] * 3 + ["topic 2?"] * 3 + ["topic 3?"] * 3 + ["topic 4?"] * 3      # the scope is the sub-question TEXT now
 
 
 def test_preparation_runs_sub_questions_side_by_side_and_one_by_one_when_asked(monkeypatch, seen):

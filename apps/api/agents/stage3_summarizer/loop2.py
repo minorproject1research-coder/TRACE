@@ -338,7 +338,8 @@ def _digest_specs(ctx: SubQuestionContext, specs: list[dict], open_idx: list[int
     main_topic = ctx.cleaned_topic
 
     def one(spec):
-        scope = (str(ctx.sq.id), f"{spec['src']['id']}#loop2-{step}")
+        scope = digest_generator.digest_cache.content_scope(ctx.sq.main_topic, spec["type"], spec["src"], suffix=f"#loop2-{step}",
+                                                            ids=(ctx.sq.id, spec["src"]["id"]))
         return svc.digest(ctx.sq.main_topic, spec["selected"], aspects_for_prompt, main_topic, scope)
 
     with ThreadPoolExecutor(max_workers=max(1, svc.digest_workers())) as pool:

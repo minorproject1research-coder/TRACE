@@ -33,6 +33,21 @@ def _h(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def content_scope(sub_question: str, source_type: str, src: dict, suffix: str = "", ids: tuple | None = None) -> tuple:
+    """The cache scope of one digest call, from CONTENT instead of database ids. A new run of the same question gets new sub-question and paper
+    ids (the plan cache keeps the plan, not the ids), so a scope made of ids never hit across runs and every run paid the whole digest cost
+    again (run 31: 0 cache hits for 21 digests, 76k tokens). The rendered prompt (question, aspects, chunk text) is part of the key anyway, so
+    the same text for the same source gives the same reply. DIGEST_CACHE_SCOPE=id restores the old scope (`ids` = (sub_question_id, source_id))."""
+    if os.getenv("DIGEST_CACHE_SCOPE", "content").strip().lower() == "id" and ids is not None:
+        return (str(ids[0]), f"{ids[1]}{suffix}")
+    if source_type == "paper":
+        from apps.api.services.db_service import paper_key      # lazy: db_service creates the database client on import
+        ident = paper_key(src)
+    else:
+        ident = "web:" + str(src.get("url") or src.get("title") or src.get("id"))
+    return (" ".join((sub_question or "").lower().split()), ident + suffix)
+
+
 def make_key(scope: tuple, aspects: Optional[List[str]], model: str, template: str, sampling: str, rendered_prompt: str) -> str:
     parts = [str(scope[0]), str(scope[1]), _h("\n".join(aspects or [])), model, _h(template), sampling, _h(rendered_prompt)]
     return _h("|".join(parts))
