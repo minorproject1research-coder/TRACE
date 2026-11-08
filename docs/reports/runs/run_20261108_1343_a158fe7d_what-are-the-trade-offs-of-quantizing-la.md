@@ -227,4 +227,24 @@ Warnings in the log: 8; errors: 0.
 
 ## 10. Notes
 
-(write your reading of this run here)
+Second complete run with `LOOP2=true` and `FACTCHECK=true` (plan cache on). It ran with the Stage 4 code of before the `partially_supported` label, so Stage 4 has no partial labels here.
+
+**Retrieval and parsing: fine.** 337 candidates -> 49 papers kept, 15 of 15 attempted papers parsed (10 from the parse cache), 0 PDF failures, 35 web sources. Semantic Scholar was skipped again (probe answered 429), as in every recent run. Two database connection drops (`Server disconnected`) were retried by `retry_transient` and did not matter.
+
+**Stage 3: 3 of 3 sub-questions sufficient, 0 judge errors, 0 digest failures. But the sufficiency of sub-question 3 is the weakest kind.**
+- Sub-question 1: sufficient without Loop 2 (2 of 2 aspects, 8 yes verdicts).
+- Sub-question 2: 3 of 4 aspects were near misses (1 yes + 3 to 5 partial verdicts each); synthesis covered all 3 in 6 s, no search.
+- Sub-question 3: the aspect split produced **8 aspects**. 4 were covered (size and memory, speed, quality, robustness) and 4 ended as `known_gap_no_evidence`: diversity of generated text, security, compatibility, interoperability. It counts as sufficient only under the core rule (`LOOP2_GAP_RULE=core`); the strict rule says **not** sufficient. So half of its aspects have no evidence at all, and a reader who sees only `sufficient: true` is told more than the evidence shows. This is KNOWN_LIMITS 4.9 in a real run, and the frontend must show `knownGapsNoEvidence` next to it.
+- Cause of those gaps: the aspect split invents side aspects (compatibility, interoperability, diversity) that the retrieved papers do not discuss; the papers cover size, speed, accuracy and robustness. Loop 2 tried the aspect it could (robustness: `reselect`, 5 new sources, 15 new verified findings, 34 s, covered) and correctly gave up on the rest instead of searching for evidence that does not exist.
+- Covered-by count over the run: 6 aspects by synthesis of several sources, 1 by `reselect`. (In my chat summary I first said 5 and 2; this table is the right count.)
+- Loop 2 in total: 46 s (3% of the run), 13,255 Groq tokens.
+
+**Groq usage:** 175,435 tokens in 151 calls: digest 88,161 (50%), stage4_judge 67,745 (39%), digest_loop2 13,255, aspect_split 6,274. 71 rate-limit answers (per-minute limit), 992 key-seconds parked; digest generation still took only 54 s. For comparison the 5-sub-question Q2 run used 186,317 tokens with a Stage 4 share of 22%: here Stage 4 used 2.7 times as many judge tokens per sub-question (22.6k against 8.3k). I did not find out why; likely candidates are more merge-judge pairs because quantization claims are very similar to each other, but that is not checked.
+
+**Stage 4: no errors, no false conflicts, almost nothing corroborated.**
+- 88 claims: 1 supported, 87 unverified, 0 contradicted, 0 disagreements. Same pattern as Q2 (4 of 113) and Q3: the stage works but papers rarely repeat the same specific claim. The new `partially_supported` label is meant for exactly this; it will show up in the next run.
+- 13m 55s for 3 sub-questions (4.6 min each, against 3.3 min each in Q2), 61% of the whole run. 216 to 239 pairs passed the topic gate in each sub-question and only the 80 most similar were checked by NLI. Stage 4 time is now the main thing to bring down (KNOWN_LIMITS 4.10).
+
+**Fixes after this run:** none to the pipeline. Report script: no change needed (its Stage 4 table already worked for this run).
+
+**Open:** (1) show known gaps next to `sufficient` in the frontend (4.9); (2) aspect split inventing aspects the sources never cover, worth a look at the split prompt (a "must be answerable from papers about the topic" rule) or accepting it as the cost of broad questions; (3) Stage 4 speed (4.10); (4) the Stage 4 judge token cost per sub-question.
