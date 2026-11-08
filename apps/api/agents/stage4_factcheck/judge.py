@@ -216,6 +216,38 @@ def judge_support(claim: str, quote: str) -> dict:
         return {"supports": False, "confidence": 0.0, "reason": f"judge failed: {e}"}
 
 
+NEAR_PROMPT = """Two claims from different research sources.
+
+Claim 1: "{a}"
+Claim 2: "{b}"
+Evidence behind claim 2: "{quote}"
+
+Claim 1 has one main point. Does source 2 make that same main point, in other words, more generally or more specifically?
+First write the point both make, in one short sentence ("shared_point"). If there is no single point that BOTH claims make, write "none".
+Then answer near=true only if all of these hold:
+- the shared point is a specific property of the same subject (not only "both are about MoE" or "both are about training")
+- the two claims point the same way
+- the main point of claim 1 is stated by claim 2 or its evidence, not merely something related to it
+Answer near=false, shared_point "none", when for example:
+- they are about different properties (efficiency vs interpretability vs training stability vs cost vs accuracy vs challenges)
+- claim 2 is a cause, example or consequence of something else, not the point of claim 1
+- the main point of claim 1 is a number, cause, comparison or condition that source 2 does not give
+
+Return ONLY JSON: {{"shared_point": "...", "near": true, "reason": "one sentence"}}
+(use true or false for near)"""
+
+
+def judge_near_match(claim: str, other_claim: str, other_quote: str) -> bool:
+    """Fails closed like the other judges: any error means "not a near match"."""
+    try:
+        v = ask(NEAR_PROMPT.format(a=claim, b=other_claim, quote=other_quote))
+        shared = str(v.get("shared_point", "")).strip().lower().strip(".\"' ")
+        return bool(v.get("near")) and shared not in ("", "none", "n/a")      # a yes without a named shared point does not count
+    except Exception as e:
+        logger.warning("Near-match judge failed: %s", e)
+        return False
+
+
 SAME_PROMPT = """Two claims from different research sources.
 
 Claim 1: "{a}"

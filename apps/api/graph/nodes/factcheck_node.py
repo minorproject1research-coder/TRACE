@@ -1,11 +1,13 @@
 """Stage 4 as a graph node: checks the claims of Stage 3 across sources.
 
 For every sub-question: the digests of the newest Stage 3 run -> claims -> clusters of claims that state the same thing -> which quotes
-really support their claim -> conflicts between clusters -> a label per cluster: supported (two independent documents), contradicted, or
+really support their claim -> a close variant in another document? -> conflicts between clusters -> a label per cluster: supported (two
+independent documents), partially_supported (one document, plus a close variant of the claim in another), contradicted, or
 unverified (rests on one document, which says nothing about whether it is true). Results go to `fact_claims` and `contradictions`.
 
   FACTCHECK=false             switch (default off: it adds several hundred LLM calls per run, see docs/KNOWN_LIMITS.md)
   STAGE4_WORKERS=4            judge calls in parallel
+  STAGE4_NEAR=true            the partially_supported label (one extra judge call per candidate pair; STAGE4_MAX_NEAR_JUDGE caps them)
   STAGE4_MAX_MERGE_JUDGE / STAGE4_MAX_SUPPORT_JUDGE / STAGE4_MAX_JUDGE / STAGE4_MAX_PAIRS   caps per sub-question (a warning is logged when one bites)
   STAGE4_CACHE=true           judge answers are cached on disk, a rerun costs no LLM calls
 
@@ -37,6 +39,8 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
     clusters = fact_checker.build_clusters(claims)
     report("support", f"Checking that the quotes support {len(clusters)} grouped claims", clusters=len(clusters))
     clusters = fact_checker.verify_support(clusters)
+    report("near", "Looking for close variants of single-source claims in other documents")
+    clusters = fact_checker.find_near_matches(clusters)
     report("conflicts", "Looking for sources that disagree")
     conflicts, disagreements = contradiction_detector.detect(clusters)
     labeled = fact_checker.label_clusters(clusters, conflicts)
@@ -46,7 +50,7 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
     for d in disagreements:
         d.update({"query_id": query_id, "sub_question_id": sq.id})
 
-    counts = {l: sum(1 for r in labeled if r["label"] == l) for l in ("supported", "contradicted", "unverified")}
+    counts = {l: sum(1 for r in labeled if r["label"] == l) for l in fact_checker.LABELS}
     total = len(labeled)
     summary = {
         **counts,
@@ -101,6 +105,6 @@ def factcheck_node(state: SharedResearchState) -> dict:
         logger.exception("Stage 4 failed")
         progress.report(qid, "factcheck", "store", "failed", f"Fact checking failed: {type(e).__name__}")
         return {"fact_summary": {"error": f"{type(e).__name__}: {str(e)[:200]}"}}
-    counts = {l: sum(1 for c in claims if c["label"] == l) for l in ("supported", "contradicted", "unverified")}
+    counts = {l: sum(1 for c in claims if c["label"] == l) for l in fact_checker.LABELS}
     progress.report(qid, "factcheck", "store", "completed", f"{len(claims)} claims checked", claims=len(claims), **counts)
     return {"fact_claims": claims, "fact_summary": summary}

@@ -280,6 +280,75 @@ def test_a_topic_gate_keeps_unrelated_quotes_away_from_the_judge(monkeypatch):
     assert cd.detect(cs) == ({}, [])
 
 
+# ------------------------------------------------------------------------------------------------------------- near matches
+def ncluster(text, doc, vec, weight=0.6):
+    m = sup(claim(text, doc, weight))
+    return {"claim": text, "emb": np.array(vec, dtype=np.float32) / np.linalg.norm(vec), "members": [m], "support": [m]}
+
+
+def test_a_single_source_claim_with_a_close_variant_in_another_document_is_partially_supported(monkeypatch):
+    asked = []
+    monkeypatch.setattr(fc, "judge_near_match", lambda a, b, q: asked.append((a, b)) or True)
+    cl = [ncluster("one", "D1", [1, 0.2]), ncluster("two", "D2", [1, 0.3])]
+    rows = fc.label_clusters(fc.find_near_matches(cl), {})
+    assert [r["label"] for r in rows] == ["partially_supported", "partially_supported"]
+    assert rows[0]["support_doc_count"] == 1                                 # still ONE document supports the claim itself
+    assert rows[0]["evidence"][-1]["relation"] == "near_match" and rows[0]["evidence"][-1]["near_claim"] == "two"
+    assert rows[0]["confidence"] <= 0.6 and len(asked) == 2
+
+
+def test_no_near_match_stays_unverified_and_a_failed_or_negative_judge_never_creates_one(monkeypatch):
+    monkeypatch.setattr(fc, "judge_near_match", lambda a, b, q: False)
+    cl = [ncluster("one", "D1", [1, 0.2]), ncluster("two", "D2", [1, 0.3])]
+    assert [r["label"] for r in fc.label_clusters(fc.find_near_matches(cl), {})] == ["unverified", "unverified"]
+
+
+def test_the_near_judge_is_not_asked_about_unrelated_claims_or_the_same_document_or_supported_claims(monkeypatch):
+    monkeypatch.setattr(fc, "judge_near_match", lambda a, b, q: pytest.fail("must not be asked"))
+    unrelated = [ncluster("one", "D1", [1, 0]), ncluster("two", "D2", [0, 1])]
+    fc.find_near_matches(unrelated)
+    same_doc = [ncluster("one", "D1", [1, 0.2]), ncluster("two", "D1", [1, 0.3])]
+    fc.find_near_matches(same_doc)
+    already = ncluster("one", "D1", [1, 0.2])
+    already["support"].append(sup(claim("one", "D2")))                      # two documents: that is "supported", not a near match
+    fc.find_near_matches([already])
+
+
+def test_supported_and_contradicted_win_over_a_near_match(monkeypatch):
+    monkeypatch.setattr(fc, "judge_near_match", lambda a, b, q: True)
+    c = ncluster("one", "D1", [1, 0.2])
+    c["support"].append(sup(claim("one", "D2")))
+    c["near"] = {**claim("x", "D3"), "relation": "near_match", "via": "near_judge", "near_claim": "x", "prob": 0.0}
+    assert fc.label_clusters([c], {})[0]["label"] == "supported"
+    d = ncluster("one", "D1", [1, 0.2])
+    d["near"] = c["near"]
+    strong = {0: [{**claim("not one", "D4", 0.9), "relation": "contradicts", "prob": 0.9}]}
+    assert fc.label_clusters([d], strong)[0]["label"] == "contradicted"
+
+
+def test_near_budget_is_charged_in_order_and_logged(monkeypatch, caplog):
+    monkeypatch.setattr(fc, "MAX_NEAR_JUDGE", 1)
+    asked = []
+    monkeypatch.setattr(fc, "judge_near_match", lambda a, b, q: asked.append(a) or True)
+    cl = [ncluster("one", "D1", [1, 0.2]), ncluster("two", "D2", [1, 0.3])]
+    with caplog.at_level(logging.WARNING, logger="apps.api.agents.stage4_factcheck"):
+        fc.find_near_matches(cl)
+    assert asked == ["one"] and "near-match judge budget" in caplog.text
+
+
+def test_near_matching_can_be_switched_off(monkeypatch):
+    monkeypatch.setattr(fc, "NEAR_ON", False)
+    monkeypatch.setattr(fc, "judge_near_match", lambda *a: pytest.fail("off means off"))
+    fc.find_near_matches([ncluster("one", "D1", [1, 0.2]), ncluster("two", "D2", [1, 0.3])])
+
+
+def test_a_near_yes_without_a_named_shared_point_does_not_count(monkeypatch):
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: {"near": True, "shared_point": "none", "reason": "x"})
+    assert judge.judge_near_match("a", "b", "q") is False
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: {"near": True, "shared_point": "MoE activates a subset of experts", "reason": "x"})
+    assert judge.judge_near_match("a", "b", "q") is True
+
+
 # ----------------------------------------------------------------------------------------------------------- judges + cache
 def test_every_judge_fails_closed(monkeypatch):
     def boom(prompt, **_):
@@ -288,6 +357,7 @@ def test_every_judge_fails_closed(monkeypatch):
     assert judge.judge_conflict("a", "q", "b")["conflicts"] is False
     assert judge.judge_support("a", "q")["supports"] is False
     assert judge.judge_same_claim("a", "b") is False
+    assert judge.judge_near_match("a", "b", "q") is False
 
 
 def test_judge_replies_are_cached_and_failures_are_not(monkeypatch):
@@ -485,7 +555,7 @@ def test_the_factcheck_stage_runs_and_reports_its_result_when_switched_on(monkey
     assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_built"}
     started = [e for e in rec.events if e["stage"] == "factcheck"]
     assert [e["event"] for e in started] == ["stage_started", "stage_completed"]
-    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0}
+    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "partially_supported": 0, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0}
     assert rec.events[-1]["data"]["stagesNotRun"] == ["report"]
 
 

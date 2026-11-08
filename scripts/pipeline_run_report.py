@@ -413,11 +413,13 @@ def main() -> int:
         by_label = Counter(r["label"] for r in fc)
         w(f"Claims after grouping: {len(fc)}; labels {dict(by_label)}; contradictions stored: {len(contra)}; "
           f"time {dur((s4_done[-1][0] - t_last_sq).total_seconds())}.\n")
-        w("| # | Sub-question | Digests | Claims | Clusters | Supported / unverified / contradicted |\n|---|---|---|---|---|---|")
+        w("| # | Sub-question | Digests | Claims | Clusters | Supported | Partly supported | Unverified | Contradicted |\n|---|---|---|---|---|---|---|---|---|")
         for i, l in enumerate(s4_done, 1):
-            m = re.match(r"Sub-question '(.*)': (\d+) digests, (\d+) claims -> (\d+) clusters \{'supported': (\d+), 'contradicted': (\d+), 'unverified': (\d+)\}", l[3])
+            m = re.match(r"Sub-question '(.*)': (\d+) digests, (\d+) claims -> (\d+) clusters (\{.*?\})", l[3])
             if m:
-                w(f"| {i} | {m.group(1)} | {m.group(2)} | {m.group(3)} | {m.group(4)} | {m.group(5)} / {m.group(7)} / {m.group(6)} |")
+                import ast
+                n = ast.literal_eval(m.group(5))
+                w(f"| {i} | {m.group(1)} | {m.group(2)} | {m.group(3)} | {m.group(4)} | {n.get('supported', 0)} | {n.get('partially_supported', 0)} | {n.get('unverified', 0)} | {n.get('contradicted', 0)} |")
         capped = [l[3] for l in msgs if "go to NLI" in l[3]]
         if capped:
             w("\nNLI pair cap: " + "; ".join(re.sub(r"^Stage 4: ", "", c) for c in capped))

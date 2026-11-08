@@ -348,7 +348,7 @@ def test_the_report_shows_the_stage_4_result_when_it_ran(monkeypatch):
     monkeypatch.setattr(report_service, "supabase", FakeDb(tables))
     report = report_service.build_report(QID)
     fc = report["subQuestions"][0]["factCheck"]
-    assert report["stages"]["factcheck"] == "completed" and report["totals"]["factChecked"] == {"contradicted": 1, "supported": 1, "unverified": 1, "contested": 0}
+    assert report["stages"]["factcheck"] == "completed" and report["totals"]["factChecked"] == {"contradicted": 1, "supported": 1, "partially_supported": 0, "unverified": 1, "contested": 0}
     assert [c["label"] for c in fc["claims"]] == ["contradicted", "supported", "unverified"]           # contradicted first
     assert fc["claims"][1]["evidence"][0]["sourceTitle"] == "A Survey on MoE" and fc["claims"][2]["evidence"] == []
     assert fc["claims"][0]["evidence"][0]["quote"] == "unstable"                                       # jsonb arrives as text in some clients

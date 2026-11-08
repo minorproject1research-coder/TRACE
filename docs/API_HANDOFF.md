@@ -126,7 +126,7 @@ type Report = {
   runError?: string                       // only when the run failed in this server process
   stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built' | 'not_run'>   // factcheck: 'completed' when fact_claims exist, else 'not_run'
   totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number;
-            factChecked: null | { supported: number; unverified: number; contradicted: number; contested: number } }   // null: Stage 4 did not run
+            factChecked: null | { supported: number; partially_supported: number; unverified: number; contradicted: number; contested: number } }   // null: Stage 4 did not run
   subQuestions: SubQuestionReport[]
   limitations: string[]                   // show these: Stage 4 / Stage 5 missing, retrieval limits, and each sub-question whose evidence is not sufficient
 }

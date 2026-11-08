@@ -1,6 +1,6 @@
 # Pipeline run report - What is mixture of experts in large language models and how does expert routing work?
 
-Generated 2026-11-08 13:41 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 28 in the file) and the database. Query id `e07c9fe3-cdb5-4d45-9464-755a05fa799e`.
+Generated 2026-11-08 14:04 by `scripts/pipeline_run_report.py` from `logs/pipeline.log` (run 28 in the file) and the database. Query id `e07c9fe3-cdb5-4d45-9464-755a05fa799e`.
 
 ## 1. Summary
 
@@ -244,13 +244,13 @@ Papers with NO usable text from any route:
 
 Claims after grouping: 113; labels {'unverified': 109, 'supported': 4}; contradictions stored: 0; time 16m 38s.
 
-| # | Sub-question | Digests | Claims | Clusters | Supported / unverified / contradicted |
-|---|---|---|---|---|---|
-| 1 | What is a large language model (LLM)? | 8 | 22 | 20 | 1 / 19 / 0 |
-| 2 | What is a mixture of experts (MoE) model? | 8 | 26 | 18 | 1 / 17 / 0 |
-| 3 | How is MoE applied to LLMs? | 8 | 30 | 24 | 1 / 23 / 0 |
-| 4 | What is expert routing in MoE models? | 8 | 20 | 16 | 1 / 15 / 0 |
-| 5 | How is expert routing implemented in LLMs? | 12 | 38 | 35 | 0 / 35 / 0 |
+| # | Sub-question | Digests | Claims | Clusters | Supported | Partly supported | Unverified | Contradicted |
+|---|---|---|---|---|---|---|---|---|
+| 1 | What is a large language model (LLM)? | 8 | 22 | 20 | 1 | 0 | 19 | 0 |
+| 2 | What is a mixture of experts (MoE) model? | 8 | 26 | 18 | 1 | 0 | 17 | 0 |
+| 3 | How is MoE applied to LLMs? | 8 | 30 | 24 | 1 | 0 | 23 | 0 |
+| 4 | What is expert routing in MoE models? | 8 | 20 | 16 | 1 | 0 | 15 | 0 |
+| 5 | How is expert routing implemented in LLMs? | 12 | 38 | 35 | 0 | 0 | 35 | 0 |
 
 NLI pair cap: 128 quote/claim pairs passed the topic gate; only the 80 most similar go to NLI; 165 quote/claim pairs passed the topic gate; only the 80 most similar go to NLI; 107 quote/claim pairs passed the topic gate; only the 80 most similar go to NLI
 

@@ -44,11 +44,11 @@ def main() -> int:
         all_dis += disagreements
         print(f"\nSQ{si} {sq['main_topic'][:80]}  ({time.time() - t0:.0f}s)")
         print(f"   digests {summary['digests']}, claims {summary['claims_loaded']} -> {summary['total']} checked: supported {summary['supported']}, "
-              f"unverified {summary['unverified']}, contradicted {summary['contradicted']}, contested {summary['contested']}, disagreements {summary['disagreements']}")
+              f"partially supported {summary['partially_supported']}, unverified {summary['unverified']}, contradicted {summary['contradicted']}, contested {summary['contested']}, disagreements {summary['disagreements']}")
         print("   steps (seconds since start):", steps)
-        for r in sorted(labeled, key=lambda r: ({"contradicted": 0, "supported": 1, "unverified": 2}[r["label"]], -r["confidence"])):
+        for r in sorted(labeled, key=lambda r: ({"contradicted": 0, "supported": 1, "partially_supported": 2, "unverified": 3}[r["label"]], -r["confidence"])):
             docs = sorted({e["source_title"][:40] for e in r["evidence"] if e["relation"] == "supports"})
-            print(f"   [{r['label']:<12}] conf={r['confidence']:.2f} docs={r['support_doc_count']}/{r['contra_doc_count']}  {r['claim'][:110]}" + (f"  <= {docs}" if r["label"] == "supported" else ""))
+            print(f"   [{r['label']:<19}] conf={r['confidence']:.2f} docs={r['support_doc_count']}/{r['contra_doc_count']}  {r['claim'][:110]}" + (f"  <= {docs}" if r["label"] == "supported" else "") + (f"  ~ {r['evidence'][-1]['source_title'][:40]}: {r['evidence'][-1].get('near_claim', '')[:90]}" if r["label"] == "partially_supported" else ""))
         for d in disagreements:
             print(f"   DISAGREE: A: {d['claim_a'][:90]}\n             B: {d['claim_b'][:90]}\n             why: {d['reason'][:140]}")
         out.append({"sub_question": sq["main_topic"], "summary": summary, "claims": labeled, "disagreements": disagreements})

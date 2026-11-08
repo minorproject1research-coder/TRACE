@@ -3,7 +3,7 @@ import os
 
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
 from apps.api.agents.stage4_factcheck.common import nli_probs, doc_key
-from apps.api.agents.stage4_factcheck.judge import judge_support, judge_same_claim, run_parallel
+from apps.api.agents.stage4_factcheck.judge import judge_support, judge_same_claim, judge_near_match, run_parallel
 
 logger = logging.getLogger("apps.api.agents.stage4_factcheck")
 
@@ -25,6 +25,12 @@ SUPPORT_JUDGE_MIN = 0.70     # judge confidence needed to accept a quote that NL
 MAX_SUPPORT_JUDGE = int(os.getenv("STAGE4_MAX_SUPPORT_JUDGE", "150"))  # cap judge calls for support checks per sub-question
 
 MIN_EVIDENCE = 1.5           # "supported" needs this much evidence weight over distinct documents
+
+LABELS = ("supported", "partially_supported", "unverified", "contradicted")
+NEAR_ON = os.getenv("STAGE4_NEAR", "true").strip().lower() not in ("0", "false", "no", "off")
+NEAR_MIN_SIM = float(os.getenv("STAGE4_NEAR_MIN_SIM", "0.70"))     # a claim of another document must be at least this similar to be asked about
+NEAR_CANDIDATES = int(os.getenv("STAGE4_NEAR_CANDIDATES", "1"))   # per claim, most similar first (2 doubles the judge calls for a few more matches)
+MAX_NEAR_JUDGE = int(os.getenv("STAGE4_MAX_NEAR_JUDGE", "120"))     # cap judge calls for near matches per sub-question
 
 
 def _stage3_supports(finding: dict) -> bool:
@@ -153,6 +159,51 @@ def verify_support(clusters: list[dict]) -> list[dict]:
     return clusters
 
 
+def find_near_matches(clusters: list[dict]) -> list[dict]:
+    """For a claim that rests on ONE document: does another document state a close variant of it (not the same claim, which the merge step
+    already looked for)? Candidates are the most similar claims of other documents that have a quote supporting them; the judge decides,
+    side by side for the (up to 2) candidates of a claim, and the first yes wins. A yes is stored in cluster["near"]; the label step turns it
+    into `partially_supported`. The budget is charged in cluster order, so which claims get asked about does not depend on thread timing."""
+    if not NEAR_ON:
+        return clusters
+    import numpy as np
+
+    live = [ci for ci, c in enumerate(clusters) if c.get("support")]
+    if len(live) < 2:
+        return clusters
+    emb = np.stack([clusters[ci]["emb"] for ci in live])
+    sims = emb @ emb.T
+    jobs, budget, skipped = [], MAX_NEAR_JUDGE, 0
+    for a, ci in enumerate(live):
+        c = clusters[ci]
+        own_docs = {m["doc"] for m in _distinct_docs(c["support"])}
+        if len(own_docs) != 1:
+            continue                                        # two documents already: supported or a conflict, not a near match
+        cands = []
+        for b in sorted(range(len(live)), key=lambda j: -sims[a, j]):
+            if b == a or sims[a, b] < NEAR_MIN_SIM:
+                continue
+            other = clusters[live[b]]
+            best = max((s for s in _distinct_docs(other["support"]) if s["doc"] not in own_docs), key=lambda s: s["weight"], default=None)
+            if best is not None:
+                cands.append((float(sims[a, b]), live[b], best))
+            if len(cands) == NEAR_CANDIDATES:
+                break
+        for _, oi, best in cands:
+            if budget > 0:
+                budget -= 1
+                jobs.append((ci, oi, best))
+            else:
+                skipped += 1
+    answers = run_parallel(judge_near_match, [(clusters[ci]["claim"], clusters[oi]["claim"], best["quote"]) for ci, oi, best in jobs])
+    for (ci, oi, best), yes in zip(jobs, answers):          # jobs are in cluster order, so the first yes of a claim is its most similar candidate
+        if yes and "near" not in clusters[ci]:
+            clusters[ci]["near"] = {**best, "relation": "near_match", "via": "near_judge", "near_claim": clusters[oi]["claim"], "prob": 0.0}
+    if skipped:
+        logger.warning("Stage 4: the near-match judge budget (%d) ran out; %d candidate pair(s) were not judged", MAX_NEAR_JUDGE, skipped)
+    return clusters
+
+
 def _distinct_docs(items: list[dict]) -> list[dict]:
     best = {}
     for it in items:
@@ -183,9 +234,12 @@ def label_clusters(clusters: list[dict], conflicts: dict[int, list[dict]]) -> li
             label, conf = "contradicted", k
         elif len(sup) >= 2 and ev_total >= MIN_EVIDENCE:
             label, conf = "supported", s
+        elif c.get("near") and len(sup) == 1:
+            label, conf = "partially_supported", min(_noisy_or(sup + [c["near"]]), 0.6)
         else:
             label, conf = "unverified", min(s, 0.5)
 
+        near = [c["near"]] if label == "partially_supported" else []
         rows.append({
             "claim": c["claim"],
             "label": label,
@@ -196,8 +250,9 @@ def label_clusters(clusters: list[dict], conflicts: dict[int, list[dict]]) -> li
             "evidence": [
                 {"source_id": e["source_id"], "source_title": e["source_title"], "quote": e["quote"],
                  "relation": e["relation"], "reliability": e["reliability"],
-                 "evidence_level": e["evidence_level"], "prob": round(e["prob"], 3), "via": e.get("via")}
-                for e in sup + con
+                 "evidence_level": e["evidence_level"], "prob": round(e["prob"], 3), "via": e.get("via"),
+                 **({"near_claim": e["near_claim"]} if e.get("near_claim") else {})}
+                for e in sup + con + near
             ],
         })
     return rows

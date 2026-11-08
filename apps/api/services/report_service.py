@@ -18,7 +18,7 @@ GENERATION_WINDOW_S = 180          # rows written by one Stage 3 run share (almo
 NOT_RUN = ("report",)
 FACTCHECK_OFF = ("Stage 4 (fact checking) did not run for this report: findings are verified only in the sense that their quote was found in the source, "
                  "and judged by an independent model against the aspect they should answer. Nothing checks across sources that a claim is true.")
-FACTCHECK_ON = ("Stage 4 compared the claims across sources. \"Supported\" means two independent documents state the claim; \"unverified\" means it rests on one "
+FACTCHECK_ON = ("Stage 4 compared the claims across sources. \"Supported\" means two independent documents state the claim; \"partially supported\" means it rests on one document and another document states a close variant of it (not the same claim); \"unverified\" means it rests on one "
                 "document, which says nothing about whether it is false; \"contradicted\" means a source asserts the opposite. The checks are automatic "
                 "(language models), not reviewed by a person, and their thresholds have not been tuned on a large labeled set.")
 LIMITATIONS = [
@@ -144,19 +144,19 @@ def _loop2_view(cov: dict) -> Optional[dict]:
             "knownGaps": [t for t, a in aspects.items() if isinstance(a, dict) and str(a.get("status", "")).startswith("known_gap")]}
 
 
-LABEL_ORDER = {"contradicted": 0, "supported": 1, "unverified": 2}
+LABEL_ORDER = {"contradicted": 0, "supported": 1, "partially_supported": 2, "unverified": 3}
 
 
 def _fact_check_view(claims: list[dict], disagreements: list[dict]) -> dict:
-    """Stage 4 result of one sub-question: counts, the checked claims (contradicted first, then supported, then unverified) and the disagreements."""
+    """Stage 4 result of one sub-question: counts, the checked claims (contradicted first, then supported, partially supported, unverified) and the disagreements."""
     rows = []
     for c in claims:
         rows.append({"claim": c.get("claim"), "label": c.get("label"), "confidence": c.get("confidence"),
                      "supportDocCount": c.get("support_doc_count"), "contraDocCount": c.get("contra_doc_count"), "contested": bool(c.get("contested")),
                      "evidence": [{"sourceId": e.get("source_id"), "sourceTitle": e.get("source_title"), "quote": e.get("quote"), "relation": e.get("relation"),
-                                   "reliability": e.get("reliability"), "evidenceLevel": e.get("evidence_level"), "prob": e.get("prob")}
+                                   "reliability": e.get("reliability"), "evidenceLevel": e.get("evidence_level"), "prob": e.get("prob"), "nearClaim": e.get("near_claim")}
                                   for e in _as_list(c.get("evidence")) if isinstance(e, dict)]})
-    rows.sort(key=lambda r: (LABEL_ORDER.get(r["label"], 3), not r["contested"], -(r["confidence"] or 0)))
+    rows.sort(key=lambda r: (LABEL_ORDER.get(r["label"], 4), not r["contested"], -(r["confidence"] or 0)))
     return {"counts": {l: sum(1 for r in rows if r["label"] == l) for l in LABEL_ORDER} | {"contested": sum(1 for r in rows if r["contested"])},
             "claims": rows,
             "disagreements": [{"claimA": d.get("claim_a"), "claimB": d.get("claim_b"), "sourceATitle": d.get("source_a_title"), "sourceBTitle": d.get("source_b_title"),
