@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -57,8 +58,10 @@ JUDGE_CACHE_PATH = Path(os.getenv("JUDGE_CACHE_PATH", "reports/judge_cache.json"
 
 
 # --- Cache helpers ---
-def _load_judge_cache() -> Dict[str, Dict]:
-    """Load judge verdict cache from JSON file."""
+_cache_io_lock = threading.Lock()
+
+
+def _read_judge_cache_file() -> Dict[str, Dict]:
     cache = {}
     if JUDGE_CACHE_PATH.exists():
         try:
@@ -69,14 +72,35 @@ def _load_judge_cache() -> Dict[str, Dict]:
     return cache
 
 
+def _load_judge_cache() -> Dict[str, Dict]:
+    """Load judge verdict cache from JSON file."""
+    with _cache_io_lock:
+        return _read_judge_cache_file()
+
+
 def _save_judge_cache(cache: Dict[str, Dict]) -> None:
-    """Save judge verdict cache to JSON file."""
+    """Save judge verdict cache to JSON file. Several sub-questions are judged at the same time (STAGE3_SQ_WORKERS): each call loaded the
+    file before its judging and saves after it, so a plain overwrite would drop the verdicts another call saved in between. The save
+    therefore merges with the file as it is NOW (this call's entries win) under a lock, and replaces the file atomically."""
     JUDGE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with open(JUDGE_CACHE_PATH, "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False)
-    except Exception as e:
-        logger.warning(f"Failed to save judge cache: {e}")
+    with _cache_io_lock:
+        try:
+            merged = _read_judge_cache_file()
+            merged.update(cache)
+            tmp = JUDGE_CACHE_PATH.with_name(JUDGE_CACHE_PATH.name + f".{os.getpid()}.{threading.get_ident()}.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(merged, f, ensure_ascii=False)
+            try:
+                os.replace(tmp, JUDGE_CACHE_PATH)
+            except OSError:                       # Windows: the target is open in another process; fall back to a direct write
+                with open(JUDGE_CACHE_PATH, "w", encoding="utf-8") as f:
+                    json.dump(merged, f, ensure_ascii=False)
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+        except Exception as e:
+            logger.warning(f"Failed to save judge cache: {e}")
 
 
 def _cache_key(aspect: str, claim: str, quote: str) -> str:

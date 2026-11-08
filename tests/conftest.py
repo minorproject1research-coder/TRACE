@@ -22,5 +22,6 @@ def _isolated_caches(tmp_path, monkeypatch):
     for name in ("PLAN_CACHE", "PLAN_CACHE_TAG", "LOOP2", "TOPIC_ASPECT", "STAGE4_CACHE"):
         monkeypatch.delenv(name, raising=False)               # off unless the test switches it on (the real .env may have Loop 2 and Stage 4 on)
     monkeypatch.setenv("FACTCHECK", "false")                  # explicit "false": a module imported later calls load_dotenv() and would bring the .env value back
+    monkeypatch.setenv("STAGE3_SQ_WORKERS", "1")             # tests that look at the order of writes and events need the sub-questions one by one
     monkeypatch.setenv("GROQ_USAGE_LOG", "off")               # tests never write the real usage log
     yield

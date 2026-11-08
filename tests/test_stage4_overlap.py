@@ -309,7 +309,7 @@ def test_preparation_runs_sub_questions_side_by_side_and_one_by_one_when_asked(m
     state = patch_stage3(monkeypatch, n=4, prep_threads=threads, barrier=threading.Barrier(4))
     monkeypatch.setenv("STAGE3_PREP_WORKERS", "4")
     sn.summarizer_node(state)
-    prep = {t for t in threads if t != "MainThread"}                              # step 3 asks for the aspects again (cached) from the main thread
+    prep = {t for t in threads if t != "MainThread" and not t.startswith("stage3-sq")}                              # step 3 asks for the aspects again (cached) from the main thread
     assert len(prep) > 1 and all(t.startswith("stage3-prep") for t in prep)
     assert len(prep) == 4
     threads.clear()

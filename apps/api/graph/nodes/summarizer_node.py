@@ -63,25 +63,68 @@ def _overlap_enabled(qid: str | None = None) -> bool:
     return factcheck_node.is_expected(qid)
 
 
+def _pipeline_enabled() -> bool:
+    """STAGE3_PIPELINE (default true): a sub-question is judged as soon as ITS digests are done, while the Groq digests of the others go on.
+    false: every digest first, then the judging, as before."""
+    return os.getenv("STAGE3_PIPELINE", "true").strip().lower() not in ("0", "false", "no", "off")
+
+
+def _sq_workers() -> int:
+    """Sub-questions judged (judge + coverage + Loop 2) at the same time. STAGE3_SQ_WORKERS, default 2; 1 = one after the other. Every one
+    sends JUDGE_PARALLEL batches to the model host, so 2 x 2 = 4 requests at once (3 at once were measured fine on 8-item batches)."""
+    try:
+        return max(1, int(os.getenv("STAGE3_SQ_WORKERS", "").strip() or 2))
+    except ValueError:
+        return 2
+
+
+class _Gate:
+    """Holds the progress events of the judge lane until the digest step has reported 'completed', then replays them in order, so the web
+    app never sees the judge of a sub-question start before the digest step ends even though the work overlaps."""
+    def __init__(self, query_id):
+        self.query_id = query_id
+        self.lock = threading.Lock()
+        self.released = False
+        self.held = []
+
+    def report(self, *args, **kwargs):
+        with self.lock:
+            if self.released:
+                progress.report(self.query_id, *args, **kwargs)
+            else:
+                self.held.append((args, kwargs))
+
+    def release(self):
+        with self.lock:
+            held, self.held, self.released = self.held, [], True
+            for args, kwargs in held:
+                progress.report(self.query_id, *args, **kwargs)
+
+
+class _Aborted(Exception):
+    """Another sub-question failed: this one stops before it writes or queues anything."""
+
+
 _row = digest_generator.digest_row
 
 
 class _Loop2Services(loop2.Services):
-    """The real services, with progress reports for the run's event stream."""
-    def __init__(self, query_id):
+    """The real services, with progress reports for the run's event stream (through the gate, so they never precede the digest step's end)."""
+    def __init__(self, query_id, report=None):
         super().__init__()
         self.query_id = query_id
+        self._report = report or (lambda *a, **k: progress.report(query_id, *a, **k))
 
     def progress(self, message, **data):
-        progress.report(self.query_id, "summarizer", "loop2", "running", message, **data)
+        self._report("summarizer", "loop2", "running", message, **data)
 
 
 def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects, rows, chunk_lookup, jobs, candidates,
-               judge_verdicts, cov, topic_aspect_used, deadline, digest_failures=0):
+               judge_verdicts, cov, topic_aspect_used, deadline, digest_failures=0, report=None):
     """Loop 2 for one sub-question; returns the final coverage (rows and chunk_lookup are extended in place). Never raises."""
     n_rows = len(rows)
     try:
-        svc = _Loop2Services(qid)
+        svc = _Loop2Services(qid, report)
         papers = [j[2] for j in jobs if j[0] == si and j[1] == "paper"]
         ctx = loop2.SubQuestionContext(
             query_id=qid, sq=sq, aspects=aspects, aspect_to_detail=aspect_to_detail, details_for_coverage=details_for_coverage,
@@ -94,8 +137,8 @@ def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_covera
         ctx.web_urls = {w.get("url") for w in db_service.get_web_sources_for_stage3(sq.id)}
         cov, _, _, info = loop2.run_subquestion(ctx, cov, candidates, judge_verdicts, svc, deadline)
         cov.setdefault("judge_stats", {})["loop2"] = info
-        progress.report(qid, "summarizer", "loop2", "running", f"Loop 2 done for sub-question {si + 1}", subQuestion=sq.main_topic[:90],
-                        searched=info["searched"], covered=info["covered"])
+        (report or (lambda *a, **k: progress.report(qid, *a, **k)))("summarizer", "loop2", "running", f"Loop 2 done for sub-question {si + 1}",
+                                                                     subQuestion=sq.main_topic[:90], searched=info["searched"], covered=info["covered"])
     except Exception:
         logger.exception("Loop 2 failed for sub-question '%s'; keeping the Stage 3 result", sq.main_topic[:50])
         del rows[n_rows:]                       # the coverage is the old one, so the digests must be the old ones too
@@ -197,7 +240,9 @@ def _summarize(state: SharedResearchState) -> dict:
     progress.report(qid, "summarizer", "prepare", "completed", f"{len(jobs)} sources to read", jobs=len(jobs),
                     papers=sum(1 for j in jobs if j[1] == "paper"), web=sum(1 for j in jobs if j[1] == "web"))
 
-    # 2. Run the digests in parallel (Groq calls; the pool spreads them over the keys and waits out 429s).
+    # 2. + 3. The digests run in parallel (Groq calls; the pool spreads them over the keys and waits out 429s). Every sub-question is judged
+    #    (judge, coverage, Loop 2, store, queue Stage 4) as soon as ITS OWN digests are done (STAGE3_PIPELINE) and up to STAGE3_SQ_WORKERS
+    #    sub-questions at the same time; the results are assembled in the original order afterwards.
     def run(job):
         si, _, src, selected, _, _, aspects, original_details, aspect_to_detail = job
         if not selected:
@@ -222,21 +267,31 @@ def _summarize(state: SharedResearchState) -> dict:
             progress.report(qid, "summarizer", "digest", "running", f"Read {done} of {len(jobs)} sources", done=done, total=len(jobs), failures=failures)
         return result
 
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        results = list(pool.map(tracked, jobs))
-    progress.report(qid, "summarizer", "digest", "completed", f"Read {len(jobs)} sources", done=len(jobs), total=len(jobs), failures=counter["failures"])
-    findings_per_job = [r[0] for r in results]
-    digest_failures_per_job = [r[1] for r in results]
-
-    # 3. Assemble rows and coverage per sub-question, in the original order.
-    all_rows, cov_rows, coverage = [], [], {}
+    n_sq = len(sub_questions)
+    jobs_of = {si: [i for i, j in enumerate(jobs) if j[0] == si] for si in range(n_sq)}
+    pipeline = _pipeline_enabled()
+    gate = _Gate(qid)
+    abort = threading.Event()
     loop2_deadline = time.monotonic() + loop2.time_budget()
-    for si, sq in enumerate(sub_questions):
-        progress.report(qid, "summarizer", "judge", "running", f"Judging the evidence for sub-question {si + 1} of {len(sub_questions)}",
-                        done=si, total=len(sub_questions), subQuestion=sq.main_topic[:90])
+    judged_lock, judged, coverage_so_far = threading.Lock(), [0], {}
+
+    def judge_subquestion(si, futures):
+        """Everything after the digests for ONE sub-question; returns (rows, cov_row, cov)."""
+        sq = sub_questions[si]
+        if not pipeline:
+            for f in futures:                       # the old order: every digest of every sub-question first
+                f.result()
+        own_results = [futures[i].result() for i in jobs_of[si]]
+        if abort.is_set():
+            raise _Aborted()
+        own_jobs = [jobs[i] for i in jobs_of[si]]
+        with judged_lock:
+            started = judged[0]
+        gate.report("summarizer", "judge", "running", f"Judging the evidence for sub-question {si + 1} of {n_sq}",
+                    done=started, total=n_sq, subQuestion=sq.main_topic[:90])
         rows = [_row(qid, sq.id, st, src, findings, weight, level)
-                for (j_si, st, src, _, weight, level, _, _, _), findings in zip(jobs, findings_per_job) if j_si == si]
-        
+                for (_, st, src, _, weight, level, _, _, _), (findings, _) in zip(own_jobs, own_results)]
+
         # Get aspects and mapping for this sub-question
         cleaned_topic = _clean_topic(sq.main_topic)
         aspects, aspect_to_detail = detail_aspects.flatten_aspects(
@@ -247,15 +302,13 @@ def _summarize(state: SharedResearchState) -> dict:
             aspects, aspect_to_detail, sq.detail_questions, sq.main_topic,
             enabled=detail_aspects.topic_aspect_for_judge())     # TOPIC_ASPECT=all: same aspects as in step 1; =judge: one more than in step 1
         topic_aspect_used = len(aspects) > n_before
-        
+
         # Build chunk_lookup for judge context
         chunk_lookup = {}
-        for (j_si, st, src, selected, weight, level, _, _, _), findings in zip(jobs, findings_per_job):
-            if j_si != si:
-                continue
+        for (_, st, src, selected, weight, level, _, _, _) in own_jobs:
             for chunk_id, chunk_text in selected:
                 chunk_lookup[f"{src['id']}:{chunk_id}"] = chunk_text      # chunk ids repeat in every source: key by source too
-        
+
         # Run judge for this sub-question if there are verified findings
         judge_verdicts = {}
         candidates = []
@@ -264,29 +317,32 @@ def _summarize(state: SharedResearchState) -> dict:
             candidates, judge_verdicts = evidence_judge.run_judge_for_subquestion(
                 aspects, rows, chunk_lookup, topic_aspect_idx=len(aspects) - 1 if topic_aspect_used else None
             )
-        
+
         # Judge-based coverage with fallback
         cov = coverage_check.check_coverage_judged(
             aspects, aspect_to_detail, details_for_coverage, rows, judge_verdicts, candidates=candidates
         )
-        sq_failures = sum(digest_failures_per_job[i] for i, (j_si, _, _, _, _, _, _, _, _) in enumerate(jobs) if j_si == si)
+        sq_failures = sum(failed for _, failed in own_results)
         if loop2.enabled() and has_verified and cov.get("uncovered_aspects"):
             cov = _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects_by_sq.get(si, aspects), rows,
-                             chunk_lookup, jobs, candidates, judge_verdicts, cov, topic_aspect_used, loop2_deadline, sq_failures)
+                             chunk_lookup, jobs, candidates, judge_verdicts, cov, topic_aspect_used, loop2_deadline, sq_failures, report=gate.report)
         if isinstance(cov.get("judge_stats"), dict):
             cov["judge_stats"]["aspect_merge"] = detail_aspects.merge_mode()      # tools that rebuild this run's aspects need to know
             cov["judge_stats"]["topic_aspect"] = topic_aspect_used                # ... both markers
         # Add digest failures count
         cov["digest_failures"] = sq_failures
-        
-        coverage[sq.id] = cov
-        progress.report(qid, "summarizer", "judge", "running", f"Judged sub-question {si + 1} of {len(sub_questions)}", done=si + 1, total=len(sub_questions),
-                        sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=sum(1 for c in coverage.values() if c.get("sufficient")))
+
         cov_row = {"query_id": qid, "sub_question_id": sq.id, **cov}
-        cov_rows.append(cov_row)
-        all_rows.extend(rows)
+        with judged_lock:
+            judged[0] += 1
+            coverage_so_far[sq.id] = cov
+            n_done, n_sufficient = judged[0], sum(1 for c in coverage_so_far.values() if c.get("sufficient"))
+        gate.report("summarizer", "judge", "running", f"Judged sub-question {si + 1} of {n_sq}", done=n_done, total=n_sq,
+                    sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=n_sufficient)
+        if abort.is_set():
+            raise _Aborted()
         if overlap:
-            _store_subquestion(qid, sq, si, len(sub_questions), rows, cov_row)
+            _store_subquestion(qid, sq, si, n_sq, rows, cov_row)
 
         logger.info("Sub-question '%s': %d digests (%d from full text), %d verified findings, coverage sufficient=%s",
                     sq.main_topic[:50], len(rows),
@@ -298,6 +354,31 @@ def _summarize(state: SharedResearchState) -> dict:
             logger.info("  Judge used: %s, stats: %s", cov.get("judge_used"), cov.get("judge_stats"))
         if cov.get("fallback_reason"):
             logger.warning("  Judge fallback: %s", cov.get("fallback_reason"))
+        return rows, cov_row, cov
+
+    digest_pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="stage3-digest")
+    sq_pool = ThreadPoolExecutor(max_workers=max(1, min(_sq_workers(), n_sq)), thread_name_prefix="stage3-sq")
+    try:
+        futures = [digest_pool.submit(tracked, job) for job in jobs]
+        sq_futures = [sq_pool.submit(judge_subquestion, si, futures) for si in range(n_sq)]
+        for f in futures:
+            f.result()                              # a failed digest call fails the node, as with pool.map
+        progress.report(qid, "summarizer", "digest", "completed", f"Read {len(jobs)} sources", done=len(jobs), total=len(jobs), failures=counter["failures"])
+        gate.release()                              # the judge events that were held back go out now, in order
+        outs = [f.result() for f in sq_futures]
+    except BaseException:
+        abort.set()                                 # the other sub-questions stop before they write or queue Stage 4 work
+        raise
+    finally:
+        digest_pool.shutdown(wait=True, cancel_futures=True)
+        sq_pool.shutdown(wait=True, cancel_futures=True)
+
+    # Assemble rows and coverage per sub-question, in the original order.
+    all_rows, cov_rows, coverage = [], [], {}
+    for sq, (rows, cov_row, cov) in zip(sub_questions, outs):
+        cov_rows.append(cov_row)
+        all_rows.extend(rows)
+        coverage[sq.id] = cov
 
     if loop2.enabled():
         progress.report(qid, "summarizer", "loop2", "completed", "Loop 2 finished",
