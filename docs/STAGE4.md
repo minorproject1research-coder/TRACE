@@ -49,6 +49,7 @@ Infrastructure: all judge answers are cached on disk (`.cache/stage4_judge`, a f
 | `STAGE4_NEAR` | true | the `partially_supported` label |
 | `STAGE4_NEAR_MIN_SIM`, `STAGE4_NEAR_CANDIDATES`, `STAGE4_MAX_NEAR_JUDGE` | 0.70, 1, 120 | near-match candidates and cap |
 | `STAGE4_RATE_WAIT_MAX`, `STAGE4_RATE_RETRIES` | 300, 2 | when every Groq key is parked for at most this many seconds (the per-minute limit; seen 124 to 171 s) a judge call waits and asks again, up to this many times, instead of failing closed; a longer limit (a daily one) opens the 5-minute breaker at once |
+| `NLI_CACHE`, `NLI_CACHE_DIR` | true, `.cache/nli` | NLI answers are cached on disk (the model is deterministic): a rerun on the same quotes and claims costs no CPU. Measured: 124 s -> 2 s for one sub-question |
 | `NLI_MODEL` | `MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli` | NLI model (1.7 GB, downloaded on first use) |
 
 ## 6. Output
@@ -65,7 +66,7 @@ On the stored digests of that run (no NLI, every member counted as supported by 
 - Prompt tightened (the shared point must be named): sub-question 2 went from 14 to 12 and sub-question 3 stayed at 9. Reading these 21 pairs again, roughly 15 were fair and 6 loose (for example a LoRA-MoE parameter-efficiency claim matched with a general MoE efficiency claim). These judgements are mine, not human labels, and no precision figure is claimed. This is why the label is called *partially* supported and why readers must not show it as a fact.
 
 ## 9. Limits (details and fixes in `docs/KNOWN_LIMITS.md`)
-- **Slow on the CPU** (4.10): moving NLI to the host needs an endpoint there; the 80-pair cap means a true conflict outside the 80 most similar pairs is never looked at.
+- **Slow on the CPU** (4.10, measured in `docs/reports/21_timings.md`): int8 quantization is slower, the smaller NLI model misses the real conflicts and a cap of 40 pairs drops one; only a GPU or NLI on the host would help a first run (a repeated run is cached). Moving NLI to the host needs an endpoint there; the 80-pair cap means a true conflict outside the 80 most similar pairs is never looked at.
 - **Little corroboration** (4.11): `supported` needs the same specific claim in two documents (about 3.5% of claims in the Q2 run); `partially_supported` is the answer to that, with the precision limit above.
 - **No real conflict between sources has been found yet** (4.12); the conflict judge on the 41-pair labeled set has precision 0.71 and recall 0.56 (see 4.12), and one of the two conflicts of run 30 was false.
 - The labeled sets (30 merge, 16 support, 40 conflict pairs) were written by an LLM, not by people.

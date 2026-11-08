@@ -385,6 +385,29 @@ def test_run_parallel_returns_results_in_input_order():
     assert judge.run_parallel(slow, [(i,) for i in range(5)]) == [0, 1, 2, 3, 4]
 
 
+def test_nli_answers_are_cached_so_a_repeated_run_costs_no_cpu(monkeypatch, tmp_path):
+    monkeypatch.setenv("NLI_CACHE", "true")
+    monkeypatch.setenv("NLI_CACHE_DIR", str(tmp_path / "nli"))
+    predicted = []
+
+    class FakeNli:
+        class config:
+            id2label = {0: "contradiction", 1: "entailment", 2: "neutral"}
+
+        def predict(self, pairs, batch_size=16):
+            predicted.extend(pairs)
+            return np.array([[0.1, 0.8, 0.1] for _ in pairs])
+    monkeypatch.setattr(common, "_model", lambda: FakeNli())
+    first = common.nli_probs([("a quote", "a claim"), ("b quote", "b claim")])
+    assert first[0]["entailment"] == pytest.approx(0.8) and len(predicted) == 2
+    again = common.nli_probs([("b quote", "b claim"), ("c quote", "c claim"), ("a  quote", "a claim")])      # b and a (cleaned) are cached
+    assert [round(x["entailment"], 2) for x in again] == [0.8, 0.8, 0.8]
+    assert len(predicted) == 3 and predicted[-1] == ("c quote", "c claim")                                 # only the new pair reached the model
+    monkeypatch.setenv("NLI_CACHE", "false")
+    common.nli_probs([("a quote", "a claim")])
+    assert len(predicted) == 4                                                                             # switched off: always computed
+
+
 # --------------------------------------------------------------------------------------------------------------- common
 def test_doc_key_counts_the_same_document_found_as_web_page_and_paper_once():
     assert common.doc_key("Mamba: Linear-Time Sequence Modeling | arXiv", "web1") == common.doc_key("Mamba: Linear-Time Sequence Modeling", "paper1")
