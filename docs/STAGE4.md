@@ -55,7 +55,7 @@ Tables `fact_claims` (one row per checked claim) and `contradictions` (one row p
 
 ## 7. What it costs (measured, full run of Q2, 2026-11-08, run 28)
 - **Time:** 16m 38s of a 29m 30s run (56%). The machine has no GPU, so the NLI model runs on the CPU at about 1.2 to 1.7 s per pair.
-- **Groq tokens:** the `stage4_judge` purpose used 41,432 of the run's 186,317 tokens (22%) before the near-match judge existed. A near-match call costs about 700 tokens (measured: 360 calls = 252,259 tokens in one experiment); with one candidate per claim expect roughly 100 extra calls (about 70,000 tokens) per run.
+- **Groq tokens:** the `stage4_judge` purpose used 41,432 of the run's 186,317 tokens (22%) before the near-match judge existed. Later runs: 67,745 of 175,435 (Q5, 3 sub-questions) and 131,766 of 284,736 (diffusion vs GAN, 4 sub-questions, with near matches). Since 2026-11-08 the judges are tagged separately in the token meter: `stage4_merge`, `stage4_support`, `stage4_near`, `stage4_conflict`. A near-match call costs about 700 tokens (measured: 360 calls = 252,259 tokens in one experiment); with one candidate per claim expect roughly 100 extra calls (about 70,000 tokens) per run.
 - **Result of that run:** 136 claims -> 113 checked claims: 4 `supported`, 109 `unverified`, 0 `contradicted`, 0 false conflicts, 0 judge failures. The 4 supported claims were read and are correct.
 
 ## 8. Near-match label: how it was tested

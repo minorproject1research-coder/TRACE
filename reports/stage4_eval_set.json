@@ -646,6 +646,14 @@
    "conflicts": true,
    "source": "synthetic",
    "ref": "strong versus strong"
+  },
+  {
+   "a": "FID solves the diversity problem of the Inception Score.",
+   "b": "Precision and Recall are used to assess coverage and diversity of generated image distributions.",
+   "quote_b": "Precision and Recall complement FID and IS by measuring coverage and diversity.",
+   "conflicts": false,
+   "source": "real run 30 (diffusion vs GAN)",
+   "ref": "stored as a conflict by Stage 4 on 2026-11-08: 'complement' does not deny that FID addresses diversity; both can be true"
   }
  ]
 }

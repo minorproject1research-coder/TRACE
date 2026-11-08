@@ -2,7 +2,7 @@
 
   python scripts/groq_usage.py [--hours 24] [--daily-limit 200000]
 
-Shows tokens and calls per key, per purpose (digest, digest_loop2, stage4_judge, aspect_split ...), 429 counts, and the limits Groq reported in its
+Shows tokens and calls per key, per purpose (digest, digest_loop2, stage4_merge / stage4_support / stage4_near / stage4_conflict, aspect_split ...), 429 counts, and the limits Groq reported in its
 response headers (requests per day, tokens per minute) with what was left at the last call. Groq does NOT report the daily TOKEN limit in headers;
 --daily-limit (default 200000, the free-tier figure published for openai/gpt-oss-120b; check your console) is only used for the "% of the day" column,
 and counts only what THIS project sent in the window (other tools on the same accounts use the same limit).

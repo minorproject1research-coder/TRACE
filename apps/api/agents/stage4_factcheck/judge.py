@@ -74,7 +74,7 @@ def workers() -> int:
         return 4
 
 
-def ask(prompt: str) -> dict:
+def ask(prompt: str, purpose: str = "stage4_judge") -> dict:
     """squeezer_json with the disk cache. Raises on failure (callers turn that into their fail-closed answer).
     After a rate-limit-for-good failure the model is not asked again for BREAKER_SECONDS (cached answers still work): a sub-question would
     otherwise wait on hundreds of calls that all fail, and every one of them fails closed anyway."""
@@ -98,7 +98,7 @@ def ask(prompt: str) -> dict:
         raise JudgeUnavailable("the judge model is rate limited; not asked again for a few minutes")
     _bump("calls")
     try:
-        value = squeezer_json(prompt, purpose="stage4_judge")
+        value = squeezer_json(prompt, purpose=purpose)
     except Exception as e:
         _bump("failures")
         if _rate_limited_for_good(e):
@@ -171,7 +171,7 @@ def judge_conflict(claim: str, quote: str, other_claim: str) -> dict:
     """A conflict needs TWO yeses: the first reading says "conflicts", and a second reading that tries to reconcile the statements fails.
     A single lenient answer from one call (the first real run produced two false conflicts that way) cannot create a conflict."""
     try:
-        v = ask(PROMPT.format(claim=claim, quote=quote, other_claim=other_claim))
+        v = ask(PROMPT.format(claim=claim, quote=quote, other_claim=other_claim), "stage4_conflict")
         out = {
             "same_aspect": bool(v.get("same_aspect")),
             "conflicts": bool(v.get("conflicts")),
@@ -179,7 +179,7 @@ def judge_conflict(claim: str, quote: str, other_claim: str) -> dict:
             "reason": str(v.get("reason", "")),
         }
         if out["conflicts"] and out["same_aspect"]:
-            c = ask(CONFIRM_PROMPT.format(claim=claim, quote=quote))
+            c = ask(CONFIRM_PROMPT.format(claim=claim, quote=quote), "stage4_conflict")
             if bool(c.get("both_can_be_true", True)):          # a missing field counts as "can be reconciled"
                 out["conflicts"] = False
                 out["reason"] = "not confirmed: " + str(c.get("reason", ""))
@@ -205,7 +205,7 @@ Return ONLY JSON: {{"supports": true, "confidence": 0.0, "reason": "one sentence
 
 def judge_support(claim: str, quote: str) -> dict:
     try:
-        v = ask(SUPPORT_PROMPT.format(claim=claim, quote=quote))
+        v = ask(SUPPORT_PROMPT.format(claim=claim, quote=quote), "stage4_support")
         return {
             "supports": bool(v.get("supports")),
             "confidence": float(v.get("confidence", 0.0)),
@@ -240,7 +240,7 @@ Return ONLY JSON: {{"shared_point": "...", "near": true, "reason": "one sentence
 def judge_near_match(claim: str, other_claim: str, other_quote: str) -> bool:
     """Fails closed like the other judges: any error means "not a near match"."""
     try:
-        v = ask(NEAR_PROMPT.format(a=claim, b=other_claim, quote=other_quote))
+        v = ask(NEAR_PROMPT.format(a=claim, b=other_claim, quote=other_quote), "stage4_near")
         shared = str(v.get("shared_point", "")).strip().lower().strip(".\"' ")
         return bool(v.get("near")) and shared not in ("", "none", "n/a")      # a yes without a named shared point does not count
     except Exception as e:
@@ -266,7 +266,7 @@ Return ONLY JSON: {{"same": true, "reason": "one sentence"}}
 
 def judge_same_claim(a: str, b: str) -> bool:
     try:
-        v = ask(SAME_PROMPT.format(a=a, b=b))
+        v = ask(SAME_PROMPT.format(a=a, b=b), "stage4_merge")
         return bool(v.get("same"))
     except Exception as e:
         logger.warning("Same-claim judge failed: %s", e)
