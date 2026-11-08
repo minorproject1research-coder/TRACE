@@ -153,6 +153,9 @@ def main() -> int:
     phases += [("Store papers in the database", t_ret, t_parse0), ("PDF download + Docling parsing", t_parse0, t_parse1),
                ("Stage 3 preparation (aspect split, chunking, embedding)", t_parse1, t_st3), ("Stage 3 digest generation (Groq)", t_st3, t_judge0),
                ("Stage 3 judge + coverage (per sub-question)", t_judge0, t_last_sq)]
+    s4_done = [l for l in msgs if re.match(r"Sub-question '.*': \d+ digests, \d+ claims -> \d+ clusters", l[3])]
+    if s4_done:
+        phases.append(("Stage 4 fact check (claims, NLI, judges)", t_last_sq, s4_done[-1][0]))
     total = (t_end - t_start).total_seconds()
     cov_by_sq_early = {}
     for c in sorted(covs, key=lambda c: c["created_at"]):
@@ -387,6 +390,9 @@ def main() -> int:
     w("## 7. Groq and judge\n")
     st3m = t_st3_first
     w(f"- {st3m[3]}")
+    usage_line = last(msgs, lambda l: l[3].startswith("Groq usage:"))
+    if usage_line:
+        w(f"- {usage_line[3]}")
     w(f"- Rate-limit parking events: {len(groq_events)}; per key (events / parked seconds): " + ", ".join(f"...{k}: {v[0]} / {v[1]}s" for k, v in sorted(groq_by_key.items())))
     w(f"- Judge batch latencies (s): {[round(x / 1000, 1) for x in judge_batches]}")
     w("")
@@ -399,6 +405,25 @@ def main() -> int:
                     judge_errors.append((d.get("source_title"), a_idx, v.get("reason")))
     w("- Judge verdicts that came back as error: " + (str(len(judge_errors)) + " -> " + "; ".join(f"aspect {int(a) + 1} of '{(t or '?')[:40]}': {(r or '')[:120]}" for t, a, r in judge_errors) if judge_errors else "0"))
     w("")
+
+    if s4_done:
+        w("## 7b. Stage 4: fact check\n")
+        fc = rd(supabase.table("fact_claims").select("sub_question_id,label,support_doc_count,contested").eq("query_id", qid))
+        contra = rd(supabase.table("contradictions").select("*").eq("query_id", qid))
+        by_label = Counter(r["label"] for r in fc)
+        w(f"Claims after grouping: {len(fc)}; labels {dict(by_label)}; contradictions stored: {len(contra)}; "
+          f"time {dur((s4_done[-1][0] - t_last_sq).total_seconds())}.\n")
+        w("| # | Sub-question | Digests | Claims | Clusters | Supported / unverified / contradicted |\n|---|---|---|---|---|---|")
+        for i, l in enumerate(s4_done, 1):
+            m = re.match(r"Sub-question '(.*)': (\d+) digests, (\d+) claims -> (\d+) clusters \{'supported': (\d+), 'contradicted': (\d+), 'unverified': (\d+)\}", l[3])
+            if m:
+                w(f"| {i} | {m.group(1)} | {m.group(2)} | {m.group(3)} | {m.group(4)} | {m.group(5)} / {m.group(7)} / {m.group(6)} |")
+        capped = [l[3] for l in msgs if "go to NLI" in l[3]]
+        if capped:
+            w("\nNLI pair cap: " + "; ".join(re.sub(r"^Stage 4: ", "", c) for c in capped))
+        for c in contra:
+            w(f"- Conflict: {str(c.get('reason') or c)[:200]}")
+        w("")
 
     w("## 8. Warnings and errors in the log (grouped)\n")
 
