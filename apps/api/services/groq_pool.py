@@ -10,10 +10,14 @@ limit and add nothing; the keys must belong to different organizations (differen
 Groq's terms before creating accounts to get around a free-tier limit.
 """
 import itertools
+import json
 import logging
 import os
 import threading
 import time
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
 
 import groq
 from dotenv import load_dotenv
@@ -31,6 +35,90 @@ CALL_TIME_BUDGET_SECONDS = float(os.getenv("GROQ_CALL_TIME_BUDGET_SECONDS", "300
 
 class GroqRateLimitExhausted(Exception):
     """Every key is rate limited for longer than MAX_WAIT_SECONDS (or the attempts ran out)."""
+
+
+# ------------------------------------------------------------------------------------------------------------ token meter
+USAGE_LOG = os.getenv("GROQ_USAGE_LOG", "logs/groq_usage.jsonl")      # one JSON line per call; "off" disables the file (the counters stay)
+
+
+class UsageMeter:
+    """Counts what every Groq call costs: tokens (prompt, completion, of which reasoning), calls and 429s, per purpose (digest, stage4_judge ...)
+    and per key, in memory (for a per-run figure) and in a log file (for "how much did I use today": scripts/groq_usage.py).
+    The limits themselves come from Groq's response headers (x-ratelimit-*): requests per day and tokens per minute per key.
+    Groq does not report the daily token limit in headers; the daily total here is what THIS project sent."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.totals: Counter = Counter()
+        self.by_purpose: dict[str, Counter] = defaultdict(Counter)
+        self.by_key: dict[str, Counter] = defaultdict(Counter)
+        self.limits: dict[str, dict] = {}                 # last seen x-ratelimit-* per key (last 4 characters)
+
+    def record(self, key: str, purpose: str, model: str, usage, headers) -> None:
+        k = key[-4:]
+        prompt = int(getattr(usage, "prompt_tokens", 0) or 0)
+        completion = int(getattr(usage, "completion_tokens", 0) or 0)
+        details = getattr(usage, "completion_tokens_details", None)
+        reasoning = int(getattr(details, "reasoning_tokens", 0) or 0)
+        total = int(getattr(usage, "total_tokens", 0) or (prompt + completion))
+        lim = {}
+        for name in ("limit-requests", "remaining-requests", "limit-tokens", "remaining-tokens", "reset-requests", "reset-tokens"):
+            v = (headers or {}).get(f"x-ratelimit-{name}") if headers is not None else None
+            if v is not None:
+                lim[name] = v
+        with self._lock:
+            for c in (self.totals, self.by_purpose[purpose], self.by_key[k]):
+                c["calls"] += 1
+                c["prompt"] += prompt
+                c["completion"] += completion
+                c["reasoning"] += reasoning
+                c["total"] += total
+            if lim:
+                self.limits[k] = {**lim, "at": time.time()}
+        self._append({"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "key": k, "purpose": purpose, "model": model, "prompt": prompt,
+                      "completion": completion, "reasoning": reasoning, "total": total, **{f"rl_{n.replace('-', '_')}": v for n, v in lim.items()}})
+
+    def rate_limited(self, key: str, purpose: str, seconds: float) -> None:
+        k = key[-4:]
+        with self._lock:
+            for c in (self.totals, self.by_purpose[purpose], self.by_key[k]):
+                c["rate_limited"] += 1
+        self._append({"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "key": k, "purpose": purpose, "event": "429", "parked_seconds": round(seconds)})
+
+    def _append(self, row: dict) -> None:
+        if USAGE_LOG.lower() == "off":
+            return
+        try:
+            path = Path(USAGE_LOG)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with self._lock, path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(row) + "\n")
+        except (OSError, ValueError):
+            pass                                           # counting must never break a call
+
+    def snapshot(self) -> dict:
+        with self._lock:
+            return {"totals": Counter(self.totals), "by_purpose": {p: Counter(c) for p, c in self.by_purpose.items()},
+                    "by_key": {k: Counter(c) for k, c in self.by_key.items()}}
+
+    def since(self, snap: dict) -> dict:
+        """What was used after `snap` (a snapshot taken earlier): {"totals": {...}, "by_purpose": {...}, "by_key": {...}}."""
+        now = self.snapshot()
+        diff = lambda a, b: {k: a[k] - b.get(k, 0) for k in a if a[k] - b.get(k, 0)}          # noqa: E731
+        return {"totals": diff(now["totals"], snap["totals"]),
+                "by_purpose": {p: d for p, c in now["by_purpose"].items() if (d := diff(c, snap["by_purpose"].get(p, {})))},
+                "by_key": {k: d for k, c in now["by_key"].items() if (d := diff(c, snap["by_key"].get(k, {})))}}
+
+
+meter = UsageMeter()
+
+
+def usage_text(used: dict) -> str:
+    """One readable line for a log: 'Groq usage: 412,300 tokens in 96 calls (digest 301,000, digest_loop2 90,500 ...), 14 rate limits'."""
+    t = used.get("totals", {})
+    parts = ", ".join(f"{p} {c.get('total', 0):,}" for p, c in sorted(used.get("by_purpose", {}).items(), key=lambda kv: -kv[1].get("total", 0)))
+    return (f"Groq usage: {t.get('total', 0):,} tokens ({t.get('prompt', 0):,} prompt + {t.get('completion', 0):,} completion, of which {t.get('reasoning', 0):,} reasoning) "
+            f"in {t.get('calls', 0)} calls, {t.get('rate_limited', 0)} rate limits" + (f" [{parts}]" if parts else ""))
 
 
 def load_keys() -> list[str]:
@@ -74,7 +162,7 @@ class GroqPool:
         with self._lock:
             self._parked_until[key] = max(self._parked_until.get(key, 0.0), time.time() + seconds)
 
-    def chat(self, messages: list[dict], model: str, temperature: float = 0.1, **kwargs):
+    def chat(self, messages: list[dict], model: str, temperature: float = 0.1, purpose: str = "other", **kwargs):
         """chat.completions.create with key rotation. Returns the SDK response.
 
         A 429 only parks its key and the call goes on (to another key, or after the Retry-After): rate limits are NOT counted against
@@ -95,11 +183,15 @@ class GroqPool:
                 time.sleep(max(wait, 0.2))
                 continue
             try:
-                return self._clients[key].chat.completions.create(
+                raw = self._clients[key].chat.completions.with_raw_response.create(
                     model=model, messages=messages, temperature=temperature, **kwargs)
+                response = raw.parse()                       # the same object create() returns; the raw response also carries the rate-limit headers
+                meter.record(key, purpose, model, getattr(response, "usage", None), getattr(raw, "headers", None))
+                return response
             except groq.RateLimitError as e:
                 seconds = _retry_after_seconds(e) or DEFAULT_COOLDOWN_SECONDS
                 self._park(key, seconds)
+                meter.rate_limited(key, purpose, seconds)
                 last = e
                 logger.info("Groq key ...%s rate limited, parked %.0fs (%d key(s) in the pool)", key[-4:], seconds, len(self._keys))
             except (groq.APIConnectionError, groq.InternalServerError) as e:
@@ -121,8 +213,8 @@ def get_pool() -> GroqPool:
         return _pool
 
 
-def chat(messages: list[dict], model: str, temperature: float = 0.1, **kwargs):
-    return get_pool().chat(messages, model, temperature, **kwargs)
+def chat(messages: list[dict], model: str, temperature: float = 0.1, purpose: str = "other", **kwargs):
+    return get_pool().chat(messages, model, temperature, purpose=purpose, **kwargs)
 
 
 def key_count() -> int:

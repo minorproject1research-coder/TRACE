@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import Callable, Optional
 
 from apps.api import config
-from apps.api.services import progress
+from apps.api.services import groq_pool, progress
 
 logger = logging.getLogger("apps.api.run_manager")
 
@@ -193,6 +193,7 @@ class RunManager:
                 rec.emit("step", stage=stage, status=state, message=report["message"], data={"lane": lane, "step": step, "state": state, **report["data"]})
 
         progress.register(rec.id, on_progress)
+        usage_before = groq_pool.meter.snapshot()           # tokens sent to Groq by THIS process during the run (runs normally do not overlap)
         try:
             for chunk in self.graph().stream(SharedResearchState(raw_query=rec.question, query_id=rec.id), stream_mode="updates"):
                 for node, update in (chunk or {}).items():
@@ -216,7 +217,11 @@ class RunManager:
                     elif node == "factcheck" and rec.stages["factcheck"] == "running":
                         self._stage(rec, "factcheck", "failed" if data.get("error") else "completed", message, data)
             rec.status, rec.finished_at = "completed", _now()
-            rec.emit("run_completed", status="completed", message="Run finished", data={"reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
+            used = groq_pool.meter.since(usage_before)
+            logger.info("run %s: %s", rec.id, groq_pool.usage_text(used))
+            rec.emit("run_completed", status="completed", message="Run finished", data={"groqTokens": used["totals"].get("total", 0),
+                     "groqCalls": used["totals"].get("calls", 0), "groqTokensByPurpose": {p: c.get("total", 0) for p, c in used["by_purpose"].items()},
+                     "reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
         except Exception as e:
             logger.error("run %s failed:\n%s", rec.id, traceback.format_exc())
             rec.status, rec.finished_at = "failed", _now()

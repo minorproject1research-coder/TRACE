@@ -114,7 +114,7 @@ def split_detail_aspects(
     
     try:
         prompt = ASPECT_SPLIT_PROMPT.format(detail=detail_text, topic=main_topic)
-        data = squeezer_json(prompt)
+        data = squeezer_json(prompt, purpose="aspect_split")
         aspects = data.get("aspects", [])
         
         # Validate: 1-3 non-empty strings

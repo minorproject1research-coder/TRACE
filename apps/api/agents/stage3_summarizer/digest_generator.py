@@ -109,6 +109,7 @@ def generate_digest(
     main_topic: str | None = None,
     cache_scope: tuple[str, str] | None = None,
     strict: bool = False,
+    purpose: str = "digest",
 ) -> list[dict]:
     """
     selected = [(chunk_id, chunk_text)].
@@ -143,7 +144,7 @@ def generate_digest(
             logger.info("Digest cache hit for source %s", cache_scope[1])
     if data is None:
         try:
-            data = squeezer_json(prompt, temperature=DIGEST_TEMPERATURE, seed=DIGEST_SEED)
+            data = squeezer_json(prompt, temperature=DIGEST_TEMPERATURE, seed=DIGEST_SEED, purpose=purpose)
         except Exception as e:
             logger.error("Digest generation failed: %s", e)
             if strict:
@@ -167,7 +168,7 @@ def generate_digest(
     return findings
 
 def generate_digest_with_retry(sub_question: str, selected: list[tuple[int, str]], *, detail_aspects: list[str] | None,
-                               main_topic: str | None, cache_scope: tuple[str, str] | None) -> tuple[list[dict], int]:
+                               main_topic: str | None, cache_scope: tuple[str, str] | None, purpose: str = "digest") -> tuple[list[dict], int]:
     """generate_digest with the summarizer's failure handling: one retry on a JSON error, any other error ends the call.
     Returns (findings, digest_failures); a failed source gives ([], n) and is counted, never raised."""
     import json
@@ -175,7 +176,7 @@ def generate_digest_with_retry(sub_question: str, selected: list[tuple[int, str]
     for attempt in range(2):
         try:
             return generate_digest(sub_question, selected, detail_aspects=detail_aspects, main_topic=main_topic,
-                                   cache_scope=cache_scope, strict=True), failures
+                                   cache_scope=cache_scope, strict=True, purpose=purpose), failures
         except json.JSONDecodeError as e:
             failures += 1
             logger.warning(f"Digest JSON parse failed (attempt {attempt + 1}/2): {e}")

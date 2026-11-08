@@ -123,7 +123,7 @@ def generate(raw_query: str) -> DomainAnchor:
         pass
 
     try:
-        result = _validate(llm_service.squeezer_json(PROMPT.format(question=raw_query.strip()), temperature=0.0))
+        result = _validate(llm_service.squeezer_json(PROMPT.format(question=raw_query.strip()), temperature=0.0, purpose="domain_anchor"))
     except Exception as e:                               # never let this break planning; the pipeline then runs as before
         logger.warning("Domain anchor unavailable (%s: %s); searching without it", type(e).__name__, e)
         return DomainAnchor()

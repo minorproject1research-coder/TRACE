@@ -15,7 +15,7 @@ QUESTION = "How do state space models like Mamba compare with transformers in tr
 def fake_llm(monkeypatch):
     calls = []
 
-    def fake(prompt, *, temperature=0.1, seed=None):
+    def fake(prompt, *, temperature=0.1, seed=None, purpose="other"):
         calls.append(prompt)
         if isinstance(fake.reply, Exception):
             raise fake.reply

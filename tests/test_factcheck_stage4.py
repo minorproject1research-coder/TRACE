@@ -282,7 +282,7 @@ def test_a_topic_gate_keeps_unrelated_quotes_away_from_the_judge(monkeypatch):
 
 # ----------------------------------------------------------------------------------------------------------- judges + cache
 def test_every_judge_fails_closed(monkeypatch):
-    def boom(prompt):
+    def boom(prompt, **_):
         raise RuntimeError("rate limited")
     monkeypatch.setattr(judge, "squeezer_json", boom)
     assert judge.judge_conflict("a", "q", "b")["conflicts"] is False
@@ -295,7 +295,7 @@ def test_judge_replies_are_cached_and_failures_are_not(monkeypatch):
     calls = []
     replies = iter([RuntimeError("down"), {"same": True}, {"same": False}])
 
-    def fake(prompt):
+    def fake(prompt, **_):
         calls.append(prompt)
         r = next(replies)
         if isinstance(r, Exception):
@@ -351,7 +351,7 @@ def test_the_judge_stops_asking_after_a_daily_limit_and_fails_closed_fast(monkey
         pass
     calls = []
 
-    def limited(prompt):
+    def limited(prompt, **_):
         calls.append(prompt)
         raise GroqRateLimitExhausted("all 7 Groq key(s) are rate limited for 900s")
     monkeypatch.setattr(judge, "squeezer_json", limited)
@@ -367,12 +367,12 @@ def test_the_judge_stops_asking_after_a_daily_limit_and_fails_closed_fast(monkey
 
 
 def test_an_ordinary_failure_does_not_trip_the_breaker(monkeypatch):
-    monkeypatch.setattr(judge, "squeezer_json", lambda p: (_ for _ in ()).throw(ValueError("bad json")))
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: (_ for _ in ()).throw(ValueError("bad json")))
     judge.reset_breaker()
     judge.judge_same_claim("a", "b")
     judge.judge_same_claim("c", "d")
     assert judge.stats()["skipped"] == judge.stats()["skipped"]       # unchanged by these two
-    monkeypatch.setattr(judge, "squeezer_json", lambda p: {"same": True})
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: {"same": True})
     assert judge.judge_same_claim("e", "f") is True
 
 
@@ -381,7 +381,7 @@ def test_a_conflict_needs_the_confirming_second_reading(monkeypatch):
     replies = {"first": {"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": "opposite"}}
     calls = []
 
-    def fake(prompt):
+    def fake(prompt, **_):
         calls.append(prompt)
         return replies["first"] if "DIRECTLY CONTRADICT" in prompt and "second reader" not in prompt else replies["second"]
     monkeypatch.setattr(judge, "squeezer_json", fake)
@@ -396,11 +396,11 @@ def test_a_conflict_needs_the_confirming_second_reading(monkeypatch):
 
 def test_no_second_reading_when_the_first_sees_no_conflict_and_a_failing_second_fails_closed(monkeypatch):
     seq = iter([{"same_aspect": True, "conflicts": False, "confidence": 0.9, "reason": ""}])
-    monkeypatch.setattr(judge, "squeezer_json", lambda p: next(seq))
+    monkeypatch.setattr(judge, "squeezer_json", lambda p, **_: next(seq))
     assert judge.judge_conflict("a", "q", "b")["conflicts"] is False                 # a second call would raise StopIteration
     answers = iter([{"same_aspect": True, "conflicts": True, "confidence": 0.9, "reason": ""}, RuntimeError("down")])
 
-    def second_fails(p):
+    def second_fails(p, **_):
         r = next(answers)
         if isinstance(r, Exception):
             raise r

@@ -203,7 +203,7 @@ def _groq_decompose(question: str) -> dict:
     from apps.api.services import groq_pool
     response = groq_pool.chat(
         messages=[{"role": "user", "content": GROQ_DECOMPOSE_PROMPT.format(question=question)}],
-        model="openai/gpt-oss-120b", temperature=0.3,
+        model="openai/gpt-oss-120b", temperature=0.3, purpose="planner_fallback",
     )
     raw = response.choices[0].message.content.strip()
     obj = trace_llm_service.extract_json_from_output(raw.replace("```json", "").replace("```", ""))

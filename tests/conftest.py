@@ -19,6 +19,7 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setenv("DOMAIN_ANCHOR_CACHE_DIR", str(tmp_path / "domain_anchor_cache"))
     monkeypatch.delenv("DOMAIN_ANCHOR", raising=False)        # tests choose the switch themselves
     monkeypatch.setenv("PLAN_CACHE_DIR", str(tmp_path / "plan_cache"))
-    for name in ("PLAN_CACHE", "PLAN_CACHE_TAG"):
-        monkeypatch.delenv(name, raising=False)               # off unless the test switches it on
+    for name in ("PLAN_CACHE", "PLAN_CACHE_TAG", "FACTCHECK", "LOOP2", "TOPIC_ASPECT", "STAGE4_CACHE"):
+        monkeypatch.delenv(name, raising=False)               # off unless the test switches it on (the real .env may have Loop 2 and Stage 4 on)
+    monkeypatch.setenv("GROQ_USAGE_LOG", "off")               # tests never write the real usage log
     yield

@@ -205,7 +205,8 @@ class Services:
 
     # --- Stage 3
     def digest(self, sub_question: str, selected: list, aspects: list[str], main_topic: str, scope: tuple) -> tuple[list[dict], int]:
-        return digest_generator.generate_digest_with_retry(sub_question, selected, detail_aspects=aspects, main_topic=main_topic, cache_scope=scope)
+        return digest_generator.generate_digest_with_retry(sub_question, selected, detail_aspects=aspects, main_topic=main_topic, cache_scope=scope,
+                                                           purpose="digest_loop2")
 
     def judge(self, ctx: SubQuestionContext):
         return evidence_judge.run_judge_for_subquestion(ctx.aspects, ctx.rows, ctx.chunk_lookup, topic_aspect_idx=ctx.topic_aspect_idx,

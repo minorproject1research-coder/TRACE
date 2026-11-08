@@ -18,7 +18,7 @@ def fake_llm(tmp_path, monkeypatch):
     monkeypatch.setenv("DIGEST_CACHE", "true")
     calls = []
 
-    def fake(prompt, *, temperature=0.1, seed=None):
+    def fake(prompt, *, temperature=0.1, seed=None, purpose="other"):
         calls.append((temperature, seed))
         if isinstance(fake.reply, Exception):
             raise fake.reply

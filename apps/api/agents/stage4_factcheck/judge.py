@@ -98,7 +98,7 @@ def ask(prompt: str) -> dict:
         raise JudgeUnavailable("the judge model is rate limited; not asked again for a few minutes")
     _bump("calls")
     try:
-        value = squeezer_json(prompt)
+        value = squeezer_json(prompt, purpose="stage4_judge")
     except Exception as e:
         _bump("failures")
         if _rate_limited_for_good(e):

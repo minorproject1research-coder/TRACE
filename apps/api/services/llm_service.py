@@ -14,7 +14,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 MODEL_NAME = OLLAMA_MODEL if BACKEND == "ollama" else GROQ_MODEL
 
 
-def squeezer_json(prompt: str, *, temperature: float = 0.1, seed: int | None = None) -> dict:
+def squeezer_json(prompt: str, *, temperature: float = 0.1, seed: int | None = None, purpose: str = "other") -> dict:
     """Sends the prompt to the configured Squeezer backend and parses a JSON reply. seed is best effort (Groq documents it as such)."""
     if BACKEND == "ollama":
         r = httpx.post(f"{OLLAMA_URL}/api/chat", timeout=180, json={
@@ -27,7 +27,7 @@ def squeezer_json(prompt: str, *, temperature: float = 0.1, seed: int | None = N
     else:
         for attempt in range(2):                    # a reply that is not valid JSON (cut off, stray text) gets one more try
             extra = {"seed": seed} if seed is not None else {}
-            resp = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model=GROQ_MODEL, temperature=temperature, **extra)
+            resp = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model=GROQ_MODEL, temperature=temperature, purpose=purpose, **extra)
             try:
                 return _parse_json(resp.choices[0].message.content)
             except json.JSONDecodeError:

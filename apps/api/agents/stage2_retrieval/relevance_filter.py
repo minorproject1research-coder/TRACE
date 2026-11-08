@@ -94,7 +94,7 @@ Return ONLY a JSON object, nothing else, in this exact format:
 def _groq_judge(sub_question: str, title: str, abstract: str) -> dict:
     """Fallback judge on Groq (model: GROQ_JUDGE_MODEL). Raises on any failure."""
     prompt = RELEVANCE_JUDGE_PROMPT.format(sub_question=sub_question, title=title, abstract=abstract)
-    response = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model=GROQ_JUDGE_MODEL, temperature=0.1)
+    response = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model=GROQ_JUDGE_MODEL, temperature=0.1, purpose="relevance_judge")
     raw = response.choices[0].message.content.strip()
     if raw.startswith("```"):
         raw = raw.strip("`").replace("json\n", "", 1)

@@ -30,7 +30,7 @@ def expand(main_topic: str, detail_questions: list[str]) -> list[str]:
         detail_questions="\n".join(f"- {q}" for q in detail_questions),
     )
 
-    response = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model="openai/gpt-oss-120b", temperature=0.4)
+    response = groq_pool.chat(messages=[{"role": "user", "content": prompt}], model="openai/gpt-oss-120b", temperature=0.4, purpose="query_expansion")
 
     raw = response.choices[0].message.content.strip()
     queries = _safe_parse(raw)[:4]
