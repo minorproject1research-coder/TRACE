@@ -89,3 +89,9 @@ On the stored digests of that run (no NLI, every member counted as supported by 
 - **Groq:** Loop 2 digests of the next sub-question and the Stage 4 judges now run at the same time and share the per-minute token limit. The pool and the judge wait (`STAGE4_RATE_WAIT_MAX`) handle a 429; a heavier overlap can mean more waiting, not wrong answers (a judge call still fails closed).
 - **Failure:** a Stage 4 error never reaches Stage 3. If Stage 3 itself fails, the queued sub-questions that have not started are cancelled.
 - Stage 3 preparation also runs the sub-questions side by side (`STAGE3_PREP_WORKERS`, default 4; 1 = one after the other); the embedding model is shared and its `encode` is serialised.
+
+Safeguards added after an independent review of the parallel code (2026-11-08):
+- Early Stage 4 jobs are only queued for a run of the graph: the planner announces the run (`factcheck_node.expect`). A direct call of `summarizer_node` (`run_stage3_judge.py`, the audit scripts) queues nothing, so it cannot spend Groq calls on jobs that nobody collects.
+- If Stage 3 fails, queued jobs are cancelled and a running job stops at its next step boundary (claims, clusters, support, near, conflicts) instead of finishing all its judge calls.
+- Known, not changed: two sub-questions that keep the same paper may embed its chunks twice in the parallel preparation (only time, same result); Stage 4 and Loop 2 share the CPU and the Groq limit, so for a budget-critical run `STAGE4_OVERLAP=false` gives the old order.
+- Dry run before the first real run (real bge and DeBERTa models, an invalid Groq key so nothing was spent, stored digests of run 30): sub-questions 1 to 3 gave exactly the stored labels, sub-question 4 differed in 1 claim (it is the one whose judge calls failed in run 30), 0 Groq tokens, no thread errors in 852 concurrent embedder calls, the registry was empty afterwards.

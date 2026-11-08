@@ -35,5 +35,8 @@ def planner_node(state: SharedResearchState) -> dict:
                          domain_anchor=anchor.anchor, domain_context=anchor.context, **plan_ids)
     db_service.write_task_plan(task_plan)
     logger.info("Saved task plan with ID: %s", task_plan.query_id)
+    if config.factcheck_enabled():          # this run goes through the factcheck node, so Stage 3 may hand it sub-questions early
+        from apps.api.graph.nodes import factcheck_node
+        factcheck_node.expect(task_plan.query_id)
 
     return {"task_plan": task_plan}

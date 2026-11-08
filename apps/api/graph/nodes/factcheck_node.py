@@ -111,6 +111,7 @@ def _check_one(query_id: str, sq, report) -> tuple[list[dict], list[dict], dict]
 # _check_sub_question measures its judge calls as a difference of the process-wide judge.stats() counters, which stays exact only while
 # one Stage 4 sub-question runs at a time (Stage 3 does not use the Stage 4 judge, so its Groq calls do not enter those counters).
 _overlaps: dict[str, "_Overlap"] = {}
+_expected: set[str] = set()         # runs of the graph (the planner announced them): only these may start Stage 4 early
 _overlaps_lock = threading.Lock()
 _worker: ThreadPoolExecutor | None = None
 
@@ -123,17 +124,24 @@ def _executor() -> ThreadPoolExecutor:
         return _worker
 
 
+class _Cancelled(Exception):
+    """The run was discarded (Stage 3 failed): the running Stage 4 job stops before its next step instead of spending Groq calls."""
+
+
 class _Overlap:
     """The Stage 4 jobs of one run that started during Stage 3. Their progress reports are held back until the factcheck node starts
     (go_live), so the UI sees the factcheck stage start first and its steps afterwards, never steps of a stage that has not begun."""
     def __init__(self, query_id: str):
         self.query_id = query_id
         self.futures: dict = {}                                 # sub-question id -> Future of (labeled, disagreements, summary)
+        self.cancelled = False                                  # set by discard(): a job that is running stops at its next step boundary
         self.live = False
         self.held: list[tuple] = []
         self.lock = threading.Lock()
 
     def report(self, step: str, message: str, subquestion: int, total: int, data: dict) -> None:
+        if self.cancelled:
+            raise _Cancelled()              # raised inside _check_sub_question at a step boundary; _check_one turns it into an error result
         with self.lock:                                         # inside the lock, so a replay and a live report keep their order
             if self.live:
                 progress.report(self.query_id, "factcheck", step, "running", message, subQuestion=subquestion, subQuestions=total, **data)
@@ -145,6 +153,18 @@ class _Overlap:
             held, self.held, self.live = self.held, [], True
             for step, message, subquestion, total, data in held:
                 progress.report(self.query_id, "factcheck", step, "running", message, subQuestion=subquestion, subQuestions=total, **data)
+
+
+def expect(query_id: str) -> None:
+    """Called by the planner of a graph run with Stage 4 on. A direct call of summarizer_node (the dev scripts, a stored-run audit) never
+    passes the planner, so it is not expected and its Stage 3 does not queue Stage 4 jobs that nothing would collect."""
+    with _overlaps_lock:
+        _expected.add(query_id)
+
+
+def is_expected(query_id: str) -> bool:
+    with _overlaps_lock:
+        return query_id in _expected
 
 
 def overlap_started(query_id: str) -> bool:
@@ -179,12 +199,15 @@ def activate(query_id: str) -> None:
         overlap.go_live()
 
 
-def discard(query_id: str) -> None:
+def discard(query_id: str, keep_expected: bool = False) -> None:
     """Forget the early Stage 4 jobs of a run (the summarizer failed, or the results were collected). Jobs that did not start are
-    cancelled; one that is running finishes on its own and its result is dropped."""
+    cancelled; one that is running stops at its next step boundary (its result is dropped)."""
     with _overlaps_lock:
         overlap = _overlaps.pop(query_id, None)
+        if not keep_expected:
+            _expected.discard(query_id)
     if overlap is not None:
+        overlap.cancelled = True
         for future in list(overlap.futures.values()):
             future.cancel()
 

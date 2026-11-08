@@ -51,9 +51,16 @@ def _prep_workers() -> int:
         return 4
 
 
-def _overlap_enabled() -> bool:
-    """STAGE4_OVERLAP (default true) with FACTCHECK=true: Stage 4 of a sub-question starts as soon as Stage 3 has stored it."""
-    return config.factcheck_enabled() and os.getenv("STAGE4_OVERLAP", "true").strip().lower() not in ("0", "false", "no", "off")
+def _overlap_enabled(qid: str | None = None) -> bool:
+    """STAGE4_OVERLAP (default true) with FACTCHECK=true: Stage 4 of a sub-question starts as soon as Stage 3 has stored it. Only for a run of
+    the graph (the planner announced it with factcheck_node.expect): a direct call of summarizer_node by a dev script has no Stage 4 node
+    that would collect the jobs, and must not start any."""
+    if not (config.factcheck_enabled() and os.getenv("STAGE4_OVERLAP", "true").strip().lower() not in ("0", "false", "no", "off")):
+        return False
+    if qid is None:
+        return True
+    from apps.api.graph.nodes import factcheck_node
+    return factcheck_node.is_expected(qid)
 
 
 _row = digest_generator.digest_row
@@ -150,7 +157,7 @@ def summarizer_node(state: SharedResearchState) -> dict:
     try:
         return _summarize(state)
     except BaseException:
-        if _overlap_enabled():                      # Stage 3 failed: the Stage 4 jobs that were queued early are not wanted
+        if _overlap_enabled(qid):                   # Stage 3 failed: the Stage 4 jobs that were queued early are not wanted
             try:
                 from apps.api.graph.nodes import factcheck_node
                 factcheck_node.discard(qid)
@@ -163,11 +170,12 @@ def _summarize(state: SharedResearchState) -> dict:
     qid = state.task_plan.query_id
     sub_questions = state.task_plan.sub_questions
     progress.report(qid, "summarizer", "prepare", "running", "Selecting the passages to read (chunking, embeddings)", subQuestions=len(sub_questions))
-    overlap = _overlap_enabled()
+    qid = state.task_plan.query_id
+    overlap = _overlap_enabled(qid)
     if overlap:
         try:
             from apps.api.graph.nodes import factcheck_node
-            factcheck_node.discard(qid)             # nothing left over from an earlier run of this query
+            factcheck_node.discard(qid, keep_expected=True)     # nothing left over from an earlier run of this query
         except Exception:
             logger.exception("Stage 4 overlap is not available; Stage 4 will run after Stage 3")
             overlap = False

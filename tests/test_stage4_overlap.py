@@ -212,11 +212,12 @@ def record_writes(monkeypatch, log):
 
 def test_overlap_stores_each_sub_question_when_it_is_finished_then_queues_stage_4(monkeypatch, seen):
     monkeypatch.setenv("FACTCHECK", "true")
+    node.expect(QID)                                                             # the planner of a graph run announces the query
     state = patch_stage3(monkeypatch)
     log = []
     record_writes(monkeypatch, log)
     monkeypatch.setattr(node, "start_in_background", lambda qid, sq, index, total: log.append(("start", sq.id, index, total)) or True)
-    monkeypatch.setattr(node, "discard", lambda qid: log.append(("discard", qid)))
+    monkeypatch.setattr(node, "discard", lambda qid, keep_expected=False: log.append(("discard", qid)))
     out = sn.summarizer_node(state)
     assert len(out["digests"]) == 9 and set(out["coverage"]) == {"s1", "s2", "s3"}
     assert log == [("discard", QID),
@@ -251,6 +252,7 @@ def test_with_factcheck_off_the_overlap_switch_changes_nothing(monkeypatch, seen
 
 def test_a_stage_4_start_that_fails_never_breaks_the_summarizer(monkeypatch, seen):
     monkeypatch.setenv("FACTCHECK", "true")
+    node.expect(QID)
     state = patch_stage3(monkeypatch, n=2)
     log = []
     record_writes(monkeypatch, log)
@@ -258,16 +260,17 @@ def test_a_stage_4_start_that_fails_never_breaks_the_summarizer(monkeypatch, see
     def explode(*a):
         raise RuntimeError("cannot queue")
     monkeypatch.setattr(node, "start_in_background", explode)
-    monkeypatch.setattr(node, "discard", lambda qid: None)
+    monkeypatch.setattr(node, "discard", lambda qid, keep_expected=False: None)
     out = sn.summarizer_node(state)
     assert len(out["digests"]) == 6 and [x[0] for x in log] == ["digests", "coverage", "digests", "coverage"]
 
 
 def test_a_failed_write_fails_the_node_as_before_and_cancels_the_queued_jobs(monkeypatch, seen):
     monkeypatch.setenv("FACTCHECK", "true")
+    node.expect(QID)
     state = patch_stage3(monkeypatch, n=2)
     discards = []
-    monkeypatch.setattr(node, "discard", lambda qid: discards.append(qid))
+    monkeypatch.setattr(node, "discard", lambda qid, keep_expected=False: discards.append(qid))
     monkeypatch.setattr(node, "start_in_background", lambda *a: True)
     monkeypatch.setattr(sn.db_service, "write_digests", lambda rows: (_ for _ in ()).throw(ConnectionError("database down")))
     monkeypatch.setattr(sn.db_service, "write_coverage", lambda rows: None)
@@ -346,3 +349,40 @@ def test_the_shared_embedder_serialises_encode():
     [t.start() for t in threads]
     [t.join() for t in threads]
     assert state["max"] == 1 and emb.dim == 7                                      # other attributes pass through
+
+
+def test_a_direct_call_of_the_summarizer_without_the_planner_queues_no_stage_4_jobs(monkeypatch, seen):
+    """The dev scripts (run_stage3_judge.py, the audits) call summarizer_node directly: nothing would collect early Stage 4 jobs, and
+    they would spend Groq calls for nothing."""
+    monkeypatch.setenv("FACTCHECK", "true")
+    node.discard(QID)                                                            # not announced by a planner
+    state = patch_stage3(monkeypatch)
+    log = []
+    record_writes(monkeypatch, log)
+    monkeypatch.setattr(node, "start_in_background", lambda *a: pytest.fail("no planner, no early Stage 4"))
+    sn.summarizer_node(state)
+    assert log == [("digests", ["s1", "s2", "s3"], 9), ("coverage", ["s1", "s2", "s3"], 3)]      # the old single write at the end
+
+
+def test_discard_stops_a_running_job_at_its_next_step_and_a_queued_one_never_starts(monkeypatch):
+    import threading
+    started, release, steps = threading.Event(), threading.Event(), []
+
+    def check(query_id, sq, report):
+        report("claims", "x")
+        steps.append((sq.id, "claims"))
+        started.set()
+        release.wait(5)
+        report("clusters", "y")                                                  # the step boundary where a discarded job must stop
+        steps.append((sq.id, "clusters"))
+        return [], [], {}
+    monkeypatch.setattr(node, "_check_sub_question", check)
+    subs = sqs(2)
+    node.start_in_background("q-cancel", subs[0], 1, 2)
+    node.start_in_background("q-cancel", subs[1], 2, 2)
+    assert started.wait(5)
+    node.discard("q-cancel")
+    release.set()
+    res = node._executor().submit(lambda: None)
+    res.result(5)                                                                # the single worker has finished the cancelled job
+    assert steps == [("s1", "claims")]                                           # s1 stopped before "clusters"; s2 was cancelled in the queue
