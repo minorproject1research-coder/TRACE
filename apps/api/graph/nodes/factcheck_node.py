@@ -124,6 +124,11 @@ def _executor() -> ThreadPoolExecutor:
         return _worker
 
 
+def _utc_now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
 class _Cancelled(Exception):
     """The run was discarded (Stage 3 failed): the running Stage 4 job stops before its next step instead of spending Groq calls."""
 
@@ -146,13 +151,13 @@ class _Overlap:
             if self.live:
                 progress.report(self.query_id, "factcheck", step, "running", message, subQuestion=subquestion, subQuestions=total, **data)
             else:
-                self.held.append((step, message, subquestion, total, data))
+                self.held.append((step, message, subquestion, total, data, _utc_now()))
 
     def go_live(self) -> None:
         with self.lock:
             held, self.held, self.live = self.held, [], True
-            for step, message, subquestion, total, data in held:
-                progress.report(self.query_id, "factcheck", step, "running", message, subQuestion=subquestion, subQuestions=total, **data)
+            for step, message, subquestion, total, data, at in held:
+                progress.report(self.query_id, "factcheck", step, "running", message, subQuestion=subquestion, subQuestions=total, occurredAt=at, **data)
 
 
 def expect(query_id: str) -> None:

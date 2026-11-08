@@ -170,3 +170,19 @@ def test_workers_and_pipeline_settings_are_forgiving(monkeypatch):
     assert sn._pipeline_enabled() is True
     monkeypatch.setenv("STAGE3_PIPELINE", "off")
     assert sn._pipeline_enabled() is False
+
+
+def test_events_say_which_sub_question_they_are_about_and_held_ones_keep_their_own_time(monkeypatch, seen):
+    state = patch(monkeypatch)
+    monkeypatch.setenv("STAGE3_SQ_WORKERS", "2")
+    sn.summarizer_node(state)
+    judge_events = [e for e in seen if e["lane"] == "summarizer" and e["step"] == "judge" and e["state"] == "running"]
+    assert judge_events and all(e["data"]["subQuestionIndex"] in (1, 2, 3) and e["data"]["subQuestions"] == 3 for e in judge_events)
+    assert all("occurredAt" in e["data"] for e in judge_events)                      # held until the digest step ended, so each carries its real time
+
+
+def test_loop2_events_carry_the_sub_question_index():
+    sent = []
+    svc = sn._Loop2Services("q", lambda *a, **k: sent.append((a, k)), 2, 4)
+    svc.progress("Loop 2 (reselect): 1 aspect(s) of 'x'", loop2Step="reselect", aspects=1)
+    assert sent == [(("summarizer", "loop2", "running", "Loop 2 (reselect): 1 aspect(s) of 'x'"), {"subQuestionIndex": 2, "subQuestions": 4, "loop2Step": "reselect", "aspects": 1})]

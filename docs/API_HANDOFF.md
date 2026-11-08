@@ -107,6 +107,15 @@ The nodes report what they are doing between a stage's start and its end. `data 
 - Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
 - Reports are best effort: a node that cannot report (no sink, an error) is never affected, and a lane may skip a step (`skipped`).
 
+### Work that now runs at the same time (2026-11-08) and what it means for the stream
+Several parts of the pipeline overlap to save time. The events are the same kinds as before, but their ORDER and TIMING changed:
+- **Sub-questions are judged at the same time** (`STAGE3_SQ_WORKERS`, default 2) and a sub-question is judged as soon as its own digests are done (`STAGE3_PIPELINE`). So `judge` events of different sub-questions interleave and finish in any order: `done` counts FINISHED sub-questions (completion order), not an index. Every `judge` and `loop2` event now has `subQuestionIndex` (1-based) and `subQuestions` (total); use them, not the message text. Two sub-questions can be in a Loop 2 step at once.
+- All `judge` and `loop2` events are held until the `digest` step has reported `completed`, then replayed in order, each with `occurredAt` (ISO time when it really happened). They are the only events whose `timestamp` (emit time) differs noticeably from the real time.
+- **Stage 4 starts during Stage 3** (`STAGE4_OVERLAP`): the work of a sub-question starts when Stage 3 has stored it. The `factcheck` stage still starts (`stage_started`) only after the summarizer ends; its `step` events (lane `factcheck`: `claims`, `clusters`, `support`, `near`, `conflicts`, `store`) for the sub-questions that were already checked arrive then as a burst, in order, each with `occurredAt`. A `factcheck` event carries `subQuestion` (1-based index) and `subQuestions`. The steps of the sub-questions can interleave in time and a sub-question's `near` and `conflicts` steps now run side by side. The new step id is `near`.
+- The `factcheck` stage's own duration (`stage_started` to `stage_completed`) is therefore SHORTER than the Stage 4 work really took; the real work started earlier (see `occurredAt`).
+- The final `factcheck` `stage_completed` data has a new `judgeWaits` (how often a Stage 4 judge call waited out a Groq limit instead of failing).
+- Groq token purposes in `run_completed.groqTokensByPurpose` are now `digest`, `digest_loop2`, `aspect_split`, `query_expansion`, `stage4_merge`, `stage4_support`, `stage4_near`, `stage4_conflict` (was one `stage4_judge`); treat the keys as open strings.
+
 ### Consuming the stream
 - Use `EventSource` on `.../events`. Events arrive as default `message` events with the JSON in `data`; the SSE `id` is `seq`.
 - **Close the EventSource when you receive `run_completed` or `run_failed`.** The server ends the stream after those, and a browser would otherwise reconnect forever.

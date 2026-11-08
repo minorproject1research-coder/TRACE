@@ -78,6 +78,11 @@ def _sq_workers() -> int:
         return 2
 
 
+def _utc_now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
 class _Gate:
     """Holds the progress events of the judge lane until the digest step has reported 'completed', then replays them in order, so the web
     app never sees the judge of a sub-question start before the digest step ends even though the work overlaps."""
@@ -92,13 +97,13 @@ class _Gate:
             if self.released:
                 progress.report(self.query_id, *args, **kwargs)
             else:
-                self.held.append((args, kwargs))
+                self.held.append((args, kwargs, _utc_now()))
 
     def release(self):
         with self.lock:
             held, self.held, self.released = self.held, [], True
-            for args, kwargs in held:
-                progress.report(self.query_id, *args, **kwargs)
+            for args, kwargs, at in held:
+                progress.report(self.query_id, *args, **{**kwargs, "occurredAt": at})      # the event's own time: it is replayed later than it happened
 
 
 class _Aborted(Exception):
@@ -110,13 +115,14 @@ _row = digest_generator.digest_row
 
 class _Loop2Services(loop2.Services):
     """The real services, with progress reports for the run's event stream (through the gate, so they never precede the digest step's end)."""
-    def __init__(self, query_id, report=None):
+    def __init__(self, query_id, report=None, sq_index=None, sq_total=None):
         super().__init__()
         self.query_id = query_id
         self._report = report or (lambda *a, **k: progress.report(query_id, *a, **k))
+        self._where = {"subQuestionIndex": sq_index, "subQuestions": sq_total} if sq_index else {}     # which sub-question (several run at once)
 
     def progress(self, message, **data):
-        self._report("summarizer", "loop2", "running", message, **data)
+        self._report("summarizer", "loop2", "running", message, **self._where, **data)
 
 
 def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects, rows, chunk_lookup, jobs, candidates,
@@ -124,7 +130,7 @@ def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_covera
     """Loop 2 for one sub-question; returns the final coverage (rows and chunk_lookup are extended in place). Never raises."""
     n_rows = len(rows)
     try:
-        svc = _Loop2Services(qid, report)
+        svc = _Loop2Services(qid, report, si + 1, len(state.task_plan.sub_questions))
         papers = [j[2] for j in jobs if j[0] == si and j[1] == "paper"]
         ctx = loop2.SubQuestionContext(
             query_id=qid, sq=sq, aspects=aspects, aspect_to_detail=aspect_to_detail, details_for_coverage=details_for_coverage,
@@ -138,7 +144,8 @@ def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_covera
         cov, _, _, info = loop2.run_subquestion(ctx, cov, candidates, judge_verdicts, svc, deadline)
         cov.setdefault("judge_stats", {})["loop2"] = info
         (report or (lambda *a, **k: progress.report(qid, *a, **k)))("summarizer", "loop2", "running", f"Loop 2 done for sub-question {si + 1}",
-                                                                     subQuestion=sq.main_topic[:90], searched=info["searched"], covered=info["covered"])
+                                                                     subQuestion=sq.main_topic[:90], subQuestionIndex=si + 1, subQuestions=len(state.task_plan.sub_questions),
+                                                                     searched=info["searched"], covered=info["covered"])
     except Exception:
         logger.exception("Loop 2 failed for sub-question '%s'; keeping the Stage 3 result", sq.main_topic[:50])
         del rows[n_rows:]                       # the coverage is the old one, so the digests must be the old ones too
@@ -288,7 +295,7 @@ def _summarize(state: SharedResearchState) -> dict:
         with judged_lock:
             started = judged[0]
         gate.report("summarizer", "judge", "running", f"Judging the evidence for sub-question {si + 1} of {n_sq}",
-                    done=started, total=n_sq, subQuestion=sq.main_topic[:90])
+                    done=started, total=n_sq, subQuestion=sq.main_topic[:90], subQuestionIndex=si + 1, subQuestions=n_sq)
         rows = [_row(qid, sq.id, st, src, findings, weight, level)
                 for (_, st, src, _, weight, level, _, _, _), (findings, _) in zip(own_jobs, own_results)]
 
@@ -338,7 +345,7 @@ def _summarize(state: SharedResearchState) -> dict:
             coverage_so_far[sq.id] = cov
             n_done, n_sufficient = judged[0], sum(1 for c in coverage_so_far.values() if c.get("sufficient"))
         gate.report("summarizer", "judge", "running", f"Judged sub-question {si + 1} of {n_sq}", done=n_done, total=n_sq,
-                    sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=n_sufficient)
+                    subQuestionIndex=si + 1, subQuestions=n_sq, sufficient=bool(cov.get("sufficient")), judgeUsed=cov.get("judge_used"), sufficientSoFar=n_sufficient)
         if abort.is_set():
             raise _Aborted()
         if overlap:
