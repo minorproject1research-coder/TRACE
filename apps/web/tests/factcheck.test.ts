@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   checkedByJudge, countsOf, elapsedLabel, EMPTY_STATE, factCheckRan, factProgress, factSummaryLine, factTotals, failedSubQuestionsNote, JUDGE_FAILURES_NOTE, judgeFailuresNote,
-  labelView, mustShowDisagreement, progressLine, splitEvidence, STAGE_FAILED_NOTE, STAGE_SKIPPED_LABEL, STRENGTH_TOOLTIP, strengthOf,
+  labelView, mustShowDisagreement, NEAR_HEADING, PARTIAL_HINT, progressLine, sourcesLine, splitEvidence, STAGE_FAILED_NOTE, STAGE_SKIPPED_LABEL, STRENGTH_TOOLTIP, strengthOf,
 } from '../lib/factcheck'
 import { stageStateLabel } from '../lib/format'
 import { demoFactChecks, demoFactTotals, withFactcheckFixtures } from '../lib/demo-factcheck'
@@ -47,15 +47,16 @@ test('contradicted and contested claims must show the disagreeing source; the ev
   assert.equal(sp.contradicts.length, 1); assert.equal(sp.supports.length, 1); assert.equal(sp.other.length, 0)
   const odd = splitEvidence({ evidence: [{ sourceId: 'x', sourceTitle: null, quote: 'q', relation: 'mentions' }] })
   assert.equal(odd.other.length, 1, 'an unknown relation is kept, not dropped')
-  assert.deepEqual(splitEvidence({ evidence: undefined as unknown as FactClaim['evidence'] }), { supports: [], contradicts: [], other: [] })
+  assert.deepEqual(splitEvidence({ evidence: undefined as unknown as FactClaim['evidence'] }), { supports: [], contradicts: [], near: [], other: [] })
 })
 
 test('counts come from `counts`, or from the claims when they are missing', () => {
   const fc = demoFactChecks()['demo-sq-1']!
-  assert.deepEqual(countsOf(fc), { supported: 1, unverified: 1, contradicted: 1, contested: 0 })
-  assert.deepEqual(countsOf({ counts: undefined as never, claims: fc.claims, disagreements: [] }), { supported: 1, unverified: 1, contradicted: 1, contested: 0 })
-  assert.deepEqual(countsOf(null), { supported: 0, unverified: 0, contradicted: 0, contested: 0 })
-  assert.match(factSummaryLine({ supported: 2, unverified: 3, contradicted: 1, contested: 1 }), /2 supported · 3 not yet confirmed · 1 contradicted · 1 contested/)
+  assert.deepEqual(countsOf(fc), { supported: 1, partially_supported: 1, unverified: 1, contradicted: 1, contested: 0 })
+  assert.deepEqual(countsOf({ counts: undefined as never, claims: fc.claims, disagreements: [] }), { supported: 1, partially_supported: 1, unverified: 1, contradicted: 1, contested: 0 })
+  assert.deepEqual(countsOf(null), { supported: 0, partially_supported: 0, unverified: 0, contradicted: 0, contested: 0 })
+  assert.equal(factSummaryLine({ supported: 2, partially_supported: 1, unverified: 3, contradicted: 1, contested: 0 }), '2 supported · 1 partly supported · 3 not yet confirmed · 1 contradicted')
+  assert.match(factSummaryLine({ supported: 2, partially_supported: 1, unverified: 3, contradicted: 1, contested: 1 }), /2 supported · 1 partly supported · 3 not yet confirmed · 1 contradicted · 1 contested/)
 })
 
 // ---------------------------------------------------------------------------------------------------------------- the report
@@ -71,17 +72,18 @@ test('Stage 4 off: nothing about it is shown, and the stage is not_run', () => {
   assert.equal(STAGE_SKIPPED_LABEL, 'skipped (switched off)')
 })
 
-test('Stage 4 on: contradicted first, then supported, then unverified; a supported claim with two sources, one checked by the judge', () => {
+test('Stage 4 on: contradicted, supported, partially_supported, unverified; a supported claim with two sources, one checked by the judge', () => {
   const r = demoReport('demo-x', 'q?', null, 'on')
   assert.equal(r.stages.factcheck, 'completed')
   assert.ok(factCheckRan(r))
   const sq1 = r.subQuestions.find(s => s.id === 'demo-sq-1')!.factCheck!
-  assert.deepEqual(sq1.claims.map(c => c.label), ['contradicted', 'supported', 'unverified'])
+  assert.deepEqual(sq1.claims.map(c => c.label), ['contradicted', 'supported', 'partially_supported', 'unverified'])
   const supported = sq1.claims[1]
   assert.equal(supported.supportDocCount, 2)
   assert.equal(supported.evidence.length, 2)
   assert.deepEqual(supported.evidence.map(e => checkedByJudge(e)), [true, false], 'one quote was already checked by the Stage 3 judge')
-  assert.ok(sq1.claims[2].supportDocCount === 1 && sq1.claims[2].confidence! <= 0.5, 'an unverified claim rests on one source and never exceeds 0.5')
+  assert.ok(sq1.claims[2].supportDocCount === 1 && sq1.claims[2].confidence! <= 0.6, 'a partially supported claim still rests on one source and never exceeds 0.6')
+  assert.ok(sq1.claims[3].supportDocCount === 1 && sq1.claims[3].confidence! <= 0.5, 'an unverified claim rests on one source and never exceeds 0.5')
   // the contradicted claim comes with the disagreeing source and a disagreement card
   assert.ok(splitEvidence(sq1.claims[0]).contradicts.length > 0)
   assert.equal(sq1.disagreements.length, 1)
@@ -186,10 +188,11 @@ test('completed: the totals, the judge-failure warning and the sub-questions tha
   const events = runUpToStage4()
   events.push(ev('stage_started', 'factcheck', {}, '', 911))
   events.push(fstep('store', 'completed', { claims: 12 }, 1900))
-  events.push(ev('stage_completed', 'factcheck', { claims: 12, subQuestions: 5, failedSubQuestions: 1, supported: 3, unverified: 7, contradicted: 2, contested: 1, disagreements: 2, judgeFailures: 4 }, 'Checked 12 claims', 1910, 'completed'))
+  events.push(ev('stage_completed', 'factcheck', { claims: 12, subQuestions: 5, failedSubQuestions: 1, supported: 3, partially_supported: 2, unverified: 7, contradicted: 2, contested: 1, disagreements: 2, judgeFailures: 4 }, 'Checked 12 claims', 1910, 'completed'))
   const p = factProgress(events)!
   assert.equal(p.state, 'completed')
   assert.deepEqual([p.result!.claims, p.result!.supported, p.result!.unverified, p.result!.contradicted, p.result!.contested, p.result!.disagreements], [12, 3, 7, 2, 1, 2])
+  assert.equal(p.result!.partiallySupported, 2)
   assert.equal(judgeFailuresNote(p), 'Some checks could not be answered (rate limit); labels are cautious and incomplete.')
   assert.equal(JUDGE_FAILURES_NOTE, judgeFailuresNote(p))
   assert.equal(failedSubQuestionsNote(p), 'Fact checking failed for 1 of 5 sub-questions; their claims are not cross-checked.')
@@ -218,4 +221,85 @@ test('a failed fact-check stage: the warning, the error, and the run is still co
   assert.equal(t.summarizer.status, 'completed')
   // run_completed after it: nothing marks the whole run as failed
   assert.ok(!events.some(e => e.event === 'run_failed'))
+})
+
+// ---------------------------------------------------------------------------------------------------------------- partially_supported
+test('a partly supported claim is not styled like a fact: not green, not grey, and its hint calls it a lead', () => {
+  const p = labelView('partially_supported'), s = labelView('supported'), u = labelView('unverified')
+  assert.equal(p.kind, 'partially_supported'); assert.equal(p.text, 'Partly supported'); assert.equal(p.short, 'Partly supported')
+  assert.notEqual(p.tone, s.tone, 'not the green of a supported claim'); assert.notEqual(p.tone, 'mint')
+  assert.notEqual(p.tone, u.tone, 'and not a bare unconfirmed claim either')
+  assert.equal(p.hint, PARTIAL_HINT)
+  assert.match(p.hint, /close variant/); assert.match(p.hint, /A lead, not a confirmed fact/)
+  assert.ok(!/\b(true|false|fact|proven|wrong)\b/i.test(p.text), p.text)
+  assert.equal(labelView('Partially_Supported').kind, 'partially_supported', 'case does not matter')
+  assert.ok(!mustShowDisagreement({ label: 'partially_supported', contested: false }), 'it has no disagreeing source of its own')
+  assert.ok(mustShowDisagreement({ label: 'partially_supported', contested: true }), 'but a contested one still shows it')
+})
+
+test('a partly supported claim never reads as two-source agreement', () => {
+  const claim = (label: string, n: number) => ({ label, supportDocCount: n })
+  assert.equal(sourcesLine(claim('partially_supported', 1)), 'Rests on one source, plus a close variant in another')
+  assert.equal(sourcesLine(claim('partially_supported', 2)), 'Rests on one source, plus a close variant in another', 'even if the server sent a wrong count')
+  for (const n of [1, 2]) assert.ok(!/\b(2|two|independent|sources)\b/i.test(sourcesLine(claim('partially_supported', n))), sourcesLine(claim('partially_supported', n)))
+  assert.equal(sourcesLine(claim('supported', 2)), '2 independent sources')
+  assert.equal(sourcesLine(claim('unverified', 1)), '1 independent source')
+})
+
+test('a missing partially_supported count means 0 (old reports and old events)', () => {
+  const old = { counts: { supported: 1, unverified: 2, contradicted: 0, contested: 0 }, claims: [], disagreements: [] }
+  assert.equal(countsOf(old).partially_supported, 0)
+  assert.equal(countsOf({ ...old, counts: { ...old.counts, partially_supported: 3 } }).partially_supported, 3)
+  const r = demoReport('demo-x', 'q?', null, 'on')
+  r.totals.factChecked = { supported: 1, unverified: 2, contradicted: 0, contested: 0 }
+  assert.equal(factTotals(r)!.partially_supported, 0)
+  assert.match(factSummaryLine(factTotals(r)!), /1 supported · 0 partly supported · 2 not yet confirmed/)
+  // an old stage_completed event: no partially_supported in its data
+  const events = runUpToStage4(); events.push(ev('stage_started', 'factcheck'), ev('stage_completed', 'factcheck', { claims: 5, supported: 2, unverified: 3 }))
+  const p = factProgress(events)!
+  assert.equal(p.result!.partiallySupported, null, 'the parser does not invent a number')
+  assert.equal(p.result!.supported, 2)
+})
+
+test('the near_match row is kept apart, with the other document\'s own wording', () => {
+  const sq1 = demoReport('demo-x', 'q?', null, 'on').subQuestions.find(s => s.id === 'demo-sq-1')!.factCheck!
+  const partial = sq1.claims.find(c => c.label === 'partially_supported')!
+  const rows = partial.evidence
+  assert.equal(rows[rows.length - 1].relation, 'near_match', 'the near-match row is the last one')
+  assert.equal(rows.filter(e => e.relation === 'near_match').length, 1)
+  const sp = splitEvidence(partial)
+  assert.equal(sp.near.length, 1); assert.equal(sp.supports.length, 1); assert.equal(sp.contradicts.length, 0); assert.equal(sp.other.length, 0)
+  assert.ok(sp.near[0].nearClaim && sp.near[0].nearClaim !== partial.claim, 'nearClaim is their wording, not the claim itself')
+  assert.ok(sp.near[0].quote && sp.near[0].sourceTitle)
+  assert.equal(partial.supportDocCount, 1)
+  assert.equal(NEAR_HEADING, 'Close variant in another source')
+  // the support rows of a supported claim carry no nearClaim
+  assert.ok(sq1.claims.filter(c => c.label !== 'partially_supported').every(c => c.evidence.every(e => e.nearClaim == null && e.relation !== 'near_match')))
+})
+
+test('a sub-question with only partly supported and unverified claims, and a very long close variant', () => {
+  const r = demoReport('demo-x', 'q?', null, 'on')
+  const sq5 = r.subQuestions.find(s => s.id === 'demo-sq-5')!
+  assert.deepEqual(sq5.factCheck!.claims.map(c => c.label), ['partially_supported', 'partially_supported', 'unverified'])
+  assert.equal(sq5.factCheck!.counts.supported, 0)
+  assert.ok(sq5.factCheck!.claims[0].evidence.some(e => e.relation === 'near_match' && (e.nearClaim ?? '').length > 250), 'a long nearClaim')
+  assert.equal(r.totals.subQuestions, r.subQuestions.length)
+  assert.equal(r.totals.sources, r.subQuestions.reduce((n, s) => n + s.sources.length, 0))
+  const expected = r.subQuestions.flatMap(s => s.factCheck?.claims ?? []).filter(c => c.label === 'partially_supported').length
+  assert.equal(r.totals.factChecked!.partially_supported, expected)
+  assert.equal(demoFactTotals().partially_supported, expected)
+  assert.ok(r.limitations.some(l => l.startsWith('Stage 4 compared the claims across sources.') && l.includes('"partially supported" means it rests on one document and another document states a close variant')))
+})
+
+test('an unknown label still falls back to other and is never shown as a fact', () => {
+  for (const w of ['mostly_supported', 'true', 'confirmed', 'partially']) {
+    const v = labelView(w)
+    assert.equal(v.kind, 'other', w); assert.equal(v.tone, 'neutral', w)
+  }
+  assert.equal(labelView(undefined).kind, 'other')
+  assert.equal(labelView('').kind, 'other')
+  // an unknown label does not count as supported or partly supported
+  const fc = { counts: undefined as never, claims: [{ claim: 'x', label: 'mostly_supported', confidence: 0.9, supportDocCount: 3, contraDocCount: 0, contested: false, evidence: [] }], disagreements: [] }
+  const c = countsOf(fc)
+  assert.deepEqual([c.supported, c.partially_supported, c.unverified, c.contradicted], [0, 0, 0, 0])
 })

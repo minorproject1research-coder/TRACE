@@ -77,15 +77,19 @@ export type Loop2 = {
 // ---- Stage 4 (optional fact checking across sources; the server runs it only with FACTCHECK=true). null / absent everywhere when it did not run.
 // Labels and relations are open strings on purpose: an unknown word gets a neutral chip, never a crash.
 
-export type FactCounts = { supported: number; unverified: number; contradicted: number; contested: number }
+/** `partially_supported` is missing in old stored reports and old events: read it as 0 (countsOf in lib/factcheck.ts does). */
+export type FactCounts = { supported: number; partially_supported?: number; unverified: number; contradicted: number; contested: number }
 
-/** One quote for or against a claim. `via: 'stage3_judge'` = the independent Stage 3 judge had already established that the quote supports the claim. */
+/** One quote for, against or near a claim. `via: 'stage3_judge'` = the independent Stage 3 judge had already established that the quote supports the claim.
+ *  `relation: 'near_match'` (only on a partially_supported claim, always its last row): another document's close variant of the claim, in its own wording (`nearClaim`). */
 export type FactEvidence = {
   sourceId: string
   sourceTitle: string | null
   quote: string
-  /** 'supports' | 'contradicts' */
+  /** 'supports' | 'contradicts' | 'near_match' (open string) */
   relation: string
+  /** Only on a near_match row: the other document's own wording of the claim. */
+  nearClaim?: string | null
   reliability?: number | null
   evidenceLevel?: string | null
   prob?: number | null
@@ -94,9 +98,9 @@ export type FactEvidence = {
 
 export type FactClaim = {
   claim: string
-  /** 'supported' | 'unverified' | 'contradicted'. NOT 'true' / 'false': see docs/STAGE4_OUTPUT.md. */
+  /** 'supported' | 'partially_supported' | 'unverified' | 'contradicted' (open string). NOT 'true' / 'false': see docs/STAGE4_OUTPUT.md. */
   label: string
-  /** A ranking number (noisy-or of source weights, at most 0.95; unverified never above 0.5). NOT a probability that the claim is true. */
+  /** A ranking number (noisy-or of source weights, at most 0.95; partially_supported at most 0.6; unverified at most 0.5). NOT a probability that the claim is true. */
   confidence: number | null
   supportDocCount: number
   contraDocCount: number
@@ -119,7 +123,7 @@ export type FactDisagreement = {
 
 export type FactCheck = {
   counts: FactCounts
-  /** Sorted by the server: contradicted first, then supported, then unverified. */
+  /** Sorted by the server: contradicted, supported, partially_supported, unverified. */
   claims: FactClaim[]
   disagreements: FactDisagreement[]
 }

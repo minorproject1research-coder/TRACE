@@ -1,17 +1,18 @@
 import { AlertTriangle, ChevronDown, GitCompare, Quote, ShieldCheck } from 'lucide-react'
 import { evidenceLevelLabel } from '@/lib/format'
 import {
-  againstSources, checkedByJudge, CONTESTED_HINT, countsOf, DISAGREEMENT_TOOLTIP, EMPTY_STATE, factSummaryLine, independentSources, JUDGE_BADGE, JUDGE_BADGE_TOOLTIP, labelView,
-  mustShowDisagreement, NOT_CROSS_CHECKED_NOTE, PANEL_INTRO, PANEL_TITLE, splitEvidence, STRENGTH_TOOLTIP, strengthOf,
+  againstSources, checkedByJudge, CONTESTED_HINT, countsOf, DISAGREEMENT_TOOLTIP, EMPTY_STATE, factSummaryLine, JUDGE_BADGE, JUDGE_BADGE_TOOLTIP, labelView,
+  mustShowDisagreement, NEAR_HEADING, NEAR_HINT, NOT_CROSS_CHECKED_NOTE, PANEL_INTRO, PANEL_TITLE, sourcesLine, splitEvidence, STRENGTH_TOOLTIP, strengthOf,
 } from '@/lib/factcheck'
 import type { FactCheck, FactClaim, FactCounts, FactDisagreement, FactEvidence, SubQuestionReport } from '@/lib/trace-types'
 import { StatusPill } from './status-pill'
 
-/** The four numbers of a fact check as chips: Supported (green), Unverified (grey), Contradicted (red) and, only when there are some, Contested (a flag). */
+/** The numbers of a fact check as chips: Supported (green), Partly supported (blue), Unverified (grey), Contradicted (red) and, only when there are some, Contested (a flag). */
 export function FactCountChips({ counts }: { counts: FactCounts }) {
   return (
     <span className="fc-chips" role="group" aria-label={factSummaryLine(counts)}>
       <span title={labelView('supported').hint}><StatusPill tone="mint">Supported {counts.supported}</StatusPill></span>
+      <span title={labelView('partially_supported').hint}><StatusPill tone="blue">Partly supported {counts.partially_supported ?? 0}</StatusPill></span>
       <span title={labelView('unverified').hint}><StatusPill tone="neutral">Unverified {counts.unverified}</StatusPill></span>
       <span title={labelView('contradicted').hint}><StatusPill tone="coral">Contradicted {counts.contradicted}</StatusPill></span>
       {counts.contested > 0 && <span className="tag gap" title={CONTESTED_HINT}>contested {counts.contested}</span>}
@@ -24,6 +25,7 @@ export function FactTotals({ totals, className = '' }: { totals: FactCounts; cla
   return (
     <section className={`metrics report-metrics fc-totals ${className}`} aria-label="Cross-check totals">
       <div title={labelView('supported').hint}><strong>{totals.supported}</strong><span>claims supported by 2+ sources</span></div>
+      <div title={labelView('partially_supported').hint}><strong>{totals.partially_supported ?? 0}</strong><span>close variant in another source</span></div>
       <div title={labelView('unverified').hint}><strong>{totals.unverified}</strong><span>not yet confirmed by a second source</span></div>
       <div title={DISAGREEMENT_TOOLTIP}><strong>{totals.contradicted}</strong><span>contradicted by another source</span></div>
       <div title={CONTESTED_HINT}><strong>{totals.contested}</strong><span>supported but contested</span></div>
@@ -50,15 +52,18 @@ function Quoted({ quote }: { quote: string | null | undefined }) {
 function EvidenceItem({ e }: { e: FactEvidence }) {
   const level = e.evidenceLevel ? (evidenceLevelLabel[e.evidenceLevel as keyof typeof evidenceLevelLabel] ?? { label: e.evidenceLevel, partial: true }) : null
   const rel = (e.relation ?? '').toLowerCase()
+  const near = rel === 'near_match'
   return (
-    <li className={`fc-ev ${rel === 'contradicts' ? 'against' : rel === 'supports' ? 'for' : 'other'}`}>
+    <li className={`fc-ev ${rel === 'contradicts' ? 'against' : rel === 'supports' ? 'for' : near ? 'near' : 'other'}`}>
+      {near && <p className="fc-near-head" title={NEAR_HINT}>{NEAR_HEADING}</p>}
       <div className="fc-ev-head">
         <b className="fc-ev-title">{e.sourceTitle ?? 'Untitled source'}</b>
-        <StatusPill tone={rel === 'supports' ? 'mint' : rel === 'contradicts' ? 'coral' : 'neutral'}>{rel === 'supports' ? 'supports' : rel === 'contradicts' ? 'contradicts' : (e.relation || 'unclear')}</StatusPill>
+        <StatusPill tone={rel === 'supports' ? 'mint' : rel === 'contradicts' ? 'coral' : near ? 'blue' : 'neutral'}>{rel === 'supports' ? 'supports' : rel === 'contradicts' ? 'contradicts' : near ? 'close variant, not the same claim' : (e.relation || 'unclear')}</StatusPill>
         {level && <StatusPill tone={level.partial ? 'amber' : 'mint'}>{level.label}</StatusPill>}
         {checkedByJudge(e) && <span className="tag synth" title={JUDGE_BADGE_TOOLTIP}>{JUDGE_BADGE}<span className="sr-only">. {JUDGE_BADGE_TOOLTIP}</span></span>}
         {typeof e.reliability === 'number' && <span className="tag" title="How reliable the source looks (venue, citations). Not a measure of this quote.">reliability {e.reliability.toFixed(2)}</span>}
       </div>
+      {near && <p className="fc-near-claim"><b>They say: </b>{e.nearClaim || '(their wording was not returned)'}</p>}
       <Quoted quote={e.quote} />
     </li>
   )
@@ -66,9 +71,9 @@ function EvidenceItem({ e }: { e: FactEvidence }) {
 
 function Claim({ claim }: { claim: FactClaim }) {
   const v = labelView(claim.label)
-  const { supports, contradicts, other } = splitEvidence(claim)
+  const { supports, contradicts, near, other } = splitEvidence(claim)
   const shown = mustShowDisagreement(claim)
-  const all = [...supports, ...contradicts, ...other]
+  const all = [...supports, ...contradicts, ...other]            // the close variants are shown apart, below
   return (
     <li className={`fc-claim ${v.kind}${claim.contested ? ' contested' : ''}`}>
       <div className="fc-claim-head">
@@ -77,7 +82,7 @@ function Claim({ claim }: { claim: FactClaim }) {
         <Strength confidence={claim.confidence} />
       </div>
       <p className="fc-claim-text">{claim.claim}</p>
-      <p className="meta fc-counts"><b>{independentSources(claim.supportDocCount)}</b><span aria-hidden="true"> · </span><span className={claim.contraDocCount > 0 ? 'against' : ''}>{againstSources(claim.contraDocCount)}</span></p>
+      <p className="meta fc-counts"><b>{sourcesLine(claim)}</b><span aria-hidden="true"> · </span><span className={claim.contraDocCount > 0 ? 'against' : ''}>{againstSources(claim.contraDocCount)}</span></p>
 
       {shown && (
         <div className="fc-against" role="group" aria-label="The source that disagrees" title={DISAGREEMENT_TOOLTIP}>
@@ -94,6 +99,10 @@ function Claim({ claim }: { claim: FactClaim }) {
           <summary>Evidence ({all.length})<ChevronDown size={14} className="chev" aria-hidden="true" /></summary>
           <ul className="fc-ev-list">{all.map((e, i) => <EvidenceItem key={`${i}:${e.sourceId}`} e={e} />)}</ul>
         </details>
+      )}
+
+      {near.length > 0 && (
+        <ul className="fc-ev-list fc-near" aria-label={NEAR_HEADING}>{near.map((e, i) => <EvidenceItem key={`${i}:${e.sourceId}`} e={e} />)}</ul>
       )}
     </li>
   )

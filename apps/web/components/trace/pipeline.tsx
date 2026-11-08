@@ -22,7 +22,7 @@ function facts(stage: StageId, events: WorkflowEvent[]): string[] {
     const r = factProgress(events)?.result
     if (!r) return []
     const part = (v: number | null, text: (v: number) => string) => (v != null ? [text(v)] : [])
-    return [...part(r.claims, v => `${v} claims checked`), ...part(r.supported, v => `${v} supported`), ...part(r.unverified, v => `${v} not yet confirmed`),
+    return [...part(r.claims, v => `${v} claims checked`), ...part(r.supported, v => `${v} supported`), ...part(r.partiallySupported, v => (v > 0 ? `${v} partly supported` : '')), ...part(r.unverified, v => `${v} not yet confirmed`),
       ...part(r.contradicted, v => `${v} contradicted`), ...part(r.contested, v => (v > 0 ? `${v} contested` : '')), ...part(r.disagreements, v => (v > 0 ? `${v} disagreements` : ''))].filter(Boolean)
   }
   return []

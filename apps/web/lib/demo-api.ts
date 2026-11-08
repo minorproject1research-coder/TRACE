@@ -24,16 +24,17 @@ function step(at: number, lane: 'papers' | 'web' | 'summarizer', stepId: string,
   return { at, event: 'step', stage: lane === 'summarizer' ? 'summarizer' : 'retrieval', status: state, message, data: { lane, step: stepId, state, ...data } }
 }
 
-/** Stage 4 runs after the summarizer, one sub-question after the other (about 3 minutes each on the real server). 4 sub-questions: the last one has no Stage 3 result. */
+/** Stage 4 runs after the summarizer, one sub-question after the other (about 3 minutes each on the real server). 5 sub-questions: the third has no Stage 3 result. */
 function factcheckBeats(fact: Exclude<DemoFact, 'off'>): Beat[] {
   const fstep = (at: number, stepId: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}): Beat => ({ at, event: 'step', stage: 'factcheck', status: state, message, data: { lane: 'factcheck', step: stepId, state, ...data } })
   const out: Beat[] = [
     { at: 13050, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
     fstep(13060, 'branch', 'running', 'Checking claims across sources'),                    // a step the page does not know: it must be ignored
   ]
-  const N = 4
-  for (let i = 1; i <= N; i++) {
-    const at = 13100 + (i - 1) * 700
+  const N = 5
+  const last = fact === 'failed' ? 2 : N                       // a failing stage stops in the second sub-question
+  for (let i = 1; i <= last; i++) {
+    const at = 13100 + (i - 1) * 600
     const c = { subQuestion: i, subQuestions: N }
     out.push(fstep(at, 'claims', 'running', `Reading the claims of ${i + 1} sources`, { ...c, sources: i + 1 }),
       fstep(at + 150, 'clusters', 'running', 'Grouping the claims that say the same thing', { ...c, claims: 4 + i }),
@@ -42,15 +43,15 @@ function factcheckBeats(fact: Exclude<DemoFact, 'off'>): Beat[] {
   }
   if (fact === 'failed') {
     out.push(fstep(14400, 'store', 'failed', 'Fact checking failed: ConnectionError'),
-      { at: 14600, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
+      { at: 14500, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
     return out
   }
   const t = demoFactTotals()
-  const claims = t.supported + t.unverified + t.contradicted
-  out.push(fstep(15950, 'store', 'running', 'Saving the fact-check results', { claims, disagreements: demoFactDisagreements() }),
-    fstep(16050, 'store', 'completed', `${claims} claims checked`, { claims, supported: t.supported, contradicted: t.contradicted, unverified: t.unverified }),
-    { at: 16200, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
-      data: { claims, subQuestions: N, failedSubQuestions: 1, supported: t.supported, unverified: t.unverified, contradicted: t.contradicted, contested: t.contested, disagreements: demoFactDisagreements(), judgeFailures: 3 } })
+  const claims = t.supported + t.partially_supported + t.unverified + t.contradicted
+  out.push(fstep(16050, 'store', 'running', 'Saving the fact-check results', { claims, disagreements: demoFactDisagreements() }),
+    fstep(16150, 'store', 'completed', `${claims} claims checked`, { claims, supported: t.supported, partially_supported: t.partially_supported, contradicted: t.contradicted, unverified: t.unverified }),
+    { at: 16300, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.partially_supported} partially supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
+      data: { claims, subQuestions: N, failedSubQuestions: 1, supported: t.supported, partially_supported: t.partially_supported, unverified: t.unverified, contradicted: t.contradicted, contested: t.contested, disagreements: demoFactDisagreements(), judgeFailures: 3 } })
   return out
 }
 
@@ -128,7 +129,7 @@ function timeline(fails: boolean, fact: DemoFact = 'off'): Beat[] {
   }
   beats.push({ at: 13000, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 3 sources; 1 of 3 sub-questions have sufficient evidence', data: { digests: 3, subQuestions: 3, sufficientSubQuestions: 1 } })
   if (fact === 'off') beats.push({ at: 13500, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['factcheck', 'report'] } })
-  else beats.push(...factcheckBeats(fact), { at: fact === 'on' ? 16300 : 14800, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['report'] } })
+  else beats.push(...factcheckBeats(fact), { at: fact === 'on' ? 16500 : 14800, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: ['report'] } })
   return beats.sort((x, y) => x.at - y.at)
 }
 
@@ -172,7 +173,7 @@ function view(s: Stored): Session {
     id: s.id, question: s.question, status, createdAt: s.createdAt,
     // like the real API, a run that only exists in storage has no start/finish times
     startedAt: s.seed || status === 'pending' ? null : new Date(new Date(s.createdAt).getTime() + 700).toISOString(),
-    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + (s.fact === 'on' ? 16300 : s.fact === 'failed' ? 14800 : 13000)).toISOString() : null,
+    finishedAt: !s.seed && (status === 'completed' || status === 'failed') ? new Date(new Date(s.createdAt).getTime() + (s.fact === 'on' ? 16500 : s.fact === 'failed' ? 14800 : 13000)).toISOString() : null,
     error, stages,
   }
 }

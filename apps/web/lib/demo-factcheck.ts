@@ -1,15 +1,17 @@
-import type { FactCheck, FactClaim, FactCounts, FactDisagreement, FactEvidence, Report } from './trace-types'
+import type { FactCountsFull } from './factcheck'
+import type { FactCheck, FactClaim, FactCounts, FactDisagreement, FactEvidence, Report, SubQuestionReport } from './trace-types'
 
 // DEMO MODE ONLY. Fictional Stage 4 (fact check across sources) data in the exact shape of GET /api/research/{id}/report, added to the sample report.
 // The cases the UI must handle: Stage 4 off (null everywhere), a claim supported by two sources (one checked by the independent judge), one that is
-// only unverified, one that is contradicted with a disagreement card, a contested supported claim, an empty result, a sub-question that was not
+// only unverified, one that is partly supported (one source plus a close variant in another), one that is contradicted with a disagreement card, a
+// contested supported claim, an empty result, a sub-question with only partly supported and unverified claims, a sub-question that was not
 // cross-checked, and very long claim and quote texts. Nothing here comes from the TRACE backend.
 
 export type DemoFact = 'off' | 'on' | 'failed'
 
 /** The wording of the server when Stage 4 did not run, and when it did (apps/api/services/report_service.py). */
 export const FACTCHECK_OFF_LINE = 'Stage 4 (fact checking) did not run for this report: findings are verified only in the sense that their quote was found in the source, and judged by an independent model against the aspect they should answer. Nothing checks across sources that a claim is true.'
-export const FACTCHECK_ON_LINE = 'Stage 4 compared the claims across sources. "Supported" means two independent documents state the claim; "unverified" means it rests on one document, which says nothing about whether it is false; "contradicted" means a source asserts the opposite. The checks are automatic (language models), not reviewed by a person, and their thresholds have not been tuned on a large labeled set.'
+export const FACTCHECK_ON_LINE = 'Stage 4 compared the claims across sources. "Supported" means two independent documents state the claim; "partially supported" means it rests on one document and another document states a close variant of it (not the same claim); "unverified" means it rests on one document, which says nothing about whether it is false; "contradicted" means a source asserts the opposite. The checks are automatic (language models), not reviewed by a person, and their thresholds have not been tuned on a large labeled set.'
 
 const LONG_WORD = 'https://example.org/a/very/long/unbreakable/address/that/a/layout/must/not/overflow/because/of/it/0123456789012345678901234567890123456789'
 const LONG_CLAIM = 'Across all evaluated configurations, including the long-context settings that were added late in the study, the sample method keeps its advantage over the baseline as long as the pretraining corpus is at least ten times larger than the task corpus, and it stops doing so otherwise (see ' + LONG_WORD + ').'
@@ -23,12 +25,17 @@ const claim = (text: string, label: string, confidence: number, support: number,
 
 const counts = (claims: FactClaim[]): FactCounts => ({
   supported: claims.filter(c => c.label === 'supported').length,
+  partially_supported: claims.filter(c => c.label === 'partially_supported').length,
   unverified: claims.filter(c => c.label === 'unverified').length,
   contradicted: claims.filter(c => c.label === 'contradicted').length,
   contested: claims.filter(c => c.contested).length,
 })
 
 const fact = (claims: FactClaim[], disagreements: FactDisagreement[]): FactCheck => ({ counts: counts(claims), claims, disagreements })
+
+/** One close variant: another document's own wording of the claim, with its quote. */
+const near = (sourceId: string, sourceTitle: string, nearClaim: string, quote: string, evidenceLevel: string, reliability: number): FactEvidence =>
+  ({ sourceId, sourceTitle, quote, relation: 'near_match', nearClaim, evidenceLevel, reliability, prob: 0.78, via: null })
 
 const SRC1 = '[Sample] A Fictional Survey of Signal Tracing Methods'
 const SRC2 = '[Sample] Sample Method Explained: A Practitioner Guide'
@@ -42,6 +49,10 @@ function sq1(): FactCheck {
     ev('demo-src-1', SRC1, 'Training proceeds in two phases, a broad pretraining phase followed by a short task-specific tuning phase.', 'supports', 'full_text', 0.81, 'stage3_judge'),
     ev('demo-src-2', SRC2, 'Most teams start from a public checkpoint and tune it on their own task data.', 'supports', 'web_snippet', 0.41),
   ])
+  const partial = claim('The sample method needs less labelled data than the baseline.', 'partially_supported', 0.44, 1, 0, [
+    ev('demo-src-1', SRC1, 'Annotation cost fell by roughly half compared with a fully supervised baseline.', 'supports', 'full_text', 0.81, 'stage3_judge'),
+    near('demo-src-2', SRC2, 'Teams that start from a public checkpoint report needing far fewer examples of their own.', 'Most teams start from a public checkpoint and tune it on their own task data.', 'web_snippet', 0.41),
+  ])
   const unverified = claim('It reduces annotation cost compared with fully supervised approaches.', 'unverified', 0.31, 1, 0, [
     ev('demo-src-1', SRC1, 'Annotation cost fell by roughly half compared with a fully supervised baseline.', 'supports', 'full_text', 0.81, 'stage3_judge'),
   ])
@@ -51,7 +62,7 @@ function sq1(): FactCheck {
     quoteA: 'It works well regardless of how much data you have.', quoteB: 'On datasets below one thousand examples the advantage was not significant.',
     prob: 0.86, reason: 'The first source claims a gain at every size; the second reports no significant gain below one thousand examples.',
   }
-  return fact([contradicted, supported, unverified], [d])
+  return fact([contradicted, supported, partial, unverified], [d])
 }
 
 function sq4(): FactCheck {
@@ -73,18 +84,56 @@ function sq4(): FactCheck {
   return fact([contested, unverified], [d])
 }
 
+/** Only partly supported and unverified claims (no claim reached two sources), one with a very long close variant. */
+function sq5(): FactCheck {
+  const partialLong = claim('The preferred learning rate schedule is a warm-up followed by a slow decay.', 'partially_supported', 0.58, 1, 0, [
+    ev('demo-src-14', '[Sample] Training Recipes For Fictional Tracers', 'The schedule we used was a short warm-up followed by a slow decay.', 'supports', 'full_text', 0.7),
+    near('demo-src-15', '[Sample] A Practitioner Notebook With A Deliberately Long Title That Keeps Going To Check That The Close Variant Block Wraps Instead Of Overflowing',
+      'In our experience the schedule that works best is a brief linear warm-up of a few hundred steps, followed by a cosine decay that is stretched over the whole run rather than cut early, as described at ' + LONG_WORD + ', and we tried several alternatives before settling on it.',
+      'We settled on a brief linear warm-up and a long cosine decay after trying several alternatives (' + LONG_WORD + ').', 'abstract', 0.5),
+  ])
+  const partialShort = claim('Larger batches help only up to a point.', 'partially_supported', 0.36, 1, 0, [
+    ev('demo-src-14', '[Sample] Training Recipes For Fictional Tracers', 'Gains from larger batches flattened out beyond a few thousand examples.', 'supports', 'full_text', 0.7),
+    near('demo-src-15', '[Sample] A Practitioner Notebook', 'Very large batches did not give us much extra.', 'We saw little extra benefit from very large batches.', 'abstract', 0.5),
+  ])
+  const unverified = claim('Gradient clipping is needed for stable training.', 'unverified', 0.27, 1, 0, [
+    ev('demo-src-14', '[Sample] Training Recipes For Fictional Tracers', 'Training diverged without gradient clipping.', 'supports', 'full_text', 0.7),
+  ])
+  return fact([partialLong, partialShort, unverified], [])
+}
+
 /** What Stage 4 found per sub-question of the sample report. sq-3 has no Stage 3 result, so it was not cross-checked (null); sq-2 had nothing to cross-check ([]). */
 export function demoFactChecks(): Record<string, FactCheck | null> {
-  return { 'demo-sq-1': sq1(), 'demo-sq-2': fact([], []), 'demo-sq-3': null, 'demo-sq-4': sq4() }
+  return { 'demo-sq-1': sq1(), 'demo-sq-2': fact([], []), 'demo-sq-3': null, 'demo-sq-4': sq4(), 'demo-sq-5': sq5() }
 }
 
 /** The totals of the fixtures, so the simulated stage_completed event and the report agree. */
-export function demoFactTotals(): FactCounts {
+export function demoFactTotals(): FactCountsFull {
   const all = Object.values(demoFactChecks()).filter((x): x is FactCheck => !!x)
-  return all.reduce((t, f) => ({ supported: t.supported + f.counts.supported, unverified: t.unverified + f.counts.unverified, contradicted: t.contradicted + f.counts.contradicted, contested: t.contested + f.counts.contested }),
-    { supported: 0, unverified: 0, contradicted: 0, contested: 0 })
+  return all.reduce((t, f) => ({ supported: t.supported + f.counts.supported, partially_supported: t.partially_supported + (f.counts.partially_supported ?? 0), unverified: t.unverified + f.counts.unverified, contradicted: t.contradicted + f.counts.contradicted, contested: t.contested + f.counts.contested }),
+    { supported: 0, partially_supported: 0, unverified: 0, contradicted: 0, contested: 0 })
 }
 export const demoFactDisagreements = (): number => Object.values(demoFactChecks()).reduce((n, f) => n + (f?.disagreements.length ?? 0), 0)
+
+/** A sub-question whose claims all stayed at one document (partly supported or unverified). */
+function sq5Report(): SubQuestionReport {
+  const finding = (claim: string, quote: string, aspect: string) => ({ claim, quote, stance: 'supports', quoteFound: true, judgements: [{ aspect, verdict: 'yes' as const, quoteSupportsClaim: 'yes', answersAspect: 'yes', reason: 'The quote states it directly.' }] })
+  const A = 'Which learning rate schedules are used?'
+  return {
+    id: 'demo-sq-5', topic: 'Which training settings does the sample method prefer?', detailQuestions: [A],
+    coverage: { sufficient: false, judgeUsed: true, sourceCount: 2, fullTextSourceCount: 1, digestFailures: 0,
+      aspects: [{ index: 0, text: A, state: 'judged_insufficient', yesVerdicts: 1, sources: 1 }], uncoveredAspects: [A], unjudgedAspects: [], fallbackReason: null },
+    sources: [
+      { id: 'demo-src-14', type: 'paper', title: '[Sample] Training Recipes For Fictional Tracers', evidenceLevel: 'full_text', weight: 0.7, findingsTotal: 2, findingsQuoteFound: 2, url: 'https://example.org/sample-recipes', authors: ['D. Fiction'], year: 2024, venue: 'Sample Proceedings', findings: [
+        finding('The preferred learning rate schedule is a warm-up followed by a slow decay.', 'The schedule we used was a short warm-up followed by a slow decay.', A),
+        finding('Larger batches help only up to a point.', 'Gains from larger batches flattened out beyond a few thousand examples.', A),
+      ] },
+      { id: 'demo-src-15', type: 'web', title: '[Sample] A Practitioner Notebook', evidenceLevel: 'web_snippet', weight: 0.3, findingsTotal: 1, findingsQuoteFound: 1, url: 'https://example.org/sample-notebook', provider: 'sample-search', publishedDate: null, findings: [
+        finding('Very large batches did not give much extra.', 'We saw little extra benefit from very large batches.', A),
+      ] },
+    ],
+  }
+}
 
 /** Adds Stage 4 to the sample report. 'off' and 'failed' both give a report without it (a failed stage stores nothing), like the server. */
 export function withFactcheckFixtures(base: Report, mode: DemoFact): Report {
@@ -99,9 +148,16 @@ export function withFactcheckFixtures(base: Report, mode: DemoFact): Report {
   }
   const checks = demoFactChecks()
   r.stages.factcheck = 'completed'
+  r.subQuestions.push(sq5Report())
   for (const sq of r.subQuestions) sq.factCheck = checks[sq.id] ?? null
+  const all = r.subQuestions.flatMap(sq => sq.sources)
+  r.totals = {
+    ...r.totals,
+    subQuestions: r.subQuestions.length, subQuestionsSufficient: r.subQuestions.filter(sq => sq.coverage?.sufficient).length, sources: all.length,
+    findings: all.reduce((n, s) => n + s.findings.length, 0), findingsQuoteFound: all.reduce((n, s) => n + s.findings.filter(f => f.quoteFound).length, 0),
+  }
   r.totals.factChecked = demoFactTotals()
   const disagree = r.subQuestions.flatMap(sq => (sq.factCheck?.disagreements ?? []).map(d => `Sources disagree (${sq.topic}): "${d.claimA}" versus "${d.claimB}"`))
-  r.limitations = [rest[0], FACTCHECK_ON_LINE, ...rest.slice(1), ...disagree]
+  r.limitations = [rest[0], FACTCHECK_ON_LINE, ...rest.slice(1), `Evidence is not sufficient for: ${r.subQuestions[r.subQuestions.length - 1].topic}`, ...disagree]
   return r
 }

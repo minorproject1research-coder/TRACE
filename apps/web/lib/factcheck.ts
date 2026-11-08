@@ -1,12 +1,16 @@
 import type { PillTone } from '@/components/trace/status-pill'
 import type { FactCheck, FactClaim, FactCounts, FactEvidence, Report, StageState, WorkflowEvent } from './trace-types'
 
+/** Every count of a fact check as a number: a missing partially_supported (old reports and events) is 0. */
+export type FactCountsFull = Required<FactCounts>
+
 // Pure helpers for Stage 4 (fact checking across sources; the server runs it only with FACTCHECK=true). No React here, so they are unit-tested
 // (tests/factcheck.test.ts). Everything tolerates null and unknown values: a label or relation this page does not know gets a neutral chip.
 //
 // Rules that come from docs/STAGE4_OUTPUT.md and must hold wherever a claim is shown:
 //  - "supported" is NOT "true": two papers can be wrong, or one can have copied the other.
 //  - "unverified" is NOT "false": it is simply not confirmed by a second source. It is never styled like a fact.
+//  - "partially_supported" rests on ONE document plus a close variant (not the same claim) in another: a lead, never a fact, and never worded as two-source agreement.
 //  - "contradicted" and contested claims are always shown together with the source that disagrees.
 //  - "confidence" is a ranking number, not a probability, so it is shown as a bar with a word, never as a percent.
 
@@ -16,12 +20,16 @@ export const JUDGE_FAILURES_NOTE = 'Some checks could not be answered (rate limi
 export const NOT_CROSS_CHECKED_NOTE = 'Not cross-checked: Stage 4 did not finish for this sub-question.'
 export const EMPTY_STATE = 'No claim could be cross-checked for this sub-question.'
 export const PANEL_TITLE = 'Cross-check'
-export const PANEL_INTRO = 'TRACE grouped the verified findings that state the same thing and compared them across sources. These labels say how many independent sources agree. They do not say what is true.'
+export const PANEL_INTRO = 'TRACE grouped the verified findings that state the same thing and compared them across sources. These labels say how many sources agree: “supported” needs two independent sources; “partly supported” rests on one source, with a close variant in another. They do not say what is true.'
 export const STRENGTH_TOOLTIP = 'A ranking of how much independent evidence backs the claim; not the chance that it is true.'
 export const DISAGREEMENT_TOOLTIP = 'One source asserts the opposite; the other source may be the wrong one.'
 export const JUDGE_BADGE = 'checked by the independent judge'
 export const JUDGE_BADGE_TOOLTIP = 'The independent Stage 3 judge had already established that this quote supports the claim.'
 export const UNVERIFIED_WORDS = 'Not yet confirmed by a second source'
+export const PARTIAL_WORDS = 'Partly supported'
+export const PARTIAL_HINT = 'One source states this; another source states a close variant. A lead, not a confirmed fact.'
+export const NEAR_HEADING = 'Close variant in another source'
+export const NEAR_HINT = 'A different document says something close to this, in its own words. It is not the same claim, so it does not confirm it.'
 export const CHECKING_WORDS = 'Checking claims across sources'
 export const TIME_HINT = 'about 3 minutes per sub-question'
 
@@ -31,7 +39,7 @@ const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? 
 const num = (d: Record<string, unknown> | undefined, k: string): number | null => (typeof d?.[k] === 'number' && Number.isFinite(d[k] as number) ? (d[k] as number) : null)
 
 // ------------------------------------------------------------------------------------------------------------------------ labels
-export type LabelView = { text: string; short: string; tone: PillTone; hint: string; kind: 'supported' | 'unverified' | 'contradicted' | 'other' }
+export type LabelView = { text: string; short: string; tone: PillTone; hint: string; kind: 'supported' | 'partially_supported' | 'unverified' | 'contradicted' | 'other' }
 
 /** How to show a claim's label. `text` is the full wording on a claim, `short` the word on a count chip. */
 export function labelView(label: string | null | undefined): LabelView {
@@ -39,6 +47,9 @@ export function labelView(label: string | null | undefined): LabelView {
     case 'supported':
       return { text: 'Supported', short: 'Supported', tone: 'mint', kind: 'supported',
         hint: 'At least two different documents state this with a supporting quote. That is not proof that it is true: two papers can be wrong, or one can have copied the other.' }
+    case 'partially_supported':
+      // between unverified (grey) and supported (green): blue, dashed card, never the green of a fact
+      return { text: PARTIAL_WORDS, short: 'Partly supported', tone: 'blue', kind: 'partially_supported', hint: PARTIAL_HINT }
     case 'unverified':
       return { text: UNVERIFIED_WORDS, short: 'Unverified', tone: 'neutral', kind: 'unverified',
         hint: 'Only one document states this, so there is no second source yet. That does not mean it is false.' }
@@ -66,18 +77,23 @@ export function strengthOf(confidence: number | null | undefined): Strength {
 
 // ------------------------------------------------------------------------------------------------------------------------ claims
 export const independentSources = (n: number | null | undefined) => plural(count(n), 'independent source', 'independent sources')
+
+/** How many sources a claim rests on. A partly supported claim rests on ONE source (plus a close variant): it never gets a number or a word of two-source agreement. */
+export const sourcesLine = (c: Pick<FactClaim, 'label' | 'supportDocCount'>): string =>
+  (c.label ?? '').toLowerCase() === 'partially_supported' ? 'Rests on one source, plus a close variant in another' : independentSources(c.supportDocCount)
 export const againstSources = (n: number | null | undefined) => `${count(n)} against`
 
 /** A contradicted claim, and a supported claim that is contested, must always be shown with the source that disagrees. */
 export const mustShowDisagreement = (c: Pick<FactClaim, 'label' | 'contested'>): boolean => (c.label ?? '').toLowerCase() === 'contradicted' || !!c.contested
 
 /** Splits a claim's evidence by relation. A relation outside supports / contradicts goes to `other` and keeps its own word. */
-export function splitEvidence(c: Pick<FactClaim, 'evidence'>): { supports: FactEvidence[]; contradicts: FactEvidence[]; other: FactEvidence[] } {
-  const out = { supports: [] as FactEvidence[], contradicts: [] as FactEvidence[], other: [] as FactEvidence[] }
+export function splitEvidence(c: Pick<FactClaim, 'evidence'>): { supports: FactEvidence[]; contradicts: FactEvidence[]; near: FactEvidence[]; other: FactEvidence[] } {
+  const out = { supports: [] as FactEvidence[], contradicts: [] as FactEvidence[], near: [] as FactEvidence[], other: [] as FactEvidence[] }
   for (const e of Array.isArray(c.evidence) ? c.evidence : []) {
     const r = (e?.relation ?? '').toLowerCase()
     if (r === 'supports') out.supports.push(e)
     else if (r === 'contradicts') out.contradicts.push(e)
+    else if (r === 'near_match') out.near.push(e)
     else out.other.push(e)
   }
   return out
@@ -86,12 +102,13 @@ export function splitEvidence(c: Pick<FactClaim, 'evidence'>): { supports: FactE
 export const checkedByJudge = (e: Pick<FactEvidence, 'via'>): boolean => e?.via === 'stage3_judge'
 
 /** The counts of a fact check, taken from `counts` and, where that is missing, from the claims. Always four numbers. */
-export function countsOf(fc: FactCheck | null | undefined): FactCounts {
+export function countsOf(fc: FactCheck | null | undefined): FactCountsFull {
   const claims = Array.isArray(fc?.claims) ? fc!.claims : []
   const given = fc?.counts
   const by = (l: string) => claims.filter(c => (c.label ?? '').toLowerCase() === l).length
   return {
     supported: given ? count(given.supported) : by('supported'),
+    partially_supported: given ? count(given.partially_supported) : by('partially_supported'),          // missing in old reports: 0
     unverified: given ? count(given.unverified) : by('unverified'),
     contradicted: given ? count(given.contradicted) : by('contradicted'),
     contested: given ? count(given.contested) : claims.filter(c => c.contested).length,
@@ -99,13 +116,13 @@ export function countsOf(fc: FactCheck | null | undefined): FactCounts {
 }
 
 /** The report's summary row: null (Stage 4 did not run) hides it. */
-export const factTotals = (r: Pick<Report, 'totals'>): FactCounts | null => (r.totals?.factChecked ? countsOf({ counts: r.totals.factChecked, claims: [], disagreements: [] }) : null)
+export const factTotals = (r: Pick<Report, 'totals'>): FactCountsFull | null => (r.totals?.factChecked ? countsOf({ counts: r.totals.factChecked, claims: [], disagreements: [] }) : null)
 
 /** Did Stage 4 run for this report? Totals say so; a sub-question's own factCheck says so too (older shapes). */
 export const factCheckRan = (r: Pick<Report, 'totals' | 'subQuestions'>): boolean => !!r.totals?.factChecked || r.subQuestions.some(sq => !!sq.factCheck)
 
 export const factSummaryLine = (c: FactCounts): string => {
-  const parts = [`${c.supported} supported`, `${c.unverified} not yet confirmed`, `${c.contradicted} contradicted`]
+  const parts = [`${count(c.supported)} supported`, `${count(c.partially_supported)} partly supported`, `${count(c.unverified)} not yet confirmed`, `${count(c.contradicted)} contradicted`]
   if (c.contested > 0) parts.push(`${c.contested} contested`)
   return parts.join(' · ')
 }
@@ -126,7 +143,7 @@ export const FACT_STEP_ORDER = ['claims', 'clusters', 'support', 'conflicts', 's
 
 export type FactResult = {
   claims: number | null; subQuestions: number | null; failedSubQuestions: number | null
-  supported: number | null; unverified: number | null; contradicted: number | null; contested: number | null
+  supported: number | null; partiallySupported: number | null; unverified: number | null; contradicted: number | null; contested: number | null
   disagreements: number | null; judgeFailures: number | null
 }
 
@@ -168,7 +185,7 @@ export function factProgress(events: WorkflowEvent[]): FactProgress | null {
   const total = last ? num(last.data, 'subQuestions') : null
   const d = closed?.data ?? {}
   const result: FactResult | null = closed && !failed
-    ? { claims: num(d, 'claims'), subQuestions: num(d, 'subQuestions'), failedSubQuestions: num(d, 'failedSubQuestions'), supported: num(d, 'supported'), unverified: num(d, 'unverified'),
+    ? { claims: num(d, 'claims'), subQuestions: num(d, 'subQuestions'), failedSubQuestions: num(d, 'failedSubQuestions'), supported: num(d, 'supported'), partiallySupported: num(d, 'partially_supported'), unverified: num(d, 'unverified'),
         contradicted: num(d, 'contradicted'), contested: num(d, 'contested'), disagreements: num(d, 'disagreements'), judgeFailures: num(d, 'judgeFailures') }
     : null
   return {

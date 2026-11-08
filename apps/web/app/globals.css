@@ -735,7 +735,14 @@ mark.active { background: #3fe0f240; box-shadow: inset 0 -2px 0 var(--cyan), 0 0
 /* An unverified claim is never styled like a fact: dashed, muted, no accent colour. */
 .fc-claim.unverified { border: 1px dashed var(--line-3); border-left: 3px dashed var(--line-3); background: transparent; }
 .fc-claim.unverified .fc-claim-text { color: var(--text-2); font-style: italic; }
+/* Partly supported: one source plus a close variant. Dashed like an unverified claim, with a blue edge: neither a fact (green, solid) nor a bare unconfirmed claim. */
+.fc-claim.partially_supported { border: 1px dashed var(--line-3); border-left: 3px dashed var(--blue); background: transparent; }
+.fc-claim.partially_supported .fc-claim-text { color: var(--text-2); }
 .fc-claim.other { border-left-color: var(--line-3); }
+.fc-near { margin-top: 10px; padding: 10px 12px; border: 1px dashed #2f4f9e; border-radius: 10px; background: #4f7dff0d; }
+.fc-near .fc-ev { min-width: 0; }
+.fc-near-head { margin: 0 0 6px; color: #9dbcff; font: 600 11.5px var(--font-code); letter-spacing: .04em; text-transform: uppercase; cursor: help; }
+.fc-near-claim { margin: 8px 0 0; color: var(--text-2); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; } .fc-near-claim b { color: var(--text-1); }
 .fc-claim-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .fc-claim-text { margin: 8px 0 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .fc-counts { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; } .fc-counts .against { color: var(--coral); }
