@@ -34,6 +34,11 @@ def planner_node(state: SharedResearchState) -> dict:
     task_plan = TaskPlan(raw_query=state.raw_query, sub_questions=sub_questions,
                          domain_anchor=anchor.anchor, domain_context=anchor.context, **plan_ids)
     db_service.write_task_plan(task_plan)
+    try:
+        from apps.api.agents.stage3_summarizer import warmup
+        warmup.start_aspects(task_plan.query_id, task_plan.sub_questions)     # STAGE3_WARM_ASPECTS: Stage 3 will find the cached answers
+    except Exception:
+        logger.exception("aspect warm-up could not start; Stage 3 splits the aspects itself")
     logger.info("Saved task plan with ID: %s", task_plan.query_id)
     if config.factcheck_enabled():          # this run goes through the factcheck node, so Stage 3 may hand it sub-questions early
         from apps.api.graph.nodes import factcheck_node

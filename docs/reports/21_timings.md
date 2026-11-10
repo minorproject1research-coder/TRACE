@@ -65,3 +65,13 @@ Nothing quality-neutral makes the first NLI computation faster on this CPU. The 
 
 ## 6. What a repeated test run (a "try") costs now
 Cached between runs: the plan (`PLAN_CACHE`), the parse of every paper, chunk embeddings, aspect splits, Stage 3 digests, Stage 3 judge verdicts, all Stage 4 judge answers and now the NLI answers. Not cached: the live searches (papers, web), the relevance filter, and Loop 2's searches. So a repeat of the same question should now spend its time on retrieval + filter (about 3 min), Stage 3 judge/Loop 2 (1 to 4 min) and a few minutes of Groq in Stage 4 instead of 14 minutes. This has been measured for Stage 4 only (section 4); a full repeat run has not been timed.
+
+## 12. Addendum 2026-11-10: run 33 and two more things done earlier
+
+Run 33 (a new question, so no parse cache and no digest cache; 19m 23s, through the web app): PDF download and parsing 4m 03s, then Stage 3 preparation 2m 00s (aspect split, chunking, embeddings: 695 chunks at 5.9 chunks per second on this CPU, measured on an empty cache), while the CPU was idle during the parsing (Docling runs on the model host). Stage 4 ran one sub-question at a time and finished 8m 10s after Stage 3.
+
+Built after it, all switches, all only filling caches Stage 3 reads (so the results are identical):
+- `STAGE3_WARM_CHUNKS` (default true): every paper is chunked and embedded into the chunk-embedding cache as soon as it is parsed, on one background worker (`stage3_summarizer/warmup.py`, called from the parse step through the new `on_paper_done` callback of `parse_papers`). The end of the parse step waits up to `STAGE3_WARM_WAIT_SECONDS` (180) for the last papers. Checked on the stored papers of run 33: the cache key of the warm-up equals the one Stage 3 computes for all 19 papers that need embeddings. Expected saving: most of the 2 minutes.
+- `STAGE3_WARM_ASPECTS` (default true): the aspect split (Groq, cached by detail text and sub-question id) starts right after the planner; Stage 3 waits for it if it is still running (about 10 s of saving).
+- `STAGE4_SQ_WORKERS=2` in `.env` (see `docs/STAGE4.md`).
+Not built: digesting a paper as soon as it is parsed (up to about 2 more minutes, but it spends Groq tokens before Stage 3 has chosen which papers it reads).

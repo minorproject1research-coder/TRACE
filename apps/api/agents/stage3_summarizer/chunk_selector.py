@@ -30,6 +30,7 @@ NON_PROSE_ALPHA_RATIO = 0.60          # min alphabetic char ratio for prose
 NON_PROSE_PIPE_THRESHOLD = 5          # max "|" chars before treating as table/figure caption
 EMBED_MODEL_ID = "BAAI/bge-base-en-v1.5"
 CHUNKING_VERSION = 1                  # raise when _split / build_chunks change what a chunk is
+DEFAULT_TOP_K = 5                     # select_chunks reads every chunk of a source that has at most this many (so nothing is embedded for it)
 
 
 def _split(text: str, size: int = 300) -> list[str]:
@@ -113,7 +114,7 @@ def embed_chunks(model, chunks: list[str]) -> np.ndarray:
 def select_chunks(
     sub_question: str,
     chunks: list[str],
-    top_k: int = 5,
+    top_k: int = DEFAULT_TOP_K,
     *,
     detail_questions: list[str] | None = None,
     main_topic: str | None = None,

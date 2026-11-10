@@ -14,7 +14,7 @@ import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import Optional
+from typing import Callable, Optional
 
 import httpx
 from pydantic import BaseModel, Field
@@ -288,6 +288,7 @@ class PaperRetrievalAgent:
         self,
         paper_ids: list[str],
         max_concurrent: int = 3,
+        on_paper_done: Optional[Callable[[str], None]] = None,
     ) -> list[ParsedPaper]:
         """
         Parse multiple papers in parallel using Docling and PDFFigures.
@@ -295,6 +296,8 @@ class PaperRetrievalAgent:
         Args:
             paper_ids: List of retrieved_paper_id UUIDs to parse.
             max_concurrent: Maximum concurrent parsing operations.
+            on_paper_done: called with the paper id as soon as ONE paper has been parsed and stored (not when the whole batch is done);
+                an exception in it is logged and ignored.
 
         Returns:
             List of ParsedPaper objects (results also stored in DB).
@@ -303,7 +306,13 @@ class PaperRetrievalAgent:
 
         async def _parse_with_semaphore(paper_id: str) -> Optional[ParsedPaper]:
             async with semaphore:
-                return await self._parse_single_paper(paper_id)
+                result = await self._parse_single_paper(paper_id)
+            if result is not None and on_paper_done is not None:
+                try:
+                    on_paper_done(paper_id)
+                except Exception:
+                    logger.exception("on_paper_done failed for paper %s", paper_id)
+            return result
 
         tasks = [_parse_with_semaphore(pid) for pid in paper_ids]
         results = await asyncio.gather(*tasks, return_exceptions=True)

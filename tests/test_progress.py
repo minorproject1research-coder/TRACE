@@ -146,7 +146,7 @@ class FakeAgent:
     async def enrich_papers(self, papers):
         return papers[:-1]                              # one paper is dropped when citations are fetched
 
-    async def parse_papers(self, paper_ids):
+    async def parse_papers(self, paper_ids, on_paper_done=None):
         # the first paper of every round has usable text, the others do not
         return [SimpleNamespace(retrieved_paper_id=pid, full_text="x" * (4000 if i == 0 else 10)) for i, pid in enumerate(paper_ids)]
 

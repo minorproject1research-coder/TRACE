@@ -219,6 +219,11 @@ def summarizer_node(state: SharedResearchState) -> dict:
 def _summarize(state: SharedResearchState) -> dict:
     qid = state.task_plan.query_id
     sub_questions = state.task_plan.sub_questions
+    try:
+        from apps.api.agents.stage3_summarizer import warmup
+        warmup.wait_aspects(qid)
+    except Exception:
+        logger.exception("could not wait for the aspect warm-up")
     progress.report(qid, "summarizer", "prepare", "running", "Selecting the passages to read (chunking, embeddings)", subQuestions=len(sub_questions))
     qid = state.task_plan.query_id
     overlap = _overlap_enabled(qid)

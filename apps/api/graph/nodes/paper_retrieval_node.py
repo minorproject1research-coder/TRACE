@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from apps.api.graph.state import SharedResearchState
 from apps.api.agents.stage2_retrieval.paper_retrieval_agent import DOWNLOADER_VERSION, PDF_FAILURE_TTL_DAYS, PaperRetrievalAgent
 from apps.api.agents.stage2_retrieval import relevance_filter, reliability_scorer
+from apps.api.agents.stage3_summarizer import warmup
 from apps.api.services import db_service, progress
 
 logger = logging.getLogger("apps.api.agents.stage2_retrieval")
@@ -195,13 +196,23 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
                     for sq, rs in by_sq.items()}
     attempted = {sq: 0 for sq in by_sq}
     usable = {sq: 0 for sq in by_sq}
-    total_attempted = total_usable = 0
 
     logger.info("Parsing the top %s papers per sub-question by combined_score (%d saved across %d sub-questions)...",
                 PARSE_TOP_N or "all", len(rows), len(by_sq))
     total_target = sum(target.values())
     progress.report(query_id, "papers", "parsing", "running", f"Parsing the best {total_target} papers (PDF to text)",
                     target=total_target, attempted=0, usable=0, papers=len(rows))
+    warmer = warmup.ChunkWarmer()          # STAGE3_WARM_CHUNKS: the chunks of each paper are embedded while the others are still being parsed
+    try:
+        await _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, warmer)
+    finally:
+        if warmer.enabled:
+            await asyncio.to_thread(warmer.finish, warmup.wait_seconds())
+
+
+async def _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, warmer):
+    total_attempted = total_usable = 0
+    rows_total = sum(len(q) for q in queues.values()) + sum(attempted.values())
     while True:
         batch: list[tuple[str, dict]] = []
         for sq, queue in queues.items():
@@ -214,7 +225,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
         if not batch:
             break
 
-        parsed = await agent.parse_papers(paper_ids=[r["id"] for _, r in batch])
+        parsed = await agent.parse_papers(paper_ids=[r["id"] for _, r in batch], **({"on_paper_done": warmer.submit} if warmer.enabled else {}))
         text_by_id = {p.retrieved_paper_id: len(p.full_text or "") for p in parsed}
         for sq, row in batch:
             total_attempted += 1
@@ -228,7 +239,7 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
                         target=total_target, attempted=total_attempted, usable=total_usable)
 
     logger.info("Parsing done: %d usable full texts out of %d papers attempted (%d saved in total)",
-                total_usable, total_attempted, len(rows))
+                total_usable, total_attempted, rows_total)
     progress.report(query_id, "papers", "parsing", "completed", f"{total_usable} of {total_target} papers parsed",
                     target=total_target, attempted=total_attempted, usable=total_usable)
 
