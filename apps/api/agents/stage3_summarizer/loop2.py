@@ -436,7 +436,8 @@ def _step_queries(ctx, open_idx, svc):
     web = []
     if new_queries:
         web = [s for s in svc.web(new_queries) if s.url not in ctx.web_urls and len(s.snippet or "") >= 200]
-    stats = {"queries": len(new_queries), "new_papers_found": len(new_papers), "new_web_found": len(web)}
+    stats = {"queries": len(new_queries), "new_papers_found": len(new_papers), "new_web_found": len(web),
+             "query_texts": {ctx.aspects[i]: list(queries) for i, queries, _ in searched if queries}}     # aspect -> the queries asked for it (shown by the UI)
     if not svc.can_store or not (new_papers or web):
         if not svc.can_store:
             stats["note"] = "dry run: not stored"
@@ -529,6 +530,13 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
                          "seconds": round(time.monotonic() - t0, 1), **stats})
         logger.info("Loop 2 [%s] %s: %d new source(s), %d of %d aspect(s) now covered (%.0f s)", ctx.sq.main_topic[:40], step,
                     len(new_rows), len(newly), len(open_idx), time.monotonic() - t0)
+        step_done = getattr(svc, "step_done", None)
+        if step_done is not None:
+            try:
+                step_done(step, aspects=len(open_idx), newSources=len(new_rows), newVerifiedFindings=step_log[-1]["new_verified"], covered=len(newly),
+                          seconds=step_log[-1]["seconds"], queries=stats.get("query_texts"), error=stats.get("error"))
+            except Exception:
+                logger.debug("loop2 step_done report dropped", exc_info=True)
         if all_failed:                               # every digest of the step failed (Groq limits): the next step would fail the same way
             logger.warning("Loop 2 [%s]: every digest of the %s step failed (rate limit?); stopping the ladder for this sub-question", ctx.sq.main_topic[:40], step)
             for i in open_idx:
@@ -538,6 +546,7 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
 
     # final state of every aspect that was uncovered after Stage 3
     evid_end = _evidence_by_aspect(candidates, verdicts)
+    final_counts = verdict_counts(candidates, verdicts)
     cov_evidence = cov.get("aspect_evidence") or {}
     non_blocking: set[int] = set()
     for text, a in aspects_info.items():
@@ -552,6 +561,10 @@ def run_subquestion(ctx: SubQuestionContext, cov: dict, candidates: list[dict], 
             a["status"] = "covered"
         elif a["status"] in ("skipped_triage", "skipped_cap", "skipped"):
             a["status"] = "known_gap_" + a["status"]
+        if idx is not None and a["status"] != "unjudged_not_searched":
+            fc = final_counts.get(idx, Counter())
+            a["after_verdicts"] = {k: fc[k] for k in ("yes", "partial", "no")}
+            a["evidence_sources"] = len({x["source_id"] for x in evid_end.get(idx, [])})
         if idx is None or a["covered_by"] or a["status"] == "unjudged_not_searched":
             continue
         e = evid_end.get(idx, [])

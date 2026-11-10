@@ -125,6 +125,24 @@ def _cached_aspects(detail_questions: list[str], sub_question_id: str, main_topi
     return aspects
 
 
+def _verdicts(d) -> Optional[dict]:
+    """{"yes", "partial", "no"} (and "sources" for the verdicts after the search) as numbers, or None when the run did not store them."""
+    d = _as_dict(d)
+    if not d:
+        return None
+    return {k: (d.get(k) if isinstance(d.get(k), int) else None) for k in ("yes", "partial", "no", "sources") if k in d or k in ("yes", "partial", "no")}
+
+
+def _after_view(a: dict) -> Optional[dict]:
+    """The verdict counts of an aspect after the second search ({"yes", "partial", "no", "sources"}), None for runs from before they were stored."""
+    v = _verdicts(a.get("after_verdicts"))
+    if v is None:
+        return None
+    src = a.get("evidence_sources")
+    v["sources"] = src if isinstance(src, int) else None
+    return v
+
+
 def _loop2_view(cov: dict) -> Optional[dict]:
     """What Loop 2 did for this sub-question (stored in judge_stats['loop2']); None when it did not run. knownGaps are the aspects that stay
     uncovered after the search (or were not searched): the report says "evidence not found" for them instead of hiding them."""
@@ -136,10 +154,18 @@ def _loop2_view(cov: dict) -> Optional[dict]:
             "coveredBySynthesis": info.get("covered_by_synthesis"), "gapRule": info.get("gap_rule"), "sufficientStrict": info.get("sufficient_strict"),
             "knownGapsNoEvidence": _as_list(info.get("known_gaps_no_evidence")),
             "steps": [{"step": s.get("step"), "aspects": len(_as_list(s.get("aspects"))), "newSources": s.get("new_sources"),
-                       "newVerifiedFindings": s.get("new_verified"), "covered": len(_as_list(s.get("covered"))), "seconds": s.get("seconds")}
+                       "newVerifiedFindings": s.get("new_verified"), "covered": len(_as_list(s.get("covered"))), "seconds": s.get("seconds"),
+                       "aspectTexts": [t for t in _as_list(s.get("aspects")) if isinstance(t, str)],
+                       "coveredTexts": [t for t in _as_list(s.get("covered")) if isinstance(t, str)],
+                       "queryCount": s.get("queries") if isinstance(s.get("queries"), int) else None,
+                       "queries": {str(k): [q for q in _as_list(v) if isinstance(q, str)] for k, v in _as_dict(s.get("query_texts")).items()} or None,
+                       "newPapersFound": s.get("new_papers_found"), "newPapersKept": s.get("new_papers_kept"), "newPapersParsed": s.get("new_papers_parsed"),
+                       "newWebFound": s.get("new_web_found"), "newWebKept": s.get("new_web_kept"),
+                       "digestTotal": s.get("digest_total"), "digestFailed": s.get("digest_failed"), "sourcesTried": s.get("sources_tried"),
+                       "error": s.get("error"), "note": s.get("note")}
                       for s in _as_list(info.get("steps")) if isinstance(s, dict)],
             "aspects": [{"text": t, "status": a.get("status"), "coveredBy": a.get("covered_by"), "how": a.get("how"), "nearMiss": a.get("near_miss"),
-                         "steps": _as_list(a.get("steps"))}
+                         "steps": _as_list(a.get("steps")), "before": _verdicts(a.get("before")), "after": _after_view(a), "stopped": a.get("stopped")}
                         for t, a in aspects.items() if isinstance(a, dict)],
             "knownGaps": [t for t, a in aspects.items() if isinstance(a, dict) and str(a.get("status", "")).startswith("known_gap")]}
 

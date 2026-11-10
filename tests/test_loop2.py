@@ -305,7 +305,10 @@ def test_report_view_of_loop2_lists_known_gaps():
             "steps": [{"step": "reselect", "aspects": ["a", "b"], "new_sources": 2, "new_verified": 3, "covered": [], "seconds": 4.0}]}
     view = rs._loop2_view({"judge_stats": {"loop2": info}})
     assert view["knownGaps"] == ["b", "c"] and view["covered"] == 1
-    assert view["steps"][0] == {"step": "reselect", "aspects": 2, "newSources": 2, "newVerifiedFindings": 3, "covered": 0, "seconds": 4.0}
+    assert {k: view["steps"][0][k] for k in ("step", "aspects", "newSources", "newVerifiedFindings", "covered", "seconds")} == {
+        "step": "reselect", "aspects": 2, "newSources": 2, "newVerifiedFindings": 3, "covered": 0, "seconds": 4.0}
+    assert view["steps"][0]["aspectTexts"] == ["a", "b"] and view["steps"][0]["queries"] is None and view["steps"][0]["queryCount"] is None      # an old run: no query texts
+    assert all(a["before"] is None and a["after"] is None and a["stopped"] is None for a in view["aspects"])                                   # ... and no verdict counts
     assert [a["coveredBy"] for a in view["aspects"]] == ["pool", None, None]
 
 
@@ -495,3 +498,60 @@ def test_core_rule_does_not_trust_an_empty_result_when_the_first_digests_failed(
     cov = coverage_check.check_coverage_judged(ctx.aspects, ctx.aspect_to_detail, ctx.details_for_coverage, ctx.rows, verdicts, candidates=cands)
     out, _, _, info = loop2.run_subquestion(ctx, cov, cands, verdicts, FakeServices(), time.monotonic() + 60)
     assert info["aspects"]["alpha topic"]["status"] == "known_gap_skipped_triage" and out["sufficient"] is False
+
+
+class StepDoneServices(FakeServices):
+    def step_done(self, step, **data):
+        self.calls.append(("step_done", step, data))
+
+
+def test_the_queries_step_keeps_the_query_texts_and_reports_each_finished_rung():
+    svc = StepDoneServices(covers={"queries": [0]})
+    ctx, (cov, _, _, info) = run(svc)
+    q = next(s for s in info["steps"] if s["step"] == "queries")
+    assert q["query_texts"] == {"alpha topic": ["query for alpha topic"], "beta topic": ["query for beta topic"]} and q["queries"] == 2
+    done = [(c[1], c[2]) for c in svc.calls if c[0] == "step_done"]
+    assert [d[0] for d in done] == [s["step"] for s in info["steps"]]                          # one event per rung, in order
+    last = done[-1][1]
+    assert last["queries"] == q["query_texts"] and last["newSources"] == q["new_sources"] and last["covered"] == len(q["covered"]) and "seconds" in last
+
+
+def test_every_judged_aspect_gets_its_verdict_counts_after_the_search_and_the_report_shows_before_and_after():
+    from apps.api.services import report_service as rs
+    svc = FakeServices(covers={"reselect": [0]})
+    ctx, (cov, _, _, info) = run(svc)
+    covered, gap = info["aspects"]["alpha topic"], info["aspects"]["beta topic"]
+    assert set(covered["before"]) == {"yes", "partial", "no"} and set(covered["after_verdicts"]) == {"yes", "partial", "no"}
+    assert set(gap["after_verdicts"]) == {"yes", "partial", "no"} and isinstance(gap["evidence_sources"], int)
+    assert covered["after_verdicts"]["yes"] >= 2                                              # the new findings are counted like the old ones
+    view = rs._loop2_view({"judge_stats": {"loop2": info}})
+    a = next(x for x in view["aspects"] if x["text"] == "alpha topic")
+    assert set(a["before"]) == {"yes", "partial", "no"} and set(a["after"]) == {"yes", "partial", "no", "sources"} and a["after"]["yes"] >= 2
+
+
+def test_the_report_view_shows_the_steps_queries_and_counts_of_a_queries_rung():
+    from apps.api.services import report_service as rs
+    info = {"searched": 1, "covered": 1, "seconds": 9.0, "aspects": {"a": {"status": "covered", "covered_by": "queries", "steps": ["queries"], "stopped": None,
+                                                                          "before": {"yes": 0, "partial": 3, "no": 3}, "after_verdicts": {"yes": 4, "partial": 3, "no": 3}, "evidence_sources": 3}},
+            "steps": [{"step": "queries", "aspects": ["a"], "covered": ["a"], "queries": 2, "query_texts": {"a": ["q one", "q two"]}, "seconds": 8.0, "new_sources": 6, "new_verified": 17,
+                       "new_papers_found": 4, "new_papers_kept": 3, "new_papers_parsed": 3, "new_web_found": 19, "new_web_kept": 3, "digest_total": 6, "digest_failed": 0, "sources_tried": 6}]}
+    v = rs._loop2_view({"judge_stats": {"loop2": info}})
+    s = v["steps"][0]
+    assert s["queries"] == {"a": ["q one", "q two"]} and s["queryCount"] == 2 and s["aspectTexts"] == ["a"] and s["coveredTexts"] == ["a"]
+    assert (s["newPapersFound"], s["newPapersKept"], s["newPapersParsed"], s["newWebFound"], s["newWebKept"], s["digestTotal"], s["digestFailed"], s["sourcesTried"]) == (4, 3, 3, 19, 3, 6, 0, 6)
+    assert v["aspects"][0]["before"] == {"yes": 0, "partial": 3, "no": 3} and v["aspects"][0]["after"] == {"yes": 4, "partial": 3, "no": 3, "sources": 3}
+
+
+def test_a_finished_rung_reaches_the_event_sink_with_its_own_step_id():
+    from apps.api.graph.nodes import summarizer_node as sn
+    from apps.api.services import progress
+    events = []
+    progress.register("run-y", events.append)
+    try:
+        svc = sn._Loop2Services("run-y", None, 2, 5)
+        svc.step_done("queries", aspects=1, newSources=6, covered=1, seconds=8.0, queries={"a": ["q"]}, error=None)
+    finally:
+        progress.unregister("run-y")
+    e = events[0]
+    assert e["lane"] == "summarizer" and e["step"] == "loop2_step" and e["state"] == "completed"
+    assert e["data"] == {"subQuestionIndex": 2, "subQuestions": 5, "loop2Step": "queries", "aspects": 1, "newSources": 6, "covered": 1, "seconds": 8.0, "queries": {"a": ["q"]}, "error": None}

@@ -124,6 +124,10 @@ class _Loop2Services(loop2.Services):
     def progress(self, message, **data):
         self._report("summarizer", "loop2", "running", message, **self._where, **data)
 
+    def step_done(self, step, **data):
+        """A rung of the ladder is finished: its own step id ("loop2_step"), so a client that only knows "loop2" ignores it."""
+        self._report("summarizer", "loop2_step", "completed", f"Loop 2 ({step}) finished", **self._where, loop2Step=step, **data)
+
 
 def _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects, rows, chunk_lookup, jobs, candidates,
                judge_verdicts, cov, topic_aspect_used, deadline, digest_failures=0, report=None):
