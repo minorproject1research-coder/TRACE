@@ -6,6 +6,8 @@ costs no LLM calls, which matters because the free Groq quota is the scarce reso
 `run_parallel` runs independent judge calls on a few threads (STAGE4_WORKERS, default 4) and returns the results in input order, so the
 outcome never depends on which thread finished first.
 """
+import contextvars
+import contextlib
 import hashlib
 import json
 import logging
@@ -48,9 +50,27 @@ def reset_breaker() -> None:
         _breaker_until = 0.0
 
 
+_job_stats: contextvars.ContextVar = contextvars.ContextVar("stage4_job_stats", default=None)
+
+
+@contextlib.contextmanager
+def track():
+    """Counts the judge calls made by ONE piece of work, exactly, even when other sub-questions use the judge at the same time (two Stage 4
+    workers). Yields a dict with the keys of stats(). Threads the work starts itself must run inside copy_context (run_parallel does)."""
+    counts = {k: 0 for k in _stats}
+    token = _job_stats.set(counts)
+    try:
+        yield counts
+    finally:
+        _job_stats.reset(token)
+
+
 def _bump(key: str) -> None:
     with _lock:
         _stats[key] += 1
+        job = _job_stats.get()
+        if job is not None:
+            job[key] += 1
 
 
 RATE_WAIT_MAX = float(os.getenv("STAGE4_RATE_WAIT_MAX", "300"))     # a pool-wide limit of at most this many seconds is waited out, not failed
@@ -147,8 +167,9 @@ def run_parallel(fn: Callable[..., T], jobs: Sequence[tuple]) -> list[T]:
     jobs = list(jobs)
     if len(jobs) <= 1 or workers() <= 1:
         return [fn(*j) for j in jobs]
+    contexts = [contextvars.copy_context() for _ in jobs]          # the calling job's counters (track) follow the work into its threads
     with ThreadPoolExecutor(max_workers=min(workers(), len(jobs))) as pool:
-        return list(pool.map(lambda j: fn(*j), jobs))
+        return list(pool.map(lambda cj: cj[0].run(fn, *cj[1]), zip(contexts, jobs)))
 
 
 # ------------------------------------------------------------------------------------------------------------------ the judges

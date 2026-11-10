@@ -16,6 +16,7 @@ A sub-question that fails (a database or model error) is reported in the summary
 Stage 3 is already stored. `needs_replan` is only recorded (the replan loop, LOOP 3, is not built).
 """
 import logging
+import contextvars
 import os
 import threading
 from concurrent.futures import CancelledError, ThreadPoolExecutor
@@ -39,8 +40,21 @@ def _parallel_steps() -> bool:
     return os.getenv("STAGE4_PARALLEL_STEPS", "true").strip().lower() not in ("0", "false", "no", "off")
 
 
+def _sq_workers() -> int:
+    """STAGE4_SQ_WORKERS (default 1): how many sub-questions Stage 4 checks at the same time when it overlaps Stage 3. 1 = one after the other
+    (the old behaviour). 2 shortens the queue behind the last sub-question but doubles the Groq and CPU load (STAGE4_WORKERS judge threads each)."""
+    try:
+        return max(1, int(os.getenv("STAGE4_SQ_WORKERS", "1")))
+    except ValueError:
+        return 1
+
+
 def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dict], dict]:
-    j0 = judge.stats()
+    with judge.track() as jt:
+        return _check_sub_question_counted(query_id, sq, report, jt)
+
+
+def _check_sub_question_counted(query_id: str, sq, report, jt: dict) -> tuple[list[dict], list[dict], dict]:
     digests = db_service.get_digests_for_stage4(query_id, sq.id)
     report("claims", f"Reading the claims of {len(digests)} sources", sources=len(digests))
     claims = fact_checker.load_claims(digests)
@@ -53,7 +67,7 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
         # the near-match judge waits on Groq, the conflict step computes NLI on the CPU: they use different resources, read the same clusters
         # and write different fields, so they run side by side (the clusters of the near step are only read by the label step after both)
         with ThreadPoolExecutor(max_workers=1, thread_name_prefix="stage4-near") as pool:
-            near = pool.submit(fact_checker.find_near_matches, clusters)
+            near = pool.submit(contextvars.copy_context().run, fact_checker.find_near_matches, clusters)
             report("conflicts", "Looking for sources that disagree")
             try:
                 conflicts, disagreements = contradiction_detector.detect(clusters)
@@ -79,10 +93,10 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
         "claims_loaded": len(claims),
         "contested": sum(1 for r in labeled if r["contested"]),
         "disagreements": len(disagreements),
-        "judge_calls": judge.stats()["calls"] - j0["calls"],
-        "judge_cache_hits": judge.stats()["cache_hits"] - j0["cache_hits"],
-        "judge_waits": judge.stats()["waits"] - j0["waits"],
-        "judge_failures": judge.stats()["failures"] - j0["failures"] + judge.stats()["skipped"] - j0["skipped"],
+        "judge_calls": jt["calls"],
+        "judge_cache_hits": jt["cache_hits"],
+        "judge_waits": jt["waits"],
+        "judge_failures": jt["failures"] + jt["skipped"],
         "support_from_stage3": sum(1 for r in labeled for e in r["evidence"] if e.get("via") == "stage3_judge"),
         "missing_evidence": db_service.get_missing_evidence(sq.id),
         "needs_replan": total == 0 or (counts["unverified"] + counts["contradicted"]) / total > REPLAN_RATIO,
@@ -107,20 +121,26 @@ def _check_one(query_id: str, sq, report) -> tuple[list[dict], list[dict], dict]
 # its digests and coverage are stored, so Stage 4 of sub-question 1 runs while Stage 3 still judges sub-question 2. factcheck_node then
 # only waits for the futures (collect), starts any sub-question that was not started, and writes the results as before.
 #
-# One worker for the whole process, on purpose: the NLI model uses all CPU cores, two at once are not faster; and
-# _check_sub_question measures its judge calls as a difference of the process-wide judge.stats() counters, which stays exact only while
-# one Stage 4 sub-question runs at a time (Stage 3 does not use the Stage 4 judge, so its Groq calls do not enter those counters).
+# One worker by default (STAGE4_SQ_WORKERS=1): the NLI model uses all CPU cores, so two NLI steps at once are not faster (they take turns
+# on the model lock; the Groq judges of the other sub-question can still run meanwhile). With 2 the queue behind the last sub-question
+# is shorter. The judge counters of a sub-question are counted per job (judge.track), so they stay exact with any number of workers.
 _overlaps: dict[str, "_Overlap"] = {}
 _expected: set[str] = set()         # runs of the graph (the planner announced them): only these may start Stage 4 early
 _overlaps_lock = threading.Lock()
 _worker: ThreadPoolExecutor | None = None
+_worker_size = 0
 
 
 def _executor() -> ThreadPoolExecutor:
-    global _worker
+    """The shared pool; made again (the old one finishes its jobs, then ends) when STAGE4_SQ_WORKERS changed since it was made."""
+    global _worker, _worker_size
+    size = _sq_workers()
     with _overlaps_lock:
-        if _worker is None:
-            _worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="stage4-overlap")
+        if _worker is None or _worker_size != size:
+            if _worker is not None:
+                _worker.shutdown(wait=False)
+            _worker = ThreadPoolExecutor(max_workers=size, thread_name_prefix="stage4-overlap")
+            _worker_size = size
         return _worker
 
 
