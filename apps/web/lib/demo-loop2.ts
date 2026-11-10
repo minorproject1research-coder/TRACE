@@ -39,19 +39,31 @@ const SQ4_LOOP2: Loop2 = {
   searched: 7, covered: 4, seconds: 412.7, triage: 'r1', gapRule: 'core', sufficientStrict: false, coveredBySynthesis: 1,
   knownGapsNoEvidence: [A.licence, A.ethics],
   steps: [
-    { step: 'reselect', aspects: 7, newSources: 3, newVerifiedFindings: 11, covered: 1, seconds: 38.9 },
-    { step: 'pool', aspects: 6, newSources: 2, newVerifiedFindings: 6, covered: 1, seconds: 71.5 },
-    { step: 'queries', aspects: 5, newSources: 4, newVerifiedFindings: 13, covered: 2, seconds: 302.3 },
+    { step: 'reselect', aspects: 7, newSources: 3, newVerifiedFindings: 11, covered: 1, seconds: 38.9,
+      aspectTexts: [A.noise, A.licence, A.ethics, A.baseline, A.cost, A.distil, A.energy], coveredTexts: [A.baseline], queryCount: null, queries: null, digestTotal: 6, digestFailed: 0, sourcesTried: 9, error: null, note: null },
+    // a rung with a digest failure: some sources could not be read, so "no evidence" may be wrong for it
+    { step: 'pool', aspects: 6, newSources: 2, newVerifiedFindings: 6, covered: 1, seconds: 71.5,
+      aspectTexts: [A.noise, A.licence, A.ethics, A.cost, A.distil, A.energy], coveredTexts: [A.energy], queryCount: null, queries: null, digestTotal: 4, digestFailed: 2, sourcesTried: 6, error: null, note: 'Parsed the next 4 ranked papers of the search results.' },
+    { step: 'queries', aspects: 4, newSources: 4, newVerifiedFindings: 13, covered: 2, seconds: 302.3,
+      aspectTexts: [A.noise, A.licence, A.cost, A.distil], coveredTexts: [A.noise, A.cost], queryCount: 9,
+      queries: {
+        [A.noise]: ['robustness of tracers to input noise', 'noise injection training for tracing', 'signal-to-noise ratio and tracing accuracy'],
+        [A.licence]: ['sample tracer licence commercial use', 'open source licence of the sample tracing method'],
+        [A.cost]: ['production cost of sample tracers', 'inference cost per request sample method'],
+        [A.distil]: ['distilling sample tracers into small models', 'knowledge distillation for tracing methods'],
+      },
+      newPapersFound: 14, newPapersKept: 6, newPapersParsed: 4, newWebFound: 11, newWebKept: 3, digestTotal: 8, digestFailed: 0, sourcesTried: 10, error: null, note: null },
   ],
   aspects: [
-    { text: A.noise, status: 'covered', coveredBy: 'synthesis', how: 'synthesis', nearMiss: null, steps: ['reselect', 'pool', 'queries'] },
-    { text: A.licence, status: 'known_gap_no_evidence', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool', 'queries'] },
-    { text: A.ethics, status: 'known_gap_no_evidence', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool', 'queries'] },
-    { text: A.baseline, status: 'covered', coveredBy: 'reselect', how: 'single claims', nearMiss: null, steps: ['reselect'] },
-    { text: A.cost, status: 'covered', coveredBy: 'queries', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool', 'queries'] },
-    { text: A.hardware, status: 'known_gap_skipped_triage', coveredBy: null, how: null, nearMiss: null, steps: [] },
-    { text: A.distil, status: 'known_gap', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool', 'queries'] },
-    { text: A.energy, status: 'covered', coveredBy: 'pool', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool'] },
+    { text: A.noise, status: 'covered', coveredBy: 'synthesis', how: 'synthesis', nearMiss: null, steps: ['reselect', 'pool', 'queries'], before: { yes: 0, partial: 2, no: 3 }, after: { yes: 3, partial: 1, no: 2, sources: 3 }, stopped: null },
+    { text: A.licence, status: 'known_gap_no_evidence', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool', 'queries'], before: { yes: 0, partial: 0, no: 4 }, after: { yes: 0, partial: 0, no: 6, sources: 0 }, stopped: null },
+    // the time budget ran out after the second rung: this aspect never got the queries rung
+    { text: A.ethics, status: 'known_gap_no_evidence', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool'], before: { yes: 0, partial: 0, no: 3 }, after: { yes: 0, partial: 1, no: 3, sources: 1 }, stopped: 'time_budget' },
+    { text: A.baseline, status: 'covered', coveredBy: 'reselect', how: 'single claims', nearMiss: null, steps: ['reselect'], before: { yes: 1, partial: 1, no: 2 }, after: { yes: 2, partial: 1, no: 2, sources: 2 }, stopped: null },
+    { text: A.cost, status: 'covered', coveredBy: 'queries', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool', 'queries'], before: { yes: 0, partial: 2, no: 1 }, after: { yes: 2, partial: 0, no: 1, sources: 2 }, stopped: null },
+    { text: A.hardware, status: 'known_gap_skipped_triage', coveredBy: null, how: null, nearMiss: null, steps: [], before: { yes: 0, partial: 1, no: 2 }, after: null, stopped: null },
+    { text: A.distil, status: 'known_gap', coveredBy: null, how: null, nearMiss: false, steps: ['reselect', 'pool', 'queries'], before: { yes: 1, partial: 0, no: 2 }, after: { yes: 1, partial: 1, no: 3, sources: 1 }, stopped: null },
+    { text: A.energy, status: 'covered', coveredBy: 'pool', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool'], before: { yes: 0, partial: 2, no: 1 }, after: { yes: 2, partial: 0, no: 1, sources: 2 }, stopped: null },
   ],
   knownGaps: [A.licence, A.ethics, A.distil, A.hardware],
 }
@@ -120,15 +132,18 @@ export function withLoop2Fixtures(base: Report): Report {
     sq2.coverage.loop2 = {
       searched: 2, covered: 1, seconds: 231.4, triage: 'r1', gapRule: 'core', sufficientStrict: false, coveredBySynthesis: 0, knownGapsNoEvidence: [],
       steps: [
-        { step: 'reselect', aspects: 2, newSources: 1, newVerifiedFindings: 3, covered: 0, seconds: 14.2 },
-        { step: 'pool', aspects: 2, newSources: 1, newVerifiedFindings: 2, covered: 1, seconds: 41.8 },
-        { step: 'queries', aspects: 1, newSources: 0, newVerifiedFindings: 0, covered: 0, seconds: 175.4 },
+        { step: 'reselect', aspects: 2, newSources: 1, newVerifiedFindings: 3, covered: 0, seconds: 14.2, aspectTexts: ['How does cost grow with length?', 'How does the sample method scale to long inputs?'], coveredTexts: [], queryCount: null, queries: null, digestTotal: 3, digestFailed: 0, sourcesTried: 4, error: null, note: null },
+        { step: 'pool', aspects: 2, newSources: 1, newVerifiedFindings: 2, covered: 1, seconds: 41.8, aspectTexts: ['How does cost grow with length?', 'How does the sample method scale to long inputs?'], coveredTexts: ['How does cost grow with length?'], queryCount: null, queries: null, digestTotal: 2, digestFailed: 0, sourcesTried: 3, error: null, note: null },
+        // a rung that found nothing new: greyed. Its queries are listed, and none of what the search found was kept.
+        { step: 'queries', aspects: 1, newSources: 0, newVerifiedFindings: 0, covered: 0, seconds: 175.4, aspectTexts: ['How does the sample method scale to long inputs?'], coveredTexts: [], queryCount: 3,
+          queries: { 'How does the sample method scale to long inputs?': ['scaling behaviour of the sample method on long inputs', 'sample method memory cost against sequence length benchmark', 'sample method long-context ablation study'] },
+          newPapersFound: 5, newPapersKept: 0, newPapersParsed: 0, newWebFound: 6, newWebKept: 0, digestTotal: 0, digestFailed: 0, sourcesTried: 0, error: null, note: null },
       ],
       aspects: [
-        { text: 'How does cost grow with length?', status: 'covered', coveredBy: 'pool', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool'] },
-        { text: 'How does the sample method scale to long inputs?', status: 'known_gap', coveredBy: null, how: null, nearMiss: true, steps: ['reselect', 'pool', 'queries'] },
-        { text: 'How does it behave on streaming inputs?', status: 'known_gap_skipped_cap', coveredBy: null, how: null, nearMiss: null, steps: [] },
-        { text: 'Which memory layout is used for long inputs?', status: 'unjudged_not_searched', coveredBy: null, how: null, nearMiss: null, steps: [] },
+        { text: 'How does cost grow with length?', status: 'covered', coveredBy: 'pool', how: 'single claims', nearMiss: null, steps: ['reselect', 'pool'], before: { yes: 0, partial: 2, no: 1 }, after: { yes: 2, partial: 0, no: 1, sources: 2 }, stopped: null },
+        { text: 'How does the sample method scale to long inputs?', status: 'known_gap', coveredBy: null, how: null, nearMiss: true, steps: ['reselect', 'pool', 'queries'], before: { yes: 0, partial: 3, no: 0 }, after: { yes: 0, partial: 3, no: 1, sources: 2 }, stopped: null },
+        { text: 'How does it behave on streaming inputs?', status: 'known_gap_skipped_cap', coveredBy: null, how: null, nearMiss: null, steps: [], before: { yes: 0, partial: 0, no: 2 }, after: null, stopped: null },
+        { text: 'Which memory layout is used for long inputs?', status: 'unjudged_not_searched', coveredBy: null, how: null, nearMiss: null, steps: [], before: null, after: null, stopped: null },
       ],
       knownGaps: ['How does the sample method scale to long inputs?', 'How does it behave on streaming inputs?'],
     }
@@ -155,6 +170,18 @@ export function withLoop2Fixtures(base: Report): Report {
     sources: all.length,
     findings: all.reduce((n, s) => n + s.findings.length, 0),
     findingsQuoteFound: all.reduce((n, s) => n + s.findings.filter(f => f.quoteFound).length, 0),
+  }
+  return r
+}
+
+/** The report of a run stored BEFORE the detail fields existed: no before / after / stopped on the aspects and only the six original fields on every step. */
+export function stripLoop2Detail(report: Report): Report {
+  const r: Report = JSON.parse(JSON.stringify(report))
+  for (const sq of r.subQuestions) {
+    const l = sq.coverage?.loop2
+    if (!l) continue
+    for (const a of l.aspects ?? []) { delete a.before; delete a.after; delete a.stopped }
+    l.steps = (l.steps ?? []).map(s => ({ step: s.step, aspects: s.aspects, newSources: s.newSources, newVerifiedFindings: s.newVerifiedFindings, covered: s.covered, seconds: s.seconds }))
   }
   return r
 }

@@ -190,6 +190,15 @@ export function progressLineFor(steps: string[], sub: number | null, total: numb
   return `${where} - ${tail.length > 1 ? `${tail.slice(0, -1).join(', ')} and ${tail[tail.length - 1]}` : tail[0]}`
 }
 
+/** With two workers (the stream has done events) two sub-questions can be running: the line names both. Older streams keep the single line. */
+function runningLine(m: FactModel, single: string): string {
+  if (!m.hasDone || m.stage !== 'running') return single
+  const running = m.sqs.filter(s => s.status === 'running' && s.index > 0).map(s => s.index)
+  if (running.length < 2) return single
+  const list = running.length === 2 ? `${running[0]} and ${running[1]}` : `${running.slice(0, -1).join(', ')} and ${running[running.length - 1]}`
+  return `${CHECKING_WORDS}: sub-questions ${list} at the same time`
+}
+
 /** The small note for a run whose Stage 4 work began during Stage 3. */
 export function overlapNote(overlapped: number, total: number | null): string | null {
   if (!(overlapped > 0)) return null
@@ -219,7 +228,7 @@ export function factProgress(events: WorkflowEvent[]): FactProgress | null {
   return {
     state: m.stage, startedAt: m.startedAt, endedAt: m.endedAt,
     step: m.lastStep, subQuestion: sub, subQuestions: total, activeSteps: steps,
-    line: progressLineFor(steps, sub, total),
+    line: runningLine(m, progressLineFor(steps, sub, total)),
     result, error: failed ? (str(closed?.data?.error) ?? runFailedHere?.message ?? closed?.message ?? null) : null,
     judgeFailures: count(result?.judgeFailures), judgeWaits: count(result?.judgeWaits), failedSubQuestions: count(result?.failedSubQuestions),
     overlapped: m.overlapped, total: m.total,

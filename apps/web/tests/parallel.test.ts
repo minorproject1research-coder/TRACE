@@ -260,10 +260,10 @@ test('the replayed burst renders its final state at once: the result only depend
   assert.deepEqual(buildTimeline(scrambled, null).factcheck, once, 'merged by seq')
   assert.deepEqual(factModel(scrambled), factModel(upToBurst))
   // what it shows: sub-questions 2 and 3 are finished, 1 is at its third step, and the rest have not started
-  assert.deepEqual(once.rows!.map(r => `${r.index}:${r.status}`), ['1:running', '2:done', '3:done', '4:waiting', '5:waiting'])
+  assert.deepEqual(once.rows!.map(r => `${r.index}:${r.status}`), ['1:done', '2:done', '3:done', '4:running', '5:running'], 'finished ones come from their done events; two are still running')
   assert.equal(once.status, 'running')
-  assert.equal(once.note, overlapNote(3, 5))
-  assert.equal(factProgress(upToBurst)!.line, 'Checking claims across sources: sub-question 1 of 5 - checking that each quote supports its claim')
+  assert.equal(once.note, overlapNote(5, 5))
+  assert.equal(factProgress(upToBurst)!.line, 'Checking claims across sources: sub-questions 4 and 5 at the same time', 'two workers: the line names both')
 })
 
 test('the real start of Stage 4 is the earliest occurredAt of its steps, not stage_started', () => {
@@ -345,9 +345,9 @@ test('new-style scenario: indexed judge events interleave, Loop 2 runs on two su
   assert.equal(judgeModel(all).done, 5, 'but never on the page')
   assert.ok(all.some(e => e.data.step === 'near') && all.some(e => typeof e.data.occurredAt === 'string'))
   const l2 = all.filter(e => e.data.step === 'loop2' && typeof e.data.loop2Step === 'string')
-  assert.ok(new Set(l2.map(e => e.data.subQuestionIndex)).size >= 2, 'two sub-questions in Loop 2')
+  assert.deepEqual([...new Set(l2.map(e => e.data.subQuestionIndex))].sort(), [2, 4, 5], 'Loop 2 on three sub-questions: all three rungs for 4, the first rung for 5, the second for 2')
   const order = all.filter(e => e.event === 'step' && e.data.lane === 'factcheck' && typeof e.data.subQuestion === 'number' && e.data.step === 'claims').map(e => e.data.subQuestion)
-  assert.deepEqual(order, [2, 3, 1, 5, 4], 'Stage 4 follows the order the sub-questions were stored')
+  assert.deepEqual(order, [1, 3, 2, 5, 4], 'Stage 4 follows the order the sub-questions were stored')
   const u = tokenUsage(all)!
   for (const k of ['digest', 'digest_loop2', 'aspect_split', 'query_expansion', 'stage4_merge', 'stage4_support', 'stage4_near', 'stage4_conflict']) assert.ok(u.rows.some(r => r.key === k && r.label !== k), k)
   assert.ok(!u.rows.some(r => r.key === 'stage4_judge'))
@@ -357,7 +357,7 @@ test('the failed Stage 4 scenario: finished sub-questions stay done, the one tha
   const all = demoEvents({ fact: 'failed' })
   const t = buildTimeline(all, null)
   assert.equal(t.factcheck!.status, 'failed')
-  assert.deepEqual(t.factcheck!.rows!.map(r => `${r.index}:${r.status}`), ['1:done', '2:done', '3:done', '4:not_reported', '5:failed'])
+  assert.deepEqual(t.factcheck!.rows!.map(r => `${r.index}:${r.status}`), ['1:done', '2:done', '3:done', '4:failed', '5:failed'], 'the two that were running when it failed')
   assert.ok(all.some(e => e.event === 'run_completed') && !all.some(e => e.event === 'run_failed'))
   assert.equal(factProgress(all)!.state, 'failed')
 })

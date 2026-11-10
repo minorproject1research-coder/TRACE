@@ -9,6 +9,8 @@ import { CoverageBlock, FindingCard, NoEvidenceTag, SourceCard, verificationStat
 import { FactCheckPanel, FactTotals } from '@/components/trace/factcheck-panel'
 import { Boundary } from '@/components/trace/boundary'
 import { Pipeline } from '@/components/trace/pipeline'
+import { RunLive } from '@/components/trace/run-live'
+import { SecondSearchTab } from '@/components/trace/second-search-tab'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { StatusPill } from '@/components/trace/status-pill'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
@@ -16,11 +18,14 @@ import { factCheckRan, factTotals, STAGE_FAILED_NOTE } from '@/lib/factcheck'
 import { formatDateTime, formatDuration, LIVE_RUN_EXPECTATION, num, stanceInfo, statusLabel, statusTone, waitingCopy, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
+import { buildSecondSearch } from '@/lib/second-search'
 import type { Report, WorkflowEvent } from '@/lib/trace-types'
 import { usePapers, useReport, useRunStream, useSession, type Async } from '@/lib/use-research'
 
-const TABS = ['Activity', 'Sources', 'Evidence', 'Verification'] as const
+const TABS = ['Activity', 'Sources', 'Evidence', 'Second search', 'Verification'] as const
 type Tab = (typeof TABS)[number]
+/** The id of a tab in the address (#second-search) and in the page. */
+const slug = (t: string) => t.toLowerCase().replace(/\s+/g, '-')
 
 export default function RunPage() {
   const { id: rawId } = useParams<{ id: string }>()
@@ -38,17 +43,19 @@ export default function RunPage() {
   // Papers are in the database once the retrieval branch has finished; the list is read again whenever a stage or branch finishes.
   // The pipeline reports when the papers are saved and after every parsing round, so the list fills in while the run goes.
   const papersReady = finished || stream.events.some(e => (e.event === 'branch_completed' && e.data.branch === 'papers') || (e.event === 'step' && e.data.lane === 'papers' && e.data.step === 'store' && e.data.state === 'completed'))
-  const papersVersion = stream.events.filter(e => e.event === 'stage_completed' || e.event === 'branch_completed' || (e.event === 'step' && e.data.state === 'completed') || (e.event === 'step' && e.data.step === 'parsing')).length + (finished ? 1000 : 0)
+  const papersVersion = stream.events.filter(e => e.event === 'stage_completed' || e.event === 'branch_completed' || (e.event === 'step' && e.data.state === 'completed' && e.data.lane !== 'notes' && e.data.step !== 'paper_parse') || (e.event === 'step' && e.data.step === 'parsing')).length + Math.floor(stream.events.filter(e => e.event === 'step' && e.data.step === 'paper_parse').length / 5) + (finished ? 1000 : 0)
   const papers = usePapers(id, papersReady, papersVersion)
   const [tab, setTab] = useState<Tab>('Activity')
+  const [secondOnly, setSecondOnly] = useState(false)                       // the Sources filter "found by second search", also opened from the Second search tab
+  const secondView = useMemo(() => buildSecondSearch({ report: report.data, events: stream.events, running: active }), [report.data, stream.events, active])
 
   useEffect(() => {
-    const read = () => { const h = window.location.hash.slice(1); const t = TABS.find(x => x.toLowerCase() === h); if (t) setTab(t) }
+    const read = () => { const h = window.location.hash.slice(1); const t = TABS.find(x => slug(x) === h); if (t) setTab(t) }
     read()
     window.addEventListener('hashchange', read)
     return () => window.removeEventListener('hashchange', read)
   }, [])
-  const pickTab = (t: Tab) => { setTab(t); history.replaceState(null, '', `#${t.toLowerCase()}`) }
+  const pickTab = (t: Tab) => { setTab(t); history.replaceState(null, '', `#${slug(t)}`) }
 
   // Safety net: if the stream drops or never connects, the status still catches up.
   useEffect(() => {
@@ -62,7 +69,7 @@ export default function RunPage() {
     e.preventDefault()
     const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length]
     pickTab(next)
-    document.getElementById(`tab-${next}`)?.focus()
+    document.getElementById(`tab-${slug(next)}`)?.focus()
   }
 
   if (session.loading && !session.data) return <><BackLink /><h1 className="sr-only">Research run</h1><Skeleton rows={6} label="Loading research run" /></>
@@ -88,6 +95,7 @@ export default function RunPage() {
             <span className="tag">{s.id.slice(0, 8)}</span>
             <span className="tag">Started {formatDateTime(s.createdAt)}</span>
             {duration && <span className="tag">took {duration}</span>}
+            <RunLive events={stream.events} running={active} live={mode === 'live'} factEnabled={s.stages.factcheck !== 'not_run' && s.stages.factcheck !== 'not_built'} />
           </div>
         </div>
         <div className="run-actions">
@@ -123,14 +131,15 @@ export default function RunPage() {
           <div className="intelligence-panel">
             <div className="intel-tabs" role="tablist" aria-label="Run details">
               {TABS.map((t, i) => (
-                <button key={t} id={`tab-${t}`} role="tab" type="button" aria-selected={tab === t} aria-controls="intel-panel" tabIndex={tab === t ? 0 : -1} onClick={() => pickTab(t)} onKeyDown={e => onTabKey(e, i)}>{t}</button>
+                <button key={t} id={`tab-${slug(t)}`} role="tab" type="button" aria-selected={tab === t} aria-controls="intel-panel" tabIndex={tab === t ? 0 : -1} onClick={() => pickTab(t)} onKeyDown={e => onTabKey(e, i)}>{t}{t === 'Second search' && secondView.badge > 0 ? <span className="count">{secondView.badge}<span className="sr-only"> aspects searched</span></span> : null}</button>
               ))}
             </div>
-            <div className="intel-body" id="intel-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+            <div className="intel-body" id="intel-panel" role="tabpanel" aria-labelledby={`tab-${slug(tab)}`}>
               <Boundary label={tab} resetKey={tab}>
               {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} factcheckState={s.stages.factcheck} />}
-              {tab === 'Sources' && <SourcesTab events={stream.events} active={active} report={report} finished={finished} />}
+              {tab === 'Sources' && <SourcesTab events={stream.events} active={active} report={report} finished={finished} second={secondOnly} setSecond={setSecondOnly} />}
               {tab === 'Evidence' && <EvidenceTab active={active} report={report} finished={finished} />}
+              {tab === 'Second search' && <SecondSearchTab runId={id} view={secondView} loading={finished && report.loading} onShowSources={() => { setSecondOnly(true); pickTab('Sources') }} />}
               {tab === 'Verification' && <VerificationTab active={active} report={report} finished={finished} />}
               </Boundary>
             </div>
@@ -155,10 +164,9 @@ function Gate({ active, finished, report, what }: { active: boolean; finished: b
   return null
 }
 
-function SourcesTab({ events, active, report, finished }: { events: WorkflowEvent[]; active: boolean; report: Async<Report>; finished: boolean }) {
+function SourcesTab({ events, active, report, finished, second, setSecond }: { events: WorkflowEvent[]; active: boolean; report: Async<Report>; finished: boolean; second: boolean; setSecond: (v: boolean) => void }) {
   const [type, setType] = useState<'all' | 'paper' | 'web'>('all')
   const [partial, setPartial] = useState(false)
-  const [second, setSecond] = useState(false)
   const topics = (events.find(e => e.stage === 'planner' && e.event === 'stage_completed')?.data.topics as string[] | undefined) ?? []
   const papers = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'papers')?.data, 'papers')
   const web = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'web')?.data, 'webSources')

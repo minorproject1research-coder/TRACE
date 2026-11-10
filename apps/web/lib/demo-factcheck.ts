@@ -119,12 +119,28 @@ export const demoFactDisagreements = (): number => Object.values(demoFactChecks(
 function sq5Report(): SubQuestionReport {
   const finding = (claim: string, quote: string, aspect: string) => ({ claim, quote, stance: 'supports', quoteFound: true, judgements: [{ aspect, verdict: 'yes' as const, quoteSupportsClaim: 'yes', answersAspect: 'yes', reason: 'The quote states it directly.' }] })
   const A = 'Which learning rate schedules are used?'
+  const B = 'How large should the batches be?'
   return {
     id: 'demo-sq-5', topic: 'Which training settings does the sample method prefer?', detailQuestions: [A],
     coverage: { sufficient: false, judgeUsed: true, sourceCount: 2, fullTextSourceCount: 1, digestFailures: 0,
-      aspects: [{ index: 0, text: A, state: 'judged_insufficient', yesVerdicts: 1, sources: 1 }], uncoveredAspects: [A], unjudgedAspects: [], fallbackReason: null },
+      aspects: [{ index: 0, text: A, state: 'judged_insufficient', yesVerdicts: 1, sources: 1 }, { index: 1, text: B, state: 'covered', coveredBy: 'single_claims', yesVerdicts: 2, sources: 2 }],
+      uncoveredAspects: [A], unjudgedAspects: [], fallbackReason: null,
+      // the Loop 2 case "covered by the first rung": one aspect is covered by reselect, the other stays a (partly answered) gap
+      loop2: {
+        searched: 2, covered: 1, seconds: 29.5, triage: 'r1', gapRule: 'core', sufficientStrict: false, coveredBySynthesis: 0, knownGapsNoEvidence: [],
+        steps: [
+          { step: 'reselect', aspects: 2, newSources: 1, newVerifiedFindings: 2, covered: 1, seconds: 17.1, aspectTexts: [B, A], coveredTexts: [B], queryCount: null, queries: null, digestTotal: 3, digestFailed: 0, sourcesTried: 4, error: null, note: null },
+          // every source of this rung failed to be read: the ladder stopped there for the remaining aspect
+          { step: 'pool', aspects: 1, newSources: 0, newVerifiedFindings: 0, covered: 0, seconds: 12.4, aspectTexts: [A], coveredTexts: [], queryCount: null, queries: null, digestTotal: 2, digestFailed: 2, sourcesTried: 2, error: null, note: 'No source of this rung could be read.' },
+        ],
+        aspects: [
+          { text: B, status: 'covered', coveredBy: 'reselect', how: 'single claims', nearMiss: null, steps: ['reselect'], before: { yes: 1, partial: 1, no: 0 }, after: { yes: 2, partial: 1, no: 0, sources: 2 }, stopped: null },
+          { text: A, status: 'known_gap', coveredBy: null, how: null, nearMiss: true, steps: ['reselect', 'pool'], before: { yes: 1, partial: 0, no: 2 }, after: { yes: 1, partial: 0, no: 3, sources: 1 }, stopped: 'digests_failed' },
+        ],
+        knownGaps: [A],
+      } },
     sources: [
-      { id: 'demo-src-14', type: 'paper', title: '[Sample] Training Recipes For Fictional Tracers', evidenceLevel: 'full_text', weight: 0.7, findingsTotal: 2, findingsQuoteFound: 2, url: 'https://example.org/sample-recipes', authors: ['D. Fiction'], year: 2024, venue: 'Sample Proceedings', findings: [
+      { id: 'demo-src-14', type: 'paper', foundByLoop2Step: 'reselect', title: '[Sample] Training Recipes For Fictional Tracers', evidenceLevel: 'full_text', weight: 0.7, findingsTotal: 2, findingsQuoteFound: 2, url: 'https://example.org/sample-recipes', authors: ['D. Fiction'], year: 2024, venue: 'Sample Proceedings', findings: [
         finding('The preferred learning rate schedule is a warm-up followed by a slow decay.', 'The schedule we used was a short warm-up followed by a slow decay.', A),
         finding('Larger batches help only up to a point.', 'Gains from larger batches flattened out beyond a few thousand examples.', A),
       ] },

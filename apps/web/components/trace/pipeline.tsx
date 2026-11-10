@@ -5,6 +5,8 @@ import { Check, X } from 'lucide-react'
 import { elapsedLabel, factProgress, failedSubQuestionsNote, judgeFailuresNote, judgeWaitsNote, OVERLAP_TAG, overlapNote, STAGE_FAILED_NOTE, TIME_HINT, type FactProgress } from '@/lib/factcheck'
 import { num, stageClockLabel, stageMeta, stageStateLabel } from '@/lib/format'
 import { stageStartedAt } from '@/lib/stream'
+import { stageExtras } from '@/lib/telemetry'
+import { StageExtrasView } from '@/components/trace/timeline-telemetry'
 import type { StageId, StageState, WorkflowEvent } from '@/lib/trace-types'
 
 const ORDER: StageId[] = ['planner', 'retrieval', 'summarizer', 'factcheck', 'report']
@@ -102,6 +104,7 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
                   <div className="stage-title"><b>{meta.name}</b><span>{stageStateLabel[state]}</span></div>
                   <p>{detailOf(id, state)}</p>
                   {id === 'factcheck' && <FactcheckStatus state={state} progress={fact} />}
+                  {id !== 'report' && <StageExtrasView stage={id} x={stageExtras(events, id)} />}
                   {state === 'running' && id !== 'factcheck' && meta.hint && <p className="hint">In progress, {meta.hint}. The Timeline tab shows its steps.</p>}
                   {(f.length > 0 || clock) && <div className="stage-detail">{f.map(x => <span key={x}>{x}</span>)}{clock && <code>{clock}</code>}</div>}
                 </div>

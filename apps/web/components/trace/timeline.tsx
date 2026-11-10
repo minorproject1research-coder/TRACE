@@ -1,12 +1,17 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, Globe, BookOpen, Brain, ListChecks, MinusCircle, ShieldCheck, X } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, Globe, BookOpen, Brain, ListChecks, MinusCircle, Search, ShieldCheck, X } from 'lucide-react'
 import { ActivityLog } from '@/components/trace/activity-log'
 import { StatusPill } from '@/components/trace/status-pill'
 import { OVERLAP_TAG, STAGE_FAILED_NOTE } from '@/lib/factcheck'
 import { formatDuration } from '@/lib/format'
-import { stageStartedAt, tokensLabel, tokenUsage, type TokenUsage } from '@/lib/stream'
+import { buildSecondSearch, timelineLine } from '@/lib/second-search'
+import { notesOf, paperParseModel, parsingNote, stageStartedAt, tokensLabel, tokenUsage, type TokenUsage } from '@/lib/stream'
+import { isParallelRun, plannedTopics, stageGantt, swimlanes, workerView } from '@/lib/swimlanes'
+import { timeShares } from '@/lib/telemetry'
+import { StageGanttView, SwimlaneMatrix, WorkerTable } from '@/components/trace/timeline-parallel'
+import { NotesSection, PapersParsing, TimeShareBar } from '@/components/trace/timeline-telemetry'
 import { buildTimeline, timelineNotes, type FactRowView, type LaneView, type StepView, type TimelineModel } from '@/lib/timeline'
 import type { PapersOverview, StageState, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
 
@@ -39,7 +44,7 @@ function FactRows({ rows }: { rows: FactRowView[] }) {
   return (
     <ol className="fact-rows" aria-label="Fact check, one row per sub-question">
       {rows.map(r => (
-        <li key={r.index} className={`fact-row ${r.status}`}>
+        <li key={r.index} data-sq={r.index} className={`fact-row ${r.status}`}>
           <div className="fact-row-head"><b>{r.label}</b><span className="fact-row-state">{r.statusText}</span>{r.chips.map(c => <span className="tag" key={c}>{c}</span>)}</div>
           <ol className="fact-steps">
             {r.steps.map(st => <li key={st.id} className={`fact-step ${st.status}`}><StepIcon status={st.status} /><span>{st.label}</span><span className="sr-only">: {statusWord[st.status]}</span></li>)}
@@ -66,7 +71,7 @@ function Step({ step, now }: { step: StepView; now: number }) {
         {step.chips.length > 0 && <div className="step-chips">{step.chips.map(c => <span className="tag" key={c}>{c}</span>)}</div>}
         {step.subs && step.subs.length > 0 && (
           <ul className="sq-chips" aria-label={`${step.label}: one chip per sub-question`}>
-            {step.subs.map(sq => <li key={sq.key} className={`sq-chip ${sq.state} ${sq.tone}`}><b>{sq.label}</b><span>{sq.text}</span></li>)}
+            {step.subs.map(sq => <li key={sq.key} data-sq={sq.sq} title={sq.tip} className={`sq-chip ${sq.state} ${sq.tone}`}><b>{sq.label}</b><span>{sq.text}</span></li>)}
           </ul>
         )}
         {pct != null && <div className="step-bar" role="progressbar" aria-valuenow={step.progress!.done} aria-valuemin={0} aria-valuemax={step.progress!.total} aria-label={`${step.label}: ${step.progress!.done} of ${step.progress!.total}`}><span style={{ width: `${pct}%` }} /></div>}
@@ -77,7 +82,7 @@ function Step({ step, now }: { step: StepView; now: number }) {
   )
 }
 
-function Lane({ lane, now, open }: { lane: LaneView; now: number; open?: boolean }) {
+function Lane({ lane, now, open, extra }: { lane: LaneView; now: number; open?: boolean; extra?: ReactNode }) {
   const Icon = laneIcon[lane.id]
   const end = lane.endedAt ?? (lane.status === 'running' ? nowIso(now) : null)
   const took = lane.startedAt && end ? formatDuration(lane.startedAt, end) : null
@@ -98,6 +103,7 @@ function Lane({ lane, now, open }: { lane: LaneView; now: number; open?: boolean
           <ol className="step-list">{lane.steps.map(s => <Step key={s.id} step={s} now={now} />)}</ol>
         </details>
       )}
+      {extra}
     </section>
   )
 }
@@ -171,6 +177,17 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
     return { from: new Date(Math.min(a, sumStart ?? a)).toISOString(), to: new Date(Math.max(...ends)).toISOString() }
   }, [model, now])
   const usage = useMemo(() => tokenUsage(events), [events])
+  // the per-sub-question views, the time shares, the per-paper parsing and the notes: each is hidden when the stream has no data for it
+  const parallel = useMemo(() => isParallelRun(events), [events])
+  const topics = useMemo(() => plannedTopics(events), [events])
+  const swim = useMemo(() => (parallel ? swimlanes(events, topics) : []), [parallel, events, topics])
+  const gantt = useMemo(() => (parallel ? stageGantt(events, now, topics) : null), [parallel, events, now, topics])
+  const workers = useMemo(() => (parallel ? workerView(events, now, topics) : null), [parallel, events, now, topics])
+  const shares = useMemo(() => timeShares(events, now), [events, now])
+  const notes_ = useMemo(() => notesOf(events), [events])
+  const parse = useMemo(() => paperParseModel(events), [events])
+  const parseNote = useMemo(() => parsingNote(events), [events])
+  const second = useMemo(() => timelineLine(buildSecondSearch({ report: null, events, running })), [events, running])
   const plannerTook = model.planner.startedAt && model.planner.endedAt ? formatDuration(model.planner.startedAt, model.planner.endedAt) : null
   const took = useMemo(() => {
     const m = new Map<number, string>()
@@ -211,7 +228,7 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
       <div className="tl-parallel" role="group" aria-label="Retrieval: two branches running at the same time">
         <div className="tl-parallel-head"><b>Retrieval</b><span className="tag">runs in parallel</span><span className="meta">{model.retrieval.startedAt && model.retrieval.endedAt ? `${formatDuration(model.retrieval.startedAt, model.retrieval.endedAt)} in total, both branches together` : 'both branches start together'}</span></div>
         <Gantt lanes={[papers, web]} from={model.retrieval.startedAt ?? papers.startedAt ?? web.startedAt} to={axisEnd} intro="Paper retrieval and web search ran at the same time." />
-        <div className="lanes"><Lane lane={papers} now={now} /><Lane lane={web} now={now} /></div>
+        <div className="lanes"><Lane lane={papers} now={now} extra={<PapersParsing m={parse} note={parseNote} />} /><Lane lane={web} now={now} /></div>
       </div>
 
       {overlap && (
@@ -220,7 +237,17 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
           <Gantt lanes={[model.summarizer, fact!]} from={overlap.from} to={overlap.to} intro="The evidence stage and the fact check overlapped in time." />
         </div>
       )}
-      <div className="tl-after"><Lane lane={model.summarizer} now={now} />{fact && <Lane lane={fact} now={now} />}</div>
+      {parallel && (
+        <div className="tl-persq" role="group" aria-label="Sub-questions">
+          <SwimlaneMatrix rows={swim} />
+          {gantt && <StageGanttView g={gantt} />}
+          {workers && <WorkerTable v={workers} />}
+        </div>
+      )}
+      <div className="tl-after">
+        <Lane lane={model.summarizer} now={now} extra={second ? <p className="lane-summary ss-line"><Search size={13} aria-hidden="true" /> {second} <a href="#second-search">Open the Second search tab</a></p> : null} />
+        {fact && <Lane lane={fact} now={now} />}
+      </div>
       {fact?.status === 'failed' && <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>{STAGE_FAILED_NOTE}</b><p>The run itself finished. Only the cross-check is missing.</p></div></div>}
 
       {notes.stage4 && <section className={`tl-notbuilt ${notes.stage4.tag === 'queued' ? 'queued' : ''}`} aria-label="Fact check status"><span className="tag">{notes.stage4.tag}</span> {notes.stage4.text}</section>}
@@ -229,6 +256,8 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
       {model.planner.status === 'failed' || papers.status === 'failed' || web.status === 'failed' || model.summarizer.status === 'failed'
         ? <div className="callout-box coral" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>The run stopped</b><p>The step that was running when it failed is marked above. The error is shown at the top of the page.</p></div></div> : null}
 
+      {shares && <TimeShareBar t={shares} />}
+      <NotesSection notes={notes_} />
       {usage && <TokenUsageTile usage={usage} />}
 
       <details className="lane-steps event-log">

@@ -1,5 +1,7 @@
-import { demoFactDisagreements, demoFactTotals, type DemoFact } from './demo-factcheck'
+import { countsOf } from './factcheck'
+import { demoFactChecks, demoFactDisagreements, demoFactTotals, type DemoFact } from './demo-factcheck'
 import { demoDetail, demoOverview, type DemoStage } from './demo-papers'
+import { stripLoop2Detail } from './demo-loop2'
 import { demoReport } from './demo-report'
 import { ApiError, TERMINAL_EVENTS, type CreateInput, type EventName, type Report, type RunStatus, type Session, type StageId, type StageState, type TraceApi, type WorkflowEvent } from './trace-types'
 
@@ -177,11 +179,10 @@ function retrievalBeats(n: number): Beat[] {
     step(6500, 'papers', 'scoring', 'completed', 'Scored 8 papers', { scored: 8 }),
     step(6550, 'papers', 'store', 'running', 'Saving the papers', { papers: 8 }),
     step(6650, 'papers', 'store', 'completed', 'Saved 8 papers', { stored: 8 }),
-    step(6700, 'papers', 'parsing', 'running', 'Parsing the best 3 papers (PDF to text)', { target: 3, attempted: 0, usable: 0, papers: 8 }),
-    step(7300, 'papers', 'parsing', 'running', 'Parsed 1 of 3 papers', { target: 3, attempted: 1, usable: 1 }),
-    step(8000, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 2, usable: 2 }),
-    step(8700, 'papers', 'parsing', 'running', 'Parsed 2 of 3 papers', { target: 3, attempted: 3, usable: 2 }),
-    step(9000, 'papers', 'parsing', 'completed', '2 of 3 papers parsed', { target: 3, attempted: 3, usable: 2 }),
+    // the parsing step is silent between its start and the end of the round (the paper_parse events fill the gap)
+    step(6700, 'papers', 'parsing', 'running', 'Parsing the best 8 papers (PDF to text)', { target: 8, attempted: 0, usable: 0, papers: 8 }),
+    step(8750, 'papers', 'parsing', 'running', 'Parsed 5 of 8 papers', { target: 8, attempted: 8, usable: 5 }),
+    step(9000, 'papers', 'parsing', 'completed', '5 of 8 papers parsed', { target: 8, attempted: 8, usable: 5 }),
     { at: 9100, event: 'branch_completed', stage: 'retrieval', status: 'completed', message: 'Kept 8 papers', data: { branch: 'papers', papers: 8 } },
     branch(3600, 'web'),
     step(3650, 'web', 'search', 'running', 'Searching the web', { subQuestions: n, queries: 3 * n, done: 0, total: n }),
@@ -198,11 +199,36 @@ function retrievalBeats(n: number): Beat[] {
   return out
 }
 
+/** A note (lane "notes"): data.step is the code, data.level info or warn, data.stage the stage it belongs to. */
+function note(at: number, code: string, stage: 'planner' | 'retrieval' | 'summarizer', level: 'info' | 'warn', message: string, data: Record<string, unknown> = {}, occ?: number): Beat {
+  return { at, ...(occ != null ? { occ } : {}), event: 'step', stage, status: 'completed', message, data: { lane: 'notes', step: code, state: 'completed', level, stage, ...data } }
+}
+
+/** One event per paper that reached an end of its parsing (lane "papers", step "paper_parse"). */
+const DEMO_PAPERS: [string, 'parsed' | 'abstract_only' | 'failed', string | null, string | null, number | null, string][] = [
+  ['[Sample] A Fictional Method for Signal Tracing', 'parsed', 'own link', null, 48210, 'demo-sq-1'],
+  ['[Sample] Scaling Fictional Tracers to Long Inputs', 'parsed', 'parse cache', null, 51377, 'demo-sq-2'],
+  ['[Sample] Open Problems of Fictional Tracers', 'parsed', 'parse cache', null, 33940, 'demo-sq-3'],
+  ['[Sample] Training Recipes For Fictional Tracers', 'parsed', 'own link', null, 40102, 'demo-sq-5'],
+  ['[Sample] Re-reading Pays Off', 'parsed', 'own link', null, 27655, 'demo-sq-4'],
+  ['[Sample] Production Costs of Fictional Tracers', 'abstract_only', 'own link', 'HTTP 403', null, 'demo-sq-4'],
+  ['[Sample] A Paywalled Survey of Tracers', 'abstract_only', 'own link', 'known failure (publisher paywall)', null, 'demo-sq-1'],
+  ['[Sample] Robustness of Tracers Under Noise (landing page)', 'failed', 'own link', 'html or non-PDF response', null, 'demo-sq-4'],
+]
+function paperParseBeats(): Beat[] {
+  return DEMO_PAPERS.map(([title, outcome, route, reason, chars, sq], k) => ({
+    at: 6900 + k * 230, event: 'step' as const, stage: 'retrieval' as const, status: 'completed', message: `${outcome === 'parsed' ? 'Parsed' : outcome === 'failed' ? 'Could not parse' : 'Kept the abstract of'} ${title}`,
+    data: { lane: 'papers', step: 'paper_parse', state: 'completed', paperId: `demo-paper-${k + 1}`, title, outcome, route, reason, chars, subQuestionId: sq },
+  }))
+}
+
 /** A held event of the summarizer: emitted at `at`, but it happened at `occ`. Without `occ` it is live. */
-function held(occ: number | null, at: number, stepId: 'judge' | 'loop2', message: string, data: Record<string, unknown>): Beat {
+function held(occ: number | null, at: number, stepId: 'judge' | 'loop2' | 'loop2_step', message: string, data: Record<string, unknown>): Beat {
   return { ...step(at, 'summarizer', stepId, 'running', message, { ...data }), ...(occ != null ? { occ } : {}) }
 }
 
+/** The Loop 2 scenario (also in the report of lib/demo-loop2.ts): sub-question 4 goes through all three rungs, 5 is covered by the first, 2 is covered by the
+ *  second and keeps a gap. Judges run two at a time, so they finish out of order; the ones that happened before the digest step ended are held and replayed. */
 function summarizerBeatsNew(): Beat[] {
   const N = NEW_N
   const sq = (i: number) => ({ subQuestion: NEW_TOPICS[i - 1], subQuestionIndex: i, subQuestions: N })
@@ -213,6 +239,11 @@ function summarizerBeatsNew(): Beat[] {
     held(occ, at, 'loop2', `Loop 2 (${r}): ${aspects} aspect(s) of '${NEW_TOPICS[i - 1]}'`, { loop2Step: r, aspects, subQuestionIndex: i, subQuestions: N })
   const loop2Done = (occ: number | null, at: number, i: number, searched: number, covered: number) =>
     held(occ, at, 'loop2', `Loop 2 done for sub-question ${i}`, { ...sq(i), searched, covered })
+  // The result of one rung, as soon as it is finished (a separate step id: the loop2 events above are unchanged)
+  const res = (occ: number | null, at: number, i: number, r: 'reselect' | 'pool' | 'queries', aspects: number, newSources: number, findings: number, covered: number, seconds: number, queries: Record<string, string[]> | null = null) =>
+    held(occ, at, 'loop2_step', `Loop 2 (${r}) finished for sub-question ${i}`, { loop2Step: r, aspects, newSources, newVerifiedFindings: findings, covered, seconds, queries, error: null, subQuestionIndex: i, subQuestions: N })
+  const gaps = (occ: number | null, at: number, i: number, g: number, searched: number, covered: number) =>
+    note(at, 'loop2_gaps', 'summarizer', 'info', `Sub-question ${i}: ${g} aspect(s) stay without evidence`, { subQuestionIndex: i, subQuestions: N, gaps: g, searched, covered }, occ ?? undefined)
 
   const beats: Beat[] = [
     { at: 9400, event: 'stage_started', stage: 'summarizer', status: 'running', message: 'Reading sources and checking evidence', data: {} },
@@ -221,79 +252,106 @@ function summarizerBeatsNew(): Beat[] {
     step(9800, 'summarizer', 'digest', 'running', 'Reading 10 sources with the LLM', { done: 0, total: 10, failures: 0 }),
   ]
   for (let k = 1; k <= 10; k++) beats.push(step(9800 + k * 190, 'summarizer', 'digest', 'running', `Read ${k} of 10 sources`, { done: k, total: 10, failures: k > 7 ? 1 : 0 }))
-  beats.push(step(11950, 'summarizer', 'digest', 'completed', 'Read 10 sources', { done: 10, total: 10, failures: 1 }))
+  beats.push(step(11950, 'summarizer', 'digest', 'completed', 'Read 10 sources', { done: 10, total: 10, failures: 1, cacheHits: 4 }))
 
-  // The judge and Loop 2 events from before 11950, in the order they happened, replayed right after the digest step ended (each with occurredAt).
+  // What happened before 11950, in the order it happened, replayed right after the digest step ended (each with occurredAt).
+  const Q2 = { 'How does the sample method scale to long inputs?': ['scaling behaviour of the sample method on long inputs', 'sample method memory cost against sequence length benchmark', 'sample method long-context ablation study'] }
+  const Q4 = {
+    'How robust is it to noise?': ['robustness of tracers to input noise', 'noise injection training for tracing', 'signal-to-noise ratio and tracing accuracy'],
+    'Is the licence compatible with commercial use?': ['sample tracer licence commercial use', 'open source licence of the sample tracing method'],
+    'What does it cost to run in production?': ['production cost of sample tracers', 'inference cost per request sample method'],
+    'Can it be distilled?': ['distilling sample tracers into small models', 'knowledge distillation for tracing methods'],
+  }
   const earlier: [number, (at: number) => Beat][] = [
     [10200, at => start(10200, at, 1, 0)],
     [10500, at => start(10500, at, 2, 0)],
-    [10800, at => rung(10800, at, 1, 'reselect', 2)],
-    [11400, at => finish(11400, at, 2, 1, true, 1)],
-    [11410, at => start(11410, at, 3, 1)],
-    [11450, at => rung(11450, at, 1, 'pool', 1)],
-    [11700, at => rung(11700, at, 3, 'reselect', 1)],
+    [10800, at => rung(10800, at, 2, 'reselect', 2)],
+    [10900, at => finish(10900, at, 1, 1, true, 1)],
+    [10905, at => start(10905, at, 3, 1)],
+    [11000, at => res(11000, at, 2, 'reselect', 2, 1, 3, 0, 14.2)],
+    [11050, at => rung(11050, at, 2, 'pool', 2)],
+    [11400, at => finish(11400, at, 3, 2, true, 2)],
+    [11405, at => start(11405, at, 4, 2)],
+    [11450, at => res(11450, at, 2, 'pool', 2, 1, 2, 1, 41.8)],
+    [11460, at => rung(11460, at, 2, 'queries', 1)],
+    [11700, at => rung(11700, at, 4, 'reselect', 7)],
+    [11780, at => res(11780, at, 2, 'queries', 1, 0, 0, 0, 175.4, Q2)],
+    [11800, at => loop2Done(11800, at, 2, 2, 1)],
+    [11801, at => gaps(11800, at, 2, 1, 2, 1)],
+    [11850, at => finish(11850, at, 2, 3, false, 2)],
+    [11855, at => start(11855, at, 5, 3)],
   ]
   earlier.forEach(([, make], k) => beats.push(make(11960 + k * 15)))
 
-  // After the gate opened the events are live. Two judges finish within 10 ms and reach the stream in the other order: done=5 before done=4.
+  // After the gate opened the events are live. Sub-questions 4 and 5 finish within 5 ms and reach the stream in the other order: done=5 before done=4.
   beats.push(
-    rung(null, 12100, 1, 'queries', 1),
-    loop2Done(null, 12150, 3, 1, 1),
-    finish(null, 12200, 3, 2, false, 1),
-    start(null, 12205, 4, 2),
-    loop2Done(null, 12500, 1, 2, 1),
-    finish(null, 12550, 1, 3, true, 2),
-    start(null, 12555, 5, 3),
-    finish(null, 12850, 5, 5, true, 3),
-    finish(null, 12860, 4, 4, false, 2),
-    step(12880, 'summarizer', 'loop2', 'completed', 'Loop 2 finished: 3 aspect(s) searched again, 2 covered', { searched: 3, covered: 2 }),
-    step(12900, 'summarizer', 'judge', 'completed', '3 of 5 sub-questions have enough evidence', { done: N, total: N, sufficientSubQuestions: 3 }),
-    step(12950, 'summarizer', 'store', 'running', 'Saving the digests and coverage', { digests: 10 }),
-    step(13000, 'summarizer', 'store', 'completed', 'Saved 10 digests', { stored: 10 }),
-    { at: 13050, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 10 sources; 3 of 5 sub-questions have sufficient evidence', data: { digests: 10, subQuestions: N, sufficientSubQuestions: 3 } },
+    rung(null, 12000, 5, 'reselect', 2),
+    res(null, 12050, 4, 'reselect', 7, 3, 11, 1, 38.9),
+    rung(null, 12100, 4, 'pool', 6),
+    res(null, 12300, 5, 'reselect', 2, 1, 2, 1, 17.1),
+    rung(null, 12310, 5, 'pool', 1),
+    res(null, 12450, 4, 'pool', 6, 2, 6, 1, 71.5),
+    rung(null, 12500, 4, 'queries', 4),
+    res(null, 12800, 5, 'pool', 1, 0, 0, 0, 12.4),
+    loop2Done(null, 12850, 5, 2, 1), gaps(null, 12851, 5, 1, 2, 1),
+    res(null, 12880, 4, 'queries', 4, 4, 13, 2, 302.3, Q4),
+    loop2Done(null, 12900, 4, 7, 4), gaps(null, 12901, 4, 2, 7, 4),
+    finish(null, 12950, 4, 5, true, 3),
+    finish(null, 12955, 5, 4, false, 2),
+    step(13000, 'summarizer', 'loop2', 'completed', 'Loop 2 finished: 11 aspect(s) searched again, 6 covered', { searched: 11, covered: 6 }),
+    step(13020, 'summarizer', 'judge', 'completed', '3 of 5 sub-questions have enough evidence', { done: N, total: N, sufficientSubQuestions: 3, cacheHits: 6 }),
+    step(13060, 'summarizer', 'store', 'running', 'Saving the digests and coverage', { digests: 10 }),
+    step(13100, 'summarizer', 'store', 'completed', 'Saved 10 digests', { stored: 10 }),
+    { at: 13150, event: 'stage_completed', stage: 'summarizer', status: 'completed', message: 'Digested 10 sources; 3 of 5 sub-questions have sufficient evidence', data: { digests: 10, subQuestions: N, sufficientSubQuestions: 3 } },
   )
   return beats
 }
 
-/** Stage 4 in the order the sub-questions were stored: 2, 3, 1, 5, 4. The first three were (partly) checked before stage_started and arrive as a burst. */
+/** Stage 4 with two workers. A sub-question joins the queue when its judge ends; the sub-questions are checked in the order they were stored (1, 3, 2, 5, 4),
+ *  two at a time, and each ends with a `done` step. Everything that happened before stage_started arrives as a burst, in order, each with occurredAt. */
+const FACT_PLAN: { i: number; start: number; dur: number; worker: 1 | 2 }[] = [
+  { i: 1, start: 10950, dur: 1100, worker: 1 }, { i: 3, start: 11450, dur: 700, worker: 2 }, { i: 2, start: 12050, dur: 700, worker: 1 },
+  { i: 5, start: 12945, dur: 700, worker: 1 }, { i: 4, start: 12950, dur: 700, worker: 2 },
+]
+const FSTART = 13200
+
 function factcheckBeatsNew(fact: Exclude<DemoFact, 'off'>): Beat[] {
-  const fstep = (at: number, stepId: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}, occ?: number): Beat =>
-    ({ at, event: 'step', stage: 'factcheck', status: state, message, data: { lane: 'factcheck', step: stepId, state, ...data }, ...(occ != null ? { occ } : {}) })
   const N = NEW_N
-  // one sub-question: the five steps, near and conflicts at the same moment. `at` is when it is emitted, `occ` when it happened (a replayed event).
-  const sqSteps = (i: number, t: number, opts: { replay: boolean; upTo?: number; emitFrom?: number }): Beat[] => {
+  const raw: Beat[] = []
+  const f = (t: number, stepId: string, message: string, data: Record<string, unknown>): void => { raw.push({ at: t, event: 'step', stage: 'factcheck', status: 'running', message, data: { lane: 'factcheck', step: stepId, state: 'running', ...data } }) }
+  const checks = demoFactChecks()
+  for (const { i, start, dur, worker } of FACT_PLAN) {
     const c = { subQuestion: i, subQuestions: N }
-    const list: [number, string, string, Record<string, unknown>][] = [
-      [0, 'claims', `Reading the claims of ${i + 1} sources`, { sources: i + 1 }],
-      [150, 'clusters', `Grouping ${4 + i} claims that say the same thing`, { claims: 4 + i }],
-      [300, 'support', `Checking that the quotes support ${3 + i} grouped claims`, { clusters: 3 + i }],
-      [450, 'near', 'Looking for close variants of single-source claims in other documents', {}],
-      [450, 'conflicts', 'Looking for sources that disagree', {}],
-    ]
-    return list.slice(0, opts.upTo ?? 5).map(([dt, id, msg, extra]) => fstep(t + dt, id, 'running', msg, { ...c, ...extra }, opts.replay ? t + dt : undefined))
+    f(start, 'claims', `Reading the claims of ${i + 1} sources`, { ...c, sources: i + 1, worker })
+    f(start + dur * 0.24, 'clusters', `Grouping ${4 + i} claims that say the same thing`, { ...c, claims: 4 + i })
+    f(start + dur * 0.49, 'support', `Checking that the quotes support ${3 + i} grouped claims`, { ...c, clusters: 3 + i })
+    f(start + dur * 0.73, 'near', 'Looking for close variants of single-source claims in other documents', c)
+    f(start + dur * 0.73, 'conflicts', 'Looking for sources that disagree', c)
+    const k = countsOf(checks[`demo-sq-${i}`])
+    f(start + dur, 'done', `Sub-question ${i} checked`, { ...c, claims: k.supported + k.partially_supported + k.unverified + k.contradicted, supported: k.supported, partially_supported: k.partially_supported, unverified: k.unverified,
+      contradicted: k.contradicted, disagreements: checks[`demo-sq-${i}`]?.disagreements.length ?? 0, judgeCalls: 6 + i, judgeCacheHits: i % 2, judgeWaits: i === 4 ? 2 : 0, judgeFailures: i === 3 ? 1 : 0, worker })
   }
+  raw.sort((a, b) => a.at - b.at)
   const out: Beat[] = [
-    { at: 13100, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
-    fstep(13102, 'branch', 'running', 'Checking claims across sources'),                    // a step the page does not know: it must be ignored
+    { at: FSTART, event: 'stage_started', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: {} },
+    { at: FSTART + 2, event: 'step', stage: 'factcheck', status: 'running', message: 'Checking claims across sources', data: { lane: 'factcheck', step: 'branch', state: 'running' } },      // unknown to the page: ignored
   ]
-  // held (occurred before stage_started), replayed in order: sq 2 (11450), sq 3 (12200), and the first three steps of sq 1 (12800)
-  const burst = [...sqSteps(2, 11450, { replay: true }), ...sqSteps(3, 12200, { replay: true }), ...sqSteps(1, 12800, { replay: true, upTo: 3 })]
-  burst.forEach((b, k) => out.push({ ...b, at: 13110 + k * 10 }))
-  // live from here on
-  out.push(...sqSteps(1, 12800, { replay: false }).slice(3))
-  out.push(...sqSteps(5, 13450, { replay: false }))
+  let k = 0
+  for (const b of raw) {
+    if (b.at < FSTART) out.push({ ...b, at: FSTART + 10 + k++ * 8, occ: Math.round(b.at) })        // held, then replayed in order after stage_started
+    else out.push({ ...b, at: Math.round(b.at) })                                                 // live
+  }
   if (fact === 'failed') {
-    const cut = out.filter(b => b.at <= 13600)
-    cut.push(fstep(13700, 'store', 'failed', 'Fact checking failed: ConnectionError'),
-      { at: 13800, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
+    const cut = out.filter(b => b.at <= 13300 || b.occ != null)
+    cut.push({ at: 13400, event: 'step', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { lane: 'factcheck', step: 'store', state: 'failed' } },
+      { at: 13500, event: 'stage_completed', stage: 'factcheck', status: 'failed', message: 'Fact checking failed: ConnectionError', data: { error: 'ConnectionError: the database stayed unreachable (simulated)' } })
     return cut
   }
-  out.push(...sqSteps(4, 14050, { replay: false }))
   const t = demoFactTotals()
   const claims = t.supported + t.partially_supported + t.unverified + t.contradicted
-  out.push(fstep(14700, 'store', 'running', 'Saving the fact-check results', { claims, disagreements: demoFactDisagreements() }),
-    fstep(14800, 'store', 'completed', `${claims} claims checked`, { claims, supported: t.supported, partially_supported: t.partially_supported, contradicted: t.contradicted, unverified: t.unverified }),
-    { at: 14900, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.partially_supported} partially supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
+  out.push({ at: 13700, event: 'step', stage: 'factcheck', status: 'running', message: 'Saving the fact-check results', data: { lane: 'factcheck', step: 'store', state: 'running', claims, disagreements: demoFactDisagreements() } },
+    { at: 13800, event: 'step', stage: 'factcheck', status: 'completed', message: `${claims} claims checked`, data: { lane: 'factcheck', step: 'store', state: 'completed', claims, supported: t.supported, partially_supported: t.partially_supported, contradicted: t.contradicted, unverified: t.unverified } },
+    { at: 13900, event: 'stage_completed', stage: 'factcheck', status: 'completed', message: `Checked ${claims} claims: ${t.supported} supported, ${t.partially_supported} partially supported, ${t.unverified} unverified, ${t.contradicted} contradicted`,
       data: { claims, subQuestions: N, failedSubQuestions: 1, supported: t.supported, partially_supported: t.partially_supported, unverified: t.unverified, contradicted: t.contradicted, contested: t.contested, disagreements: demoFactDisagreements(), judgeFailures: 1, judgeWaits: 2 } })
   return out
 }
@@ -304,33 +362,67 @@ function timelineNew(fails: boolean, fact: DemoFact): Beat[] {
     { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
     { at: 700, event: 'run_started', stage: null, status: 'running', message: 'Run started', data: {} },
     { at: 900, event: 'stage_started', stage: 'planner', status: 'running', message: 'Planner started', data: {} },
+    fact === 'failed' ? note(3100, 'plan_fallback', 'planner', 'warn', 'The planner model was unreachable: Groq wrote the plan') : note(3100, 'plan_cache', 'planner', 'info', 'The stored plan was reused'),
     { at: 3200, event: 'stage_completed', stage: 'planner', status: 'completed', message: `Planned ${N} sub-questions and ${3 * N} search queries`, data: { subQuestions: N, queries: 3 * N, domainAnchor: 'sample research field', topics: NEW_TOPICS } },
     { at: 3500, event: 'stage_started', stage: 'retrieval', status: 'running', message: 'Retrieval started', data: {} },
+    note(4300, 's2_skipped', 'retrieval', 'warn', 'Semantic Scholar answered HTTP 429 and was skipped for this run'),
     ...retrievalBeats(N),
+    ...paperParseBeats(),
+    note(8800, 'chunk_warmup', 'retrieval', 'info', 'The text of 4 papers was prepared while the others were parsed', { papers: 4, chunks: 212 }),
+    note(8950, 'parse_summary', 'retrieval', 'warn', '5 of 8 papers parsed', { attempted: 8, parsed: 5, abstractOnly: 2, failed: 1, fromParseCache: 2, reasons: { 'HTTP 403': 1, 'known failure (publisher paywall)': 1, 'html or non-PDF response': 1 } }),
     { at: 9200, event: 'stage_completed', stage: 'retrieval', status: 'completed', message: 'Retrieval finished', data: {} },
     ...summarizerBeatsNew(),
   ]
   if (fails) {
     // the summarizer stops while it is reading sources: the held judge events never appear
     const failure: Beat = { at: 11000, event: 'run_failed', stage: 'summarizer', status: 'failed', message: 'DemoError: simulated failure in the summarizer', data: {} }
-    return [...beats.filter(b => b.at < 10800), failure].sort((x, y) => x.at - y.at)
+    return slowDown(withGroq([...beats.filter(b => b.at < 10800), failure].sort((x, y) => x.at - y.at), NEW_TOKENS))
   }
   const done = (extra: Record<string, unknown>, notRun: string[]): Beat => ({ at: 0, event: 'run_completed', stage: null, status: 'completed', message: 'Run finished', data: { reportUrl: '', stagesNotRun: notRun, ...extra } })
-  const usage = (tokens: Record<string, number>) => ({ groqTokens: sumOf(tokens), groqCalls: Math.round(sumOf(tokens) / 520), groqTokensByPurpose: tokens })
+  let tokens: Record<string, number>
   if (fact === 'off') {
-    const t = { digest: NEW_TOKENS.digest, digest_loop2: NEW_TOKENS.digest_loop2, aspect_split: NEW_TOKENS.aspect_split, query_expansion: NEW_TOKENS.query_expansion }
-    beats.push({ ...done(usage(t), ['factcheck', 'report']), at: 13500 })
+    tokens = { digest: NEW_TOKENS.digest, digest_loop2: NEW_TOKENS.digest_loop2, aspect_split: NEW_TOKENS.aspect_split, query_expansion: NEW_TOKENS.query_expansion }
+    beats.push({ ...done({}, ['factcheck', 'report']), at: 13500 })
   } else {
     beats.push(...factcheckBeatsNew(fact))
-    const last = Math.max(...beats.map(b => b.at))
-    const t: Record<string, number> = fact === 'failed' ? { ...NEW_TOKENS, stage4_merge: 6100, stage4_support: 5200, stage4_near: 0, stage4_conflict: 0, rerank_probe: 0 } : NEW_TOKENS
-    beats.push({ ...done(usage(t), ['report']), at: last + 200 })
+    tokens = fact === 'failed' ? { ...NEW_TOKENS, stage4_merge: 6100, stage4_support: 5200, stage4_near: 0, stage4_conflict: 0, rerank_probe: 0 } : NEW_TOKENS
+    beats.push({ ...done({}, ['report']), at: Math.max(...beats.map(b => b.at)) + 200 })
   }
-  return slowDown(beats.sort((x, y) => x.at - y.at))
+  const total = sumOf(tokens)
+  const sorted = withGroq(beats.sort((x, y) => x.at - y.at), tokens)
+  const end = sorted.find(b => b.event === 'run_completed')!
+  end.data = { ...end.data, groqTokens: total, groqCalls: Math.round(total / 520), groqRateLimits: Math.floor(total / 14000), groqParkedSeconds: Math.floor(total / 14000) * 38, groqTokensByPurpose: tokens }
+  return slowDown(sorted)
+}
+
+// ------------------------------------------------------------------------------------------------------------------------ Groq telemetry (data.groq)
+/** Cumulative Groq use on every step and stage event: tokens grow with the work (digests, then the fact check), the rest follows from the tokens. The last
+ *  value is the run's total. stage_completed also carries byPurpose (tokens by purpose so far). */
+const PURPOSE_STAGE: Record<string, number> = { aspect_split: 0, query_expansion: 0, rerank_probe: 1, digest: 2, digest_loop2: 2, stage4_merge: 3, stage4_support: 3, stage4_near: 3, stage4_conflict: 3 }
+const STAGE_ORDER = ['planner', 'retrieval', 'summarizer', 'factcheck']
+
+function withGroq(beats: Beat[], tokens: Record<string, number>): Beat[] {
+  const total = sumOf(tokens)
+  const lastAt = Math.max(...beats.map(b => b.at))
+  const pts: [number, number][] = [[0, 0], [3200, 0.03], [9200, 0.06], [11950, 0.38], [13150, 0.55], [Math.max(lastAt, 13151), 1]]
+  const cum = (t: number): number => {
+    for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, f0] = pts[i - 1], [t1, f1] = pts[i]; return (f0 + ((t - t0) / (t1 - t0)) * (f1 - f0)) * total }
+    return total
+  }
+  const use = (t: number) => { const tk = Math.round(cum(t)); const rl = Math.floor(tk / 14000); return { tokens: tk, calls: Math.round(tk / 520), rateLimits: rl, parkedSeconds: rl * 38 } }
+  return beats.map(b => {
+    if (b.event !== 'step' && b.event !== 'stage_started' && b.event !== 'stage_completed') return b
+    const g = use(b.at)
+    if (b.event !== 'stage_completed' || !b.stage) return { ...b, data: { ...b.data, groq: g } }
+    const idx = STAGE_ORDER.indexOf(b.stage)
+    const by: Record<string, number> = {}
+    for (const [k, v] of Object.entries(tokens)) { const ps = PURPOSE_STAGE[k] ?? 3; const part = ps <= idx ? 1 : b.stage === 'summarizer' && ps === 3 ? 0.6 : 0; if (part > 0 && v > 0) by[k] = Math.round(v * part) }
+    return { ...b, data: { ...b.data, groq: { ...g, byPurpose: by } } }
+  })
 }
 
 /** The real pipeline judges for minutes, the demo for seconds. Everything after the digest step ended is stretched, so the chips can be watched: two
- *  judging at once, Loop 2 on two sub-questions, the burst. The mapping is monotone, so the order of events, and of when things really happened, is kept. */
+ *  judging at once, Loop 2 on three sub-questions, the burst. The mapping is monotone, so the order of events, and of when things really happened, is kept. */
 const GATE = 11950
 const SLOW = 3
 const stretch = (t: number) => (t <= GATE ? t : Math.round(GATE + (t - GATE) * SLOW))
@@ -437,7 +529,8 @@ export const demoApi: TraceApi = {
     const v = view(s)
     if (v.status === 'pending' || v.status === 'running') throw new ApiError('The run is not finished yet; follow /events and read the report after run_completed', 409)
     if (v.status === 'failed' && s.seed === 'failed') throw new ApiError('Research session not found', 404)
-    const report: Report = demoReport(s.id, s.question, s.createdAt, s.fact ?? 'off')
+    let report: Report = demoReport(s.id, s.question, s.createdAt, s.fact ?? 'off')
+    if (s.old) report = stripLoop2Detail(report)                       // an old-style run: none of the new second-search fields
     if (v.status === 'failed') report.runError = v.error ?? undefined
     return report
   },

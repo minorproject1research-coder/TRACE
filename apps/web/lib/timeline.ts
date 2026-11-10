@@ -1,6 +1,6 @@
 import { factProgress, overlapNote, STAGE_SKIPPED_LABEL, TIME_HINT } from './factcheck'
 import { ladderLabel, SUBSTEP_TITLE } from './loop2'
-import { eventIso, factModel, FACT_RANK, FACT_STEPS, judgeModel, loop2Model, mergeBySeq, mergedData, parsingNote, posInt, spanOf, type FactSq, type FactStepId, type JudgeModel, type Loop2Model } from './stream'
+import { eventIso, factModel, FACT_RANK, FACT_STEPS, judgeModel, loop2Model, loop2RungResults, loop2Tip, mergeBySeq, mergedData, parsingNote, posInt, spanOf, type FactSq, type FactStepId, type JudgeModel, type Loop2Model, type Loop2RungResult } from './stream'
 import type { PapersOverview, StageState, StepState, WorkflowEvent } from './trace-types'
 
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
@@ -10,7 +10,7 @@ export type LaneId = 'papers' | 'web' | 'summarizer' | 'factcheck'
 export type StepStatus = StepState | 'pending' | 'unreported'
 
 /** One sub-question inside a step that works on several at once (the judge, the second search). */
-export type SubView = { key: string; label: string; state: 'waiting' | 'active' | 'done' | 'failed'; text: string; tone: 'neutral' | 'blue' | 'mint' | 'amber' }
+export type SubView = { key: string; sq?: number; /** A tooltip: the queries asked and the result of each finished rung (second search). */ tip?: string; label: string; state: 'waiting' | 'active' | 'done' | 'failed'; text: string; tone: 'neutral' | 'blue' | 'mint' | 'amber' }
 
 export type StepView = {
   id: string
@@ -176,24 +176,35 @@ function judgeSubs(jm: JudgeModel, lm: Loop2Model, stopped: boolean): SubView[] 
     const second = lm.sqs.find(x => x.index === sq.index)
     const secondActive = !!second && !second.done
     if (sq.phase === 'done') {
-      return sq.sufficient === true ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done · enough evidence', tone: 'mint' as const }
-        : sq.sufficient === false ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done · not enough evidence', tone: 'amber' as const }
-          : { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: 'done', tone: 'neutral' as const }
+      return sq.sufficient === true ? { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'done' as const, text: 'done · enough evidence', tone: 'mint' as const }
+        : sq.sufficient === false ? { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'done' as const, text: 'done · not enough evidence', tone: 'amber' as const }
+          : { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'done' as const, text: 'done', tone: 'neutral' as const }
     }
     if (sq.phase === 'active') {
-      return stopped ? { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
-        : { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'active' as const, text: secondActive ? 'judging · second search' : 'judging', tone: 'blue' as const }
+      return stopped ? { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
+        : { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'active' as const, text: secondActive ? 'judging · second search' : 'judging', tone: 'blue' as const }
     }
-    return { key: `j${sq.index}`, label: sqLabel(sq.index), state: 'waiting' as const, text: 'waiting', tone: 'neutral' as const }
+    return { key: `j${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'waiting' as const, text: 'waiting', tone: 'neutral' as const }
   })
 }
 
 /** The second search per sub-question: the rung each one is on now, or what it found. */
-function loop2Subs(lm: Loop2Model, stopped: boolean): SubView[] {
+function loop2Subs(lm: Loop2Model, stopped: boolean, results: Loop2RungResult[] = []): SubView[] {
+  return loop2SubsBase(lm, stopped).map(v => {
+    // loop2_step: the result of each finished rung, as soon as it arrives. The current-rung text above is unchanged; the last result is added after it.
+    const mine = v.sq != null ? results.filter(r => r.subQuestionIndex === v.sq) : []
+    const last = mine.length ? mine.reduce((a, b) => (b.seq > a.seq ? b : a)) : null
+    const result = last && v.state === 'active' ? ` · ${last.rung}: ${last.newSources ?? 0} new ${last.newSources === 1 ? 'source' : 'sources'}, ${last.covered ?? 0} covered` : ''
+    const tip = v.sq != null ? loop2Tip(results, v.sq) : null
+    return { ...v, text: v.text + result, ...(tip ? { tip } : {}) }
+  })
+}
+
+function loop2SubsBase(lm: Loop2Model, stopped: boolean): SubView[] {
   return lm.sqs.map(sq => {
-    if (sq.done) return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'done' as const, text: `searched ${plural(sq.searched ?? 0, 'aspect', 'aspects')}, ${sq.covered ?? 0} covered`, tone: 'neutral' as const }
-    if (stopped) return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
-    return { key: `l${sq.index}`, label: sqLabel(sq.index), state: 'active' as const, tone: 'blue' as const,
+    if (sq.done) return { key: `l${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'done' as const, text: `searched ${plural(sq.searched ?? 0, 'aspect', 'aspects')}, ${sq.covered ?? 0} covered`, tone: 'neutral' as const }
+    if (stopped) return { key: `l${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'failed' as const, text: 'stopped when the run failed', tone: 'amber' as const }
+    return { key: `l${sq.index}`, sq: sq.index, label: sqLabel(sq.index), state: 'active' as const, tone: 'blue' as const,
       text: sq.rung ? `now: ${ladderLabel(sq.rung)}${sq.aspects != null ? ` (${plural(sq.aspects, 'aspect', 'aspects')})` : ''}` : 'second search started' }
   })
 }
@@ -203,6 +214,7 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
   const hasLoop2 = lane === 'summarizer' && mine.some(e => e.event === 'step' && e.data.step === 'loop2')
   const jm = lane === 'summarizer' ? judgeModel(events) : null
   const lm = lane === 'summarizer' ? loop2Model(events) : null
+  const rungResults = lane === 'summarizer' ? loop2RungResults(events) : []
   const steps: StepView[] = DEFS[lane].filter(def => def.id !== 'loop2' || hasLoop2).map(def => {
     const evs = mine.filter(e => e.event === 'step' && e.data.step === def.id)
     if (evs.length === 0) return { id: def.id, label: def.label, status: 'pending' as StepStatus, startedAt: null, endedAt: null, message: '', chips: [], progress: null, approx: false }
@@ -218,7 +230,7 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
     if (def.id === 'judge' && hasLoop2) chips = [...chips, 'includes the second search']          // loop2 runs between the judge events, inside its span
     let progress = closed || def.id === 'loop2' ? null : progressFor(def.id, data)
     if (indexedJudge && !closed && jm!.total) progress = { done: Math.min(jm!.done, jm!.total), total: jm!.total }
-    const subs = indexedJudge ? judgeSubs(jm!, lm!, false) : indexedLoop2 ? loop2Subs(lm!, false) : undefined
+    const subs = indexedJudge ? judgeSubs(jm!, lm!, false) : indexedLoop2 ? loop2Subs(lm!, false, rungResults) : undefined
     return {
       id: def.id, label: def.label, status, startedAt: span.from,
       endedAt: closed ? span.to : null, message: last.message,

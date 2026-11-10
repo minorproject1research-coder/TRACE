@@ -53,10 +53,34 @@ export type AspectRow = {
 /** The ladder Loop 2 climbs for an aspect: reselect, pool, queries (in this order). */
 export type Loop2LadderStep = 'reselect' | 'pool' | 'queries'
 
-export type Loop2StepRow = { step: string; aspects: number; newSources: number; newVerifiedFindings: number; covered: number; seconds: number }
+/** Judge verdicts per finding for one aspect. `after` also has the distinct sources behind the yes and partial verdicts. */
+export type Verdicts = { yes: number; partial: number; no: number }
+export type VerdictsAfter = Verdicts & { sources?: number | null }
+
+/** The fields after `seconds` exist only for runs from 2026-11-10 on (null or absent before): never treat a missing one as an error. */
+export type Loop2StepRow = {
+  step: string; aspects: number; newSources: number; newVerifiedFindings: number; covered: number; seconds: number
+  aspectTexts?: string[] | null
+  coveredTexts?: string[] | null
+  queryCount?: number | null
+  /** {aspect text: [query texts]}; only the queries rung of newer runs. */
+  queries?: Record<string, string[]> | null
+  newPapersFound?: number | null; newPapersKept?: number | null; newPapersParsed?: number | null
+  newWebFound?: number | null; newWebKept?: number | null
+  digestTotal?: number | null; digestFailed?: number | null; sourcesTried?: number | null
+  error?: string | null
+  note?: string | null
+}
 
 /** status: covered | known_gap | known_gap_no_evidence | known_gap_skipped_triage | known_gap_skipped_cap | unjudged_not_searched (open string). */
-export type Loop2Aspect = { text: string; status: string; coveredBy?: string | null; how?: string | null; nearMiss?: boolean | null; steps?: string[] }
+export type Loop2Aspect = {
+  text: string; status: string; coveredBy?: string | null; how?: string | null; nearMiss?: boolean | null; steps?: string[]
+  /** Verdicts before the second search (aspects that were uncovered after Stage 3) and after it (newer runs only). Null or absent on older runs. */
+  before?: Verdicts | null
+  after?: VerdictsAfter | null
+  /** Why the ladder stopped for this aspect: "time_budget" | "digests_failed" | null (open string). */
+  stopped?: string | null
+}
 
 export type Loop2 = {
   searched: number
