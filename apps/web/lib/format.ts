@@ -30,22 +30,39 @@ export function formatDuration(from: string | null, to: string | null): string |
 export const statusLabel: Record<RunStatus, string> = { pending: 'Queued', running: 'Running', completed: 'Completed', failed: 'Failed' }
 export const statusTone: Record<RunStatus, PillTone> = { pending: 'amber', running: 'blue', completed: 'mint', failed: 'coral' }
 
-/** How long a full live run is expected to take. An ESTIMATE: the pipeline now overlaps several stages and has not been timed on a real run yet.
+/** How long a full live run is expected to take. An ESTIMATE from two measured runs (13 min 54 s and 19 min 42 s, with the fact check on).
  *  The one place the number lives, so the composer, the run page and Settings never disagree. */
-export const FULL_RUN_ETA = 'roughly 20 to 30 minutes'
-export const ETA_ESTIMATE_NOTE = 'This is an estimate: the current pipeline has not been timed on a real run yet.'
-export const LIVE_RUN_EXPECTATION = `A full run is expected to take ${FULL_RUN_ETA}. ${ETA_ESTIMATE_NOTE}`
+export const FULL_RUN_ETA = 'about 15 to 25 minutes'
+export const ETA_ESTIMATE_NOTE = '(measured on two runs, so an estimate)'
+export const LIVE_RUN_EXPECTATION = `A full run takes ${FULL_RUN_ETA} ${ETA_ESTIMATE_NOTE}.`
 
 export const stageMeta: Record<StageId, { name: string; detail: string; hint: string }> = {
-  planner: { name: 'Planner', detail: 'Breaks the question into sub-questions and search queries.', hint: 'usually about 30 seconds' },
-  retrieval: { name: 'Retrieval', detail: 'Searches papers and the web in parallel, then reads the sources it keeps.', hint: 'usually 2 to 9 minutes, longer for a new topic' },
-  summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'usually 8 to 11 minutes (an estimate); the fact check starts during this stage' },
+  planner: { name: 'Planner', detail: 'Breaks the question into sub-questions and search queries.', hint: 'about a minute (53 seconds on a measured run)' },
+  retrieval: { name: 'Retrieval', detail: 'Searches papers and the web in parallel, then reads the sources it keeps.', hint: 'about 6 minutes on a measured run, longer for a new topic' },
+  summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'about 4 to 5 minutes on a measured run (an estimate); the fact check starts during this stage' },
   factcheck: { name: 'Fact check', detail: 'Groups the verified findings that state the same thing, looks for a second source for each, and for sources that disagree. It does not decide what is true.', hint: 'about 3 minutes per sub-question, but most of it now runs during the evidence stage (an estimate)' },
   report: { name: 'Written report', detail: 'Will write an answer from the verified evidence.', hint: '' },
 }
 
 export const stageStateLabel: Record<StageState, string> = {
   pending: 'queued', running: 'running', completed: 'done', failed: 'failed', not_built: 'not built yet', not_run: STAGE_SKIPPED_LABEL, unknown: 'unknown',
+}
+
+/** The small time on a stage card. While the stage runs it is when it STARTED, once it is done it is when it FINISHED: the word says which. */
+export function stageClockLabel(state: StageState, iso: string | null | undefined): string | null {
+  if (!iso) return null
+  if (state === 'running') return `started ${formatClock(iso)}`
+  if (state === 'completed') return `finished ${formatClock(iso)}`
+  return null
+}
+
+/** What a tab says while the run has not finished. The verb agrees with the noun, and each tab says when ITS results are saved. */
+export function waitingCopy(what: 'Sources' | 'Evidence' | 'Verification results'): { title: string; body: string } {
+  switch (what) {
+    case 'Evidence': return { title: 'Evidence appears when the run finishes', body: 'TRACE stores it in the database as each sub-question is judged. It can only be read once the run completes.' }
+    case 'Sources': return { title: 'Sources appear when the run finishes', body: 'TRACE stores them in the database as each sub-question is judged. They can only be read once the run completes.' }
+    default: return { title: 'Verification results appear when the run finishes', body: 'They are saved at the end of the fact check (Stage 4), or with the evidence when the fact check is switched off. They can only be read once the run completes.' }
+  }
 }
 
 export const evidenceLevelLabel: Record<EvidenceLevel, { label: string; partial: boolean }> = {

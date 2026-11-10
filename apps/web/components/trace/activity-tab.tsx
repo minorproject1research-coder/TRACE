@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
 import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { num } from '@/lib/format'
 import { radioGroupKeys } from '@/lib/radio-keys'
+import { parsingNote } from '@/lib/stream'
 import type { PapersOverview, PaperSummary, StageState, StreamStatus, WorkflowEvent } from '@/lib/trace-types'
 import type { Async } from '@/lib/use-research'
 
@@ -58,6 +59,9 @@ export function ActivityTab(props: {
   const webEv = num(events.find(e => e.event === 'branch_completed' && e.data.branch === 'web')?.data, 'webSources')
     ?? num(events.find(e => e.event === 'step' && e.data.lane === 'web' && e.data.step === 'search' && e.data.state === 'completed')?.data, 'found')
   const c = ov?.counts
+  // While the parser works the counts stay 0 for minutes (the backend reports them at the start and at the end of a round): say what it is doing
+  const parsing = useMemo(() => parsingNote(events), [events])
+  const parsingNow = !!parsing && (c?.papersParsed ?? 0) === 0
   const kept = c?.papersKept ?? paperEv
   const web = c?.webFound ?? webEv
 
@@ -91,7 +95,7 @@ export function ActivityTab(props: {
             <span className="funnel-label">Papers</span>
             <Step value={kept} label="kept" hint="after relevance filter" onClick={() => pick('papers', 'all')} active={view === 'papers' && filter === 'all'} pending={kept == null} />
             <ArrowRight size={16} className="funnel-arrow" aria-hidden="true" />
-            <Step value={c?.papersParsed ?? null} label="parsed" hint="content extracted" onClick={() => pick('papers', 'parsed')} active={view === 'papers' && filter === 'parsed'} pending={!c} />
+            <Step value={parsingNow ? null : (c?.papersParsed ?? null)} label={parsingNow ? parsing! : 'parsed'} hint="content extracted" onClick={() => pick('papers', 'parsed')} active={view === 'papers' && filter === 'parsed'} pending={!c} />
             <ArrowRight size={16} className="funnel-arrow" aria-hidden="true" />
             <Step value={c?.papersUsedAsEvidence ?? null} label="used as evidence" hint={c ? `${c.papersUsedFullText} full text · ${c.papersUsedAbstractOnly} abstract` : 'after judging'} onClick={() => pick('papers', 'used')} active={view === 'papers' && filter === 'used'} pending={!c || (running && !c.papersUsedAsEvidence)} />
           </div>
@@ -142,7 +146,7 @@ export function ActivityTab(props: {
                 ? <ol className="plan-list">{perQuestion.map(q => (
                     <li key={q.id}><b>{q.topic}</b>
                       <div className="source-tags">
-                        <span className="tag">{q.kept} papers kept</span><span className="tag">{q.parsed} parsed</span><span className="tag">{q.used} used as evidence</span><span className="tag">{q.web} web ({q.webUsed} used)</span>
+                        <span className="tag">{q.kept} papers kept</span><span className="tag">{parsingNow ? parsing : `${q.parsed} parsed`}</span><span className="tag">{q.used} used as evidence</span><span className="tag">{q.web} web ({q.webUsed} used)</span>
                         <button type="button" className="link-button" onClick={() => { setSubQ(q.id); pick('papers', 'all') }}>See its papers <ArrowRight size={13} aria-hidden="true" /></button>
                       </div></li>))}</ol>
                 : topics.length > 0 && <ol className="plan-list">{topics.map(t => <li key={t}><b>{t}</b></li>)}</ol>}
@@ -158,7 +162,7 @@ export function ActivityTab(props: {
               {hasPapers && (
                 <>
                   {filtered.length === 0 ? <EmptyState title="No paper matches" message="Change or clear the filters." action={<button className="link-button" onClick={() => { setFilter('all'); setQuery(''); setSubQ('') }}>Clear filters</button>} />
-                    : <div className="card-list">{filtered.slice(0, shown).map(p => <PaperCard key={p.id} paper={p} runId={runId} />)}</div>}
+                    : <div className="card-list">{filtered.slice(0, shown).map(p => <PaperCard key={p.id} paper={p} runId={runId} parsing={parsingNow} />)}</div>}
                   {filtered.length > shown && <button className="tool-button more" onClick={() => setShown(n => n + PAGE)}>Show {Math.min(PAGE, filtered.length - shown)} more</button>}
                   <p className="meta">The funnel starts at the papers kept: candidates removed by the relevance filter are not stored. {mode === 'live' ? 'Parsed means TRACE stored the paper’s extracted content. Open a paper to read it and see where each quote comes from.' : ''}</p>
                 </>

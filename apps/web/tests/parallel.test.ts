@@ -314,7 +314,9 @@ test('warnings: a judge call that waited for a Groq limit is a plain note, failu
 test('the overlap note names how many sub-questions ran during Stage 3, and says nothing for 0', () => {
   assert.equal(overlapNote(0, 5), null)
   assert.match(overlapNote(3, 5)!, /^Overlapped with Stage 3: 3 of 5 sub-questions were checked while the evidence stage was still running/)
-  assert.match(overlapNote(1, 5)!, /1 of 5 sub-question was checked/)
+  assert.match(overlapNote(1, 5)!, /1 of 5 sub-questions was checked/)
+  assert.match(overlapNote(2, 5)!, /2 of 5 sub-questions were checked/)
+  assert.match(overlapNote(1, null)!, /Stage 3: 1 sub-question was checked/)
   assert.match(overlapNote(2, null)!, /Stage 3: 2 sub-questions were checked/)
 })
 
@@ -390,11 +392,11 @@ test('token usage: absent or malformed data gives nothing, never a crash', () =>
 })
 
 // ------------------------------------------------------------------------------------------------------------------------ estimate copy
-test('the ETA says roughly 20 to 30 minutes and calls it an estimate, in one place', () => {
-  assert.equal(FULL_RUN_ETA, 'roughly 20 to 30 minutes')
-  assert.match(ETA_ESTIMATE_NOTE, /estimate/); assert.match(ETA_ESTIMATE_NOTE, /not been timed on a real run yet/)
+test('the ETA says about 15 to 25 minutes, measured on two runs and still an estimate, in one place', () => {
+  assert.equal(FULL_RUN_ETA, 'about 15 to 25 minutes')
+  assert.match(ETA_ESTIMATE_NOTE, /measured on two runs/); assert.match(ETA_ESTIMATE_NOTE, /estimate/)
   assert.ok(LIVE_RUN_EXPECTATION.includes(FULL_RUN_ETA) && LIVE_RUN_EXPECTATION.includes(ETA_ESTIMATE_NOTE))
-  for (const m of Object.values(stageMeta)) assert.ok(!/25 to 35/.test(`${m.detail} ${m.hint}`))
+  for (const m of Object.values(stageMeta)) assert.ok(!/25 to 35|20 to 30|not been timed|usually (about 30 seconds|2 to 9|8 to 11)/.test(`${m.detail} ${m.hint}`))
   assert.match(stageMeta.factcheck.hint, /estimate/); assert.match(stageMeta.summarizer.hint, /estimate/)
 })
 

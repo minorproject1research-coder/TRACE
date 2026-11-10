@@ -2,12 +2,12 @@
 
 import { FlaskConical, Radio } from 'lucide-react'
 import { StatusPill } from '@/components/trace/status-pill'
-import { FULL_RUN_ETA } from '@/lib/format'
+import { ETA_ESTIMATE_NOTE, FULL_RUN_ETA } from '@/lib/format'
 import { useMode, type Mode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
 
 const options: { value: Mode; title: string; icon: React.ReactNode; body: string }[] = [
-  { value: 'live', title: 'Live', icon: <Radio size={20} />, body: `Talks to the real TRACE FastAPI backend. A full run is expected to take ${FULL_RUN_ETA} (an estimate, not yet timed on a real run) and uses the model server and external APIs.` },
+  { value: 'live', title: 'Live', icon: <Radio size={20} />, body: `Talks to the real TRACE FastAPI backend. A full run takes ${FULL_RUN_ETA} ${ETA_ESTIMATE_NOTE} and uses the model server and external APIs.` },
   { value: 'demo', title: 'Demo', icon: <FlaskConical size={20} />, body: 'A browser-side simulator with fictional sample data. Runs finish in about 20 seconds. Nothing reaches the backend or the database.' },
 ]
 
@@ -44,9 +44,10 @@ export default function SettingsPage() {
 
       <section className="panel rise" style={{ '--i': 3 } as React.CSSProperties} aria-labelledby="not-title">
         <h2 id="not-title">What TRACE does not do yet</h2>
+        <p className="meta">Fact checking across sources (Stage 4) is built and optional: it runs when the server has FACTCHECK=true.</p>
         <ul className="plain-list">
           <li>Sign-in and per-user data: every visitor sees every run.</li>
-          <li>Fact checking (Stage 4) and the written report (Stage 5). Results are collected and judged evidence, not an answer.</li>
+          <li>The written report (Stage 5). Results are collected and judged evidence, not an answer.</li>
           <li>Cancelling a run once it has started.</li>
         </ul>
       </section>

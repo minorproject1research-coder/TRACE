@@ -719,7 +719,9 @@ mark.active { background: #3fe0f240; box-shadow: inset 0 -2px 0 var(--cyan), 0 0
 .stage.not_run { opacity: .75; } .stage.not_run .stage-marker { border-style: dashed; background: transparent; } .stage.not_run .stage-title b { color: var(--text-3); } .stage.not_run .stage-title span { color: var(--lav); }
 .stage-note { margin-top: 8px; padding: 8px 10px; border: 1px solid #6b5320; border-radius: 8px; background: #ffd07a0d; color: var(--amber); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
 .stage-note.bad { border-color: #7a3548; background: #ff7f970d; color: var(--coral); }
-.stage .live-line { margin-top: 6px; color: var(--cyan); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; } .stage .live-line b { font-weight: 600; } .stage .live-line .elapsed { margin-left: 6px; color: var(--text-2); font: 12px var(--font-code); white-space: nowrap; }
+.stage .live-line { margin-top: 6px; min-width: 0; color: var(--cyan); font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; word-break: break-word; } .stage .live-line p { margin: 0; min-width: 0; color: inherit; font-size: inherit; } .stage .live-line b { font-weight: 600; } .stage .live-line .elapsed { margin-top: 2px; color: var(--text-2); font: 12px var(--font-code); }
+.workflow { overflow-x: hidden; } .stage-info, .stage-info p, .stage-note, .stage-info-note { min-width: 0; overflow-wrap: anywhere; word-break: break-word; } .stage-detail code { white-space: normal; overflow-wrap: anywhere; }
+.tl-notbuilt.queued { border-style: solid; border-color: var(--line-2); color: var(--text-2); }
 .fc-chips { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 .factcheck-panel { margin-top: 10px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: #0b1630aa; }
 .factcheck-panel > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 11px 14px; cursor: pointer; list-style: none; }

@@ -335,6 +335,22 @@ export function stageStartedAt(events: WorkflowEvent[], stage: string): string |
   return events.find(e => e.event === 'stage_started' && e.stage === stage)?.timestamp ?? null
 }
 
+// ------------------------------------------------------------------------------------------------------------------------ PDF parsing
+/** The parsing step reports {target, attempted, usable} only when it starts and again when a long round ends, so for minutes the parsed count is 0 although
+ *  the parser is busy. While it runs and nothing has been attempted yet this says what it is doing instead; otherwise null (the real counts are shown). */
+export function parsingNote(input: WorkflowEvent[]): string | null {
+  const events = mergeBySeq(input)
+  const evs = stepEvents(events, 'papers', 'parsing')
+  if (evs.length === 0 || events.some(e => e.event === 'run_failed')) return null
+  const last = evs[evs.length - 1]
+  if (last.data.state !== 'running') return null
+  const d = mergedData(evs)
+  if (isNum(d.attempted) && d.attempted > 0) return null
+  if (isNum(d.usable) && d.usable > 0) return null
+  const target = isNum(d.target) && d.target > 0 ? Math.floor(d.target) : null
+  return target != null ? `parsing up to ${target} paper${target === 1 ? '' : 's'}…` : 'parsing papers…'
+}
+
 // ------------------------------------------------------------------------------------------------------------------------ token usage
 /** What each Groq purpose is called on screen. The keys are open strings: an unknown one is shown as it is. stage4_judge is the single purpose of older runs. */
 export const PURPOSE_LABEL: Record<string, string> = {

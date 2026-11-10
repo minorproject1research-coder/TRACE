@@ -52,7 +52,7 @@ Keyboard: `Ctrl+K` search and jump, `N` new research, `Ctrl+Enter` start a run f
 
 ## Live mode and demo mode
 
-- **Live** (default) calls the real API. A full run is expected to take roughly 20 to 30 minutes (an estimate: the current pipeline has not been timed on a real run yet; the text lives in `lib/format.ts`). The run page follows `GET /api/research/{id}/events` (server-sent events), closes the stream after `run_completed` / `run_failed`, and re-reads the run status after every event and every 8 seconds, so a dropped stream never leaves the screen stale.
+- **Live** (default) calls the real API. A full run takes about 15 to 25 minutes (measured on two runs, 13 min 54 s and 19 min 42 s, so an estimate; the text lives in `lib/format.ts`). The run page follows `GET /api/research/{id}/events` (server-sent events), closes the stream after `run_completed` / `run_failed`, and re-reads the run status after every event and every 8 seconds, so a dropped stream never leaves the screen stale.
 - **Demo** is an explicit choice in Settings. It is a browser-side simulator (`lib/demo-api.ts`, `lib/demo-report.ts`) with fictional data; a run finishes in about 20 seconds, and a question containing the word "fail" makes it fail, to exercise the failure states. It never sends a request to the backend. Demo mode is announced by a banner, a `DEMO` badge in the top bar, the sidebar card and the composer.
 - If the backend is unreachable in live mode, the app says so and offers to switch to demo mode. It never falls back silently.
 

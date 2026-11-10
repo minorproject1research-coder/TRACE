@@ -13,7 +13,7 @@ import { TabFixed, TabScroll } from '@/components/trace/tab-layout'
 import { StatusPill } from '@/components/trace/status-pill'
 import { EmptyState, ErrorState, Skeleton } from '@/components/trace/states'
 import { factCheckRan, factTotals, STAGE_FAILED_NOTE } from '@/lib/factcheck'
-import { formatDateTime, formatDuration, LIVE_RUN_EXPECTATION, num, stanceInfo, statusLabel, statusTone, type StanceGroup } from '@/lib/format'
+import { formatDateTime, formatDuration, LIVE_RUN_EXPECTATION, num, stanceInfo, statusLabel, statusTone, waitingCopy, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
 import type { Report, WorkflowEvent } from '@/lib/trace-types'
@@ -147,7 +147,7 @@ function BackLink() {
 
 /** What to show while the evidence is not readable yet, or could not be loaded. Returns null when the report is ready. */
 function Gate({ active, finished, report, what }: { active: boolean; finished: boolean; report: Async<Report>; what: string }) {
-  if (active) return <div className="state-box"><Hourglass size={22} aria-hidden="true" /><div><b>{what} appear when the run finishes</b><p>TRACE stores them in the database as each sub-question is judged. They can only be read once the run completes.</p></div></div>
+  if (active) { const c = waitingCopy(what as 'Sources' | 'Evidence' | 'Verification results'); return <div className="state-box"><Hourglass size={22} aria-hidden="true" /><div><b>{c.title}</b><p>{c.body}</p></div></div> }
   if (!finished || report.loading) return <Skeleton rows={4} label={`Loading ${what.toLowerCase()}`} />
   if (report.error) return report.error.status === 404
     ? <EmptyState title="No evidence stored for this run" message="This run ended before any evidence was saved, or the server could not read it just now." action={<button className="link-button" onClick={report.reload}>Try again</button>} />

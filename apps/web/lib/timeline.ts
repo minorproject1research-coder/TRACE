@@ -1,7 +1,7 @@
-import { factProgress, overlapNote, TIME_HINT } from './factcheck'
+import { factProgress, overlapNote, STAGE_SKIPPED_LABEL, TIME_HINT } from './factcheck'
 import { ladderLabel, SUBSTEP_TITLE } from './loop2'
-import { eventIso, factModel, FACT_RANK, FACT_STEPS, judgeModel, loop2Model, mergeBySeq, mergedData, posInt, spanOf, type FactSq, type FactStepId, type JudgeModel, type Loop2Model } from './stream'
-import type { PapersOverview, StepState, WorkflowEvent } from './trace-types'
+import { eventIso, factModel, FACT_RANK, FACT_STEPS, judgeModel, loop2Model, mergeBySeq, mergedData, parsingNote, posInt, spanOf, type FactSq, type FactStepId, type JudgeModel, type Loop2Model } from './stream'
+import type { PapersOverview, StageState, StepState, WorkflowEvent } from './trace-types'
 
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
 // steps, from the timestamps of the rows it wrote to the database (approximate, and labelled as such).
@@ -239,6 +239,20 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
   return { id: lane, title, subtitle, status, startedAt: startedLane, endedAt: completedEv?.timestamp ?? null, summary: '', steps }
 }
 
+export type TimelineNote = { tag: string; text: string }
+
+/** The two notes at the bottom of the Timeline. Decided from the fact-check stage state of the run: pending and running mean it IS part of this
+ *  pipeline (queued, or running without a lane yet), only not_run means it was switched off, and only the written report (Stage 5) is "not built yet". */
+export function timelineNotes(factcheck: StageState | undefined, hasLane: boolean): { stage4: TimelineNote | null; stage5: TimelineNote } {
+  const stage5 = { tag: 'not built yet', text: 'The written report (Stage 5) is not built yet.' }
+  if (hasLane || factcheck === 'completed' || factcheck === 'failed') return { stage4: null, stage5 }                       // the lane (or its failure note) says it all
+  if (factcheck === 'not_run') return { stage4: { tag: STAGE_SKIPPED_LABEL, text: 'Fact check (Stage 4) was switched off for this run.' }, stage5 }
+  if (factcheck === 'pending' || factcheck === 'running') {
+    return { stage4: { tag: 'queued', text: 'Fact check (Stage 4) is part of this run. It starts during the evidence stage, one sub-question at a time, and its steps appear here once it has begun.' }, stage5 }
+  }
+  return { stage4: { tag: 'not built yet', text: 'Fact check (Stage 4) is not part of this server.' }, stage5 }               // not_built / unknown: an older server
+}
+
 const PAPERS_TITLE: [string, string] = ['Paper retrieval', 'OpenAlex, Scopus, arXiv · relevance judge · scoring · PDF parsing']
 const WEB_TITLE: [string, string] = ['Web search', 'search providers · reliability scoring']
 const SUM_TITLE: [string, string] = ['Evidence digest and judging', 'LLM reads each source, then an independent judge checks the findings']
@@ -331,7 +345,8 @@ export function buildTimeline(input: WorkflowEvent[], overview: PapersOverview |
     const web = laneFromEvents('web', events, ...WEB_TITLE, runFailed)
     const summarizer = laneFromEvents('summarizer', events, ...SUM_TITLE, runFailed)
     const c = overview?.counts
-    papers.summary = c ? `${c.papersKept} kept · ${c.papersParsed} parsed` : ''
+    const parsing = parsingNote(events)                                      // 'parsing up to 25 papers…' instead of a bare '0 parsed' while the parser works
+    papers.summary = c ? `${c.papersKept} kept · ${parsing && c.papersParsed === 0 ? parsing : `${c.papersParsed} parsed`}` : ''
     web.summary = c ? `${c.webFound} sources` : ''
     summarizer.summary = c ? `${c.papersUsedAsEvidence} papers and ${c.webUsedAsEvidence} web sources used` : ''
     return { source: 'events', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [papers, web] }, summarizer, factcheck: factLane(events) }

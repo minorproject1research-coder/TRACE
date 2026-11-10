@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { elapsedLabel, factProgress, failedSubQuestionsNote, judgeFailuresNote, judgeWaitsNote, OVERLAP_TAG, overlapNote, STAGE_FAILED_NOTE, TIME_HINT, type FactProgress } from '@/lib/factcheck'
-import { formatClock, num, stageMeta, stageStateLabel } from '@/lib/format'
+import { num, stageClockLabel, stageMeta, stageStateLabel } from '@/lib/format'
 import { stageStartedAt } from '@/lib/stream'
 import type { StageId, StageState, WorkflowEvent } from '@/lib/trace-types'
 
@@ -57,11 +57,11 @@ function FactcheckStatus({ state, progress }: { state: StageState; progress: Fac
   return (
     <>
       {state === 'running' && (
-        <p className="live-line" role="status">
-          <b>{progress?.line ?? 'Checking claims across sources'}</b>
-          {took && <span className="elapsed">{took}</span>}
-          <span className="elapsed">{TIME_HINT}</span>
-        </p>
+        <div className="live-line" role="status">
+          <p><b>{progress?.line ?? 'Checking claims across sources'}</b></p>
+          {took && <p className="elapsed">Running for {took}</p>}
+          <p className="elapsed">{TIME_HINT}</p>
+        </div>
       )}
       {state === 'failed' && <p className="stage-note bad" role="alert"><b>{STAGE_FAILED_NOTE}</b>{progress?.error ? <> <code>{progress.error}</code></> : null}</p>}
       {overlap && state !== 'failed' && <p className="stage-info-note" role="note"><span className="tag">{OVERLAP_TAG}</span> {overlap}</p>}
@@ -91,6 +91,7 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
           const f = facts(id, events)
           const t = state === 'completed' ? when(id, events, 'stage_completed') : state === 'running' ? when(id, events, 'stage_started') : null
           const cls = state
+          const clock = stageClockLabel(state, t)                    // "started 16:29:10" while it runs, "finished 16:35:16" when it is done
           const fact = id === 'factcheck' ? factProgress(events) : null
           return (
             <li key={id} className={`stage ${cls}`} aria-current={state === 'running' ? 'step' : undefined}>
@@ -102,7 +103,7 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
                   <p>{detailOf(id, state)}</p>
                   {id === 'factcheck' && <FactcheckStatus state={state} progress={fact} />}
                   {state === 'running' && id !== 'factcheck' && meta.hint && <p className="hint">In progress, {meta.hint}. The Timeline tab shows its steps.</p>}
-                  {(f.length > 0 || t) && <div className="stage-detail">{f.map(x => <span key={x}>{x}</span>)}{t && <code>{formatClock(t)}</code>}</div>}
+                  {(f.length > 0 || clock) && <div className="stage-detail">{f.map(x => <span key={x}>{x}</span>)}{clock && <code>{clock}</code>}</div>}
                 </div>
               </div>
             </li>

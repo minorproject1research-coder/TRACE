@@ -26,7 +26,7 @@ export function EvidenceChip({ evidence }: { evidence: PaperSummary['evidence'] 
   return <StatusPill tone="mint">Used as evidence · {evidence.findings ?? 0} finding{evidence.findings === 1 ? '' : 's'} · {level.toLowerCase()}</StatusPill>
 }
 
-export function PaperCard({ paper, runId }: { paper: PaperSummary; runId: string }) {
+export function PaperCard({ paper, runId, parsing = false }: { paper: PaperSummary; runId: string; parsing?: boolean }) {
   const href = `/research/${encodeURIComponent(runId)}/papers/${encodeURIComponent(paper.id)}`
   const ext = safeUrl(paper.url)
   const pdf = safeUrl(paper.pdfUrl)
@@ -45,7 +45,7 @@ export function PaperCard({ paper, runId }: { paper: PaperSummary; runId: string
       </div>
       {blurb && <p className="paper-blurb">{paper.tldr ? <><b>TL;DR </b>{blurb}</> : blurb}{!paper.tldr && paper.abstractPreview.length >= 320 ? '…' : ''}</p>}
       <div className="source-tags">
-        <StatusPill tone={parsed ? 'blue' : 'neutral'}>{parsed ? 'Parsed' : 'Not parsed'}</StatusPill>
+        <StatusPill tone={parsed ? 'blue' : 'neutral'}>{parsed ? 'Parsed' : parsing ? 'Not parsed yet' : 'Not parsed'}</StatusPill>
         <EvidenceChip evidence={paper.evidence} />
         <span className="tag" title="How close the abstract is to the sub-question">relevance {score(paper.scores.relevance)}</span>
         <span className="tag" title="Venue, citations and source quality">reliability {score(paper.scores.reliability)}</span>

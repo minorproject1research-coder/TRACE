@@ -193,8 +193,9 @@ export function progressLineFor(steps: string[], sub: number | null, total: numb
 /** The small note for a run whose Stage 4 work began during Stage 3. */
 export function overlapNote(overlapped: number, total: number | null): string | null {
   if (!(overlapped > 0)) return null
-  const of = total != null && total >= overlapped ? ` of ${total}` : ''
-  return `Overlapped with Stage 3: ${overlapped}${of} sub-question${overlapped === 1 ? ' was' : 's were'} checked while the evidence stage was still running, so the time of this stage alone is shorter than the work it did.`
+  // "1 of 5 sub-questions was checked", "2 of 5 sub-questions were checked"; without a total: "1 sub-question was", "2 sub-questions were"
+  const noun = total != null && total >= overlapped ? `${overlapped} of ${total} sub-questions` : `${overlapped} sub-question${overlapped === 1 ? '' : 's'}`
+  return `Overlapped with Stage 3: ${noun} ${overlapped === 1 ? 'was' : 'were'} checked while the evidence stage was still running, so the time of this stage alone is shorter than the work it did.`
 }
 
 /** Reads the fact-check stage from the run's events. null: no event mentions it (Stage 4 is off, or has not started). Unknown steps and malformed data are ignored. */
