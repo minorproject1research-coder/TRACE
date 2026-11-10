@@ -118,3 +118,26 @@ def test_preload_swallows_a_load_error(monkeypatch):
     for t in threading.enumerate():
         if t.name == "nli-preload":
             t.join(5)                                  # no exception escapes the thread; Stage 4 would raise its own error
+
+
+def test_a_finished_sub_question_says_so_with_its_counts_and_its_worker(monkeypatch):
+    stub_everything_but_the_two_steps(monkeypatch)
+    monkeypatch.setattr(fact_checker, "NEAR_ON", False)
+    monkeypatch.setattr(contradiction_detector, "detect", lambda c: ({}, [{"d": 1}, {"d": 2}]))
+    monkeypatch.setattr(fact_checker, "label_clusters", lambda c, conflicts: [{"label": "supported", "contested": False, "evidence": []}, {"label": "unverified", "contested": False, "evidence": []}])
+    reports = []
+    out = {}
+
+    def run():
+        out["r"] = node._check_sub_question("q1", SimpleNamespace(id="s1", main_topic="topic"), lambda step, message, **data: reports.append((step, message, data)))
+    t = threading.Thread(target=run, name="stage4-overlap_1")           # the second worker of the overlap pool
+    t.start()
+    t.join()
+    steps = [r[0] for r in reports]
+    assert steps[0] == "claims" and steps[-1] == "done"
+    assert reports[0][2]["worker"] == 2
+    done = reports[-1][2]
+    assert done["worker"] == 2 and done["claims"] == 2 and done["supported"] == 1 and done["unverified"] == 1 and done["disagreements"] == 2
+    assert {"judgeCalls", "judgeCacheHits", "judgeWaits", "judgeFailures"} <= set(done)
+    run_in_main = node._check_sub_question("q1", SimpleNamespace(id="s1", main_topic="topic"), lambda step, message, **data: reports.append((step, message, data)))
+    assert reports[-1][2]["worker"] is None                              # not a worker thread (the sequential path)

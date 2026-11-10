@@ -49,6 +49,17 @@ def _sq_workers() -> int:
         return 1
 
 
+def _worker_no():
+    """1-based number of the Stage 4 worker thread that runs this sub-question ("stage4-overlap_0" -> 1), None when it is not a worker thread."""
+    name = threading.current_thread().name
+    if name.startswith("stage4-overlap_"):
+        try:
+            return int(name.rsplit("_", 1)[-1]) + 1
+        except ValueError:
+            return None
+    return None
+
+
 def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dict], dict]:
     with judge.track() as jt:
         return _check_sub_question_counted(query_id, sq, report, jt)
@@ -56,7 +67,7 @@ def _check_sub_question(query_id: str, sq, report) -> tuple[list[dict], list[dic
 
 def _check_sub_question_counted(query_id: str, sq, report, jt: dict) -> tuple[list[dict], list[dict], dict]:
     digests = db_service.get_digests_for_stage4(query_id, sq.id)
-    report("claims", f"Reading the claims of {len(digests)} sources", sources=len(digests))
+    report("claims", f"Reading the claims of {len(digests)} sources", sources=len(digests), worker=_worker_no())
     claims = fact_checker.load_claims(digests)
     report("clusters", f"Grouping {len(claims)} claims that say the same thing", claims=len(claims))
     clusters = fact_checker.build_clusters(claims)
@@ -103,6 +114,8 @@ def _check_sub_question_counted(query_id: str, sq, report, jt: dict) -> tuple[li
     }
     logger.info("Sub-question '%s': %d digests, %d claims -> %d clusters %s, %d disagreements",
                 str(sq.main_topic)[:50], len(digests), len(claims), total, counts, len(disagreements))
+    report("done", f"Checked {total} claims", claims=total, **counts, disagreements=len(disagreements), judgeCalls=summary["judge_calls"],
+           judgeCacheHits=summary["judge_cache_hits"], judgeWaits=summary["judge_waits"], judgeFailures=summary["judge_failures"], worker=_worker_no())
     return labeled, disagreements, summary
 
 
