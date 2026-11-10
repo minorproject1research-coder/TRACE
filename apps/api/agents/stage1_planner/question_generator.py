@@ -27,6 +27,12 @@ MAX_DETAIL_QUESTIONS = int(os.getenv("MAX_DETAIL_QUESTIONS", "5"))      # detail
 DETAIL_DUPLICATE_SIMILARITY = 0.9                                       # a merged-in detail this close to one we have is dropped
 # groq: if the model server is unreachable, decompose with the Groq model instead; none: raise the error
 LLM_FALLBACK = os.getenv("TRACE_LLM_FALLBACK", "groq").lower()
+_SOURCES: dict[str, str] = {}                    # question -> "planner" | "plan-cache" | "groq-fallback", for the progress note of the planner node
+
+
+def plan_source(raw_query: str):
+    """Where the plan of the last generate(raw_query) came from (None when unknown)."""
+    return _SOURCES.get(raw_query)
 
 
 def generate(raw_query: str) -> list[SubQuestion]:
@@ -50,6 +56,7 @@ def generate(raw_query: str) -> list[SubQuestion]:
             plan = _groq_decompose(raw_query)
             source = "groq-fallback"
 
+    _SOURCES[raw_query] = source
     sub_questions = _build_sub_questions(plan)
     _assign_queries(sub_questions, plan["search_queries"])
     logger.info("Planner (%s): %d sub-questions, %d search queries -> %s", source, len(sub_questions),

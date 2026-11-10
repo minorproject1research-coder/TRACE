@@ -279,6 +279,13 @@ class PaperRetrievalAgent:
         self._s2_probe_started = False
         self._s2_probe_done = asyncio.Event()
         self._s2_giveups = 0
+        self._route: dict[str, str] = {}                   # retrieved_paper_id -> the way its text was obtained ("own link", "parse cache", ...)
+        self._fail_reason: dict[str, str] = {}             # retrieved_paper_id -> why no PDF could be had ("HTTP 403", "known failure (...)")
+        self._chars: dict[str, int] = {}                   # retrieved_paper_id -> characters of full text
+
+    def parse_outcome(self, paper_id: str) -> dict:
+        """How the parse of one paper ended: {"chars", "route", "reason"} (route and reason may be None). Read it from on_paper_done."""
+        return {"chars": getattr(self, "_chars", {}).get(paper_id, 0), "route": getattr(self, "_route", {}).get(paper_id), "reason": getattr(self, "_fail_reason", {}).get(paper_id)}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Paper Parsing (Docling + PDFFigures)
@@ -307,6 +314,8 @@ class PaperRetrievalAgent:
         async def _parse_with_semaphore(paper_id: str) -> Optional[ParsedPaper]:
             async with semaphore:
                 result = await self._parse_single_paper(paper_id)
+            if result is not None:
+                self.__dict__.setdefault("_chars", {})[paper_id] = len(getattr(result, "full_text", "") or "")      # (setdefault: tests build the agent without __init__)
             if result is not None and on_paper_done is not None:
                 try:
                     on_paper_done(paper_id)
@@ -385,6 +394,7 @@ class PaperRetrievalAgent:
             known = await asyncio.to_thread(db_service.get_pdf_failures, [key], PDF_FAILURE_TTL_DAYS, DOWNLOADER_VERSION)
             if key in known:
                 row = known[key]
+                self._fail_reason[retrieved_paper_id] = f"known failure ({row.get('error_class')})"
                 logger.info("Skipping '%s': its PDF failed before (%s, %sx); retried after %.0f days or when the download logic improves",
                             (paper_metadata.get("title") or "")[:60], row.get("error_class"), row.get("fail_count"), PDF_FAILURE_TTL_DAYS)
                 return self._empty_parsed(retrieved_paper_id, paper_metadata)
@@ -394,6 +404,7 @@ class PaperRetrievalAgent:
         if PDF_FAILURE_TTL_DAYS > 0:
             failure = self._download_failures.pop(retrieved_paper_id, None)
             if failure:
+                self._fail_reason[retrieved_paper_id] = failure[0]
                 await asyncio.to_thread(db_service.record_pdf_failure, key, paper_metadata.get("title") or "",
                                         paper_metadata.get("doi"), failure[0], failure[1], DOWNLOADER_VERSION)
             elif result is not None and len(result.full_text or "") >= PARSE_CACHE_MIN_CHARS:
@@ -425,12 +436,14 @@ class PaperRetrievalAgent:
         )
         self._apply_metadata(parsed, paper_metadata)
         await asyncio.to_thread(self._store_parsed_paper, parsed)
+        self._route[retrieved_paper_id] = "parse cache"
         logger.info("Parse cache hit: '%s' (%d chars) reused from an earlier query - no download or parsing",
                     (paper_metadata.get("title") or "")[:60], len(parsed.full_text))
         return parsed
 
     async def _finish_pdf(self, client: httpx.AsyncClient, retrieved_paper_id: str, paper_metadata: dict, pdf_bytes: bytes, route: str) -> ParsedPaper:
         """Docling + PDFFigures on a downloaded PDF, then store: the common end of every download route."""
+        self._route[retrieved_paper_id] = route
         logger.info("PDF obtained via %s (%d bytes): '%s'", route, len(pdf_bytes), (paper_metadata.get("title") or "")[:60])
         docling_result, figures = await asyncio.gather(
             self._safe_docling(pdf_bytes), self._safe_pdffigures(client, pdf_bytes), return_exceptions=True)

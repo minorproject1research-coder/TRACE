@@ -16,7 +16,7 @@ from typing import Callable, Optional
 
 logger = logging.getLogger("apps.api.progress")
 
-LANES = ("papers", "web", "summarizer", "factcheck")
+LANES = ("papers", "web", "summarizer", "factcheck", "notes")
 STATES = ("running", "completed", "skipped", "failed")
 
 Sink = Callable[[dict], None]
@@ -45,3 +45,10 @@ def report(run_id: Optional[str], lane: str, step: str, state: str = "running", 
             sink({"lane": lane, "step": step, "state": state, "message": message, "data": data})
     except Exception:                       # a progress report must never break the pipeline
         logger.debug("progress report dropped", exc_info=True)
+
+
+def note(run_id: Optional[str], code: str, message: str, level: str = "info", stage: Optional[str] = None, **data) -> None:
+    """Something worth knowing about this run that is not a step: a cache that was used, a source that was skipped, failures of PDFs. The event is
+    a step event of the lane "notes" (step = `code`, state "completed"); data has level ("info" | "warn"), stage ("planner" | "retrieval" |
+    "summarizer" | "factcheck") and small counts. Never raises."""
+    report(run_id, "notes", code, "completed", message, level=level, stage=stage, **data)

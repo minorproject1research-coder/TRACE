@@ -116,6 +116,18 @@ Several parts of the pipeline overlap to save time. The events are the same kind
 - The final `factcheck` `stage_completed` data has a new `judgeWaits` (how often a Stage 4 judge call waited out a Groq limit instead of failing).
 - Groq token purposes in `run_completed.groqTokensByPurpose` are now `digest`, `digest_loop2`, `aspect_split`, `query_expansion`, `stage4_merge`, `stage4_support`, `stage4_near`, `stage4_conflict` (was one `stage4_judge`); treat the keys as open strings.
 
+### Telemetry, notes and per-paper events (2026-11-10) - all optional fields, nothing existing changed
+
+For the timeline. Every item is additive: a client that ignores them works as before. `RUN_TELEMETRY=false` removes `data.groq`.
+
+- **Groq use so far, `data.groq`**, on every `step`, `stage_started` and `stage_completed` event: `{tokens, calls, rateLimits, parkedSeconds}`, cumulative since the run started (`parkedSeconds` = key-seconds spent waiting for a rate limit, summed over the keys). `stage_completed` also has `byPurpose` (tokens by purpose so far). `run_completed` has `groqRateLimits` and `groqParkedSeconds` next to `groqTokens`. Per stage: subtract the value at its `stage_started` from the value at its `stage_completed`.
+- **Notes**: step events with `data.lane = "notes"`, `data.step = <code>`, `data.state = "completed"`, `data.level` (`info` | `warn`), `data.stage` (`planner` | `retrieval` | `summarizer`; the event's own `stage` field has the same value) and small counts. Codes:
+  - `plan_cache` (the stored plan was reused), `plan_fallback` (warn: the planner model was unreachable, Groq wrote the plan);
+  - `s2_skipped` (warn: Semantic Scholar answered HTTP 429 and was skipped for the run), `parse_summary` (`attempted, parsed, abstractOnly, failed, fromParseCache, reasons` where `reasons` maps a failure reason such as "HTTP 403" to a count; level warn when something stayed abstract-only), `chunk_warmup` (`papers, chunks`: the text of that many papers was prepared while the others were still parsed);
+  - `loop2_gaps` (`subQuestionIndex, subQuestions, gaps, searched, covered`: aspects that stay without evidence after the second search; held and replayed like the other summarizer events, with `occurredAt`).
+- **One event per parsed paper**: `data.lane = "papers"`, `data.step = "paper_parse"`, `state "completed"`, with `paperId`, `title`, `outcome` (`parsed` | `abstract_only` | `failed`), `route` (`own link`, `parse cache`, ... or null), `reason` (for example `HTTP 403`, `html or non-PDF response`, `known failure (...)`, or null), `chars` (characters of full text) and `subQuestionId`. They arrive as each paper ends, so the parse step is no longer silent for minutes (the existing `parsing` step still only reports at the start and when a round ends). A paper whose parse raised an error gives no event.
+- **Cache hits**: the `summarizer` `digest` step with `state "completed"` has `cacheHits` (digests of this run taken from the digest cache); the `judge` step with `state "completed"` has `cacheHits` (judge verdicts taken from the judge cache).
+
 ### Consuming the stream
 - Use `EventSource` on `.../events`. Events arrive as default `message` events with the JSON in `data`; the SSE `id` is `seq`.
 - **Close the EventSource when you receive `run_completed` or `run_failed`.** The server ends the stream after those, and a browser would otherwise reconnect forever.

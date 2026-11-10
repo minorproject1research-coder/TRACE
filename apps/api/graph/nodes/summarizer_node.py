@@ -17,7 +17,7 @@ from apps.api.agents.stage3_summarizer import (
     detail_aspects,
     evidence_judge,
 )
-from apps.api.services import db_service, groq_pool, llm_service, progress
+from apps.api.services import cache_counters, db_service, groq_pool, llm_service, progress
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 
@@ -224,6 +224,7 @@ def _summarize(state: SharedResearchState) -> dict:
         warmup.wait_aspects(qid)
     except Exception:
         logger.exception("could not wait for the aspect warm-up")
+    cache_base = {"digest": cache_counters.get("digest"), "judge": cache_counters.get("judge")}      # the stage reports how much came from a cache
     progress.report(qid, "summarizer", "prepare", "running", "Selecting the passages to read (chunking, embeddings)", subQuestions=len(sub_questions))
     qid = state.task_plan.query_id
     overlap = _overlap_enabled(qid)
@@ -338,6 +339,14 @@ def _summarize(state: SharedResearchState) -> dict:
         if loop2.enabled() and has_verified and cov.get("uncovered_aspects"):
             cov = _run_loop2(qid, state, sq, si, aspects, aspect_to_detail, details_for_coverage, digest_aspects_by_sq.get(si, aspects), rows,
                              chunk_lookup, jobs, candidates, judge_verdicts, cov, topic_aspect_used, loop2_deadline, sq_failures, report=gate.report)
+            try:
+                l2 = (cov.get("judge_stats") or {}).get("loop2") or {}
+                gaps = l2.get("known_gaps_no_evidence") or []
+                if gaps:
+                    gate.report("notes", "loop2_gaps", "completed", f"Sub-question {si + 1}: {len(gaps)} aspect(s) stay without evidence after the second search", level="info",
+                                stage="summarizer", subQuestionIndex=si + 1, subQuestions=n_sq, gaps=len(gaps), searched=l2.get("searched", 0), covered=l2.get("covered", 0))
+            except Exception:
+                logger.debug("loop2 gap note dropped", exc_info=True)
         if isinstance(cov.get("judge_stats"), dict):
             cov["judge_stats"]["aspect_merge"] = detail_aspects.merge_mode()      # tools that rebuild this run's aspects need to know
             cov["judge_stats"]["topic_aspect"] = topic_aspect_used                # ... both markers
@@ -375,7 +384,8 @@ def _summarize(state: SharedResearchState) -> dict:
         sq_futures = [sq_pool.submit(judge_subquestion, si, futures) for si in range(n_sq)]
         for f in futures:
             f.result()                              # a failed digest call fails the node, as with pool.map
-        progress.report(qid, "summarizer", "digest", "completed", f"Read {len(jobs)} sources", done=len(jobs), total=len(jobs), failures=counter["failures"])
+        progress.report(qid, "summarizer", "digest", "completed", f"Read {len(jobs)} sources", done=len(jobs), total=len(jobs), failures=counter["failures"],
+                        cacheHits=cache_counters.get("digest") - cache_base["digest"])
         gate.release()                              # the judge events that were held back go out now, in order
         outs = [f.result() for f in sq_futures]
     except BaseException:
@@ -397,7 +407,8 @@ def _summarize(state: SharedResearchState) -> dict:
                         searched=sum(((c.get("judge_stats") or {}).get("loop2") or {}).get("searched", 0) for c in coverage.values()),
                         covered=sum(((c.get("judge_stats") or {}).get("loop2") or {}).get("covered", 0) for c in coverage.values()))
     progress.report(qid, "summarizer", "judge", "completed", f"{sum(1 for c in coverage.values() if c.get('sufficient'))} of {len(sub_questions)} sub-questions have enough evidence",
-                    done=len(sub_questions), total=len(sub_questions), sufficientSubQuestions=sum(1 for c in coverage.values() if c.get("sufficient")))
+                    done=len(sub_questions), total=len(sub_questions), sufficientSubQuestions=sum(1 for c in coverage.values() if c.get("sufficient")),
+                    cacheHits=cache_counters.get("judge") - cache_base["judge"])
     progress.report(qid, "summarizer", "store", "running", "Saving the digests and coverage", digests=len(all_rows))
     if not overlap:                                 # with STAGE4_OVERLAP every sub-question was stored as soon as it was finished
         db_service.write_digests(all_rows)

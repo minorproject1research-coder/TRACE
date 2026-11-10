@@ -13,6 +13,7 @@ Stages the UI should show: planner, retrieval (papers + web), summarizer, factch
 report is not built and is reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
 """
 import logging
+import os
 import threading
 import traceback
 import uuid
@@ -51,6 +52,22 @@ class RunRecord:
         self.stages = {s: ("not_built" if s in NOT_BUILT else "not_run" if (s == "factcheck" and not config.factcheck_enabled()) else "pending") for s in STAGES}
         self.events: list[dict] = []
         self._lock = threading.Lock()
+        self.usage_before: Optional[dict] = None        # Groq meter snapshot taken when the run starts (the usage of the run = the meter now minus this)
+
+    def groq(self, by_purpose: bool = False) -> Optional[dict]:
+        """Groq use of this run SO FAR (cumulative): tokens, calls, rate limits and the key-seconds spent waiting for them. None when switched off
+        (RUN_TELEMETRY=false) or not started. Never raises."""
+        if self.usage_before is None or os.getenv("RUN_TELEMETRY", "true").strip().lower() in ("0", "false", "no", "off"):
+            return None
+        try:
+            used = groq_pool.meter.since(self.usage_before)
+            t = used["totals"]
+            out = {"tokens": t.get("total", 0), "calls": t.get("calls", 0), "rateLimits": t.get("rate_limited", 0), "parkedSeconds": t.get("parked_seconds", 0)}
+            if by_purpose:
+                out["byPurpose"] = {p: c.get("total", 0) for p, c in used["by_purpose"].items()}
+            return out
+        except Exception:
+            return None
 
     @property
     def finished(self) -> bool:
@@ -175,10 +192,14 @@ class RunManager:
     # ----------------------------------------------------------------------------------------------------------- the run
     def _stage(self, rec: RunRecord, stage: str, state: str, message: str = "", data: Optional[dict] = None) -> None:
         rec.stages[stage] = state
+        g = rec.groq(by_purpose=state != "running")
+        if g is not None:
+            data = {**(data or {}), "groq": g}
         rec.emit("stage_started" if state == "running" else "stage_completed", stage=stage, status=state, message=message, data=data)
 
     def _run(self, rec: RunRecord) -> None:
         from apps.api.graph.state import SharedResearchState        # lazy: keeps importing this module light
+        rec.usage_before = groq_pool.meter.snapshot()       # tokens sent to Groq by THIS process during the run (runs normally do not overlap)
         rec.status, rec.started_at = "running", _now()
         rec.emit("run_started", status="running", message="Run started")
         self._stage(rec, "planner", "running", "Planning sub-questions")
@@ -187,14 +208,16 @@ class RunManager:
         def on_progress(report: dict) -> None:
             """A node of this run reported a step: it becomes an event (called from the node's thread; emit() is thread-safe)."""
             lane, step, state = report["lane"], report["step"], report["state"]
-            stage = LANE_STAGE.get(lane)
+            stage = LANE_STAGE.get(lane) or (report["data"].get("stage") if lane == "notes" else None)
+            g = rec.groq()
+            extra = {"groq": g} if g is not None else {}
             if step == "branch":
                 rec.emit("branch_started", stage=stage, status=state, message=report["message"], data={"branch": lane, **report["data"]})
             else:
-                rec.emit("step", stage=stage, status=state, message=report["message"], data={"lane": lane, "step": step, "state": state, **report["data"]})
+                rec.emit("step", stage=stage, status=state, message=report["message"], data={"lane": lane, "step": step, "state": state, **report["data"], **extra})
 
         progress.register(rec.id, on_progress)
-        usage_before = groq_pool.meter.snapshot()           # tokens sent to Groq by THIS process during the run (runs normally do not overlap)
+        usage_before = rec.usage_before
         try:
             for chunk in self.graph().stream(SharedResearchState(raw_query=rec.question, query_id=rec.id), stream_mode="updates"):
                 for node, update in (chunk or {}).items():
@@ -221,7 +244,8 @@ class RunManager:
             used = groq_pool.meter.since(usage_before)
             logger.info("run %s: %s", rec.id, groq_pool.usage_text(used))
             rec.emit("run_completed", status="completed", message="Run finished", data={"groqTokens": used["totals"].get("total", 0),
-                     "groqCalls": used["totals"].get("calls", 0), "groqTokensByPurpose": {p: c.get("total", 0) for p, c in used["by_purpose"].items()},
+                     "groqCalls": used["totals"].get("calls", 0), "groqRateLimits": used["totals"].get("rate_limited", 0),
+                     "groqParkedSeconds": used["totals"].get("parked_seconds", 0), "groqTokensByPurpose": {p: c.get("total", 0) for p, c in used["by_purpose"].items()},
                      "reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
         except Exception as e:
             logger.error("run %s failed:\n%s", rec.id, traceback.format_exc())

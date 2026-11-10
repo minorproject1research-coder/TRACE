@@ -186,3 +186,22 @@ def test_loop2_events_carry_the_sub_question_index():
     svc = sn._Loop2Services("q", lambda *a, **k: sent.append((a, k)), 2, 4)
     svc.progress("Loop 2 (reselect): 1 aspect(s) of 'x'", loop2Step="reselect", aspects=1)
     assert sent == [(("summarizer", "loop2", "running", "Loop 2 (reselect): 1 aspect(s) of 'x'"), {"subQuestionIndex": 2, "subQuestions": 4, "loop2Step": "reselect", "aspects": 1})]
+
+
+def test_the_digest_and_judge_steps_say_how_much_came_from_a_cache(monkeypatch, seen):
+    from apps.api.services import cache_counters
+    state = patch(monkeypatch, n=2)
+
+    def digest(sub_question, selected, **kw):
+        cache_counters.bump("digest")                                      # every digest of this run is a cache hit
+        return [{"claim": "c", "quote": "q", "verified": True, "stance": "supports"}]
+    monkeypatch.setattr(sn.digest_generator, "generate_digest", digest)
+
+    def run_judge(aspects, rows, lookup, **kw):
+        cache_counters.bump("judge", 3)
+        return [], {}
+    monkeypatch.setattr(sn.evidence_judge, "run_judge_for_subquestion", run_judge)
+    sn.summarizer_node(state)
+    digest_done = next(e for e in seen if e["lane"] == "summarizer" and e["step"] == "digest" and e["state"] == "completed")
+    judge_done = next(e for e in seen if e["lane"] == "summarizer" and e["step"] == "judge" and e["state"] == "completed")
+    assert digest_done["data"]["cacheHits"] == 4 and judge_done["data"]["cacheHits"] == 6      # 2 sub-questions x 2 sources; 2 judge calls x 3

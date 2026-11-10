@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -40,6 +41,8 @@ def paper_retrieval_node(state: SharedResearchState) -> dict:
     results = asyncio.run(_retrieve_all())
     candidates = sum(len(r) for r in results if not isinstance(r, Exception))
     progress.report(qid, "papers", "search", "completed", f"Found {candidates} candidate papers", candidates=candidates)
+    if getattr(agent, "_s2_tripped", False):
+        progress.note(qid, "s2_skipped", "Semantic Scholar was skipped for this run (it answered HTTP 429 to the first search)", level="warn", stage="retrieval")
 
     progress.report(qid, "papers", "relevance_filter", "running", "Judging relevance (embedding shortlist, then the LLM judge)",
                     candidates=candidates, done=0, total=len(sub_questions))
@@ -203,14 +206,58 @@ async def _parse_relevant_papers(agent: PaperRetrievalAgent, query_id: str, pape
     progress.report(query_id, "papers", "parsing", "running", f"Parsing the best {total_target} papers (PDF to text)",
                     target=total_target, attempted=0, usable=0, papers=len(rows))
     warmer = warmup.ChunkWarmer()          # STAGE3_WARM_CHUNKS: the chunks of each paper are embedded while the others are still being parsed
+    tally: collections.Counter = collections.Counter()
+    reasons: collections.Counter = collections.Counter()
+    on_done = _paper_done_callback(agent, query_id, {r["id"]: r for r in rows}, warmer, tally, reasons)
     try:
-        await _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, warmer)
+        await _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, on_done)
     finally:
         if warmer.enabled:
             await asyncio.to_thread(warmer.finish, warmup.wait_seconds())
+    _parse_notes(query_id, sum(attempted.values()), tally, reasons, warmer)
 
 
-async def _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, warmer):
+def _paper_done_callback(agent, query_id, rows_by_id, warmer, tally, reasons):
+    """The callback of agent.parse_papers: warms the chunk embeddings of the paper and reports ONE event for it (step "paper_parse"):
+    how it ended (parsed / abstract_only / failed), the route, the reason of a failure and the characters of text. Never raises."""
+    def done(paper_id: str) -> None:
+        warmer.submit(paper_id)
+        try:
+            o = agent.parse_outcome(paper_id) if hasattr(agent, "parse_outcome") else {}
+            chars, reason, route = o.get("chars", 0), o.get("reason"), o.get("route")
+            outcome = "parsed" if chars >= MIN_USABLE_TEXT_CHARS else ("failed" if reason else "abstract_only")
+            tally[outcome] += 1
+            if route == "parse cache":
+                tally["fromParseCache"] += 1
+            if reason and outcome != "parsed":
+                reasons[reason] += 1
+            row = rows_by_id.get(paper_id) or {}
+            title = (row.get("title") or "")[:140]
+            progress.report(query_id, "papers", "paper_parse", "completed", f"{outcome.replace('_', '-')}: {title}", paperId=paper_id, title=title, outcome=outcome,
+                            route=route, reason=reason, chars=chars, subQuestionId=row.get("sub_question_id"))
+        except Exception:
+            logger.debug("paper_parse event dropped", exc_info=True)
+    return done
+
+
+def _parse_notes(query_id, attempted, tally, reasons, warmer) -> None:
+    """Notes at the end of the parse step: how the papers ended, and how much of Stage 3 preparation was done early."""
+    try:
+        parsed, abstract_only, failed = tally.get("parsed", 0), tally.get("abstract_only", 0), tally.get("failed", 0)
+        bad = abstract_only + failed
+        msg = f"{parsed} of {attempted} attempted papers parsed to full text" + (f" ({tally.get('fromParseCache', 0)} from the parse cache)" if tally.get("fromParseCache") else "")
+        if bad:
+            msg += f"; {bad} stay abstract-only" + (" (" + ", ".join(f"{k}: {v}" for k, v in reasons.most_common(4)) + ")" if reasons else "")
+        progress.note(query_id, "parse_summary", msg, level="warn" if bad else "info", stage="retrieval", attempted=attempted, parsed=parsed,
+                      abstractOnly=abstract_only, failed=failed, fromParseCache=tally.get("fromParseCache", 0), reasons=dict(reasons.most_common(6)))
+        if warmer.enabled and warmer.chunks:
+            progress.note(query_id, "chunk_warmup", f"The text of {warmer.papers} papers ({warmer.chunks} passages) was prepared for reading while the other PDFs were still being parsed",
+                          stage="retrieval", papers=warmer.papers, chunks=warmer.chunks)
+    except Exception:
+        logger.debug("parse notes dropped", exc_info=True)
+
+
+async def _parse_batches(agent, query_id, queues, target, max_attempts, attempted, usable, total_target, on_paper_done):
     total_attempted = total_usable = 0
     rows_total = sum(len(q) for q in queues.values()) + sum(attempted.values())
     while True:
@@ -225,7 +272,7 @@ async def _parse_batches(agent, query_id, queues, target, max_attempts, attempte
         if not batch:
             break
 
-        parsed = await agent.parse_papers(paper_ids=[r["id"] for _, r in batch], **({"on_paper_done": warmer.submit} if warmer.enabled else {}))
+        parsed = await agent.parse_papers(paper_ids=[r["id"] for _, r in batch], on_paper_done=on_paper_done)
         text_by_id = {p.retrieved_paper_id: len(p.full_text or "") for p in parsed}
         for sq, row in batch:
             total_attempted += 1

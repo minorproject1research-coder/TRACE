@@ -617,7 +617,7 @@ def test_the_factcheck_stage_runs_and_reports_its_result_when_switched_on(monkey
     assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_built"}
     started = [e for e in rec.events if e["stage"] == "factcheck"]
     assert [e["event"] for e in started] == ["stage_started", "stage_completed"]
-    assert started[1]["data"] == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "partially_supported": 0, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0, "judgeWaits": 0}
+    assert {k: v for k, v in started[1]["data"].items() if k != "groq"} == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "partially_supported": 0, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0, "judgeWaits": 0}
     assert rec.events[-1]["data"]["stagesNotRun"] == ["report"]
 
 
@@ -634,4 +634,4 @@ def test_a_failed_factcheck_fails_the_stage_but_not_the_run(monkeypatch):
                 yield chunk if "factcheck" not in chunk else {"factcheck": {"fact_summary": {"error": "ConnectionError: database down"}}}
     rec = run_to_end(G(), monkeypatch, True)
     assert rec.status == "completed" and rec.stages["factcheck"] == "failed"
-    assert [e for e in rec.events if e["stage"] == "factcheck"][-1]["data"] == {"error": "ConnectionError: database down"}
+    assert [e for e in rec.events if e["stage"] == "factcheck"][-1]["data"].get("error") == "ConnectionError: database down"

@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
-from apps.api.services import trace_llm_service
+from apps.api.services import cache_counters, trace_llm_service
 
 logger = logging.getLogger("apps.api.agents.stage3_summarizer.evidence_judge")
 
@@ -435,6 +435,7 @@ def judge_candidates(
 
     if cache_hits:
         logger.info(f"Judge cache hits: {cache_hits}/{len(items)}")
+        cache_counters.bump("judge", cache_hits)
 
     # Process in batches. Each batch has its own retry loop; with JUDGE_PARALLEL > 1 several batches are in flight at once,
     # but the results are always processed in the original batch order, so the output equals the sequential one.

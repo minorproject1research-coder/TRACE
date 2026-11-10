@@ -3,7 +3,7 @@ import os
 import re
 from typing import Any, List
 
-from apps.api.services import llm_service
+from apps.api.services import cache_counters, llm_service
 from apps.api.services.llm_service import squeezer_json
 from apps.api.agents.stage3_summarizer import digest_cache
 from apps.api.agents.stage3_summarizer.quote_verifier import verify_quote
@@ -142,6 +142,7 @@ def generate_digest(
         data = digest_cache.get(key)
         if data is not None:
             logger.info("Digest cache hit for source %s", cache_scope[1])
+            cache_counters.bump("digest")
     if data is None:
         try:
             data = squeezer_json(prompt, temperature=DIGEST_TEMPERATURE, seed=DIGEST_SEED, purpose=purpose)

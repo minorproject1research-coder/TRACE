@@ -3,7 +3,7 @@ import logging
 from apps.api.graph.state import SharedResearchState
 from apps.api.models.task_plan import TaskPlan
 from apps.api.agents.stage1_planner import domain_anchor, question_generator, query_expansion
-from apps.api.services import db_service
+from apps.api.services import db_service, progress
 from apps.api import config
 
 logger = logging.getLogger("apps.api.agents.stage1_planner")
@@ -34,6 +34,14 @@ def planner_node(state: SharedResearchState) -> dict:
     task_plan = TaskPlan(raw_query=state.raw_query, sub_questions=sub_questions,
                          domain_anchor=anchor.anchor, domain_context=anchor.context, **plan_ids)
     db_service.write_task_plan(task_plan)
+    try:
+        source = question_generator.plan_source(state.raw_query)
+        if source == "plan-cache":
+            progress.note(task_plan.query_id, "plan_cache", "The stored plan for this question was reused (PLAN_CACHE), so the planner model was not called", stage="planner", source=source)
+        elif source == "groq-fallback":
+            progress.note(task_plan.query_id, "plan_fallback", "The planner model was unreachable, so Groq wrote the plan", level="warn", stage="planner", source=source)
+    except Exception:
+        logger.debug("plan note dropped", exc_info=True)
     try:
         from apps.api.agents.stage3_summarizer import warmup
         warmup.start_aspects(task_plan.query_id, task_plan.sub_questions)     # STAGE3_WARM_ASPECTS: Stage 3 will find the cached answers

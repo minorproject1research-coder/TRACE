@@ -90,7 +90,7 @@ def test_reports_become_events_in_order_with_the_right_stage():
         assert {(e["data"]["lane"], e["data"]["step"]) for e in step_ev} == {("papers", "parsing"), ("web", "search"), ("summarizer", "digest")}
         assert next(e for e in step_ev if e["data"]["lane"] == "summarizer")["stage"] == "summarizer"
         parsing = next(e for e in step_ev if e["data"]["step"] == "parsing")
-        assert parsing["data"] == {"lane": "papers", "step": "parsing", "state": "running", "usable": 2, "target": 5} and parsing["message"] == "Parsed 2 of 5"
+        assert {k: v for k, v in parsing["data"].items() if k != "groq"} == {"lane": "papers", "step": "parsing", "state": "running", "usable": 2, "target": 5} and parsing["message"] == "Parsed 2 of 5"
         # the step events sit between the stage's start and end, and the old events are unchanged
         names = [e["event"] for e in ev]
         assert names[0] == "run_queued" and names[-1] == "run_completed" and names.count("branch_completed") == 2

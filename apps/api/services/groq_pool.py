@@ -83,6 +83,7 @@ class UsageMeter:
         with self._lock:
             for c in (self.totals, self.by_purpose[purpose], self.by_key[k]):
                 c["rate_limited"] += 1
+                c["parked_seconds"] += int(round(seconds))
         self._append({"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "key": k, "purpose": purpose, "event": "429", "parked_seconds": round(seconds)})
 
     def _append(self, row: dict) -> None:
