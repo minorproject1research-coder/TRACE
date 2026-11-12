@@ -3,7 +3,8 @@
 A node calls   progress.report(query_id, "papers", "parsing", "running", "Parsed 3 of 10 papers", usable=3, target=10)
 The run manager registers a sink for the run (the run id IS the query id) and turns each report into an event on the run's stream.
 
-  lane   "papers" | "web"  (the two retrieval branches, which run at the same time)  |  "summarizer"
+  lane   "papers" | "web"  (the two retrieval branches, which run at the same time)  |  "summarizer"  |  "factcheck"  |  "report"  (Stage 5: steps
+         sections, write, validate, summary, references)
   step   "branch" (the lane started) or a step of the lane, e.g. "search", "relevance_filter", "scoring", "store", "parsing", "digest", "judge"
   state  "running" | "completed" | "skipped" | "failed"
 
@@ -16,7 +17,7 @@ from typing import Callable, Optional
 
 logger = logging.getLogger("apps.api.progress")
 
-LANES = ("papers", "web", "summarizer", "factcheck", "notes")
+LANES = ("papers", "web", "summarizer", "factcheck", "report", "notes")
 STATES = ("running", "completed", "skipped", "failed")
 
 Sink = Callable[[dict], None]
@@ -50,5 +51,5 @@ def report(run_id: Optional[str], lane: str, step: str, state: str = "running", 
 def note(run_id: Optional[str], code: str, message: str, level: str = "info", stage: Optional[str] = None, **data) -> None:
     """Something worth knowing about this run that is not a step: a cache that was used, a source that was skipped, failures of PDFs. The event is
     a step event of the lane "notes" (step = `code`, state "completed"); data has level ("info" | "warn"), stage ("planner" | "retrieval" |
-    "summarizer" | "factcheck") and small counts. Never raises."""
+    "summarizer" | "factcheck" | "report") and small counts. Never raises."""
     report(run_id, "notes", code, "completed", message, level=level, stage=stage, **data)

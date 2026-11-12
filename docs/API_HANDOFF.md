@@ -14,10 +14,10 @@ uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
 - Interactive docs: `http://localhost:8000/docs`.
 
 ## What a run is
-A run executes the whole graph in a background thread: **planner -> (paper retrieval + web search in parallel) -> summarizer**. It takes **15-25 minutes**. The UI must be built around progress events, not around waiting for a response.
+A run executes the whole graph in a background thread: **planner -> (paper retrieval + web search in parallel) -> summarizer -> fact check (Stage 4, optional) -> written report (Stage 5, optional)**. It takes **15-25 minutes**. The UI must be built around progress events, not around waiting for a response.
 - The run id is a UUID and is also the id of the research query in the database, so a finished run can be read after a server restart.
 - Runs are queued: `MAX_CONCURRENT_RUNS` (default 1) at a time, `MAX_PENDING_RUNS` (default 5) waiting. A further `POST` gets **429** `{"detail": "..."}`.
-- `report` (Stage 5) **does not exist yet**: always `"not_built"`. `factcheck` (Stage 4) exists and runs after the summarizer **only when the server has `FACTCHECK=true`**; otherwise its state is `"not_run"`. There is no written answer, only collected and judged evidence (see "Report").
+- `factcheck` (Stage 4) runs after the summarizer **only when the server has `FACTCHECK=true`**; otherwise its state is `"not_run"`. `report` (Stage 5, the written report) runs after Stage 4 **only when the server has `STAGE5=true`**; otherwise its state is `"not_run"` (it used to be `"not_built"`; no stage is `not_built` any more, the value stays in the type for old clients). Without Stage 5 there is no written answer, only collected and judged evidence (see "Report"); with it, see "Stage 5: the written report" below. A Stage 5 failure marks the `report` stage `failed` and never fails the run.
 - There is no quick or web-only mode: every run uses the full pipeline. (`depth` and `scope` were removed from the request and from the session; a client that still sends them is ignored.)
 - A run cannot be cancelled (no endpoint).
 
@@ -33,6 +33,8 @@ Errors are `{"detail": "text"}` (validation errors: FastAPI's list under `detail
 | `GET /api/research/{id}` | status of one run | Session | 404 |
 | `GET /api/research/{id}/events` | live progress, server-sent events | `text/event-stream` | 404 |
 | `GET /api/research/{id}/report` | the evidence report | Report | 404, **409** while the run is still going |
+| `GET /api/research/{id}/written-report` | the written report of Stage 5 (added 2026-11-11) | **200** WrittenReportResponse, or **202** `{"state": "running"}` while it is being written | 404 none stored, 503 |
+| `POST /api/research/{id}/written-report` | write it again from the STORED run (no new search; only with `STAGE5=true`) | **202** `{"state": "started"}` | 400 STAGE5 is off, 404 unknown run, **409** a write is already running for this id or the run is not finished |
 | `GET /health` | liveness | `{"status": "ok", "activeRuns": 0}` | |
 
 ### POST body
@@ -44,7 +46,7 @@ Errors are `{"detail": "text"}` (validation errors: FastAPI's list under `detail
 ```ts
 type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
 type StageId = 'planner' | 'retrieval' | 'summarizer' | 'factcheck' | 'report'
-type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'not_run' | 'unknown'   // not_run: the stage exists but was switched off for this run
+type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'not_run' | 'unknown'   // not_run: the stage exists but was switched off (or skipped) for this run; not_built: no stage has it any more
 
 type Session = {
   id: string
@@ -80,7 +82,8 @@ Typical order for one run (the 11 stage-level events; `branch_started` and `step
 | `step` | retrieval or summarizer | `{lane, step, state, ...counts}`: see "Steps" below |
 | `branch_completed` | retrieval | `{branch: 'papers', papers}` or `{branch: 'web', webSources}` |
 | `stage_completed` | summarizer | `{digests, subQuestions, sufficientSubQuestions}` |
-| `run_completed` | null | `{reportUrl, stagesNotRun: ['report']}` (also `'factcheck'` when it was off) |
+| `stage_started` / `stage_completed` | report | only when the server has `STAGE5=true`; see "Stage 5: the written report". `stage_started` carries `data.groq` only |
+| `run_completed` | null | `{reportUrl, stagesNotRun: ['report']}` (also `'factcheck'` when it was off); `report` is missing from `stagesNotRun` when Stage 5 ran |
 | `run_failed` | the stage that was running, or null | `message` is `"ErrorType: text"` (also `session.error`) |
 
 Timing hint for the progress UI: planner about 30 s, retrieval and parsing 2-9 min (longer for a new topic), summarizer 8-11 min.
@@ -121,10 +124,11 @@ Several parts of the pipeline overlap to save time. The events are the same kind
 For the timeline. Every item is additive: a client that ignores them works as before. `RUN_TELEMETRY=false` removes `data.groq`.
 
 - **Groq use so far, `data.groq`**, on every `step`, `stage_started` and `stage_completed` event: `{tokens, calls, rateLimits, parkedSeconds}`, cumulative since the run started (`parkedSeconds` = key-seconds spent waiting for a rate limit, summed over the keys). `stage_completed` also has `byPurpose` (tokens by purpose so far). `run_completed` has `groqRateLimits` and `groqParkedSeconds` next to `groqTokens`. Per stage: subtract the value at its `stage_started` from the value at its `stage_completed`.
-- **Notes**: step events with `data.lane = "notes"`, `data.step = <code>`, `data.state = "completed"`, `data.level` (`info` | `warn`), `data.stage` (`planner` | `retrieval` | `summarizer`; the event's own `stage` field has the same value) and small counts. Codes:
+- **Notes**: step events with `data.lane = "notes"`, `data.step = <code>`, `data.state = "completed"`, `data.level` (`info` | `warn`), `data.stage` (`planner` | `retrieval` | `summarizer` | `factcheck` | `report`; the event's own `stage` field has the same value) and small counts. Codes:
   - `plan_cache` (the stored plan was reused), `plan_fallback` (warn: the planner model was unreachable, Groq wrote the plan);
   - `s2_skipped` (warn: Semantic Scholar answered HTTP 429 and was skipped for the run), `parse_summary` (`attempted, parsed, abstractOnly, failed, fromParseCache, reasons` where `reasons` maps a failure reason such as "HTTP 403" to a count; level warn when something stayed abstract-only), `chunk_warmup` (`papers, chunks`: the text of that many papers was prepared while the others were still parsed);
-  - `loop2_gaps` (`subQuestionIndex, subQuestions, gaps, searched, covered`: aspects that stay without evidence after the second search; held and replayed like the other summarizer events, with `occurredAt`).
+  - `loop2_gaps` (`subQuestionIndex, subQuestions, gaps, searched, covered`: aspects that stay without evidence after the second search; held and replayed like the other summarizer events, with `occurredAt`);
+  - `stage5_skipped` (`stage: "report"`, level info: Stage 5 did not run for this run, for example because Stage 4 did not run, so there were no labels to write from; the `report` stage then ends `not_run`), `stage5_fallback` (warn, `count`: that many sentences use the deterministic template wording instead of the model's), `stage5_dropped` (warn, `count`: that many sentences were dropped by the final check).
 - **One event per parsed paper**: `data.lane = "papers"`, `data.step = "paper_parse"`, `state "completed"`, with `paperId`, `title`, `outcome` (`parsed` | `abstract_only` | `failed`), `route` (`own link`, `parse cache`, ... or null), `reason` (for example `HTTP 403`, `html or non-PDF response`, `known failure (...)`, or null), `chars` (characters of full text) and `subQuestionId`. They arrive as each paper ends, so the parse step is no longer silent for minutes (the existing `parsing` step still only reports at the start and when a round ends). A paper whose parse raised an error gives no event.
 - **Stage 4, a sub-question is finished**: a `factcheck` step event with `data.step = "done"` (state field says "running" like the other Stage 4 steps; the step id means finished) and `data.subQuestion` / `subQuestions`: `claims, supported, partially_supported, unverified, contradicted, disagreements, judgeCalls, judgeCacheHits, judgeWaits, judgeFailures, worker`. `worker` (1 or 2, null in the sequential path) is also on the sub-question's first event (`claims`). Until now only the start of a sub-question was visible, so its end had to be guessed; with STAGE4_SQ_WORKERS=2 that guess is wrong. It goes through the same hold-and-replay as the other Stage 4 events (`occurredAt`). The other steps (`claims, clusters, support, near, conflicts`) still never report `completed`.
 - **Cache hits**: the `summarizer` `digest` step with `state "completed"` has `cacheHits` (digests of this run taken from the digest cache); the `judge` step with `state "completed"` has `cacheHits` (judge verdicts taken from the judge cache).
@@ -145,8 +149,60 @@ Live: when a rung is finished, a summarizer step event with `data.step = "loop2_
 - A run that exists only in the database (server restarted since) gets a single closing event (`run_completed` or `run_failed`).
 - If the server restarts while a run is in progress, that run is lost: it later shows as `failed`.
 
+## Stage 5: the written report (added 2026-11-11, `STAGE5=true`; contract of the stored document: `docs/STAGE5_OUTPUT.md`)
+Stage 5 writes a cited report from the Stage 4 labels. It is off by default; with `STAGE5` off nothing below appears and `stages.report` is `"not_run"`.
+
+**The `report` stage in a run.** It starts (`stage_started`, stage `report`) when the fact-check node has finished (also when Stage 4 is off or failed) and ends with one `stage_completed`:
+- `status "completed"`: `data = {status, sections, sentences, references, warnings}` where `status` is the written report's own status (`completed | completed_with_warnings | insufficient_evidence`); the stage state is `completed` for all three (`insufficient_evidence` is a normal result: there was nothing eligible to write).
+- `status "failed"`: the report's status was `failed`, or the node raised. The message says the evidence report is still available. **The run still ends `run_completed`**, never `run_failed`.
+- `status "not_run"`: the node skipped itself (for example Stage 4 did not run, so there is nothing to write from). The stage ends `not_run` and stays in `stagesNotRun`.
+The `report` stage starts after the factcheck stage ends, so the two never overlap. Older clients ignore the unknown stage events.
+
+**Steps** (`step` events, `data.lane = "report"`, `stage = "report"`, `state` as for the other lanes, counts are small numbers; treat the count names as open): the lane starts with a `branch` step (a `branch_started` event with `data.branch = "report"`, like the fact-check lane), then `sections` (the sections were planned, one per sub-question: `{sections}`), `write` (`{jobs}` sentences to write, one report per finished model call), `validate` (the checks on numbers and names, NLI and judge: completed `{kept, fallback, dropped}`), `summary` (overview and conclusion), `references` (completed `{references}`) and `store` (completed `{sections, sentences, references, warnings, stored}`; `stored` is false when the report could not be saved, for example before migration 016 is applied). Notes with `stage: "report"`: see `stage5_skipped`, `stage5_fallback` and `stage5_dropped` above. Groq tokens of Stage 5 are in `run_completed.groqTokensByPurpose` under `stage5_write`, `stage5_summary` and `stage5_check`.
+
+**`stages.report` of a stored run** (`GET /api/research/{id}` after a restart, and `Report.stages.report`) is derived from the stored written report: `completed` (stored status `completed`, `completed_with_warnings` or `insufficient_evidence`), `failed` (stored status `failed`) or `not_run` (none stored, or the table does not exist yet).
+
+**`GET /api/research/{id}/written-report`**
+- **200** `WrittenReportResponse`:
+```ts
+type WrittenReportResponse = {
+  status: 'completed' | 'completed_with_warnings' | 'insufficient_evidence' | 'failed'
+  report: WrittenReport          // the structured report: see docs/STAGE5_OUTPUT.md (sections, sentences with claim ids, references, limitations)
+  markdown: string               // the same report as Markdown, for download
+  stats: Record<string, unknown> // counts of the run of Stage 5 (nested objects: claims by tier, sentences by origin, calls, tokens, NLI and judge counts, seconds); open keys
+  model: string | null           // the writer model, e.g. "openai/gpt-oss-120b"
+  templateVersion: string | null // the prompt/template version, e.g. "s5-v1"
+  generatedAt: string | null     // when the row was last written (ISO 8601)
+}
+```
+- **202** `{"state": "running"}`: the report of this run is being written right now (the live run is in its `report` stage, or a POST started one). Poll again; an older stored report is NOT returned meanwhile.
+- **404** `{"detail": "No written report for this run (Stage 5 did not run, or it has not been stored)"}`; when the last background attempt failed the text ends with `; the last attempt failed: <reason>`. Also returned for a malformed id and, until `db/migrations/016_add_written_reports.sql` is applied, for every run.
+- **503** the database could not be reached (ask again).
+
+**`POST /api/research/{id}/written-report`** writes the report again from the STORED run (the stored claims, evidence and sources; nothing is searched again) in a background thread and replaces the stored row. Use it for runs that finished before `STAGE5` was switched on, or after a prompt change. It answers **202** `{"state": "started"}` at once; poll the GET above until it is 200. Errors: **400** `STAGE5` is off on the server (the message names the switch), **404** unknown run, **409** a write is already running for this id (kept in memory, per server process) or the run itself has not finished.
+
+```ts
+type WrittenReport = {            // details and the meaning of every field: docs/STAGE5_OUTPUT.md
+  status: string; question: string; generatedAt: string
+  overview: { summary: Sentence[]; counts: { sections: number; documents: number; claims: number; supported: number; partly: number; single: number; disputed: number
+                                              filtered: number; sentences: number; disagreements: number; references: number } }
+  introduction: string[]         // paragraphs written by Python templates
+  sections: { id: string; title: string; subQuestionId: string; detailQuestions: string[]; sentences: Sentence[]
+              disagreements: { claimA: string; claimB: string; claimId: string | null; note: string
+                               sideA: { quote: string; ref: number | null; title: string }; sideB: { quote: string; ref: number | null; title: string } }[]
+              gaps: string[]; counts: { total: number; supported: number; partly: number; single: number; disputed: number; filtered: number } }[]
+  limitations: string[]
+  conclusion: Sentence[]          // may be empty: a tiny report has no separate conclusion
+  references: { number: number; title: string | null; authors: string[]; year: number | null; venue: string | null; doi: string | null; url: string | null
+                kind: 'paper' | 'web'; evidenceLevel: string | null; sourceIds: string[]; text: string; markdown: string }[]   // text / markdown: the formatted entry
+  stats: Record<string, unknown>; warnings: string[]
+}
+type Sentence = { text: string; claimIds: string[]; refs: number[]; tier: 'supported' | 'partly' | 'single' | string; origin: 'llm' | 'fallback' | 'template' | string }
+```
+`text` never contains the `[n]` markers: the client adds them from `refs`. A single-source sentence ("One study reports ...") must always be shown with its legend; see `docs/STAGE5_OUTPUT.md`.
+
 ## Report (`GET /api/research/{id}/report`)
-It is an **evidence report**, not an answer. Read it after `run_completed`. While the run is going it answers 409; if a run failed halfway, a partial report may still exist (and then has `runError`). Size is large (about 100 KB for a 5 sub-question run).
+It is an **evidence report**, not an answer (the written answer of Stage 5 is a separate document, above). Read it after `run_completed`. While the run is going it answers 409; if a run failed halfway, a partial report may still exist (and then has `runError`). Size is large (about 100 KB for a 5 sub-question run).
 
 ```ts
 type Report = {
@@ -154,11 +210,11 @@ type Report = {
   question: string
   createdAt: string | null
   runError?: string                       // only when the run failed in this server process
-  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'not_built' | 'not_run'>   // factcheck: 'completed' when fact_claims exist, else 'not_run'
+  stages: Record<StageId, 'completed' | 'incomplete' | 'unknown' | 'failed' | 'not_built' | 'not_run'>   // factcheck: 'completed' when fact_claims exist, else 'not_run'; report: 'completed' | 'failed' from the stored written report, else 'not_run'
   totals: { subQuestions: number; subQuestionsSufficient: number; sources: number; findings: number; findingsQuoteFound: number;
             factChecked: null | { supported: number; partially_supported: number; unverified: number; contradicted: number; contested: number } }   // null: Stage 4 did not run
   subQuestions: SubQuestionReport[]
-  limitations: string[]                   // show these: Stage 4 / Stage 5 missing, retrieval limits, and each sub-question whose evidence is not sufficient
+  limitations: string[]                   // show these: Stage 4 / Stage 5 did not run, retrieval limits, and each sub-question whose evidence is not sufficient
 }
 
 type SubQuestionReport = {
@@ -192,7 +248,24 @@ type SubQuestionReport = {
       knownGaps: string[]                 // aspects still uncovered after the search (or not searched): show "evidence not found" for them
     }
   }
-  sources: SourceReport[]                 // ordered by evidence weight, highest first
+  sources: SourceReport[]                 // ordered by evidence weight, highest first (inside each subQuestions[i], NOT a top-level field of Report)
+  factCheck: FactCheck | null             // Stage 4; null when Stage 4 produced no rows for the run (then `totals.factChecked` is null too)
+}
+
+// Stage 4 (types as in apps/web/lib/trace-types.ts; labels and relations are open strings; docs/STAGE4_OUTPUT.md is the contract)
+type FactCheck = {
+  counts: { supported: number; partially_supported: number; unverified: number; contradicted: number; contested: number }
+  claims: FactClaim[]                     // sorted: contradicted, supported, partially_supported, unverified; then contested; then confidence
+  disagreements: { claimA: string; claimB: string; sourceATitle: string | null; sourceBTitle: string | null; quoteA: string; quoteB: string; prob: number | null; reason: string | null }[]
+}
+type FactClaim = {
+  claim: string
+  label: 'supported' | 'partially_supported' | 'unverified' | 'contradicted'
+  confidence: number | null               // a ranking number, NOT a probability
+  supportDocCount: number; contraDocCount: number
+  contested: boolean                      // a claim with a conflicting source that did not outweigh the support (a flag, not a label)
+  evidence: { sourceId: string; sourceTitle: string | null; quote: string; relation: 'supports' | 'contradicts' | 'near_match'; nearClaim?: string | null
+              reliability: number | null; evidenceLevel: string | null; prob: number | null }[]
 }
 
 type AspectRow = {
@@ -229,7 +302,7 @@ type Finding = {
 ```
 
 How to present it honestly (these are product requirements, not suggestions):
-- A finding is **not a fact**. `quoteFound` only means the quote exists in the source; the claim may still be wrong. Stage 4 would check that and is not there.
+- A finding is **not a fact**. `quoteFound` only means the quote exists in the source; the claim may still be wrong. Stage 4 (`factCheck`) compares claims across sources, and only a `supported` claim has two independent documents behind it.
 - "Sufficient" means enough independent sources answered the aspects; it does not mean the question is answered. Show `uncoveredAspects` and `limitations` prominently, per sub-question.
 - A source with `evidenceLevel` `abstract` or `web_snippet` was only partly read; label it.
 - Never present a sub-question with `coverage: null` or `sufficient: false` as complete.
@@ -282,7 +355,7 @@ type PaperDetail = {
 - The web app only shows what is returned: it never fetches papers itself.
 
 ## Not built, for the product plan
-Authentication and per-user data access; cancelling a run; Stage 4 and Stage 5; progress inside a stage; a database-backed run queue (runs are in memory, so a restart loses running ones); rate limiting per user; a saved-report or export endpoint.
+Authentication and per-user data access; cancelling a run; progress inside a stage; a database-backed run queue (runs are in memory, so a restart loses running ones); rate limiting per user; a saved-report or export endpoint.
 
 ## Files
-`apps/api/main.py` (app, CORS, logging), `routers/query_router.py` (sessions and events), `routers/report_router.py`, `services/run_manager.py` (queue, thread, events), `services/report_service.py` (database to report), `config.py`, `dependencies.py`, `graph/state.py` and `graph/nodes/planner_node.py` (the run id is chosen by the API), tests in `tests/test_api.py`. Environment variables are in `.env.example` under "API server".
+`apps/api/main.py` (app, CORS, logging), `routers/query_router.py` (sessions and events), `routers/report_router.py` (evidence report and written report), `services/run_manager.py` (queue, thread, events), `services/report_service.py` (database to report; the written-report background run), `services/db_service.py` (`write_written_report`, `get_written_report`), `graph/nodes/report_node.py` (Stage 5), `config.py`, `dependencies.py`, `graph/state.py` and `graph/nodes/planner_node.py` (the run id is chosen by the API), tests in `tests/test_api.py` and `tests/test_stage5_wiring.py`. Environment variables are in `.env.example` under "API server".

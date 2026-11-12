@@ -1,6 +1,6 @@
 """Runs of the research graph for the API: a queue, a worker thread per concurrent run, and an event log per run.
 
-A run is the whole graph (planner -> paper retrieval + web search in parallel -> summarizer), started in a background thread because it
+A run is the whole graph (planner -> paper retrieval + web search in parallel -> summarizer -> fact check -> written report), started in a background thread because it
 takes 15-25 minutes. The run id IS the research query id (SharedResearchState.query_id), so a finished run can be read from the database
 after a server restart. Progress is the stream of node updates of the graph (stream_mode="updates"), turned into events:
 
@@ -9,8 +9,9 @@ after a server restart. Progress is the stream of node updates of the graph (str
 branch_started and step come from INSIDE the nodes (services/progress.py): the paper and web branches run at the same time, and each reports its
 steps (search, relevance judge, scoring, store, parsing; digest and evidence judge in the summarizer) with small counts.
 
-Stages the UI should show: planner, retrieval (papers + web), summarizer, factcheck (only when FACTCHECK=true, otherwise "not_run");
-report is not built and is reported as "not_built". State lives in memory (events, status); everything a report needs is in the database.
+Stages the UI should show: planner, retrieval (papers + web), summarizer, factcheck (only when FACTCHECK=true, otherwise "not_run"),
+report (Stage 5, the written report: only when STAGE5=true, otherwise "not_run"; a failure marks the stage "failed", never the run).
+State lives in memory (events, status); everything a report needs is in the database.
 """
 import logging
 import os
@@ -28,10 +29,10 @@ from apps.api.services import groq_pool, progress
 logger = logging.getLogger("apps.api.run_manager")
 
 STAGES = ("planner", "retrieval", "summarizer", "factcheck", "report")
-NOT_BUILT = ("report",)                     # "factcheck" is added per run when FACTCHECK is off
-NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck"}
+NOT_BUILT = ()                              # every stage is built now ("factcheck" and "report" are "not_run" per run when their switch is off)
+NODE_STAGE = {"planner": "planner", "paper_retrieval": "retrieval", "web_search": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck", "report": "report"}
 BRANCH = {"paper_retrieval": "papers", "web_search": "web"}
-LANE_STAGE = {"papers": "retrieval", "web": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck"}
+LANE_STAGE = {"papers": "retrieval", "web": "retrieval", "summarizer": "summarizer", "factcheck": "factcheck", "report": "report"}
 TERMINAL = ("run_completed", "run_failed")
 
 
@@ -43,13 +44,23 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _switched_off(stage: str) -> bool:
+    """The stages that run only when their switch is on: factcheck (FACTCHECK) and report (STAGE5)."""
+    if stage == "factcheck":
+        return not config.factcheck_enabled()
+    if stage == "report":
+        from apps.api.agents.stage5_report import settings as stage5       # light: only reads the environment
+        return not stage5.stage5_enabled()
+    return False
+
+
 class RunRecord:
     def __init__(self, run_id: str, question: str):
         self.id, self.question = run_id, question
         self.status = "pending"
         self.created_at, self.started_at, self.finished_at = _now(), None, None
         self.error: Optional[str] = None
-        self.stages = {s: ("not_built" if s in NOT_BUILT else "not_run" if (s == "factcheck" and not config.factcheck_enabled()) else "pending") for s in STAGES}
+        self.stages = {s: ("not_built" if s in NOT_BUILT else "not_run" if _switched_off(s) else "pending") for s in STAGES}
         self.events: list[dict] = []
         self._lock = threading.Lock()
         self.usage_before: Optional[dict] = None        # Groq meter snapshot taken when the run starts (the usage of the run = the meter now minus this)
@@ -128,6 +139,17 @@ def summarize_update(node: str, update: dict) -> tuple[str, dict]:
                     "judgeFailures": sum(s.get("judge_failures", 0) for s in summary.values() if isinstance(s, dict)),
                     "judgeWaits": sum(s.get("judge_waits", 0) for s in summary.values() if isinstance(s, dict))}
             return f"Checked {data['claims']} claims: {data['supported']} supported, {data['partially_supported']} partially supported, {data['unverified']} unverified, {data['contradicted']} contradicted", data
+        if node == "report":
+            status = str(update.get("written_report_status") or "")
+            if not status:
+                return "The written report did not run", {}
+            rep = update.get("written_report") or {}
+            sections = rep.get("sections") or []
+            data = {"status": status, "sections": _count(sections), "sentences": sum(_count(s.get("sentences")) for s in sections if isinstance(s, dict)),
+                    "references": _count(rep.get("references")), "warnings": _count(rep.get("warnings"))}
+            if status == "failed":
+                return "The written report failed; the evidence report is still available", data
+            return f"Wrote the report ({status}): {data['sections']} sections, {data['sentences']} sentences, {data['references']} references", data
     except Exception:                                   # a summary must never break a run
         logger.exception("could not summarize the update of node %s", node)
     return "", {}
@@ -197,6 +219,16 @@ class RunManager:
             data = {**(data or {}), "groq": g}
         rec.emit("stage_started" if state == "running" else "stage_completed", stage=stage, status=state, message=message, data=data)
 
+    @staticmethod
+    def _complete(rec: RunRecord, usage_before: Optional[dict]) -> None:
+        rec.status, rec.finished_at = "completed", _now()
+        used = groq_pool.meter.since(usage_before)
+        logger.info("run %s: %s", rec.id, groq_pool.usage_text(used))
+        rec.emit("run_completed", status="completed", message="Run finished", data={"groqTokens": used["totals"].get("total", 0),
+                 "groqCalls": used["totals"].get("calls", 0), "groqRateLimits": used["totals"].get("rate_limited", 0),
+                 "groqParkedSeconds": used["totals"].get("parked_seconds", 0), "groqTokensByPurpose": {p: c.get("total", 0) for p, c in used["by_purpose"].items()},
+                 "reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
+
     def _run(self, rec: RunRecord) -> None:
         from apps.api.graph.state import SharedResearchState        # lazy: keeps importing this module light
         rec.usage_before = groq_pool.meter.snapshot()       # tokens sent to Groq by THIS process during the run (runs normally do not overlap)
@@ -238,20 +270,26 @@ class RunManager:
                         self._stage(rec, "summarizer", "completed", message, data)
                         if rec.stages["factcheck"] == "pending":
                             self._stage(rec, "factcheck", "running", "Checking claims across sources")
-                    elif node == "factcheck" and rec.stages["factcheck"] == "running":
-                        self._stage(rec, "factcheck", "failed" if data.get("error") else "completed", message, data)
-            rec.status, rec.finished_at = "completed", _now()
-            used = groq_pool.meter.since(usage_before)
-            logger.info("run %s: %s", rec.id, groq_pool.usage_text(used))
-            rec.emit("run_completed", status="completed", message="Run finished", data={"groqTokens": used["totals"].get("total", 0),
-                     "groqCalls": used["totals"].get("calls", 0), "groqRateLimits": used["totals"].get("rate_limited", 0),
-                     "groqParkedSeconds": used["totals"].get("parked_seconds", 0), "groqTokensByPurpose": {p: c.get("total", 0) for p, c in used["by_purpose"].items()},
-                     "reportUrl": f"/api/research/{rec.id}/report", "stagesNotRun": [s for s, v in rec.stages.items() if v in ("not_built", "not_run")]})
+                    elif node == "factcheck":
+                        if rec.stages["factcheck"] == "running":
+                            self._stage(rec, "factcheck", "failed" if data.get("error") else "completed", message, data)
+                        if rec.stages["report"] == "pending":           # Stage 5 starts when the factcheck node is done (also when Stage 4 is off or failed)
+                            self._stage(rec, "report", "running", "Writing the report from the checked claims")
+                    elif node == "report" and rec.stages["report"] == "running":
+                        if not data:                                    # the node did nothing (skipped): the stage stays "not_run", the evidence report is all there is
+                            self._stage(rec, "report", "not_run", message, data)
+                        else:
+                            self._stage(rec, "report", "failed" if data.get("status") == "failed" else "completed", message, data)
+            self._complete(rec, usage_before)
         except Exception as e:
             logger.error("run %s failed:\n%s", rec.id, traceback.format_exc())
+            running = [s for s, v in rec.stages.items() if v == "running"]
+            if running == ["report"]:                                   # Stage 5 must never fail the run: everything before it is stored and readable
+                self._stage(rec, "report", "failed", f"The written report failed: {type(e).__name__}: {str(e)[:200]}")
+                self._complete(rec, usage_before)
+                return
             rec.status, rec.finished_at = "failed", _now()
             rec.error = f"{type(e).__name__}: {str(e)[:300]}"
-            running = [s for s, v in rec.stages.items() if v == "running"]
             for s in running:
                 rec.stages[s] = "failed"
             rec.emit("run_failed", stage=running[0] if running else None, status="failed", message=rec.error)

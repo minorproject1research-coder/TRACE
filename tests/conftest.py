@@ -27,4 +27,6 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setenv("STAGE3_WARM_CHUNKS", "false")        # the warm-ups read the database, the embedder and Groq: only their own tests switch them on
     monkeypatch.setenv("STAGE3_WARM_ASPECTS", "false")
     monkeypatch.setenv("GROQ_USAGE_LOG", "off")               # tests never write the real usage log
+    monkeypatch.setenv("STAGE5_CACHE_DIR", str(tmp_path / "stage5_cache"))     # Stage 5 writes its validated replies here, never into the real .cache/stage5
+    monkeypatch.setenv("STAGE5", "false")                     # explicit "false" like FACTCHECK: the real .env may switch the written report on
     yield

@@ -83,7 +83,7 @@ def test_start_a_run_and_read_its_status(client):
     wait_finished(client.manager, body["id"])
     done = client.get(f"/api/research/{body['id']}").json()
     assert done["status"] == "completed" and done["error"] is None
-    assert done["stages"] == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "not_run", "report": "not_built"}
+    assert done["stages"] == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "not_run", "report": "not_run"}
 
 
 def test_the_question_is_validated_and_tidied(client):
@@ -282,7 +282,7 @@ def test_the_report_is_built_from_the_database(monkeypatch):
     monkeypatch.setattr(report_service, "supabase", FakeDb(db_fixture()))
     da._save_cache_entry(da._cache_key("sq1", "How does it differ from a dense model?"), ["How does it differ from a dense model?"])
     report = report_service.build_report(QID)
-    assert report["question"] == "What is mixture of experts?" and report["stages"]["factcheck"] == "not_run" and report["stages"]["report"] == "not_built"
+    assert report["question"] == "What is mixture of experts?" and report["stages"]["factcheck"] == "not_run" and report["stages"]["report"] == "not_run"
     assert report["totals"] == {"subQuestions": 1, "subQuestionsSufficient": 0, "sources": 2, "findings": 2, "findingsQuoteFound": 1,
                                 "factChecked": None}
     assert report["subQuestions"][0]["factCheck"] is None and any("Stage 4" in x and "did not run" in x for x in report["limitations"])

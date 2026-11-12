@@ -614,7 +614,7 @@ def run_to_end(graph, monkeypatch, enabled):
 
 def test_the_factcheck_stage_runs_and_reports_its_result_when_switched_on(monkeypatch):
     rec = run_to_end(GraphWithFactcheck(), monkeypatch, True)
-    assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_built"}
+    assert rec.stages == {"planner": "completed", "retrieval": "completed", "summarizer": "completed", "factcheck": "completed", "report": "not_run"}
     started = [e for e in rec.events if e["stage"] == "factcheck"]
     assert [e["event"] for e in started] == ["stage_started", "stage_completed"]
     assert {k: v for k, v in started[1]["data"].items() if k != "groq"} == {"claims": 3, "subQuestions": 1, "failedSubQuestions": 0, "supported": 1, "partially_supported": 0, "unverified": 1, "contradicted": 1, "contested": 0, "disagreements": 1, "judgeFailures": 0, "judgeWaits": 0}

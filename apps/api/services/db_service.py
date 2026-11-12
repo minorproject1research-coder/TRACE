@@ -485,3 +485,43 @@ def write_contradictions(query_id: str, rows: list[dict]) -> None:
     for row in rows:
         row.setdefault("created_at", now)
     _insert_with_optional_columns("contradictions", rows, ("reason",))
+
+
+# ------------------------------------------------------------------------------------------------------ Stage 5: the written report
+WRITTEN_REPORTS = "written_reports"                            # migration 016; until the user applies it, every call below logs a warning and gives False / None
+
+
+def _table_missing(error: Exception, table: str) -> bool:
+    """True when the database error says that `table` does not exist (migration not run yet): PostgREST "Could not find the table ... in the
+    schema cache" (PGRST205) or Postgres 42P01 "relation ... does not exist"."""
+    text = str(error).lower()
+    return table in text and any(k in text for k in ("does not exist", "could not find", "schema cache", "pgrst205", "42p01"))
+
+
+@retry_transient
+def write_written_report(query_id: str, status: str, report: dict, markdown: str, stats: dict, model: str, template_version: str) -> bool:
+    """Store (or replace) the written report of a run: one row per query_id, updated_at = now. Idempotent. Returns False (and logs a warning)
+    when the table does not exist yet (run db/migrations/016_add_written_reports.sql); any other error is raised."""
+    row = strip_nul({"query_id": query_id, "status": status, "report": report, "markdown": markdown, "stats": stats, "model": model,
+                     "template_version": template_version, "updated_at": _now_ist()})
+    try:
+        supabase.table(WRITTEN_REPORTS).upsert(row, on_conflict="query_id").execute()
+    except Exception as e:
+        if _table_missing(e, WRITTEN_REPORTS):
+            logger.warning("table %s is missing - run db/migrations/016_add_written_reports.sql; the written report was not stored", WRITTEN_REPORTS)
+            return False
+        raise
+    return True
+
+
+def get_written_report(query_id: str) -> "dict | None":
+    """The stored written report of a run (the row: status, report, markdown, stats, model, template_version, created_at, updated_at), or None
+    when there is none or the table does not exist yet (a warning is logged). Other errors are raised (the API retries connection errors and answers 503)."""
+    try:
+        rows = supabase.table(WRITTEN_REPORTS).select("*").eq("query_id", query_id).limit(1).execute().data
+    except Exception as e:
+        if _table_missing(e, WRITTEN_REPORTS):
+            logger.warning("table %s is missing - run db/migrations/016_add_written_reports.sql; no written report can be read", WRITTEN_REPORTS)
+            return None
+        raise
+    return rows[0] if rows else None

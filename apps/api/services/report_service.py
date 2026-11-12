@@ -1,28 +1,33 @@
 """Read a finished (or half-finished) run from the database and shape it for the frontend. No LLM call, no writes.
 
-Stage 4 (fact check) is not wired into the graph and Stage 5 (the written report) is not built, so the "report" is an EVIDENCE report:
+This is the EVIDENCE report (Stage 5, the written report, is a separate document: GET /api/research/{id}/written-report):
 per sub-question the sources that were read, the findings taken from them (claim, verbatim quote, whether the quote was found in the source,
 the independent judge's verdicts) and whether the evidence is sufficient, with the aspects that stay uncovered named explicitly. The
-frontend must show that gap and must not present this as a finished answer.
+frontend must show that gap and must not present this as a finished answer. `stages.report` is derived from the stored written report
+(see written_report_stage): completed / failed, or not_run when there is none.
 """
 import json
 import logging
+import threading
 from datetime import datetime
 from typing import Any, Iterable, Optional
 
+import httpx
+
+from apps.api.services import db_service
 from apps.api.services.db_service import supabase
 
 logger = logging.getLogger("apps.api.report_service")
 
 GENERATION_WINDOW_S = 180          # rows written by one Stage 3 run share (almost) the same created_at; a rerun of Stage 3 writes new rows
-NOT_RUN = ("report",)
+COMPLETED_STATUSES = ("completed", "completed_with_warnings", "insufficient_evidence")      # Stage 5 statuses that mean "the stage finished"
+NO_WRITTEN_REPORT = ("Stage 5 (the written report) did not run for this report: this is the collected evidence, not an answer.")
 FACTCHECK_OFF = ("Stage 4 (fact checking) did not run for this report: findings are verified only in the sense that their quote was found in the source, "
                  "and judged by an independent model against the aspect they should answer. Nothing checks across sources that a claim is true.")
 FACTCHECK_ON = ("Stage 4 compared the claims across sources. \"Supported\" means two independent documents state the claim; \"partially supported\" means it rests on one document and another document states a close variant of it (not the same claim); \"unverified\" means it rests on one "
                 "document, which says nothing about whether it is false; \"contradicted\" means a source asserts the opposite. The checks are automatic "
                 "(language models), not reviewed by a person, and their thresholds have not been tuned on a large labeled set.")
 LIMITATIONS = [
-    "Stage 5 (the written report) is not built: this is the collected evidence, not an answer.",
     "Retrieval can only reach what the sources expose: papers behind publisher bot protection or without an open copy are read as abstracts or not at all.",
 ]
 
@@ -49,6 +54,22 @@ def _latest_generation(rows: list[dict]) -> list[dict]:
         if r["sub_question_id"] not in newest or t > newest[r["sub_question_id"]]:
             newest[r["sub_question_id"]] = t
     return [r for r in rows if (newest[r["sub_question_id"]] - _ts(r["created_at"])).total_seconds() <= GENERATION_WINDOW_S]
+
+
+def written_report_stage(query_id: str) -> str:
+    """The state of the report stage of a stored run, from the written_reports row: completed (status completed, completed_with_warnings or
+    insufficient_evidence), failed (status failed) or not_run (no row, or the table does not exist yet: migration 016). Connection errors are raised
+    (the caller's retry answers 503); any other error means "not_run"."""
+    try:
+        rows = supabase.table("written_reports").select("status").eq("query_id", query_id).limit(1).execute().data
+    except httpx.TransportError:
+        raise
+    except Exception as e:                              # e.g. the table does not exist yet
+        logger.warning("written report state unknown for %s: %s: %s", query_id, type(e).__name__, str(e)[:120])
+        return "not_run"
+    if not rows:
+        return "not_run"
+    return "completed" if rows[0].get("status") in COMPLETED_STATUSES else "failed"
 
 
 def _as_list(value: Any) -> list:
@@ -83,9 +104,11 @@ def session_from_db(query_id: str) -> Optional[dict]:
     covs = supabase.table("coverage_results").select("sub_question_id").eq("query_id", query_id).execute().data
     done = bool(sqs) and {c["sub_question_id"] for c in covs} >= {s["id"] for s in sqs}
     stages = {"planner": "completed" if sqs else "failed", "retrieval": "completed" if done else "unknown",
-              "summarizer": "completed" if done else "unknown", "factcheck": "not_run", "report": "not_built"}
+              "summarizer": "completed" if done else "unknown", "factcheck": "not_run", "report": "not_run"}
     if done and supabase.table("fact_claims").select("id").eq("query_id", query_id).limit(1).execute().data:
         stages["factcheck"] = "completed"
+    if done:
+        stages["report"] = written_report_stage(query_id)
     return {"id": query_id, "question": rq[0]["raw_query"], "status": "completed" if done else "failed", "createdAt": rq[0].get("created_at"),
             "startedAt": None, "finishedAt": None, "error": None if done else "The run did not finish (the server restarted or the run was stopped).",
             "stages": stages}
@@ -252,7 +275,8 @@ def build_report(query_id: str) -> Optional[dict]:
     fact_rows = _select("fact_claims", "sub_question_id", sq_ids)
     contra_rows = _select("contradictions", "sub_question_id", sq_ids)
     fact_ran = bool(fact_rows)
-    sub_questions, limitations = [], ([FACTCHECK_ON] if fact_ran else [FACTCHECK_OFF]) + list(LIMITATIONS)
+    report_stage = written_report_stage(query_id)
+    sub_questions, limitations = [], ([FACTCHECK_ON] if fact_ran else [FACTCHECK_OFF]) + ([NO_WRITTEN_REPORT] if report_stage == "not_run" else []) + list(LIMITATIONS)
     for sq in sqs:
         cov = covs.get(sq["id"])
         mine = [d for d in digests if d["sub_question_id"] == sq["id"]]
@@ -286,7 +310,7 @@ def build_report(query_id: str) -> Optional[dict]:
     return {"id": query_id, "question": rq[0]["raw_query"], "createdAt": rq[0].get("created_at"),
             "stages": {"planner": "completed" if sqs else "unknown", "retrieval": "completed" if sqs else "unknown",
                        "summarizer": "completed" if sqs and len(done) == len(sqs) else "incomplete", "factcheck": "completed" if fact_ran else "not_run",
-                       **{s: "not_built" for s in NOT_RUN}},
+                       "report": report_stage},
             "totals": {"subQuestions": len(sqs), "subQuestionsSufficient": sum(1 for s in done if s["coverage"]["sufficient"]),
                        "sources": sum(len(s["sources"]) for s in sub_questions),
                        "findings": sum(f for s in sub_questions for src in s["sources"] for f in [len(src["findings"])]),
@@ -294,3 +318,63 @@ def build_report(query_id: str) -> Optional[dict]:
                        "factChecked": ({l: sum(1 for r in fact_rows if r["label"] == l) for l in LABEL_ORDER} | {"contested": sum(1 for r in fact_rows if r.get("contested"))}
                                        if fact_ran else None)},
             "subQuestions": sub_questions, "limitations": limitations}
+
+
+# ------------------------------------------------------------------------------------------------------ Stage 5: the written report
+# POST /written-report runs Stage 5 again on the STORED run (no new retrieval): load the stored inputs, write, store. One at a time per run id; the
+# set is in memory (a restart forgets it, which is right: the thread is gone too).
+_running: set[str] = set()
+_failed: dict[str, str] = {}                            # query id -> why the last background run could not store its report
+_running_lock = threading.Lock()
+
+
+def written_report_running(query_id: str) -> bool:
+    with _running_lock:
+        return query_id in _running
+
+
+def written_report_error(query_id: str) -> Optional[str]:
+    with _running_lock:
+        return _failed.get(query_id)
+
+
+def written_report_view(row: dict) -> dict:
+    """The stored row as the API returns it (camelCase; report, markdown, stats as they were stored)."""
+    return {"status": row.get("status"), "report": _as_dict(row.get("report")), "markdown": row.get("markdown") or "", "stats": _as_dict(row.get("stats")),
+            "model": row.get("model"), "templateVersion": row.get("template_version"), "generatedAt": row.get("updated_at") or row.get("created_at")}
+
+
+def _run_written_report(query_id: str) -> None:
+    """The background thread: Stage 5 on the stored run. Never raises; the reason of a failure is kept in _failed and logged."""
+    try:
+        from apps.api.agents.stage5_report import assembler, loader      # lazy: they load the validators and, on use, the models
+        inputs = loader.load_inputs(query_id)
+        out = assembler.build_report(inputs)                                # never raises; a failure is a report with status "failed"
+        stored = db_service.write_written_report(query_id, out["status"], out["report"], out["markdown"], out["stats"], out["model"], out["template_version"])
+        if not stored:
+            raise RuntimeError("the table written_reports does not exist: apply db/migrations/016_add_written_reports.sql")
+        with _running_lock:
+            _failed.pop(query_id, None)
+    except Exception as e:                                                  # noqa: BLE001
+        logger.exception("written report of %s failed", query_id)
+        with _running_lock:
+            _failed[query_id] = f"{type(e).__name__}: {str(e)[:200]}"
+    finally:
+        with _running_lock:
+            _running.discard(query_id)
+
+
+def start_written_report(query_id: str) -> bool:
+    """Start Stage 5 for a stored run in a background thread. False when one is already running for this id."""
+    with _running_lock:
+        if query_id in _running:
+            return False
+        _running.add(query_id)
+        _failed.pop(query_id, None)
+    try:
+        threading.Thread(target=_run_written_report, args=(query_id,), name=f"trace-stage5-{query_id[:8]}", daemon=True).start()
+    except Exception:
+        with _running_lock:
+            _running.discard(query_id)
+        raise
+    return True
