@@ -6,7 +6,7 @@ import type { PapersOverview, StageState, StepState, WorkflowEvent } from './tra
 // Builds what the Timeline view draws, from the run's events (live, exact) or, for a run that finished before the pipeline reported
 // steps, from the timestamps of the rows it wrote to the database (approximate, and labelled as such).
 
-export type LaneId = 'papers' | 'web' | 'summarizer' | 'factcheck'
+export type LaneId = 'papers' | 'web' | 'summarizer' | 'factcheck' | 'report'
 export type StepStatus = StepState | 'pending' | 'unreported'
 
 /** One sub-question inside a step that works on several at once (the judge, the second search). */
@@ -60,6 +60,8 @@ export type TimelineModel = {
   summarizer: LaneView
   /** Stage 4. null unless a fact-check event arrived, so a run without it looks as before. */
   factcheck: LaneView | null
+  /** Stage 5, the written report. null unless the report stage ran (a stage that was not run has no lane: the note under the Timeline says why). */
+  report: LaneView | null
 }
 
 const DEFS: Record<LaneId, { id: string; label: string }[]> = {
@@ -83,6 +85,15 @@ const DEFS: Record<LaneId, { id: string; label: string }[]> = {
     // Only when the server runs Loop 2 (LOOP2=true). Left out of the lane when no such event arrives, so a run without it looks as before.
     { id: 'loop2', label: SUBSTEP_TITLE },
     { id: 'store', label: 'Save digests and coverage' },
+  ],
+  // Stage 5: one report per run; the lane starts with a `branch` step that is not listed here (like the fact-check lane).
+  report: [
+    { id: 'sections', label: 'Plan the sections (one per sub-question)' },
+    { id: 'write', label: 'Write the sentences' },
+    { id: 'validate', label: 'Check the sentences (numbers, names, entailment)' },
+    { id: 'summary', label: 'Write the overview and the conclusion' },
+    { id: 'references', label: 'Number the references' },
+    { id: 'store', label: 'Save the report' },
   ],
   // Stage 4. These steps repeat for every sub-question (about 3 minutes each).
   factcheck: [
@@ -118,6 +129,12 @@ function chipsFor(lane: LaneId, step: string, d: Record<string, unknown>, done: 
     if (step === 'search') add(n(d, 'found'), v => `${v} sources found`)
     if (step === 'scoring') add(n(d, 'scored'), v => `${v} scored`)
     if (step === 'store') add(n(d, 'stored'), v => `${v} saved`)
+  } else if (lane === 'report') {
+    if (step === 'sections') add(n(d, 'sections'), v => `${v} sections`)
+    if (step === 'write') add(n(d, 'jobs'), v => `${v} sentences to write`)
+    if (step === 'validate') { add(n(d, 'kept'), v => `${v} kept`); add(n(d, 'fallback'), v => (v > 0 ? `${v} in template wording` : '')); add(n(d, 'dropped'), v => (v > 0 ? `${v} dropped` : '')) }
+    if (step === 'references') add(n(d, 'references'), v => `${v} references`)
+    if (step === 'store') { add(n(d, 'sentences'), v => `${v} sentences`); add(n(d, 'references'), v => `${v} references`); add(n(d, 'warnings'), v => (v > 0 ? `${v} warnings` : '')) }
   } else if (lane === 'factcheck') {
     // the counts the step carried for the sub-question it is working on now
     if (step === 'claims') add(n(d, 'sources'), v => `${v} sources`)
@@ -238,10 +255,11 @@ function laneFromEvents(lane: LaneId, events: WorkflowEvent[], title: string, su
     }
   })
   const started = mine[0] ? eventIso(mine[0]) : null
-  const completedEv = lane === 'summarizer'
-    ? events.find(e => e.event === 'stage_completed' && e.stage === 'summarizer')
+  const stageLane = lane === 'summarizer' || lane === 'report'                          // lanes that are a whole stage, not a branch
+  const completedEv = stageLane
+    ? events.find(e => e.event === 'stage_completed' && e.stage === lane)
     : events.find(e => e.event === 'branch_completed' && e.data.branch === lane)
-  const startedLane = lane === 'summarizer' ? events.find(e => e.event === 'stage_started' && e.stage === 'summarizer')?.timestamp ?? started : started
+  const startedLane = stageLane ? events.find(e => e.event === 'stage_started' && e.stage === lane)?.timestamp ?? started : started
   const status: LaneView['status'] = completedEv ? 'completed' : startedLane ? (runFailed ? 'failed' : 'running') : 'pending'
   if (status === 'completed') for (const st of steps) if (st.status === 'pending') st.status = 'unreported'
   if (status === 'failed') {                      // the step that was running when the run failed
@@ -255,19 +273,24 @@ export type TimelineNote = { tag: string; text: string }
 
 /** The two notes at the bottom of the Timeline. Decided from the fact-check stage state of the run: pending and running mean it IS part of this
  *  pipeline (queued, or running without a lane yet), only not_run means it was switched off, and only the written report (Stage 5) is "not built yet". */
-export function timelineNotes(factcheck: StageState | undefined, hasLane: boolean): { stage4: TimelineNote | null; stage5: TimelineNote } {
-  const stage5 = { tag: 'not built yet', text: 'The written report (Stage 5) is not built yet.' }
+export function timelineNotes(factcheck: StageState | undefined, hasLane: boolean, report?: StageState, hasReportLane = false): { stage4: TimelineNote | null; stage5: TimelineNote | null } {
+  // Stage 5, from the state of the report stage: its lane says everything once it exists; a stage that was not run says why; one that is queued says it is coming.
+  const stage5: TimelineNote | null = hasReportLane || report === 'completed' || report === 'failed' ? null
+    : report === 'not_run' ? { tag: 'not run', text: 'The written report (Stage 5) did not run: it is switched off on the server, or Stage 4 did not run so there was nothing to write from.' }
+      : report === 'pending' || report === 'running' ? { tag: 'queued', text: 'The written report (Stage 5) is part of this run. It starts after the fact check and its steps appear here once it has begun.' }
+        : { tag: 'not available', text: 'The written report (Stage 5) is not available on this server.' }                                 // not_built / unknown / undefined: an older server
   if (hasLane || factcheck === 'completed' || factcheck === 'failed') return { stage4: null, stage5 }                       // the lane (or its failure note) says it all
   if (factcheck === 'not_run') return { stage4: { tag: STAGE_SKIPPED_LABEL, text: 'Fact check (Stage 4) was switched off for this run.' }, stage5 }
   if (factcheck === 'pending' || factcheck === 'running') {
     return { stage4: { tag: 'queued', text: 'Fact check (Stage 4) is part of this run. It starts during the evidence stage, one sub-question at a time, and its steps appear here once it has begun.' }, stage5 }
   }
-  return { stage4: { tag: 'not built yet', text: 'Fact check (Stage 4) is not part of this server.' }, stage5 }               // not_built / unknown: an older server
+  return { stage4: { tag: 'not available', text: 'Fact check (Stage 4) is not available on this server.' }, stage5 }          // not_built / unknown: an older server
 }
 
 const PAPERS_TITLE: [string, string] = ['Paper retrieval', 'OpenAlex, Scopus, arXiv · relevance judge · scoring · PDF parsing']
 const WEB_TITLE: [string, string] = ['Web search', 'search providers · reliability scoring']
 const SUM_TITLE: [string, string] = ['Evidence digest and judging', 'LLM reads each source, then an independent judge checks the findings']
+const REPORT_TITLE: [string, string] = ['Written report', 'writes a cited report from the fact-check labels · checks every sentence · numbers the references']
 const FACT_TITLE: [string, string] = ['Fact check across sources', 'groups the claims that say the same thing · looks for close variants and for sources that disagree']
 
 const ROW_TEXT: Record<FactSq['status'], string> = { waiting: 'waiting', running: 'checking', done: 'checked', failed: 'stopped', not_reported: 'no result' }
@@ -337,6 +360,24 @@ function factLane(events: WorkflowEvent[]): LaneView | null {
   return { id: 'factcheck', title: FACT_TITLE[0], subtitle: FACT_TITLE[1], status: p.state, startedAt: p.startedAt, endedAt: p.endedAt, summary, steps, rows: rows.length ? rows : undefined, note: overlapNote(p.overlapped, p.total) }
 }
 
+/** Stage 5 as a lane. null when the report stage did not start, or ended `not_run` (it had nothing to write from): then there is no lane and a note says so.
+ *  A failed report stage fails only itself, never the run. */
+export function reportLane(events: WorkflowEvent[]): LaneView | null {
+  const started = events.find(e => e.event === 'stage_started' && e.stage === 'report')
+  const closed = events.find(e => e.event === 'stage_completed' && e.stage === 'report')
+  if (!started && !closed) return null
+  if (closed?.status === 'not_run') return null
+  const lane = laneFromEvents('report', events, ...REPORT_TITLE, false)
+  if (closed?.status === 'failed') {
+    lane.status = 'failed'
+    for (const st of lane.steps) if (st.status === 'running') { st.status = 'failed'; st.endedAt = closed.timestamp; st.progress = null }
+  }
+  const d = closed?.data ?? {}
+  const sent = n(d, 'sentences'), refs = n(d, 'references')
+  lane.summary = closed && closed.status !== 'failed' ? [sent != null ? `${sent} sentences` : '', refs != null ? `${refs} references` : '', typeof d.status === 'string' ? String(d.status).replace(/_/g, ' ') : ''].filter(Boolean).join(' · ') : ''
+  return lane
+}
+
 export function buildTimeline(input: WorkflowEvent[], overview: PapersOverview | null): TimelineModel {
   const events = mergeBySeq(input)                                        // seq order, each seq once, whatever order the events reached the page
   const runFailed = events.some(e => e.event === 'run_failed')
@@ -361,14 +402,14 @@ export function buildTimeline(input: WorkflowEvent[], overview: PapersOverview |
     papers.summary = c ? `${c.papersKept} kept · ${parsing && c.papersParsed === 0 ? parsing : `${c.papersParsed} parsed`}` : ''
     web.summary = c ? `${c.webFound} sources` : ''
     summarizer.summary = c ? `${c.papersUsedAsEvidence} papers and ${c.webUsedAsEvidence} web sources used` : ''
-    return { source: 'events', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [papers, web] }, summarizer, factcheck: factLane(events) }
+    return { source: 'events', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [papers, web] }, summarizer, factcheck: factLane(events), report: reportLane(events) }
   }
 
   const t = overview?.timing
   if (overview && t && (t.papersStoredAt || t.webStoredAt || t.digestsFirstAt)) return reconstruct(overview, planner)
 
   const empty = (id: LaneId, title: string, subtitle: string): LaneView => ({ id, title, subtitle, status: 'pending', startedAt: null, endedAt: null, summary: '', steps: [] })
-  return { source: 'none', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [empty('papers', ...PAPERS_TITLE), empty('web', ...WEB_TITLE)] }, summarizer: empty('summarizer', ...SUM_TITLE), factcheck: factLane(events) }
+  return { source: 'none', planner, retrieval: { startedAt: rStart, endedAt: rEnd, lanes: [empty('papers', ...PAPERS_TITLE), empty('web', ...WEB_TITLE)] }, summarizer: empty('summarizer', ...SUM_TITLE), factcheck: factLane(events), report: reportLane(events) }
 }
 
 /** A finished run without step events: rows were stamped when they were written, so each step shows the moment its result was saved. */
@@ -408,6 +449,6 @@ function reconstruct(ov: PapersOverview, planner: TimelineModel['planner']): Tim
       lane('web', WEB_TITLE, plannedAt, t.webStoredAt ?? null, webSteps, `${c.webFound} sources`),
     ] },
     summarizer: lane('summarizer', SUM_TITLE, retrievalEnd, sumEnd, sumSteps, `${c.papersUsedAsEvidence} papers and ${c.webUsedAsEvidence} web sources used`),
-    factcheck: null,
+    factcheck: null, report: null,
   }
 }

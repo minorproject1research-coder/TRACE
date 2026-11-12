@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, Globe, BookOpen, Brain, ListChecks, MinusCircle, Search, ShieldCheck, X } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, CircleDashed, Clock, FileText, Globe, BookOpen, Brain, ListChecks, MinusCircle, Search, ShieldCheck, X } from 'lucide-react'
 import { ActivityLog } from '@/components/trace/activity-log'
 import { StatusPill } from '@/components/trace/status-pill'
 import { OVERLAP_TAG, STAGE_FAILED_NOTE } from '@/lib/factcheck'
@@ -28,7 +28,7 @@ function useNow(active: boolean) {
 const ms = (iso: string | null) => (iso ? new Date(iso).getTime() : null)
 const nowIso = (now: number) => new Date(now).toISOString()
 
-const laneIcon = { papers: BookOpen, web: Globe, summarizer: Brain, factcheck: ShieldCheck } as const
+const laneIcon = { papers: BookOpen, web: Globe, summarizer: Brain, factcheck: ShieldCheck, report: FileText } as const
 const laneTone = { pending: 'neutral', running: 'blue', completed: 'mint', failed: 'coral' } as const
 const laneText = { pending: 'Waiting', running: 'Running', completed: 'Done', failed: 'Failed' } as const
 
@@ -108,7 +108,7 @@ function Lane({ lane, now, open, extra }: { lane: LaneView; now: number; open?: 
   )
 }
 
-const GANTT_LABEL = { papers: 'Papers', web: 'Web', summarizer: 'Evidence', factcheck: 'Fact check' } as const
+const GANTT_LABEL = { papers: 'Papers', web: 'Web', summarizer: 'Evidence', factcheck: 'Fact check', report: 'Report' } as const
 
 /** Lanes on one time axis: the overlap is the point (the two retrieval branches; Stage 3 and Stage 4). */
 function Gantt({ lanes, from, to, intro }: { lanes: LaneView[]; from: string | null; to: string | null; intro: string }) {
@@ -159,14 +159,15 @@ function TokenUsageTile({ usage }: { usage: TokenUsage }) {
   )
 }
 
-export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverview | null; streamStatus: StreamStatus; streamDetail?: string; running: boolean; factcheckState?: StageState }) {
-  const { events, overview, streamStatus, streamDetail, running, factcheckState } = props
+export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverview | null; streamStatus: StreamStatus; streamDetail?: string; running: boolean; factcheckState?: StageState; reportState?: StageState }) {
+  const { events, overview, streamStatus, streamDetail, running, factcheckState, reportState } = props
   const model: TimelineModel = useMemo(() => buildTimeline(events, overview), [events, overview])
   const now = useNow(running)
   const [papers, web] = model.retrieval.lanes
   const fact = model.factcheck
-  const notes = timelineNotes(factcheckState, !!fact)
-  const anyRunning = papers.status === 'running' || web.status === 'running' || model.summarizer.status === 'running' || model.planner.status === 'running' || fact?.status === 'running'
+  const report = model.report
+  const notes = timelineNotes(factcheckState, !!fact, reportState, !!report)
+  const anyRunning = papers.status === 'running' || web.status === 'running' || model.summarizer.status === 'running' || model.planner.status === 'running' || fact?.status === 'running' || report?.status === 'running'
   const axisEnd = model.retrieval.endedAt ?? (papers.status === 'running' || web.status === 'running' ? nowIso(now) : [papers.endedAt, web.endedAt].filter(Boolean).sort().pop() ?? null)
   // Stage 3 and Stage 4 overlap when the fact check's real start (its earliest step) is before the evidence stage ended
   const overlap = useMemo(() => {
@@ -247,11 +248,13 @@ export function Timeline(props: { events: WorkflowEvent[]; overview: PapersOverv
       <div className="tl-after">
         <Lane lane={model.summarizer} now={now} extra={second ? <p className="lane-summary ss-line"><Search size={13} aria-hidden="true" /> {second} <a href="#second-search">Open the Second search tab</a></p> : null} />
         {fact && <Lane lane={fact} now={now} />}
+        {report && <Lane lane={report} now={now} />}
       </div>
+      {report?.status === 'failed' && <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>The written report failed.</b><p>The run itself finished and the evidence report can still be read.</p></div></div>}
       {fact?.status === 'failed' && <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>{STAGE_FAILED_NOTE}</b><p>The run itself finished. Only the cross-check is missing.</p></div></div>}
 
       {notes.stage4 && <section className={`tl-notbuilt ${notes.stage4.tag === 'queued' ? 'queued' : ''}`} aria-label="Fact check status"><span className="tag">{notes.stage4.tag}</span> {notes.stage4.text}</section>}
-      <section className="tl-notbuilt" aria-label="Written report status"><span className="tag">{notes.stage5.tag}</span> {notes.stage5.text}</section>
+      {notes.stage5 && <section className={`tl-notbuilt ${notes.stage5.tag === 'queued' ? 'queued' : ''}`} aria-label="Written report status"><span className="tag">{notes.stage5.tag}</span> {notes.stage5.text}</section>}
 
       {model.planner.status === 'failed' || papers.status === 'failed' || web.status === 'failed' || model.summarizer.status === 'failed'
         ? <div className="callout-box coral" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>The run stopped</b><p>The step that was running when it failed is marked above. The error is shown at the top of the page.</p></div></div> : null}

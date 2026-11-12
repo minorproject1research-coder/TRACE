@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ArrowLeft, FileText, Hourglass, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, FileText, Hourglass, PenLine, ShieldAlert } from 'lucide-react'
 import { ActivityTab } from '@/components/trace/activity-tab'
 import { CoverageBlock, FindingCard, NoEvidenceTag, SourceCard, verificationStats } from '@/components/trace/evidence'
 import { FactCheckPanel, FactTotals } from '@/components/trace/factcheck-panel'
@@ -18,6 +18,7 @@ import { factCheckRan, factTotals, STAGE_FAILED_NOTE } from '@/lib/factcheck'
 import { formatDateTime, formatDuration, LIVE_RUN_EXPECTATION, num, stanceInfo, statusLabel, statusTone, waitingCopy, type StanceGroup } from '@/lib/format'
 import { useMode } from '@/lib/mode'
 import { radioGroupKeys } from '@/lib/radio-keys'
+import { writtenReportButton } from '@/lib/written-report'
 import { buildSecondSearch } from '@/lib/second-search'
 import type { Report, WorkflowEvent } from '@/lib/trace-types'
 import { usePapers, useReport, useRunStream, useSession, type Async } from '@/lib/use-research'
@@ -82,6 +83,7 @@ export default function RunPage() {
   const duration = formatDuration(s.startedAt, s.finishedAt)
   const reportReady = finished && !!report.data
   const failedNote = s.status === 'failed'
+  const written = writtenReportButton(s.stages.report)                    // Open written report: only when the report stage is completed
 
   return (
     <>
@@ -106,6 +108,9 @@ export default function RunPage() {
               : reportReady
                 ? <Link className="start-button" href={`/research/${encodeURIComponent(s.id)}/report`}><FileText size={15} />Open evidence report</Link>
                 : <span className="start-button disabled" aria-disabled="true" title="No evidence was stored for this run"><FileText size={15} />No report stored</span>}
+          {written === 'open' && <Link className="start-button secondary" href={`/research/${encodeURIComponent(s.id)}/written-report`}><PenLine size={15} aria-hidden="true" />Open written report</Link>}
+          {written === 'writing' && <span className="start-button disabled" aria-disabled="true"><Hourglass size={15} aria-hidden="true" />Writing the report…</span>}
+          {written === 'failed' && <span className="start-button disabled" aria-disabled="true" title="The evidence report can still be read"><AlertTriangle size={15} aria-hidden="true" />Written report failed</span>}
         </div>
       </section>
 
@@ -127,7 +132,7 @@ export default function RunPage() {
 
       <section className="live-workspace ring live rise" style={{ '--i': 1 } as React.CSSProperties} aria-label="Run workspace">
         <div className="workspace-grid">
-          <Pipeline stages={s.stages} events={stream.events} />
+          <Pipeline stages={s.stages} events={stream.events} runId={s.id} />
           <div className="intelligence-panel">
             <div className="intel-tabs" role="tablist" aria-label="Run details">
               {TABS.map((t, i) => (
@@ -136,7 +141,7 @@ export default function RunPage() {
             </div>
             <div className="intel-body" id="intel-panel" role="tabpanel" aria-labelledby={`tab-${slug(tab)}`}>
               <Boundary label={tab} resetKey={tab}>
-              {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} factcheckState={s.stages.factcheck} />}
+              {tab === 'Activity' && <ActivityTab runId={id} events={stream.events} streamStatus={stream.status} streamDetail={stream.detail} running={active} papers={papers} mode={mode} factcheckState={s.stages.factcheck} reportState={s.stages.report} />}
               {tab === 'Sources' && <SourcesTab events={stream.events} active={active} report={report} finished={finished} second={secondOnly} setSecond={setSecondOnly} />}
               {tab === 'Evidence' && <EvidenceTab active={active} report={report} finished={finished} />}
               {tab === 'Second search' && <SecondSearchTab runId={id} view={secondView} loading={finished && report.loading} onShowSources={() => { setSecondOnly(true); pickTab('Sources') }} />}
@@ -254,7 +259,7 @@ function VerificationTab({ active, report, finished }: { active: boolean; report
         ? <div className="callout-box lav" role="note"><ShieldAlert size={18} aria-hidden="true" /><div><b>Cross-checked, not proven</b><p>Stage 4 compared the claims across sources. “Supported” means at least two independent sources state a claim; “partly supported” means one source states it and another states a close variant, which is a lead and not a confirmation; “not yet confirmed” means only one source does, which says nothing about whether it is false. None of them means a claim is true.</p></div></div>
         : r.stages.factcheck === 'not_run'
           ? <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking was switched off for this run</b><p>Stage 4 compares claims across sources. It did not run, so nothing here is cross-checked. TRACE only checked that each quote exists in its source, and had an independent model judge the finding against the aspect it should answer.</p></div></div>
-          : <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking is not built yet</b><p>Stage 4 would check whether each claim is true. Today TRACE only checks that the quote exists in the source, and has an independent model judge the finding against the aspect it should answer.</p></div></div>}
+          : <div className="callout-box amber" role="note"><AlertTriangle size={18} aria-hidden="true" /><div><b>Fact checking is not available on this server</b><p>Stage 4 compares claims across sources. Here TRACE only checked that the quote exists in the source, and had an independent model judge the finding against the aspect it should answer.</p></div></div>}
       {fact && <FactTotals totals={fact} />}
       <div className="metrics">
         <div><strong>{found}/{total}</strong><span>quotes found in source</span></div>

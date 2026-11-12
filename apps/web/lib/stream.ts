@@ -452,6 +452,9 @@ export const PURPOSE_LABEL: Record<string, string> = {
   stage4_near: 'Fact check: looking for close variants',
   stage4_conflict: 'Fact check: looking for disagreements',
   stage4_judge: 'Fact check: judge (older runs)',
+  stage5_write: 'Written report: writing the sentences',
+  stage5_summary: 'Written report: overview and conclusion',
+  stage5_check: 'Written report: checking the sentences',
 }
 
 export const purposeLabel = (key: string): string => (hasOwn(PURPOSE_LABEL, key) ? PURPOSE_LABEL[key] : key)
@@ -610,7 +613,7 @@ export type StageGroq = {
 export function groqByStage(input: WorkflowEvent[]): StageGroq[] {
   const events = mergeBySeq(input)
   const out: StageGroq[] = []
-  for (const stage of ['planner', 'retrieval', 'summarizer', 'factcheck']) {
+  for (const stage of ['planner', 'retrieval', 'summarizer', 'factcheck', 'report']) {
     const start = events.find(e => e.event === 'stage_started' && e.stage === stage)
     const end = events.find(e => e.event === 'stage_completed' && e.stage === stage)
     const from = start ? groqOf(start) : null

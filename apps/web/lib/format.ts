@@ -41,12 +41,18 @@ export const stageMeta: Record<StageId, { name: string; detail: string; hint: st
   retrieval: { name: 'Retrieval', detail: 'Searches papers and the web in parallel, then reads the sources it keeps.', hint: 'about 6 minutes on a measured run, longer for a new topic' },
   summarizer: { name: 'Evidence digest and judging', detail: 'Extracts findings, finds the quote behind each, and has an independent judge check them against the sub-question.', hint: 'about 4 to 5 minutes on a measured run (an estimate); the fact check starts during this stage' },
   factcheck: { name: 'Fact check', detail: 'Groups the verified findings that state the same thing, looks for a second source for each, and for sources that disagree. It does not decide what is true.', hint: 'about 3 minutes per sub-question, but most of it now runs during the evidence stage (an estimate)' },
-  report: { name: 'Written report', detail: 'Will write an answer from the verified evidence.', hint: '' },
+  report: { name: 'Written report', detail: 'Writes a cited report from the fact-check labels. Every sentence names its sources, and a finding that rests on one source is marked as not confirmed. It is not a verified answer.', hint: 'a few minutes (an estimate)' },
 }
 
+/** The written report (Stage 5) was not run: switched off on the server, or Stage 4 did not run so there was nothing to write from. */
+export const REPORT_NOT_RUN = 'not run (Stage 5 is switched off or Stage 4 did not run)'
+
 export const stageStateLabel: Record<StageState, string> = {
-  pending: 'queued', running: 'running', completed: 'done', failed: 'failed', not_built: 'not built yet', not_run: STAGE_SKIPPED_LABEL, unknown: 'unknown',
+  pending: 'queued', running: 'running', completed: 'done', failed: 'failed', not_built: 'not available', not_run: STAGE_SKIPPED_LABEL, unknown: 'unknown',
 }
+
+/** The word on a stage card. Stage 5 says "not run" (not "skipped"): it can also have nothing to write from. */
+export const stageStateWord = (id: StageId, state: StageState): string => (id === 'report' && state === 'not_run' ? 'not run' : stageStateLabel[state])
 
 /** The small time on a stage card. While the stage runs it is when it STARTED, once it is done it is when it FINISHED: the word says which. */
 export function stageClockLabel(state: StageState, iso: string | null | undefined): string | null {

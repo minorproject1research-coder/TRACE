@@ -27,9 +27,9 @@ function Step({ value, label, hint, onClick, active, pending }: { value: number 
 }
 
 export function ActivityTab(props: {
-  runId: string; events: WorkflowEvent[]; streamStatus: StreamStatus; streamDetail?: string; running: boolean; papers: Async<PapersOverview>; mode: 'live' | 'demo'; factcheckState?: StageState
+  runId: string; events: WorkflowEvent[]; streamStatus: StreamStatus; streamDetail?: string; running: boolean; papers: Async<PapersOverview>; mode: 'live' | 'demo'; factcheckState?: StageState; reportState?: StageState
 }) {
-  const { runId, events, streamStatus, streamDetail, running, papers, mode, factcheckState } = props
+  const { runId, events, streamStatus, streamDetail, running, papers, mode, factcheckState, reportState } = props
   const ov = papers.data
   const [view, setView] = useState<View>('timeline')
   const [filter, setFilter] = useState<PaperFilter>('all')
@@ -135,7 +135,7 @@ export function ActivityTab(props: {
       </TabFixed>
 
       <TabScroll label={`${VIEW_LABEL[view]} list`} scrollRef={scroller}>
-          {view === 'timeline' && <Timeline events={events} overview={ov} streamStatus={streamStatus} streamDetail={streamDetail} running={running} factcheckState={factcheckState} />}
+          {view === 'timeline' && <Timeline events={events} overview={ov} streamStatus={streamStatus} streamDetail={streamDetail} running={running} factcheckState={factcheckState} reportState={reportState} />}
 
           {view === 'plan' && (
             <div className="view-body">

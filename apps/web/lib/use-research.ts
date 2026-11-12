@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMode } from './mode'
-import { ApiError, type PaperDetail, type PapersOverview, type Report, type RunSummary, type Session, type StreamStatus, type WorkflowEvent } from './trace-types'
+import { ApiError, type PaperDetail, type PapersOverview, type Report, type RunSummary, type Session, type StreamStatus, type WorkflowEvent, type WrittenReportResponse } from './trace-types'
+import { generateMessage, POLL_MS } from './written-report'
 
 export type Async<T> = { data: T | null; error: ApiError | null; loading: boolean; reload: () => void }
 
@@ -81,4 +82,57 @@ export function useRunStream(id: string, onAnyEvent?: (event: WorkflowEvent) => 
     })
   }, [api, id])
   return { events, status, detail }
+}
+
+export type WrittenState =
+  | { phase: 'loading' }
+  | { phase: 'running' }
+  | { phase: 'ready'; data: WrittenReportResponse }
+  | { phase: 'none'; detail: string }
+  | { phase: 'error'; error: ApiError }
+
+/** The written report of a run. 202 means "being written": it asks again every 3 seconds until it is 200. 404 offers `generate`. */
+export function useWrittenReport(id: string) {
+  const { api } = useMode()
+  const [state, setState] = useState<WrittenState>({ phase: 'loading' })
+  const [message, setMessage] = useState<{ kind: string; text: string } | null>(null)
+  const [generating, setGenerating] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const alive = useRef(true)
+
+  const load = useCallback(async () => {
+    clearTimeout(timer.current)
+    try {
+      const r = await api.writtenReport(id)
+      if (!alive.current) return
+      if (r.state === 'ready') setState({ phase: 'ready', data: r.data })
+      else if (r.state === 'none') setState({ phase: 'none', detail: r.detail })
+      else { setState({ phase: 'running' }); timer.current = setTimeout(load, POLL_MS) }
+    } catch (e) {
+      if (alive.current) setState({ phase: 'error', error: e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : 'Something went wrong') })
+    }
+  }, [api, id])
+
+  useEffect(() => {
+    alive.current = true
+    setState({ phase: 'loading' }); setMessage(null)
+    load()
+    return () => { alive.current = false; clearTimeout(timer.current) }
+  }, [load])
+
+  const generate = useCallback(async () => {
+    setGenerating(true); setMessage(null)
+    try {
+      await api.writeWrittenReport(id)
+      const m = generateMessage(202, undefined)
+      setMessage(m); setState({ phase: 'running' }); clearTimeout(timer.current); timer.current = setTimeout(load, POLL_MS)
+    } catch (e) {
+      const err = e instanceof ApiError ? e : new ApiError('Something went wrong')
+      const m = generateMessage(err.status, err.message)
+      setMessage(m)
+      if (m.kind === 'running') { setState({ phase: 'running' }); clearTimeout(timer.current); timer.current = setTimeout(load, POLL_MS) }
+    } finally { setGenerating(false) }
+  }, [api, id, load])
+
+  return { state, message, generating, generate, reload: load }
 }

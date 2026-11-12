@@ -1,4 +1,5 @@
 import { countsOf } from './factcheck'
+import { demoWrittenResponse, demoWrittenStatus, type DemoWritten } from './demo-written'
 import { demoFactChecks, demoFactDisagreements, demoFactTotals, type DemoFact } from './demo-factcheck'
 import { demoDetail, demoOverview, type DemoStage } from './demo-papers'
 import { stripLoop2Detail } from './demo-loop2'
@@ -19,7 +20,7 @@ const DEMO_PREFIX = 'demo-'
 type Beat = { at: number; occ?: number; event: EventName; stage: StageId | null; status: string | null; message: string; data: Record<string, unknown> }
 
 /** `old`: the pipeline before the parallel work (no subQuestionIndex, no occurredAt, no near step): proves that old runs still render. */
-type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed'; fact?: DemoFact; old?: boolean }
+type Stored = { id: string; question: string; createdAt: string; fails: boolean; seed?: 'completed' | 'failed'; fact?: DemoFact; old?: boolean; /** What the written report (Stage 5) of this run is. Default: from the fact-check mode. */ written?: DemoWritten }
 
 const REL = { candidates: 24, shortlisted: 12, judged: 12, passed: 5, backend: 'server' }
 
@@ -153,7 +154,7 @@ const NEW_TOPICS = [
   'What is the sample method and how does it work?', 'How does the sample method scale to long inputs?', 'What are the open problems of the sample method?',
   'Which training settings does the sample method prefer?', 'How does the sample method compare with its baselines?',
 ]
-const NEW_TOKENS = { digest: 41200, digest_loop2: 9600, aspect_split: 3300, query_expansion: 2500, stage4_merge: 18400, stage4_support: 22100, stage4_near: 9300, stage4_conflict: 14700, rerank_probe: 700 }
+const NEW_TOKENS = { digest: 41200, digest_loop2: 9600, aspect_split: 3300, query_expansion: 2500, stage4_merge: 18400, stage4_support: 22100, stage4_near: 9300, stage4_conflict: 14700, rerank_probe: 700, stage5_write: 9800, stage5_summary: 2100, stage5_check: 6400 }
 const OLD_TOKENS = { digest: 41200, digest_loop2: 8800, aspect_split: 3100, query_expansion: 2400 }
 const sumOf = (o: Record<string, number>) => Object.values(o).reduce((a, b) => a + b, 0)
 
@@ -200,7 +201,7 @@ function retrievalBeats(n: number): Beat[] {
 }
 
 /** A note (lane "notes"): data.step is the code, data.level info or warn, data.stage the stage it belongs to. */
-function note(at: number, code: string, stage: 'planner' | 'retrieval' | 'summarizer', level: 'info' | 'warn', message: string, data: Record<string, unknown> = {}, occ?: number): Beat {
+function note(at: number, code: string, stage: 'planner' | 'retrieval' | 'summarizer' | 'report', level: 'info' | 'warn', message: string, data: Record<string, unknown> = {}, occ?: number): Beat {
   return { at, ...(occ != null ? { occ } : {}), event: 'step', stage, status: 'completed', message, data: { lane: 'notes', step: code, state: 'completed', level, stage, ...data } }
 }
 
@@ -356,7 +357,50 @@ function factcheckBeatsNew(fact: Exclude<DemoFact, 'off'>): Beat[] {
   return out
 }
 
-function timelineNew(fails: boolean, fact: DemoFact): Beat[] {
+/** What a run's written report is: an explicit `written`, else from the fact-check mode (a new run with Stage 4 writes one; one whose Stage 4 failed has nothing to write from;
+ *  an old-style run, and a run without Stage 4, never had Stage 5 on). */
+export function writtenKind(s: Pick<Stored, 'fact' | 'old' | 'written'>): DemoWritten {
+  if (s.written) return s.written
+  if (s.fact === 'on') return s.old ? 'none' : 'warnings'
+  return s.fact === 'failed' ? 'none' : 'off'
+}
+
+/** The report stage (Stage 5) of a new-style run: it starts when the fact check has ended. Stage 4 failed: it skips itself (stage5_skipped, ends not_run). */
+function reportBeats(at0: number, fact: DemoFact, written: DemoWritten): Beat[] {
+  const rstep = (at: number, id: string, state: 'running' | 'completed' | 'failed', message: string, data: Record<string, unknown> = {}): Beat =>
+    ({ at, event: 'step', stage: 'report', status: state, message, data: { lane: 'report', step: id, state, ...data } })
+  const out: Beat[] = [{ at: at0, event: 'stage_started', stage: 'report', status: 'running', message: 'Writing the report', data: {} }]
+  if (fact !== 'on') {
+    out.push(note(at0 + 40, 'stage5_skipped', 'report', 'info', 'Stage 5 was skipped: Stage 4 did not run, so there were no labels to write from'),
+      { at: at0 + 80, event: 'stage_completed', stage: 'report', status: 'not_run', message: 'The written report did not run: Stage 4 did not run', data: {} })
+    return out
+  }
+  const kind = written === 'running' ? 'completed' : written
+  const res = demoWrittenResponse(kind as 'completed' | 'warnings' | 'insufficient' | 'failed')
+  const sentences = res.report.overview?.counts?.sentences ?? 0, refs = res.report.references?.length ?? 0, warns = res.report.warnings?.length ?? 0
+  const t = (k: number) => at0 + 60 + k * 140
+  out.push({ at: at0 + 20, event: 'branch_started', stage: 'report', status: 'running', message: 'Written report started', data: { branch: 'report' } },
+    rstep(t(0), 'sections', 'running', 'Planning the sections', { sections: 4 }), rstep(t(1), 'sections', 'completed', '4 sections planned', { sections: 4 }))
+  if (kind === 'failed') {
+    out.push(rstep(t(2), 'write', 'running', 'Writing the sentences', { jobs: 9 }), rstep(t(3), 'write', 'failed', 'RuntimeError: the writer model stayed unreachable (simulated)'),
+      { at: t(4), event: 'stage_completed', stage: 'report', status: 'failed', message: 'The written report failed: RuntimeError (simulated). The evidence report is still available.', data: { status: 'failed', error: 'RuntimeError: the writer model stayed unreachable (simulated)' } })
+    return out
+  }
+  if (kind === 'insufficient') {
+    out.push(rstep(t(2), 'summary', 'completed', 'Nothing eligible to write about'), rstep(t(3), 'store', 'completed', 'Saved the report', { sections: 4, sentences: 0, references: 0, warnings: 0, stored: true }),
+      { at: t(4), event: 'stage_completed', stage: 'report', status: 'completed', message: 'Written report: insufficient evidence', data: { status: 'insufficient_evidence', sections: 4, sentences: 0, references: 0, warnings: 0 } })
+    return out
+  }
+  out.push(rstep(t(2), 'write', 'running', 'Writing the sentences', { jobs: 9 }), rstep(t(3), 'write', 'completed', '9 sentences written', { jobs: 9 }),
+    rstep(t(4), 'validate', 'running', 'Checking the sentences'), rstep(t(5), 'validate', 'completed', 'Checked the sentences', { kept: kind === 'warnings' ? 8 : 9, fallback: kind === 'warnings' ? 1 : 0, dropped: kind === 'warnings' ? 1 : 0 }))
+  if (kind === 'warnings') out.push(note(t(5) + 10, 'stage5_fallback', 'report', 'warn', '1 sentence uses the template wording', { count: 1 }), note(t(5) + 20, 'stage5_dropped', 'report', 'warn', '1 sentence was dropped by the final check', { count: 1 }))
+  out.push(rstep(t(6), 'summary', 'completed', 'Wrote the overview and the conclusion'), rstep(t(7), 'references', 'completed', `Numbered ${refs} references`, { references: refs }),
+    rstep(t(8), 'store', 'completed', 'Saved the report', { sections: 4, sentences, references: refs, warnings: warns, stored: true }),
+    { at: t(9), event: 'stage_completed', stage: 'report', status: 'completed', message: `Written report: ${res.status.replace(/_/g, ' ')}`, data: { status: res.status, sections: 4, sentences, references: refs, warnings: warns } })
+  return out
+}
+
+function timelineNew(fails: boolean, fact: DemoFact, written: DemoWritten = 'off'): Beat[] {
   const N = NEW_N
   const beats: Beat[] = [
     { at: 0, event: 'run_queued', stage: null, status: 'pending', message: 'Run queued', data: {} },
@@ -385,8 +429,13 @@ function timelineNew(fails: boolean, fact: DemoFact): Beat[] {
     beats.push({ ...done({}, ['factcheck', 'report']), at: 13500 })
   } else {
     beats.push(...factcheckBeatsNew(fact))
-    tokens = fact === 'failed' ? { ...NEW_TOKENS, stage4_merge: 6100, stage4_support: 5200, stage4_near: 0, stage4_conflict: 0, rerank_probe: 0 } : NEW_TOKENS
-    beats.push({ ...done({}, ['report']), at: Math.max(...beats.map(b => b.at)) + 200 })
+    const withReport = fact === 'failed' || (written !== 'off' && written !== 'none')                  // Stage 5 is on for this run (it skips itself when Stage 4 failed)
+    if (withReport) beats.push(...reportBeats(Math.max(...beats.map(b => b.at)) + 100, fact, written))
+    const wrote = fact === 'on' && withReport && written !== 'failed' && written !== 'insufficient'
+    const drop = (o: Record<string, number>, keys: string[]) => Object.fromEntries(Object.entries(o).filter(([k, v]) => !keys.includes(k) && v > 0))
+    tokens = fact === 'failed' ? { ...drop(NEW_TOKENS, ['stage5_write', 'stage5_summary', 'stage5_check', 'stage4_near', 'stage4_conflict', 'rerank_probe']), stage4_merge: 6100, stage4_support: 5200 }
+      : wrote ? NEW_TOKENS : drop(NEW_TOKENS, ['stage5_write', 'stage5_summary', 'stage5_check'])
+    beats.push({ ...done({}, withReport && (fact === 'on') ? [] : ['report']), at: Math.max(...beats.map(b => b.at)) + 200 })
   }
   const total = sumOf(tokens)
   const sorted = withGroq(beats.sort((x, y) => x.at - y.at), tokens)
@@ -398,8 +447,8 @@ function timelineNew(fails: boolean, fact: DemoFact): Beat[] {
 // ------------------------------------------------------------------------------------------------------------------------ Groq telemetry (data.groq)
 /** Cumulative Groq use on every step and stage event: tokens grow with the work (digests, then the fact check), the rest follows from the tokens. The last
  *  value is the run's total. stage_completed also carries byPurpose (tokens by purpose so far). */
-const PURPOSE_STAGE: Record<string, number> = { aspect_split: 0, query_expansion: 0, rerank_probe: 1, digest: 2, digest_loop2: 2, stage4_merge: 3, stage4_support: 3, stage4_near: 3, stage4_conflict: 3 }
-const STAGE_ORDER = ['planner', 'retrieval', 'summarizer', 'factcheck']
+const PURPOSE_STAGE: Record<string, number> = { aspect_split: 0, query_expansion: 0, rerank_probe: 1, digest: 2, digest_loop2: 2, stage4_merge: 3, stage4_support: 3, stage4_near: 3, stage4_conflict: 3, stage5_write: 4, stage5_summary: 4, stage5_check: 4 }
+const STAGE_ORDER = ['planner', 'retrieval', 'summarizer', 'factcheck', 'report']
 
 function withGroq(beats: Beat[], tokens: Record<string, number>): Beat[] {
   const total = sumOf(tokens)
@@ -435,8 +484,8 @@ const oldUsage = (fact: DemoFact) => {
 }
 
 /** The timeline of a stored run: the parallel pipeline, or (old: true) the one before it. */
-function timeline(s: Pick<Stored, 'fails' | 'fact' | 'old'>): Beat[] {
-  return s.old ? timelineOld(s.fails, s.fact ?? 'off') : timelineNew(s.fails, s.fact ?? 'off')
+function timeline(s: Pick<Stored, 'fails' | 'fact' | 'old' | 'written'>): Beat[] {
+  return s.old ? timelineOld(s.fails, s.fact ?? 'off') : timelineNew(s.fails, s.fact ?? 'off', writtenKind(s))
 }
 
 function load(): Stored[] {
@@ -452,6 +501,10 @@ function seeded(): Stored[] {
     { id: 'demo-interrupted', question: 'What happened to this interrupted demo run?', createdAt: ago(300), fails: true, seed: 'failed' },
     { id: 'demo-factcheck', question: 'How does the sample method compare with the baseline? (demo, with the cross-check)', createdAt: ago(130), fails: false, seed: 'completed', fact: 'on' },
     { id: 'demo-factcheck-old', question: 'How does the sample method compare with the baseline? (demo, cross-check, old-style events)', createdAt: ago(145), fails: false, seed: 'completed', fact: 'on', old: true },
+    { id: 'demo-written-ok', question: 'How does the sample method compare with the baseline? (demo, written report: completed)', createdAt: ago(110), fails: false, seed: 'completed', fact: 'on', written: 'completed' },
+    { id: 'demo-written-insufficient', question: 'What is the sample method? (demo, written report: insufficient evidence)', createdAt: ago(115), fails: false, seed: 'completed', fact: 'on', written: 'insufficient' },
+    { id: 'demo-written-failed', question: 'How does the sample method scale? (demo, written report: failed)', createdAt: ago(120), fails: false, seed: 'completed', fact: 'on', written: 'failed' },
+    { id: 'demo-written-running', question: 'Which settings does the sample method prefer? (demo, the report is still being written)', createdAt: ago(125), fails: false, seed: 'completed', fact: 'on', written: 'running' },
     { id: 'demo-factcheck-failed', question: 'How does the sample method scale? (demo, the cross-check failed)', createdAt: ago(160), fails: false, seed: 'completed', fact: 'failed' },
   ]
 }
@@ -462,16 +515,23 @@ function all(): Stored[] {
 
 function elapsed(s: Stored) { return s.seed ? Infinity : Date.now() - new Date(s.createdAt).getTime() }
 
+/** The report stage before any event: queued when Stage 5 is on for the run (or will skip itself because Stage 4 failed), else not run. */
+function reportInitial(s: Stored): StageState {
+  if (s.old) return 'not_run'
+  if (s.fact === 'failed') return 'pending'
+  return s.fact === 'on' && writtenKind(s) !== 'none' && writtenKind(s) !== 'off' ? 'pending' : 'not_run'
+}
+
 function view(s: Stored): Session {
   const beats = timeline(s)
   const t = elapsed(s)
-  const stages: Record<StageId, StageState> = { planner: 'pending', retrieval: 'pending', summarizer: 'pending', factcheck: s.fact ? 'pending' : 'not_run', report: 'not_built' }
+  const stages: Record<StageId, StageState> = { planner: 'pending', retrieval: 'pending', summarizer: 'pending', factcheck: s.fact ? 'pending' : 'not_run', report: reportInitial(s) }
   let status: RunStatus = 'pending'
   let error: string | null = null
   for (const b of beats) {
     if (b.at > t) break
     if (b.event === 'run_started') status = 'running'
-    if (b.stage && (b.event === 'stage_started' || b.event === 'stage_completed')) stages[b.stage] = b.event === 'stage_started' ? 'running' : b.status === 'failed' ? 'failed' : 'completed'
+    if (b.stage && (b.event === 'stage_started' || b.event === 'stage_completed')) stages[b.stage] = b.event === 'stage_started' ? 'running' : b.status === 'failed' ? 'failed' : b.status === 'not_run' ? 'not_run' : 'completed'
     if (b.event === 'run_completed') status = 'completed'
     if (b.event === 'run_failed') { status = 'failed'; error = b.message; if (b.stage) stages[b.stage] = 'failed' }
   }
@@ -504,11 +564,13 @@ function toEvent(b: Beat, seq: number, base: number, id: string): WorkflowEvent 
 }
 
 /** The whole event list of a simulated run, as the stream would deliver it (for the tests and for reading the scenarios). */
-export function demoEvents(opts: { fails?: boolean; fact?: DemoFact; old?: boolean }, base = Date.parse('2026-11-08T10:00:00Z')): WorkflowEvent[] {
-  return timeline({ fails: !!opts.fails, fact: opts.fact, old: opts.old }).map((b, seq) => toEvent(b, seq, base, 'demo-test'))
+export function demoEvents(opts: { fails?: boolean; fact?: DemoFact; old?: boolean; written?: DemoWritten }, base = Date.parse('2026-11-08T10:00:00Z')): WorkflowEvent[] {
+  return timeline({ fails: !!opts.fails, fact: opts.fact, old: opts.old, written: opts.written }).map((b, seq) => toEvent(b, seq, base, 'demo-test'))
 }
 
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
+const polls = new Map<string, number>()                // how often a run's report was asked for while it is "being written"
+const generated = new Map<string, number>()            // runs whose report was started with POST: polls left before it is ready
 const find = (id: string) => all().find(s => s.id === id)
 
 export const demoApi: TraceApi = {
@@ -544,6 +606,28 @@ export const demoApi: TraceApi = {
       return { ...empty, counts: Object.fromEntries(Object.keys(empty.counts).map(k => [k, 0])) as typeof empty.counts, papers: [], web: [], subQuestions: [] }
     }
     return demoOverview(id, stage, s.createdAt)
+  },
+  async writtenReport(id) {
+    await wait(250)
+    const s = find(id)
+    const none = { state: 'none' as const, detail: 'No written report for this run (Stage 5 did not run, or it has not been stored)' }
+    if (!s) return none
+    const kind = writtenKind(s)
+    const v = view(s)
+    if (v.stages.report === 'running' || (kind === 'running' && (polls.get(id) ?? 0) < 3)) { if (kind === 'running') polls.set(id, (polls.get(id) ?? 0) + 1); return { state: 'running' as const } }
+    const g = generated.get(id)
+    if (g != null) { if (g > 0) { generated.set(id, g - 1); return { state: 'running' as const } } return { state: 'ready' as const, data: demoWrittenResponse('warnings', s.question) } }
+    if (kind === 'off' || kind === 'none' || v.stages.report === 'not_run' || v.stages.report === 'pending') return none
+    return { state: 'ready' as const, data: demoWrittenResponse((kind === 'running' ? 'completed' : kind) as 'completed' | 'warnings' | 'insufficient' | 'failed', s.question) }
+  },
+  async writeWrittenReport(id) {
+    await wait(250)
+    const s = find(id)
+    if (!s) throw new ApiError('Research session not found', 404)
+    if (writtenKind(s) === 'off') throw new ApiError('Stage 5 is switched off on the server (STAGE5=false), so the report cannot be written.', 400)
+    if ((generated.get(id) ?? -1) > 0 || writtenKind(s) === 'running') throw new ApiError('A written report is already being written for this run', 409)
+    generated.set(id, 1)                                           // one poll answers 202, then the report is ready
+    return { state: 'started' }
   },
   async paper(id, paperId) {
     await wait(300)

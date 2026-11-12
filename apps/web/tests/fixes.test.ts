@@ -21,18 +21,24 @@ test('while Stage 3 runs the Timeline does not say the fact check is not built: 
   }
 })
 
-test('only not_run means switched off, and only the written report (Stage 5) reads "not built yet"', () => {
-  const off = timelineNotes('not_run', false)
+test('nothing says "not built yet": not_run says it did not run, queued says it is coming, an older server says "not available"', () => {
+  const off = timelineNotes('not_run', false, 'not_run')
   assert.equal(off.stage4!.tag, 'skipped (switched off)'); assert.match(off.stage4!.text, /switched off/)
-  for (const state of ['pending', 'running', 'not_run', 'completed', 'failed'] as const) {
-    assert.equal(timelineNotes(state, state === 'completed').stage5.tag, 'not built yet'); assert.match(timelineNotes(state, false).stage5.text, /Stage 5\) is not built yet/)
-    const s4 = timelineNotes(state, false).stage4
-    assert.ok(!s4 || s4.tag !== 'not built yet', 'Stage 4 is never "not built yet" for ' + state)
+  assert.equal(off.stage5!.tag, 'not run'); assert.match(off.stage5!.text, /switched off on the server, or Stage 4 did not run/)
+  for (const state of ['pending', 'running', 'not_run', 'completed', 'failed', 'not_built', undefined] as const) {
+    for (const rep of ['pending', 'running', 'not_run', 'completed', 'failed', 'not_built', undefined] as const) {
+      const n = timelineNotes(state, false, rep)
+      for (const note of [n.stage4, n.stage5]) assert.ok(!note || !/not built/i.test(`${note.tag} ${note.text}`), `${state}/${rep}: ${note?.text}`)
+    }
   }
   assert.equal(timelineNotes('running', true).stage4, null, 'once the lane exists it says everything itself')
   assert.equal(timelineNotes('completed', false).stage4, null); assert.equal(timelineNotes('failed', false).stage4, null)
-  assert.equal(timelineNotes('not_built', false).stage4!.tag, 'not built yet', 'an older server that really has no Stage 4 keeps its note')
+  assert.equal(timelineNotes('not_built', false).stage4!.tag, 'not available', 'an older server that really has no Stage 4')
   assert.ok(timelineNotes(undefined, false).stage4)
+  // Stage 5: queued while it is pending or running, nothing once its lane exists or it is completed or failed (its own card says it)
+  assert.equal(timelineNotes('completed', true, 'pending').stage5!.tag, 'queued'); assert.equal(timelineNotes('completed', true, 'running').stage5!.tag, 'queued')
+  assert.equal(timelineNotes('completed', true, 'running', true).stage5, null); assert.equal(timelineNotes('completed', true, 'completed').stage5, null); assert.equal(timelineNotes('completed', true, 'failed').stage5, null)
+  assert.equal(timelineNotes('completed', true, undefined).stage5!.tag, 'not available')
 })
 
 test('no fact-check event yet: the Timeline has no fact-check lane, so the queued note stands in for it', () => {

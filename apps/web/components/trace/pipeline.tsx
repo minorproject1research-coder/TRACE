@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { elapsedLabel, factProgress, failedSubQuestionsNote, judgeFailuresNote, judgeWaitsNote, OVERLAP_TAG, overlapNote, STAGE_FAILED_NOTE, TIME_HINT, type FactProgress } from '@/lib/factcheck'
-import { num, stageClockLabel, stageMeta, stageStateLabel } from '@/lib/format'
+import Link from 'next/link'
+import { num, REPORT_NOT_RUN, stageClockLabel, stageMeta, stageStateWord } from '@/lib/format'
+import { statusView } from '@/lib/written-report'
 import { stageStartedAt } from '@/lib/stream'
 import { stageExtras } from '@/lib/telemetry'
 import { StageExtrasView } from '@/components/trace/timeline-telemetry'
@@ -21,6 +23,11 @@ function facts(stage: StageId, events: WorkflowEvent[]): string[] {
     return [papers ? `${num(papers.data, 'papers') ?? '?'} papers kept` : null, web ? `${num(web.data, 'webSources') ?? '?'} web sources` : null].filter((x): x is string => !!x)
   }
   if (stage === 'summarizer' && done) return [`${num(done.data, 'digests') ?? '?'} sources digested`, `${num(done.data, 'sufficientSubQuestions') ?? '?'} of ${num(done.data, 'subQuestions') ?? '?'} sub-questions sufficient`]
+  if (stage === 'report' && done) {
+    const status = typeof done.data.status === 'string' ? statusView(done.data.status).label : null
+    const part = (k: string, w: string) => (num(done.data, k) != null ? [`${num(done.data, k)} ${w}`] : [])
+    return [...(status ? [status] : []), ...part('sections', 'sections'), ...part('sentences', 'sentences'), ...part('references', 'references'), ...part('warnings', 'warnings')]
+  }
   if (stage === 'factcheck') {
     const r = factProgress(events)?.result
     if (!r) return []
@@ -34,7 +41,10 @@ function facts(stage: StageId, events: WorkflowEvent[]): string[] {
 /** What a stage says about itself. A stage that was switched off for this run says so; the fact check also has a text of its own when it is not built. */
 function detailOf(id: StageId, state: StageState): string {
   if (id === 'factcheck' && state === 'not_run') return 'Switched off for this run, so the evidence is not cross-checked.'
-  if (id === 'factcheck' && state === 'not_built') return 'Will check whether each claim is actually true.'
+  if (id === 'factcheck' && state === 'not_built') return 'Not available on this server.'
+  if (id === 'report' && state === 'not_run') return REPORT_NOT_RUN
+  if (id === 'report' && state === 'not_built') return 'Not available on this server.'
+  if (id === 'report' && state === 'failed') return 'The written report could not be produced. The evidence report is still available.'
   return stageMeta[id].detail
 }
 
@@ -80,7 +90,7 @@ function when(stage: StageId, events: WorkflowEvent[], kind: 'stage_started' | '
   return events.find(e => e.stage === stage && e.event === kind)?.timestamp ?? null
 }
 
-export function Pipeline({ stages, events }: { stages: Record<StageId, StageState>; events: WorkflowEvent[] }) {
+export function Pipeline({ stages, events, runId }: { stages: Record<StageId, StageState>; events: WorkflowEvent[]; runId?: string }) {
   const observed = ORDER.filter(s => stages[s] === 'completed').length
   const buildable = ORDER.filter(s => stages[s] !== 'not_built' && stages[s] !== 'not_run').length          // a stage that is switched off is not counted
   return (
@@ -101,10 +111,11 @@ export function Pipeline({ stages, events }: { stages: Record<StageId, StageStat
                 <div className="stage-marker" aria-hidden="true">{state === 'completed' ? <Check size={14} /> : state === 'running' ? <span className="spinner" /> : state === 'failed' ? <X size={14} /> : <span>{i + 1}</span>}</div>
                 {i < ORDER.length - 1 && <div className="stage-connector" aria-hidden="true" />}
                 <div className="stage-info">
-                  <div className="stage-title"><b>{meta.name}</b><span>{stageStateLabel[state]}</span></div>
+                  <div className="stage-title"><b>{meta.name}</b><span>{stageStateWord(id, state)}</span></div>
                   <p>{detailOf(id, state)}</p>
                   {id === 'factcheck' && <FactcheckStatus state={state} progress={fact} />}
-                  {id !== 'report' && <StageExtrasView stage={id} x={stageExtras(events, id)} />}
+                  <StageExtrasView stage={id} x={stageExtras(events, id)} />
+                  {id === 'report' && state === 'completed' && runId && <p className="stage-info-note"><Link href={`/research/${encodeURIComponent(runId)}/written-report`} className="link-button strong">Open the written report</Link></p>}
                   {state === 'running' && id !== 'factcheck' && meta.hint && <p className="hint">In progress, {meta.hint}. The Timeline tab shows its steps.</p>}
                   {(f.length > 0 || clock) && <div className="stage-detail">{f.map(x => <span key={x}>{x}</span>)}{clock && <code>{clock}</code>}</div>}
                 </div>

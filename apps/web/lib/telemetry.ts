@@ -151,6 +151,9 @@ export function noteView(note: Note): { title: string; detail: string | null } {
       const sq = note.subQuestionIndex != null ? `Sub-question ${note.subQuestionIndex}` : 'A sub-question'
       return { title: `${sq}: ${g != null ? `${g} ${g === 1 ? 'aspect stays' : 'aspects stay'}` : 'some aspects stay'} without evidence after the second search`, detail: n(d, 'searched') != null ? `${n(d, 'searched')} searched again, ${n(d, 'covered') ?? 0} covered.` : null }
     }
+    case 'stage5_skipped': return { title: 'The written report was skipped', detail: 'Stage 4 did not run, so there were no labels to write from.' }
+    case 'stage5_fallback': { const c = n(d, 'count'); return { title: `${c != null ? `${c} ${c === 1 ? 'sentence uses' : 'sentences use'}` : 'Some sentences use'} the standard template wording`, detail: 'The model’s sentence failed its checks twice, so the sentence was written from the claim’s own wording. It is still attributed and cited.' } }
+    case 'stage5_dropped': { const c = n(d, 'count'); return { title: `${c != null ? `${c} ${c === 1 ? 'sentence was' : 'sentences were'}` : 'Some sentences were'} dropped by the final check`, detail: 'They are not in the written report.' } }
     default: return { title: note.message || note.code, detail: null }
   }
 }
@@ -165,9 +168,9 @@ export type StageExtras = {
   notes: { count: number; warn: number }
 }
 
-export function stageExtras(events: WorkflowEvent[], stage: 'planner' | 'retrieval' | 'summarizer' | 'factcheck'): StageExtras {
+export function stageExtras(events: WorkflowEvent[], stage: 'planner' | 'retrieval' | 'summarizer' | 'factcheck' | 'report'): StageExtras {
   const ev = mergeBySeq(events)
-  const chips = stage === 'factcheck' ? [] : cacheChips(cacheInfo(ev))[stage]
+  const chips = stage === 'factcheck' || stage === 'report' ? [] : cacheChips(cacheInfo(ev))[stage]
   const notes = notesOf(ev).filter(x => x.stage === stage)
   return { chips, groq: stageGroqLine(groqByStage(ev), stage), notes: { count: notes.length, warn: notes.filter(x => x.level === 'warn').length } }
 }

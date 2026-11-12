@@ -44,10 +44,10 @@ export default function SettingsPage() {
 
       <section className="panel rise" style={{ '--i': 3 } as React.CSSProperties} aria-labelledby="not-title">
         <h2 id="not-title">What TRACE does not do yet</h2>
-        <p className="meta">Fact checking across sources (Stage 4) is built and optional: it runs when the server has FACTCHECK=true.</p>
+        <p className="meta">Fact checking across sources (Stage 4) is built and optional: it runs when the server has FACTCHECK=true. The written report (Stage 5) is built and optional too: it runs when the server has STAGE5=true, after Stage 4.</p>
         <ul className="plain-list">
           <li>Sign-in and per-user data: every visitor sees every run.</li>
-          <li>The written report (Stage 5). Results are collected and judged evidence, not an answer.</li>
+          <li>A verified answer. The written report only reports what the sources say, with every check automatic and none reviewed by a person.</li>
           <li>Cancelling a run once it has started.</li>
         </ul>
       </section>

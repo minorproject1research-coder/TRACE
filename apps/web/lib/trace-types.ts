@@ -2,7 +2,7 @@
 
 export type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
 export type StageId = 'planner' | 'retrieval' | 'summarizer' | 'factcheck' | 'report'
-/** not_run: the stage exists but was switched off for this run (Stage 4 with FACTCHECK off). not_built: the stage does not exist yet (Stage 5). */
+/** not_run: the stage was switched off for this run, or had nothing to work from (Stage 4 with FACTCHECK off; Stage 5 with STAGE5 off or without Stage 4). not_built stays in the type for old servers; no stage reports it any more. */
 export type StageState = 'pending' | 'running' | 'completed' | 'failed' | 'not_built' | 'not_run' | 'unknown'
 
 export type Session = {
@@ -345,6 +345,31 @@ export class ApiError extends Error {
   }
 }
 
+// ---- Stage 5: the written report (docs/STAGE5_OUTPUT.md). Every field is optional for the reader: unknown fields are ignored, tier / origin / kind / evidenceLevel are open strings.
+export type WrittenSentence = { text: string; claimIds?: string[]; refs?: number[]; /** supported | partly | single (open string) */ tier: string; /** llm | fallback | template (open string) */ origin?: string }
+export type WrittenSide = { quote?: string | null; ref?: number | null; title?: string | null }
+export type WrittenDisagreement = { claimA?: string; claimB?: string; claimId?: string | null; note?: string; sideA?: WrittenSide; sideB?: WrittenSide }
+export type WrittenSection = {
+  id?: string; title: string; subQuestionId?: string; detailQuestions?: string[]; sentences?: WrittenSentence[]; disagreements?: WrittenDisagreement[]; gaps?: string[]
+  counts?: Record<string, number>
+}
+export type WrittenReference = {
+  number: number; title?: string | null; authors?: string[]; year?: number | null; venue?: string | null; doi?: string | null; url?: string | null
+  kind?: string; evidenceLevel?: string | null; sourceIds?: string[]; text?: string; markdown?: string
+}
+export type WrittenReport = {
+  status?: string; question?: string; generatedAt?: string
+  overview?: { summary?: WrittenSentence[]; counts?: Record<string, number> }
+  introduction?: string[]; sections?: WrittenSection[]; limitations?: string[]; conclusion?: WrittenSentence[]; references?: WrittenReference[]
+  stats?: Record<string, unknown>; warnings?: string[]
+}
+/** GET /api/research/{id}/written-report, 200. */
+export type WrittenReportResponse = {
+  status: string; report: WrittenReport; markdown: string; stats?: Record<string, unknown>; model?: string | null; templateVersion?: string | null; generatedAt?: string | null
+}
+/** The three answers of the GET that are not errors: 200 (ready), 202 (being written, poll again) and 404 (none stored). 503 and the rest are ApiErrors. */
+export type WrittenReportResult = { state: 'ready'; data: WrittenReportResponse } | { state: 'running' } | { state: 'none'; detail: string }
+
 /** The surface the UI talks to. Implemented by the live client (lib/trace-api.ts) and the demo simulator (lib/demo-api.ts). */
 export interface TraceApi {
   mode: 'live' | 'demo'
@@ -356,6 +381,10 @@ export interface TraceApi {
   /** The retrieval funnel and every paper / web source kept so far. Works while the run is going. */
   papers(id: string): Promise<PapersOverview>
   paper(id: string, paperId: string): Promise<PaperDetail>
+  /** The written report of Stage 5. 202 and 404 are results, not errors; 503 and the rest throw an ApiError. */
+  writtenReport(id: string): Promise<WrittenReportResult>
+  /** Starts writing it again from the stored run (202). Throws an ApiError: 400 Stage 5 is switched off on the server, 404 unknown run, 409 already running. */
+  writeWrittenReport(id: string): Promise<{ state: string }>
   /** Returns an unsubscribe function. The stream closes itself after run_completed / run_failed. */
   subscribe(id: string, handlers: StreamHandlers): () => void
 }

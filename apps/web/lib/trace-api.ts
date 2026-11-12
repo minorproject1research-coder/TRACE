@@ -1,4 +1,4 @@
-import { ApiError, TERMINAL_EVENTS, type CreateInput, type Health, type PaperDetail, type PapersOverview, type Report, type RunSummary, type Session, type StreamHandlers, type TraceApi, type WorkflowEvent } from './trace-types'
+import { ApiError, TERMINAL_EVENTS, type CreateInput, type Health, type PaperDetail, type PapersOverview, type Report, type RunSummary, type Session, type StreamHandlers, type TraceApi, type WorkflowEvent, type WrittenReportResponse, type WrittenReportResult } from './trace-types'
 
 /**
  * Public URL of the FastAPI service. Only a URL: no secret ever belongs in a NEXT_PUBLIC_ variable (it ships to every browser).
@@ -64,6 +64,26 @@ async function attempt<T>(path: string, init?: RequestInit, timeout = DEFAULT_TI
 
 const enc = encodeURIComponent
 
+/** The written-report GET answers 200 (ready), 202 (being written) and 404 (none stored); 202 and 404 are results here, not errors. 503 and the rest throw. */
+async function writtenReport(id: string): Promise<WrittenReportResult> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REPORT_TIMEOUT)
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}/api/research/${enc(id)}/written-report`, { headers: { Accept: 'application/json' }, signal: controller.signal })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw new ApiError('The TRACE backend took too long to respond. Try again.')
+    throw new ApiError(`Cannot reach the TRACE backend at ${API_BASE_URL}. Is it running?`)
+  } finally {
+    clearTimeout(timer)
+  }
+  const body = await response.json().catch(() => null)
+  if (response.status === 202) return { state: 'running' }
+  if (response.status === 404) return { state: 'none', detail: detailMessage(body, 404) }
+  if (!response.ok) throw new ApiError(detailMessage(body, response.status), response.status)
+  return { state: 'ready', data: body as WrittenReportResponse }
+}
+
 export const liveApi: TraceApi = {
   mode: 'live',
   health: () => request<Health>('/health', undefined, 8_000),
@@ -76,6 +96,8 @@ export const liveApi: TraceApi = {
   report: (id) => request<Report>(`/api/research/${enc(id)}/report`, undefined, REPORT_TIMEOUT),
   papers: (id) => request<PapersOverview>(`/api/research/${enc(id)}/papers`, undefined, REPORT_TIMEOUT),
   paper: (id, paperId) => request<PaperDetail>(`/api/research/${enc(id)}/papers/${enc(paperId)}`, undefined, REPORT_TIMEOUT),
+  writtenReport,
+  writeWrittenReport: (id) => request<{ state: string }>(`/api/research/${enc(id)}/written-report`, { method: 'POST', body: JSON.stringify({}) }),
 
   subscribe(id, { onEvent, onStatus }: StreamHandlers) {
     let source: EventSource | null = null

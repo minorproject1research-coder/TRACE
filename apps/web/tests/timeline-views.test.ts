@@ -321,7 +321,7 @@ test('the demo run carries telemetry, notes, per-paper events and cache hits end
   const all = demoEvents({ fact: 'on' })
   const u = groqTotal(all)!
   assert.equal(u.tokens, tokenUsage(all)!.total); assert.ok(u.rateLimits > 0 && u.parkedSeconds > 0)
-  assert.ok(groqByStage(all).length === 4)
+  assert.ok(groqByStage(all).length === 5, 'planner, retrieval, summarizer, fact check and the written report')
   assert.ok(notesOf(all).some(x => x.level === 'warn') && notesOf(all).some(x => x.code === 'loop2_gaps'))
   assert.equal(paperParseModel(all).done, 8); assert.equal(cacheInfo(all).planCache, true)
   const old = demoEvents({ fact: 'on', old: true })
