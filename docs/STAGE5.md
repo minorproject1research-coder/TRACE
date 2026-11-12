@@ -51,7 +51,7 @@ Citations: the model never writes a `[n]`, a URL, an author or a year; the valid
 | `STAGE5` | false | switch for the whole stage (1/true/yes/on) |
 | `STAGE5_MODEL` | `openai/gpt-oss-120b` | the writer model (through `groq_pool`) |
 | `STAGE5_REASONING_EFFORT` | low | low / medium / high |
-| `STAGE5_MAX_OUTPUT_TOKENS` | 1500 | `max_completion_tokens` of one call |
+| `STAGE5_MAX_OUTPUT_TOKENS` | 2500 | `max_completion_tokens` of one call (reasoning tokens count; 1500 was cut off in the first live run) |
 | `STAGE5_MAX_PROMPT_TOKENS` | 4500 | a section above this (about 4 characters per token) is split into several calls |
 | `STAGE5_TEMPERATURE` | 0.2 | |
 | `STAGE5_RETRIES` | 1 | retries of a failed sentence with the Python reasons before the fallback sentence |
