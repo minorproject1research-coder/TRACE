@@ -659,3 +659,43 @@ def test_make_check_runs_the_cheap_checks_before_the_models():
     chk3 = grounding.make_check(nli=FakeNli(ent=0.0), judge=FakeJudge(False, 0.9, reason="adds a detail"))
     r = chk3("One study reports that ViT-B/16 attains 77.9% top-1 accuracy on ImageNet-1k.", ["c_1"], job)
     assert r and "not supported" in r[0]
+
+
+# ---------------------------------------------------------------------------------------------------- natural style (template s5-v3)
+def _natural(monkeypatch):
+    monkeypatch.setenv("STAGE5_STYLE", "natural")
+
+
+def test_natural_style_needs_a_description_of_the_source_only_for_single_claims(monkeypatch):
+    from apps.api.agents.stage5_report import hedging
+    _natural(monkeypatch)
+    assert hedging.check_hedge("single", "A PET/CT segmentation study reports that federated learning matches centralized training.") == []
+    assert hedging.check_hedge("single", "In a benchmark on chest X-rays, federated models lose three points.") == []
+    assert hedging.check_hedge("single", "According to one study, differential privacy lowers accuracy.") == []
+    assert hedging.check_hedge("single", "One study reports that it works.") == []
+    assert hedging.check_hedge("single", "Federated learning matches centralized training.")                   # a bare claim is not enough for one source
+    assert hedging.check_hedge("single", "A study clearly shows that federated learning wins.")                 # fact verbs stay forbidden
+    assert hedging.check_hedge("partly", "Federated training matches centralized accuracy; a related result is degradation under skew.") == []
+    assert hedging.check_hedge("partly", "Federated training clearly matches centralized accuracy.")
+    assert hedging.check_hedge("supported", "Federated models reach accuracy comparable to centralized pooling.") == []
+    assert hedging.check_hedge("supported", "Federated learning is proven to match centralized training.")
+
+
+def test_natural_style_prompts_and_version_differ_from_the_attributed_style(monkeypatch):
+    from apps.api.agents.stage5_report import prompts, settings
+    _natural(monkeypatch)
+    assert settings.template_version() == "s5-v3"
+    msgs = prompts.summary_messages("summary", [{"n": 1, "text": "x", "tier": "single"}], 4, 6, {"question": "Q?", "parts": []})
+    assert "labelled [supported], [partly] or [single]" in msgs[0]["content"] and "One study reports" not in msgs[0]["content"]
+    monkeypatch.setenv("STAGE5_STYLE", "attributed")
+    assert settings.template_version() == "s5-v2"
+    assert "One study reports" in prompts.summary_messages("summary", [{"n": 1, "text": "x", "tier": "single"}], 4, 6, {"question": "Q?", "parts": []})[0]["content"]
+
+
+def test_natural_style_summary_check_wants_a_described_source_for_single_findings(monkeypatch):
+    from apps.api.agents.stage5_report import validators
+    _natural(monkeypatch)
+    body = [{"n": 1, "text": "A PET/CT study reports that federated learning matches centralized training.", "tier": "single"}]
+    ok = validators.check_summary([{"text": "A PET/CT study reports that federated learning matches centralized training.", "from_sentences": [1]}], body, min_sentences=1, max_sentences=5)
+    bad = validators.check_summary([{"text": "Federated learning matches centralized training.", "from_sentences": [1]}], body, min_sentences=1, max_sentences=5)
+    assert ok == [] and any("what the source is" in r for r in bad)

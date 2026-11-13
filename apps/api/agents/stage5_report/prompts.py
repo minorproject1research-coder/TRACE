@@ -45,13 +45,31 @@ SUMMARY_SYSTEM = """You compress numbered, already verified sentences from a lit
 Rules:
 1. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number.
 2. Each {kind} sentence is based on one to three numbered sentences: list their numbers in from_sentences.
-3. Never sound more certain than the numbered sentences it is based on. If one of them says "one study reports" or "according to", keep that attribution. Never turn a reported finding into a fact.
-   Concretely: a summary sentence that is based on ANY numbered sentence starting "One source reports" or "One study reports" must itself start with "One study reports" or "One source reports" (or "According to one source,"). Only a sentence based on sentences that ALL start with "Two sources report" may start that way. To avoid mixing, base each sentence on sentences of the same kind.
+3. {hedge}
 4. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
 5. {extra}
 6. At most 60 words per sentence.
 
 Return only JSON: {{"sentences": [{{"text": "...", "from_sentences": [1, 2]}}]}}"""
+
+# the hedge rule of the summary / answer prompts, per style (STAGE5_STYLE); {hedge} in the templates below
+HEDGE_ATTRIBUTED = {
+    "summary": 'Never sound more certain than the numbered sentences it is based on. If one of them says "one study reports" or "according to", keep that attribution. Never turn a reported finding into a fact.\nConcretely: a summary sentence that is based on ANY numbered sentence starting "One source reports" or "One study reports" must itself start with "One study reports" or "One source reports" (or "According to one source,"). Only a sentence based on sentences that ALL start with "Two sources report" may start that way. To avoid mixing, base each sentence on sentences of the same kind.',
+    "answer": 'Never sound more certain than the numbered sentences. A sentence based on ANY numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that ALL start "Two sources report" may start that way. Base each sentence on sentences of the same kind. Never turn a reported finding into a fact.',
+    "parts": 'Never sound more certain than the numbered sentences. A sentence based on a numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that start "Two sources report" may start that way. Never turn a reported finding into a fact. If the two numbered sentences of a part point in different directions, give both sides ("One source reports X, while another reports Y").',
+}
+HEDGE_NATURAL = (
+    "Never sound more certain than the numbered sentences. Each is labelled [supported], [partly] or [single]. A sentence based on ANY [single] sentence must say "
+    "what its source is (\"A ... study reports that ...\", \"In a ... benchmark, ...\", \"According to one study, ...\"). A sentence based on [partly] sentences "
+    "must not use shows, proves, demonstrates, confirms, establishes or clearly. Base each sentence on sentences with the same label where you can. Never turn "
+    "a reported finding into a fact. If two numbered sentences point in different directions, say so (\"...; however ...\")."
+)
+
+
+def hedge_rule(kind_of_prompt: str) -> str:
+    from apps.api.agents.stage5_report import settings
+    return HEDGE_NATURAL if settings.natural() else HEDGE_ATTRIBUTED[kind_of_prompt]
+
 
 ANSWER_SYSTEM = """You answer a research question for a reader, using ONLY numbered sentences that were already verified against sources. You write the {kind}: {low} to {high} sentences.
 
@@ -61,7 +79,7 @@ Rules:
 1. Answer the question itself. The first sentence must give the verdict on the main part of the question in plain words (for example how the two things compare). Then give the numbers, conditions or limits that qualify it, then answer every other part of the question (for example the trade-offs). If the numbered sentences do not answer a part, say nothing about it: the system adds a note about what the evidence does not settle.
 2. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number. Prefer sentences that contain a figure, and keep the figure with what it is compared with.
 3. Each answer sentence is based on one to four numbered sentences: list their numbers in from_sentences. The sentences are grouped under "== Part: ... ==" headers. Write at least one answer sentence for each of three or more different parts, so that the answer covers the verdict, the conditions or limits, and the risks or costs when the parts have them.
-4. Never sound more certain than the numbered sentences. A sentence based on ANY numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that ALL start "Two sources report" may start that way. Base each sentence on sentences of the same kind. Never turn a reported finding into a fact.
+4. {hedge}
 5. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
 6. {extra}
 7. At most 70 words per sentence.
@@ -75,7 +93,7 @@ The question: {question}
 Rules:
 1. Each answer sentence says, in plain words, what the numbered sentences of its own part say about the question. Base it on one or two numbered sentences of that part ONLY: list their numbers in from_sentences. Never mix sentences of different parts in one answer sentence.
 2. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number. Keep a figure together with what it is compared with.
-3. Never sound more certain than the numbered sentences. A sentence based on a numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that start "Two sources report" may start that way. Never turn a reported finding into a fact. If the two numbered sentences of a part point in different directions, give both sides ("One source reports X, while another reports Y").
+3. {hedge}
 4. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
 5. {extra}
 6. At most 60 words per sentence.
@@ -205,11 +223,11 @@ def summary_messages(kind: str, sentences: list, low: int, high: int, context=No
         nl = chr(10)
         parts_text = ("The report looked at these sub-questions; the sentences come from them:" + nl + nl.join(f"- {x}" for x in parts) + nl) if parts else ""
         if (context or {}).get("mode") == "parts":
-            system = ANSWER_PARTS_SYSTEM.format(kind=kind, n=high, question=question, extra=extra)
+            system = ANSWER_PARTS_SYSTEM.format(kind=kind, n=high, question=question, extra=extra, hedge=hedge_rule("parts"))
         else:
-            system = ANSWER_SYSTEM.format(kind=kind, low=low, high=high, question=question, parts=parts_text, extra=extra)
+            system = ANSWER_SYSTEM.format(kind=kind, low=low, high=high, question=question, parts=parts_text, extra=extra, hedge=hedge_rule("answer"))
     else:
-        system = SUMMARY_SYSTEM.format(kind=kind, low=low, high=high, extra=extra)
+        system = SUMMARY_SYSTEM.format(kind=kind, low=low, high=high, extra=extra, hedge=hedge_rule("summary"))
     parts_titles = (context or {}).get("parts") if question else None
     return [{"role": "system", "content": system}, {"role": "user", "content": f"Numbered sentences:\n{_numbered(sentences, parts_titles)}"}]
 

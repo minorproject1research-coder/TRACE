@@ -97,5 +97,16 @@ def breaker_seconds() -> float:
     return _float("STAGE5_BREAKER_SECONDS", 300.0)
 
 
+def style() -> str:
+    """STAGE5_STYLE: "natural" (template s5-v3; NOT the default yet: it has unit tests but no clean live run, the Groq limit was exhausted on 2026-11-13) writes plain claims, the strength of the evidence is shown by the tier label and the citations,
+    a single-source claim names what its source is ("A PET/CT study reports ..."); "attributed" is the s5-v2 wording ("One source reports that ...",
+    "Two sources report that ...") in every sentence."""
+    return "natural" if os.getenv("STAGE5_STYLE", "attributed").strip().lower() == "natural" else "attributed"
+
+
+def natural() -> bool:
+    return style() == "natural"
+
+
 def template_version() -> str:
-    return TEMPLATE_VERSION
+    return "s5-v3" if natural() else TEMPLATE_VERSION

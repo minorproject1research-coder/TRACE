@@ -46,8 +46,13 @@ STANDING_CAVEAT = ("The check for conflicts between sources compares only the mo
 LEGEND = ("How to read the findings: a sentence that starts with \"Two sources report\" is stated by two or more documents; a finding marked "
           "(partly supported) rests on one document with a related point in another; single-source findings are attributed to one document and are not "
           "confirmed. Citation numbers point to the references at the end.")
+LEGEND_NATURAL = ("How to read the findings: a sentence without a label is stated by two or more documents; a finding marked (partly supported) rests on one "
+                  "document with a close variant in another; a finding marked (one source, not confirmed) is stated by a single document and says what that source is. "
+                  "Citation numbers point to the references at the end.")
 SINGLE_SHARE_SENTENCE = "These findings rest on one source each and are attributed to that source."
+SINGLE_SHARE_NATURAL = "According to one study each, these findings are not confirmed by a second source."
 SINGLE_SHARE_CONCLUSION = "The evidence gathered is limited: each of these findings is attributed to one source."
+SINGLE_SHARE_CONCLUSION_NATURAL = "According to one study each, the evidence gathered is limited and not confirmed by a second source."
 TIER_LABEL_MD = {TIER_SINGLE: "*(one source, not confirmed)*", TIER_PARTLY: "*(partly supported)*"}
 FILTER_TEXT = {
     tiers.FILTER_WEAK: "the only quote came from an abstract or a web snippet that Stage 3 had not confirmed",
@@ -460,9 +465,9 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
         if summary_s and (gap_s := answer.gap_sentence([_section_gaps(sqs[k], sections[k].counts, len(sentences_by_section[k]), bool(inputs.get("fact_ran")))
                                                         for k in top])):
             summary_s.append(gap_s)                         # what the evidence does not settle (a template, no citation)
-        if summary_s and (limit_s := _limitation_sentence(SINGLE_SHARE_SENTENCE, body, "summary", summary_s)):
+        if summary_s and (limit_s := _limitation_sentence(SINGLE_SHARE_NATURAL if settings.natural() else SINGLE_SHARE_SENTENCE, body, "summary", summary_s)):
             summary_s.append(limit_s)
-        if conclusion_s and (limit_c := _limitation_sentence(SINGLE_SHARE_CONCLUSION, body, "conclusion", conclusion_s)):
+        if conclusion_s and (limit_c := _limitation_sentence(SINGLE_SHARE_CONCLUSION_NATURAL if settings.natural() else SINGLE_SHARE_CONCLUSION, body, "conclusion", conclusion_s)):
             conclusion_s.append(limit_c)
         if conclusion_s and {_scrub(s.text) for s in conclusion_s if s.claim_ids} <= {_scrub(s.text) for s in summary_s}:
             conclusion_s = []                               # nothing to add to the summary (a tiny report): no second copy of it
@@ -661,7 +666,7 @@ def render_markdown(report: dict) -> str:
     r = report or {}
     lines = [f"# {r.get('question') or 'Research report'}", ""]
     overview = r.get("overview") or {}
-    lines += ["## Answer and Overview", "", f"> {LEGEND}", ""]
+    lines += ["## Answer and Overview", "", f"> {LEGEND_NATURAL if settings.natural() else LEGEND}", ""]
     counts = overview.get("counts") or {}
     if counts:
         lines += [f"Status: {r.get('status', '')}. {counts.get('sections', 0)} sections, {counts.get('documents', 0)} documents, {counts.get('claims', 0)} checked claims "

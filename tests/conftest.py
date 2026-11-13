@@ -24,6 +24,7 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setenv("FACTCHECK", "false")                  # explicit "false": a module imported later calls load_dotenv() and would bring the .env value back
     monkeypatch.setenv("STAGE3_SQ_WORKERS", "1")             # tests that look at the order of writes and events need the sub-questions one by one
     monkeypatch.setenv("STAGE4_SQ_WORKERS", "1")             # the real .env enables 2; tests that count simultaneous Stage 4 jobs choose it themselves
+    monkeypatch.setenv("STAGE5_STYLE", "attributed")           # the existing Stage 5 tests are written for the s5-v2 wording; the natural style has its own tests
     monkeypatch.setenv("STAGE5_EMBED_SELECT", "false")         # tests must not load the embedding model; the embedding path has its own test with a fake
     monkeypatch.setenv("PLAN_ANSWER_SUBQUESTIONS", "0")        # the real step calls Groq; its own tests switch it on with a fake chat
     monkeypatch.setenv("STAGE3_WARM_CHUNKS", "false")        # the warm-ups read the database, the embedder and Groq: only their own tests switch them on

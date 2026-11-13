@@ -23,7 +23,7 @@ import re
 import unicodedata
 from typing import Optional
 
-from apps.api.agents.stage5_report import hedging
+from apps.api.agents.stage5_report import hedging, settings
 from apps.api.agents.stage5_report.schema import TIER_PARTLY, TIER_SINGLE, TIER_SUPPORTED
 
 DEFAULT_MAX_WORDS = 60
@@ -588,7 +588,11 @@ def check_summary(summary_sentences, body_sentences, *, min_sentences: int = 3, 
             ev = _Evidence([_body_text(b) for b in mapped], [])
             local += _grounding_problems(text, ev, where="the body sentences it summarises", soft_drops=True)
             weakest = min(_body_strength(b) for b in mapped)
-            if hedging.strength(None, text) > weakest:
+            if settings.natural():
+                problem = hedging.natural_summary_problem({1: "single", 2: "partly", 3: "supported"}[weakest], text)
+                if problem:
+                    local.append(problem)
+            elif hedging.strength(None, text) > weakest:
                 name = {1: "single-source", 2: "partly supported", 3: "supported"}[weakest]
                 local.append(f"its wording is stronger than the weakest sentence it summarises ({name}); keep the hedge ('One study reports ...')")
         reasons += [pre + r for r in local]

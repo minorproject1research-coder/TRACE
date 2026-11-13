@@ -307,7 +307,7 @@ def default_check(text: str, claim_ids: list, job) -> list:
 def default_tier_rules():
     try:
         from apps.api.agents.stage5_report import hedging
-        return getattr(hedging, "TIER_RULES", None)
+        return hedging.rules() if hasattr(hedging, "rules") else getattr(hedging, "TIER_RULES", None)
     except Exception:
         return None
 

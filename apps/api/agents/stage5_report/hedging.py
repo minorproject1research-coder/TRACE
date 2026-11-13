@@ -10,6 +10,8 @@ Pure Python, no model, no network, no environment switches (the word lists are c
 import re
 from typing import Optional
 
+from apps.api.agents.stage5_report import settings
+
 from apps.api.agents.stage5_report.schema import (
     ORIGIN_FALLBACK, TIER_DISPUTED, TIER_PARTLY, TIER_SINGLE, TIER_SUPPORTED, TIERS, Sentence,
 )
@@ -83,6 +85,72 @@ TIER_RULES = {
     },
 }
 
+# ---- natural style (template s5-v3): plain claims; the tier label and the citations carry the strength of the evidence
+_SOURCE_NOUN = r"(?:study|source|paper|report|review|survey|trial|experiment|experiments|analysis|evaluation|benchmark|article|preprint|work|investigation|simulation|framework|case study|meta-analysis)"
+NATURAL_SINGLE_ATTRIBUTION = [
+    rf"^(?:a|an|one|the)\s+(?:[\w\-/]+\s+){{0,5}}?{_SOURCE_NOUN}\b",
+    rf"^in\s+(?:a|an|one|the)\s+(?:[\w\-/]+\s+){{0,6}}?{_SOURCE_NOUN}\b",
+    r"^according to\b", r"^(?:reportedly|per)\b",
+]
+TIER_RULES_NATURAL = {
+    TIER_SUPPORTED: {
+        "label": "supported (two or more documents state it)",
+        "instruction": ("Two or more documents state this. Write it as a plain statement of the finding in natural scientific prose (for example "
+                        "\"Federated models reach accuracy comparable to centralized pooling.\"); do not begin with \"Two sources report\". Do not write "
+                        "\"proves\", \"establishes\", \"conclusively\" or \"universally\". Do not add anything the claims do not say."),
+        "examples": ["Federated models reach accuracy comparable to centralized pooling."],
+        "opener_patterns": [], "opener_required": False, "required_any": [], "forbidden_verbs": _SUPPORTED_FORBIDDEN,
+    },
+    TIER_PARTLY: {
+        "label": "partly supported (one document states it, another a close variant)",
+        "instruction": ("One document states this and another document makes a close but not identical point. Write ONE plain sentence in natural scientific "
+                        "prose that says what the claim says; if the two wordings differ in what they say, say how (\"...; a related result is ...\"). "
+                        "Do not begin with \"One source reports\" and do not write \"another source\". Use a reporting or hedged verb (reports, finds, "
+                        "suggests, appears to, is associated with) when it reads naturally. Never write \"shows\", \"proves\", \"demonstrates\", "
+                        "\"confirms\", \"establishes\" or \"clearly\"."),
+        "examples": ["Federated training matches centralized accuracy on multi-site data; a related result is that it degrades under strong site heterogeneity."],
+        "opener_patterns": [], "opener_required": False, "required_any": [], "forbidden_verbs": _ATTRIBUTION_FORBIDDEN,
+    },
+    TIER_SINGLE: {
+        "label": "single source (one document states it; not confirmed elsewhere)",
+        "instruction": ("Only ONE document states this and nothing else confirms it, so never present it as fact. Start the sentence by saying what the source is, "
+                        "in natural words taken from the claim or the quote: \"A PET/CT segmentation study reports that ...\", \"In a benchmark on chest X-rays, "
+                        "...\", \"A systematic review finds that ...\", \"According to one study, ...\". Never write \"One source reports\" if a better description "
+                        "of the source is in the claim or quote. Do not write \"shows\", \"proves\", \"demonstrates\", \"confirms\", \"establishes\" or \"clearly\", "
+                        "and do not mention other sources or say that several studies agree."),
+        "examples": ["A PET/CT segmentation study reports that ...", "In a benchmark on chest X-rays, ...", "According to one study, ..."],
+        "opener_patterns": NATURAL_SINGLE_ATTRIBUTION, "opener_required": True, "required_any": [], "forbidden_verbs": _ATTRIBUTION_FORBIDDEN,
+    },
+}
+
+
+def rules() -> dict:
+    """The tier rules of the active style (STAGE5_STYLE)."""
+    return TIER_RULES_NATURAL if settings.natural() else TIER_RULES
+
+
+def has_natural_attribution(text: str) -> bool:
+    t = _norm(text).lower()
+    return any(re.search(p, t) for p in NATURAL_SINGLE_ATTRIBUTION)
+
+
+def natural_summary_problem(weakest_tier: str, text: str) -> Optional[str]:
+    """Natural style: the problem (or None) of a summary / answer sentence whose weakest source sentence is of `weakest_tier`: a single-source sentence must say what
+    its source is, a partly supported one may not state the finding with a fact verb; a supported one is free (its forbidden words are checked elsewhere)."""
+    t = _norm(text)
+    if weakest_tier == TIER_SINGLE:
+        if not has_natural_attribution(t):
+            return "it rests on one source: start by saying what the source is (\"A ... study reports that ...\", \"According to one study, ...\")"
+        m = _FORBIDDEN_RE[TIER_SINGLE].search(t)
+        if m:
+            return f"the word '{m.group(0).lower()}' states a single-source finding as fact"
+    if weakest_tier == TIER_PARTLY:
+        m = _FORBIDDEN_RE[TIER_PARTLY].search(t)
+        if m:
+            return f"the word '{m.group(0).lower()}' states a partly supported finding as fact"
+    return None
+
+
 # order of strength used by the summary check: a summary sentence may never be stronger than the weakest body sentence it summarises
 STRENGTH = {TIER_SINGLE: 1, TIER_PARTLY: 2, TIER_SUPPORTED: 3}
 
@@ -102,7 +170,7 @@ _FORBIDDEN_RE = {t: _word_re(r["forbidden_verbs"]) for t, r in TIER_RULES.items(
 
 def has_opener(tier: str, text: str) -> bool:
     t = _norm(text).lower()
-    return any(re.search(p, t) for p in TIER_RULES.get(tier, {}).get("opener_patterns", []))
+    return any(re.search(p, t) for p in rules().get(tier, {}).get("opener_patterns", []))
 
 
 def has_partly_marker(text: str) -> bool:
@@ -144,14 +212,14 @@ def check_hedge(tier: str, text: str, claim_text: str = "") -> list[str]:
     in the opening words, where the verb that reports the claim stands ("One study shows ..." stays wrong even if the claim says "shows")."""
     if tier == TIER_DISPUTED:
         return ["disputed claims are never written as prose (they belong in the 'Sources disagree' section)"]
-    rules = TIER_RULES.get(tier)
-    if rules is None:
+    rules_ = globals()["rules"]().get(tier)
+    if rules_ is None:
         return [f"unknown tier '{tier}'"]
     t = _norm(text)
     reasons: list[str] = []
-    if rules["opener_required"] and not has_opener(tier, t):
-        reasons.append("must open with an attribution such as: " + " / ".join(f'"{e}"' for e in rules["examples"]))
-    if tier == TIER_PARTLY and not has_partly_marker(t):
+    if rules_["opener_required"] and not has_opener(tier, t):
+        reasons.append("must open with an attribution such as: " + " / ".join(f'"{e}"' for e in rules_["examples"]))
+    if tier == TIER_PARTLY and not settings.natural() and not has_partly_marker(t):
         reasons.append("must say that another source makes a related point (use the word 'related')")
     head = _head(t).lower()
     claim_l = (claim_text or "").lower()
@@ -180,6 +248,11 @@ def strip_attribution(text: str) -> str:
         rf"^according to\s+(?:one|a single|only one|two|several|multiple)\s+(?:\w+\s+)?(?:{_DOC_SINGULAR}|{_DOC_PLURAL})\s*,?\s*",
         rf"^(?:one|a single|a lone|only one|two|three|four|five|several|multiple)\s+(?:independent\s+)?(?:\w+\s+)?(?:{_DOC_SINGULAR}|{_DOC_PLURAL})"
         rf"\s+(?:also\s+)?{verbs}\s*(?:that\s+|:\s*|,\s*)?",
+    ]
+    pats += [  # natural style: "A PET/CT study reports that X", "In a benchmark on chest X-rays, X", "According to one study, X"
+        rf"^(?:a|an|the)\s+(?:[\w\-/]+\s+){{0,5}}?{_SOURCE_NOUN}\s+(?:also\s+)?{verbs}\s*(?:that\s+|:\s*|,\s*)?",
+        rf"^in\s+(?:a|an|one|the)\s+(?:[\w\-/]+\s+){{0,6}}?{_SOURCE_NOUN}(?:\s+(?:on|of|with|using|across)\s+[^,]{{3,50}})?\s*,\s*",
+        r"^according to\s+[^,]{3,60},\s*",
     ]
     for p in pats:
         m = re.match(p, t, flags=re.I)
