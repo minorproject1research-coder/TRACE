@@ -235,7 +235,7 @@ class PaperRetrievalAgent:
 
         # Semantic Scholar search retry policy (env-configurable). With the defaults the
         # waits are 5, 10, 20, 40, 60s (+ up to 25% jitter) across 6 attempts.
-        self.s2_max_attempts = max(1, int(os.getenv("S2_MAX_ATTEMPTS", "6")))
+        self.s2_max_attempts = max(1, int(os.getenv("S2_MAX_ATTEMPTS", "1")))
         self.s2_backoff_base = float(os.getenv("S2_BACKOFF_BASE_SECONDS", "5"))
         self.s2_backoff_cap = float(os.getenv("S2_BACKOFF_CAP_SECONDS", "60"))
 

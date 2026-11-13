@@ -150,7 +150,7 @@ Live: when a rung is finished, a summarizer step event with `data.step = "loop2_
 - If the server restarts while a run is in progress, that run is lost: it later shows as `failed`.
 
 ## Stage 5: the written report (added 2026-11-11, `STAGE5=true`; contract of the stored document: `docs/STAGE5_OUTPUT.md`)
-Stage 5 writes a cited report from the Stage 4 labels. It is off by default; with `STAGE5` off nothing below appears and `stages.report` is `"not_run"`.
+Stage 5 writes a cited report from the Stage 4 labels. It is on by default (since 2026-11-13); with `STAGE5=false` nothing below appears and `stages.report` is `"not_run"`.
 
 **The `report` stage in a run.** It starts (`stage_started`, stage `report`) when the fact-check node has finished (also when Stage 4 is off or failed) and ends with one `stage_completed`:
 - `status "completed"`: `data = {status, sections, sentences, references, warnings}` where `status` is the written report's own status (`completed | completed_with_warnings | insufficient_evidence`); the stage state is `completed` for all three (`insufficient_evidence` is a normal result: there was nothing eligible to write).

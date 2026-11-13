@@ -25,7 +25,7 @@ MAX_RUNS_IN_MEMORY = _int("MAX_RUNS_IN_MEMORY", 200)               # finished ru
 
 def factcheck_enabled() -> bool:
     """FACTCHECK=true runs Stage 4 (claims checked across sources) after Stage 3. Read at call time so a test or a restart-free switch works."""
-    return os.getenv("FACTCHECK", "false").strip().lower() in ("1", "true", "yes", "on")
+    return os.getenv("FACTCHECK", "true").strip().lower() in ("1", "true", "yes", "on")
 
 
 QUESTION_MIN_CHARS = 10

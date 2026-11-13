@@ -41,7 +41,7 @@ def _get_config():
         # JUDGE_URL / JUDGE_API_KEY are optional overrides (only needed if the judge ever runs somewhere else).
         "JUDGE_URL": (os.getenv("JUDGE_URL") or os.getenv("TRACE_LLM_URL") or "").strip().rstrip("/"),
         "API_KEY": os.getenv("JUDGE_API_KEY") or trace_llm_service.api_key(),
-        "JUDGE_MODEL_ID": os.getenv("JUDGE_MODEL_ID", "judge"),
+        "JUDGE_MODEL_ID": os.getenv("JUDGE_MODEL_ID", "judge-v2"),
         "JUDGE_CANDIDATES_PER_ASPECT": int(os.getenv("JUDGE_CANDIDATES_PER_ASPECT", "6")),
         "JUDGE_EXTRA_BY_SIM": int(os.getenv("JUDGE_EXTRA_BY_SIM", "2")),
         "JUDGE_BATCH_SIZE": int(os.getenv("JUDGE_BATCH_SIZE", "32")),

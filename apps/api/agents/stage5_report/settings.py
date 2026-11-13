@@ -39,7 +39,7 @@ def _float(name: str, default: float, minimum: float = 0.0) -> float:
 
 def stage5_enabled() -> bool:
     """STAGE5=true runs Stage 5 after Stage 4. Off by default, like FACTCHECK."""
-    return os.getenv("STAGE5", "false").strip().lower() in _TRUE
+    return os.getenv("STAGE5", "true").strip().lower() in _TRUE
 
 
 def model() -> str:

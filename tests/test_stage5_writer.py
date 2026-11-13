@@ -104,7 +104,7 @@ def run(job_list, llm, **kw):
 
 # ------------------------------------------------------------------------------------------------------------ settings
 def test_settings_defaults():
-    assert settings.stage5_enabled() is False
+    assert settings.stage5_enabled() is True              # on by default since 2026-11-13
     assert settings.model() == "openai/gpt-oss-120b"
     assert settings.retries() == 1
     assert settings.max_prompt_tokens() == 4500

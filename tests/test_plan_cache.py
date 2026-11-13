@@ -16,7 +16,8 @@ PLAN = {"sub_questions": [{"topic": "What are state space models?", "details": [
         "search_queries": ["state space models overview", "mamba vs transformer efficiency"]}
 
 
-def test_off_by_default_nothing_is_stored_or_loaded(tmp_path):
+def test_when_off_nothing_is_stored_or_loaded(tmp_path, monkeypatch):
+    monkeypatch.setenv("PLAN_CACHE", "false")
     plan_cache.store(Q, PLAN)
     assert plan_cache.load(Q) is None
     assert not (tmp_path / "plan_cache").exists()
@@ -73,6 +74,7 @@ def test_generate_reuses_the_plan_when_on(monkeypatch):
 
 
 def test_generate_plans_every_time_when_off(monkeypatch):
+    monkeypatch.setenv("PLAN_CACHE", "false")
     calls = _count_calls(monkeypatch)
     qg.generate(Q)
     qg.generate(Q)

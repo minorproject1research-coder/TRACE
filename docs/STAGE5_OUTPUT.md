@@ -5,7 +5,7 @@ Stage 5 writes a cited report from the labels of Stage 4 (`docs/STAGE4_OUTPUT.md
 ## Where it is
 - Table `written_reports` (migration `db/migrations/016_add_written_reports.sql`, **the user must apply it**; until then nothing is stored and the endpoint answers 404): one row per run (`query_id` unique), replaced when Stage 5 runs again. Columns: `status`, `report` (jsonb, the structured report below), `markdown` (the same report as text), `stats` (jsonb), `model`, `template_version`, `created_at`, `updated_at`.
 - `GET /api/research/{id}/written-report` returns `{status, report, markdown, stats, model, templateVersion, generatedAt}` (200), `{"state": "running"}` (202) while it is being written, or 404.
-- Stage 5 runs only with `STAGE5=true` on the server (default off). A run without it has no row, and `stages.report` is `not_run`.
+- Stage 5 runs unless `STAGE5=false` on the server (default on since 2026-11-13). A run without it has no row, and `stages.report` is `not_run`.
 
 ## `status` (one value per report, also in `report.status`)
 | value | meaning | what to show |

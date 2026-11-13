@@ -87,7 +87,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 def enabled() -> bool:
-    return _env_bool("LOOP2", False)
+    return _env_bool("LOOP2", True)
 
 
 def steps() -> list[str]:

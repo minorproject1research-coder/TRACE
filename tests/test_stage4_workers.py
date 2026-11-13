@@ -52,8 +52,10 @@ def run(monkeypatch, workers, n=4):
     return tracker, results
 
 
-def test_the_default_is_one_sub_question_at_a_time(monkeypatch, seen):
+def test_the_default_is_two_sub_questions_and_one_when_set_to_one(monkeypatch, seen):
     monkeypatch.delenv("STAGE4_SQ_WORKERS", raising=False)
+    assert node._sq_workers() == 2
+    monkeypatch.setenv("STAGE4_SQ_WORKERS", "1")
     assert node._sq_workers() == 1
     tracker = {"lock": threading.Lock(), "running": 0, "max": 0}
     monkeypatch.setattr(node, "_check_sub_question", tracked_check(tracker, 0.05))

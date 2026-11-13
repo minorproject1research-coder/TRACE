@@ -542,9 +542,9 @@ def test_no_second_reading_when_the_first_sees_no_conflict_and_a_failing_second_
 
 
 # ------------------------------------------------------------------------------------------------------------ the graph node
-def test_the_node_does_nothing_unless_switched_on(monkeypatch):
+def test_the_node_does_nothing_when_switched_off(monkeypatch):
     from apps.api.graph.nodes import factcheck_node as node
-    monkeypatch.delenv("FACTCHECK", raising=False)
+    monkeypatch.setenv("FACTCHECK", "false")
     monkeypatch.setattr(node, "run_factcheck", lambda *a: pytest.fail("Stage 4 must not run"))
     assert node.factcheck_node(None) == {}
 

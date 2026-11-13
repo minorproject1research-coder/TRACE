@@ -21,7 +21,7 @@ _embedder_lock = threading.Lock()
 _encode_lock = threading.Lock()
 
 # Toggle: get value from environment variable (default: false) — only the fast embedding filter runs.
-USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "false").lower() == "true"
+USE_LLM_JUDGMENT = os.environ.get("USE_LLM_JUDGMENT", "true").lower() == "true"
 
 # Where the judge runs: "server" = the fine-tuned-stack model server (POST /judge, Qwen3.5-9B on vLLM over Tailscale);
 # "groq" = the old Groq placeholder only.

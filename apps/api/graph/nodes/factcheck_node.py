@@ -44,7 +44,7 @@ def _sq_workers() -> int:
     """STAGE4_SQ_WORKERS (default 1): how many sub-questions Stage 4 checks at the same time when it overlaps Stage 3. 1 = one after the other
     (the old behaviour). 2 shortens the queue behind the last sub-question but doubles the Groq and CPU load (STAGE4_WORKERS judge threads each)."""
     try:
-        return max(1, int(os.getenv("STAGE4_SQ_WORKERS", "1")))
+        return max(1, int(os.getenv("STAGE4_SQ_WORKERS", "2")))
     except ValueError:
         return 1
 

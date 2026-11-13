@@ -26,7 +26,7 @@ logger = logging.getLogger("apps.api.agents.stage1_planner")
 
 
 def enabled() -> bool:
-    return os.getenv("PLAN_CACHE", "false").strip().lower() in ("1", "true", "yes", "on")
+    return os.getenv("PLAN_CACHE", "true").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _cache_dir() -> Path:

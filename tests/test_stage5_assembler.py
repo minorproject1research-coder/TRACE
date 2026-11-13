@@ -513,7 +513,8 @@ def fake_pipeline(monkeypatch):
     return saved
 
 
-def test_report_node_does_nothing_when_stage5_is_off(sink, fake_pipeline):
+def test_report_node_does_nothing_when_stage5_is_off(monkeypatch, sink, fake_pipeline):
+    monkeypatch.setenv("STAGE5", "false")
     assert report_node.report_node(state_for()) == {}
     assert sink.events == [] and fake_pipeline == []
 

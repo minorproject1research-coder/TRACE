@@ -6,7 +6,7 @@ Related files: the contract of the stored report is `docs/STAGE5_OUTPUT.md`; the
 
 ## 1. Where it sits
 planner -> retrieval -> Stage 3 -> Stage 4 -> **Stage 5**.
-It runs once per run, after Stage 4, only when `STAGE5=true` and Stage 4 ran (with `FACTCHECK` off there are no labels and the stage stays "not run", with a note `stage5_skipped`). It never fails a run: an error gives `status = failed` and a minimal report, the evidence of Stages 3 and 4 is already stored. Code: `apps/api/graph/nodes/report_node.py` (the node), `apps/api/agents/stage5_report/assembler.py` (the whole build), and the modules below.
+It runs once per run, after Stage 4, unless `STAGE5=false`, and only when Stage 4 ran (with `FACTCHECK` off there are no labels and the stage stays "not run", with a note `stage5_skipped`). It never fails a run: an error gives `status = failed` and a minimal report, the evidence of Stages 3 and 4 is already stored. Code: `apps/api/graph/nodes/report_node.py` (the node), `apps/api/agents/stage5_report/assembler.py` (the whole build), and the modules below.
 
 ## 2. The policy (agreed with the user)
 The Stage 4 label never changes. The **tier** decides the wording, never whether something is "true".
@@ -48,7 +48,7 @@ Citations: the model never writes a `[n]`, a URL, an author or a year; the valid
 ## 5. Settings (`.env`, defaults in `.env.example`; all read at call time)
 | Setting | Default | Meaning |
 |---|---|---|
-| `STAGE5` | false | switch for the whole stage (1/true/yes/on) |
+| `STAGE5` | true (since 2026-11-13) | switch for the whole stage (1/true/yes/on) |
 | `STAGE5_MODEL` | `openai/gpt-oss-120b` | the writer model (through `groq_pool`) |
 | `STAGE5_REASONING_EFFORT` | low | low / medium / high |
 | `STAGE5_MAX_OUTPUT_TOKENS` | 2500 | `max_completion_tokens` of one call (reasoning tokens count; 1500 was cut off in the first live run) |

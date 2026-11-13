@@ -22,8 +22,8 @@ from apps.api.services import cache_counters, db_service, groq_pool, llm_service
 logger = logging.getLogger("apps.api.agents.stage3_summarizer")
 
 # keep small for the first run (free-tier API limits); raise to 8 and 5 later
-MAX_PAPERS = int(os.getenv("MAX_PAPERS") or 3)
-MAX_WEB = int(os.getenv("MAX_WEB_SEARCHES") or 2)
+MAX_PAPERS = int(os.getenv("MAX_PAPERS") or 5)
+MAX_WEB = int(os.getenv("MAX_WEB_SEARCHES") or 3)
 
 
 def _clean_topic(main_topic: str) -> str:
