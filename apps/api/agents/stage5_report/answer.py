@@ -14,7 +14,7 @@ The model only words the answer from the numbered sentences (summary.py, prompts
 import re
 from typing import Optional
 
-from apps.api.agents.stage5_report.schema import ORIGIN_TEMPLATE, TIER_SINGLE, Sentence
+from apps.api.agents.stage5_report.schema import ORIGIN_TEMPLATE, Sentence
 
 STOPWORDS = frozenset("""a an and are as at be by can could do does for from has have how in into is it its of on or than that the their there these this to was were what when
 which who whom why will with would about across between compared compare versus vs other over under using use used based""".split())
@@ -22,6 +22,7 @@ TIER_RANK = {"supported": 3, "partly": 2, "single": 1}
 TOP_SECTIONS = 3                    # sections whose sentences feed the answer
 REQUIRED_SECTIONS = 2               # the answer must use at least this many of the top sections (fewer when the report has fewer)
 PER_TOP_SECTION = 5                 # sentences taken from each of the top sections for the answer
+TIER_NOTE = "note"                  # a template note without a source: no tier label is shown for it
 GAP_PREFIX = "The collected evidence does not sufficiently answer: "
 
 
@@ -139,4 +140,4 @@ def gap_sentence(gaps_of_top_sections: list) -> Optional[Sentence]:
         return None
     aspects = [a.rstrip("?. ") for a in aspects]
     text = "The evidence collected does not settle: " + "; ".join(a[:1].lower() + a[1:] if not a[:2].isupper() else a for a in aspects) + "."
-    return Sentence(text=text, claim_ids=[], job_id="answer_gaps", tier=TIER_SINGLE, origin=ORIGIN_TEMPLATE, attempts=0)
+    return Sentence(text=text, claim_ids=[], job_id="answer_gaps", tier=TIER_NOTE, origin=ORIGIN_TEMPLATE, attempts=0)

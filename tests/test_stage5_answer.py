@@ -51,7 +51,7 @@ def test_gap_sentence_names_what_the_evidence_does_not_settle_and_is_a_template(
     gaps = [["The collected evidence does not sufficiently answer: How does centralized training affect accuracy?", "3 claims not used: x"],
             ["The collected evidence does not sufficiently answer: How does centralized training expose privacy risks?; How does it expose security risks?"]]
     s = answer.gap_sentence(gaps)
-    assert s.origin == ORIGIN_TEMPLATE and not s.claim_ids and s.text.startswith("The evidence collected does not settle:")
+    assert s.origin == ORIGIN_TEMPLATE and s.tier == "note" and not s.claim_ids and s.text.startswith("The evidence collected does not settle:")
     assert "privacy risks" in s.text and "accuracy" in s.text
     assert answer.gap_sentence([["3 claims not used"]]) is None
 
