@@ -102,7 +102,7 @@ def test_select_parts_picks_the_sentences_closest_to_the_question_for_each_top_s
              sent("One source reports a privacy-utility trade-off: stronger privacy lowers the accuracy of the model.", "partly", "p1"),
              sent("One source reports that federated learning keeps data on the owner site.", "supported", "p2")]
     parts = answer.select_parts(Q, sections, by)
-    assert len(parts) == 5 and parts[0][0] in (3, 4) and all(len(ss) <= 2 for _, ss in parts)
+    assert len(parts) == 3 and parts[0][0] in (3, 4) and {i for i, _ in parts} == {2 + 1, 4, 0}   # the two background titles ("applications and datasets", "applied") are not parts and all(len(ss) <= 2 for _, ss in parts)
     privacy = dict(parts)[4]
     assert any("trade-off" in s.text for s in privacy)                                  # the trade-off sentence beats the stronger-tier "data stays local" ones
     assert not (len(privacy) == 2 and all("keeps data" in s.text for s in privacy))     # and the two near duplicates do not both go in
@@ -124,3 +124,19 @@ def test_the_answer_is_put_in_the_order_of_the_parts():
     body = [{"n": 1, "section": 2}, {"n": 2, "section": 3}, {"n": 3, "section": 4}]
     items = [{"text": "a", "from_sentences": [1]}, {"text": "b", "from_sentences": [3]}, {"text": "c", "from_sentences": [2]}]
     assert [i["text"] for i in answer.order_items(items, body, [3, 4, 2])] == ["c", "b", "a"]
+
+
+def test_select_parts_by_meaning_uses_the_embedder_and_skips_application_sections():
+    import numpy as np
+    sections = [sec(t) for t in TITLES]
+    sections[2] = sec("How is federated learning applied to medical image analysis?")
+    by = [[sent(f"One source reports fact {i} {j}.", job=f"f{i}{j}") for j in range(2)] for i in range(5)]
+    by[3] = [sent("One source reports that it wins on every benchmark.", job="x"), sent("One source reports that heterogeneity degrades convergence.", job="y")]
+
+    def embed(texts):                                   # the sentence about heterogeneity is "closest"; everything else is far
+        return np.array([[1.0, 0.0] if ("heterogeneity" in t or t == Q or t.startswith("How does federated learning compare")) else [0.0, 1.0] for t in texts])
+
+    parts = dict(answer.select_parts(Q, sections, by, embed=embed))
+    assert 2 not in parts                                # the application section is not a part (4 others qualify)
+    assert [s.job_id for s in parts[3]] == ["y"]
+    assert answer.select_parts(Q, sections, by, embed=lambda texts: (_ for _ in ()).throw(RuntimeError("no model")))   # a broken embedder falls back to words

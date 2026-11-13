@@ -42,6 +42,12 @@ def stage5_enabled() -> bool:
     return os.getenv("STAGE5", "true").strip().lower() in _TRUE
 
 
+def embed_select() -> bool:
+    """STAGE5_EMBED_SELECT (default true): the sentence of each part of the answer is chosen by embedding similarity to the question and to the section (the bge
+    model of Stage 2); false or an error: by word overlap."""
+    return os.getenv("STAGE5_EMBED_SELECT", "true").strip().lower() in _TRUE
+
+
 def model() -> str:
     return os.getenv("STAGE5_MODEL", "").strip() or DEFAULT_MODEL
 

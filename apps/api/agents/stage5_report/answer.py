@@ -139,13 +139,26 @@ def candidates(question: str, sections: list, sentences_by_section: list, limit:
     return chosen, spare[:limit], top
 
 
+BACKGROUND_TITLE = re.compile(r"^\s*(how|where)\s+(is|are|can|do|does)\b.*\b(applied|used|utili[sz]ed|deployed)\b|\b(applications?|datasets?|use cases?)\b", re.I)
+
+
+def make_embedder():
+    """texts -> normalised vectors with the bge model of Stage 2 (loaded once, shared); None when it cannot be loaded."""
+    try:
+        from apps.api.agents.stage2_retrieval.relevance_filter import get_embedder
+        model = get_embedder()
+        return lambda texts: model.encode(list(texts), normalize_embeddings=True)
+    except Exception:
+        return None
+
+
 PART_MIN = 3                        # the answer is built part by part when at least this many sections qualify
 MAX_PARTS = 5                       # the planner now writes up to 5 sub-questions that are all about the answer; background ones fall below MIN_PART_RELEVANCE
 MIN_PART_RELEVANCE = 0.3            # a section is a part when its relevance to the question is at least this share of the best section's
 PER_PART = 1                        # sentences offered to the model for each part
 
 
-def select_parts(question: str, sections: list, sentences_by_section: list, max_parts: int = MAX_PARTS, per_part: int = PER_PART) -> list:
+def select_parts(question: str, sections: list, sentences_by_section: list, max_parts: int = MAX_PARTS, per_part: int = PER_PART, embed=None) -> list:
     """[(section index, [Sentence, ...])], the most relevant sections first, with the sentences of each part that the answer may use: the ones whose finding
     words are closest to the question and the section's own title (words that few sentences share count most, so "privacy-utility trade-off" beats
     "federated learning"), then the stronger tier, then those with a figure; no two near duplicates. The model only words ONE sentence per part from them."""
@@ -154,6 +167,15 @@ def select_parts(question: str, sections: list, sentences_by_section: list, max_
     scores = section_scores(question, sections)
     best = max((scores[i] for i in top), default=0.0)
     top = [i for i in top if scores[i] >= MIN_PART_RELEVANCE * best]
+    foreground = [i for i in top if not BACKGROUND_TITLE.search(sections[i].title)]
+    if len(foreground) >= PART_MIN:
+        top = foreground                                # "where is X applied / which datasets" describes use, not how well it works or what it costs
+    qv = None
+    if embed is not None:
+        try:
+            qv = embed([question])[0]
+        except Exception:
+            embed = None
     everything = [s for ss in sentences_by_section for s in ss]
     df: dict = {}
     for s in everything:
@@ -167,7 +189,17 @@ def select_parts(question: str, sections: list, sentences_by_section: list, max_
     parts = []
     for i in top:
         focus = q | tokens(sections[i].title)
-        ranked = sorted(sentences_by_section[i], key=lambda s: (-sum(weight(w) for w in tokens(s.text) & focus), -TIER_RANK.get(s.tier, 0), -int(bool(re.search(r"\d", s.text)))))
+        by_meaning = None
+        if embed is not None:
+            try:
+                vecs = embed([f"{sections[i].title} {' '.join(getattr(sections[i], 'detail_questions', None) or [])}"] + [s.text for s in sentences_by_section[i]])
+                by_meaning = {id(s): float(vecs[k + 1] @ qv) + float(vecs[k + 1] @ vecs[0]) for k, s in enumerate(sentences_by_section[i])}
+            except Exception:
+                by_meaning = None
+        if by_meaning is not None:
+            ranked = sorted(sentences_by_section[i], key=lambda s: (-round(by_meaning[id(s)] + 0.02 * TIER_RANK.get(s.tier, 0), 3), -int(bool(re.search(r"\d", s.text)))))
+        else:
+            ranked = sorted(sentences_by_section[i], key=lambda s: (-sum(weight(w) for w in tokens(s.text) & focus), -TIER_RANK.get(s.tier, 0), -int(bool(re.search(r"\d", s.text)))))
         chosen, seen = [], []
         for s in ranked:
             tk = content_tokens(s.text)

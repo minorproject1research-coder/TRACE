@@ -421,7 +421,7 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
             s.section = k                                   # read by summary.select_body and by the coverage check of the answer
     question_text = _scrub(inputs.get("question"))
     candidates, candidates_c, top = answer.candidates(question_text, sections, sentences_by_section, limit=MAX_CANDIDATES)
-    parts = answer.select_parts(question_text, sections, sentences_by_section)
+    parts = answer.select_parts(question_text, sections, sentences_by_section, embed=answer.make_embedder() if (settings.embed_select() and not deterministic) else None)
     by_part = len(parts) >= answer.PART_MIN                 # built part by part: one sentence for each of the most relevant sections
     if by_part:
         candidates, top = [s for _, ss in parts for s in ss], [i for i, _ in parts]
