@@ -1,7 +1,7 @@
 import logging
 import os
 
-from apps.api.agents.stage1_planner import plan_cache
+from apps.api.agents.stage1_planner import answer_needs, plan_cache
 from apps.api.models.task_plan import SubQuestion
 from apps.api.services import trace_llm_service
 from apps.api.services.trace_llm_service import TraceLLMError
@@ -27,7 +27,13 @@ MAX_DETAIL_QUESTIONS = int(os.getenv("MAX_DETAIL_QUESTIONS", "5"))      # detail
 DETAIL_DUPLICATE_SIMILARITY = 0.9                                       # a merged-in detail this close to one we have is dropped
 # groq: if the model server is unreachable, decompose with the Groq model instead; none: raise the error
 LLM_FALLBACK = os.getenv("TRACE_LLM_FALLBACK", "groq").lower()
+_NOTES: dict[str, dict] = {}                      # question -> {"added": [...], "dropped": [...]} of the answer-needs step, for the progress note of the planner node
 _SOURCES: dict[str, str] = {}                    # question -> "planner" | "plan-cache" | "groq-fallback", for the progress note of the planner node
+
+
+def plan_notes(raw_query: str):
+    """What the answer-needs step did for the last generate(raw_query): {"added": [topics], "dropped": [topics]} or None."""
+    return _NOTES.get(raw_query)
 
 
 def plan_source(raw_query: str):
@@ -57,6 +63,10 @@ def generate(raw_query: str) -> list[SubQuestion]:
             source = "groq-fallback"
 
     _SOURCES[raw_query] = source
+    plan, info = answer_needs.augment(raw_query, plan, MAX_SUBQUESTIONS)         # conditions / risks / figures sub-questions (PLAN_ANSWER_SUBQUESTIONS)
+    _NOTES[raw_query] = info
+    if info and not info.get("stored") and source != "groq-fallback":
+        plan_cache.store(raw_query, plan)               # the augmented plan is what a rerun reuses
     sub_questions = _build_sub_questions(plan)
     _assign_queries(sub_questions, plan["search_queries"])
     logger.info("Planner (%s): %d sub-questions, %d search queries -> %s", source, len(sub_questions),

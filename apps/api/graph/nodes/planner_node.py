@@ -40,6 +40,11 @@ def planner_node(state: SharedResearchState) -> dict:
             progress.note(task_plan.query_id, "plan_cache", "The stored plan for this question was reused (PLAN_CACHE), so the planner model was not called", stage="planner", source=source)
         elif source == "groq-fallback":
             progress.note(task_plan.query_id, "plan_fallback", "The planner model was unreachable, so Groq wrote the plan", level="warn", stage="planner", source=source)
+        extra = question_generator.plan_notes(state.raw_query)
+        if extra and extra.get("added"):
+            left = f" and left out {len(extra['dropped'])} background sub-question(s)" if extra.get("dropped") else ""
+            progress.note(task_plan.query_id, "answer_subquestions", f"Added {len(extra['added'])} sub-question(s) the answer needs (when it fails, risks and figures){left}",
+                          stage="planner", added=extra["added"], dropped=extra.get("dropped") or [])
     except Exception:
         logger.debug("plan note dropped", exc_info=True)
     try:
