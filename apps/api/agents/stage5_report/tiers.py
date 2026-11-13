@@ -46,7 +46,8 @@ DEFAULT_MAX_SINGLE_PER_SECTION = 8
 DEFAULT_SCOPE_ENTAIL_MIN = 0.5
 STRONG_VIA = "stage3_judge"
 MAX_PER_JOB = 3
-PARTLY_PER_JOB = 1      # a partly sentence carries the claim AND the other document's related wording: three of them cannot fit in 60 words (first live run)
+SINGLE_PER_JOB = 2      # and only claims of the same document (see make_jobs)
+PARTLY_PER_JOB = 1     # a partly sentence carries the claim AND the other document's related wording: three of them cannot fit in 60 words (first live run)
 
 
 # ----------------------------------------------------------------------------------------------------------------------- settings
@@ -295,9 +296,22 @@ def make_jobs(section_id: str, claims: list, max_per_job: int = MAX_PER_JOB) -> 
     jobs = []
     for tier in WRITABLE_TIERS:
         size = min(size_all, PARTLY_PER_JOB) if tier == TIER_PARTLY else size_all
+        if tier == TIER_SINGLE:
+            size = min(size, SINGLE_PER_JOB)
         mine = sorted([c for c in claims if c.tier == tier], key=lambda c: (-c.confidence, c.text.lower(), c.claim_id))
-        for i in range(0, len(mine), size):
-            group = mine[i:i + size]
+        groups = []
+        if tier == TIER_SINGLE:
+            # "One study reports ..." must cite ONE document: a single-source sentence only joins claims of the same document (run 36 had
+            # "One study reports ..." with four references, and garbled sentences from three unrelated claims)
+            by_doc: dict[str, list] = {}
+            for c in mine:
+                by_doc.setdefault((primary_evidence(c) or Evidence("", "", "")).ref_key, []).append(c)
+            for doc_claims in by_doc.values():
+                groups.extend(doc_claims[i:i + size] for i in range(0, len(doc_claims), size))
+            groups.sort(key=lambda g: (-g[0].confidence, g[0].text.lower(), g[0].claim_id))
+        else:
+            groups = [mine[i:i + size] for i in range(0, len(mine), size)]
+        for group in groups:
             digest = hashlib.sha1(f"{section_id}|{tier}|{','.join(sorted(c.claim_id for c in group))}".encode("utf-8")).hexdigest()[:10]
             jobs.append(Job(job_id=f"j_{digest}", section_id=section_id, tier=tier, claims=group))
     return jobs

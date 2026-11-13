@@ -211,7 +211,8 @@ def _limitations(inputs: dict, sections: list, totals: dict, body_stats: dict, w
     if empty:
         out.append(_end("No eligible claim was found for: " + _name_list(empty)))
     if warnings_fallback:
-        out.append(f"{_n(warnings_fallback, 'sentence')} use a fixed template wording (the claim's own wording behind a standard opener) because the written sentence did not pass the automatic checks.")
+        verb = "uses" if warnings_fallback == 1 else "use"
+        out.append(f"{_n(warnings_fallback, 'sentence')} {verb} a fixed template wording (the claim's own wording, or a body sentence repeated) because the written sentence did not pass the automatic checks.")
     if dropped:
         out.append(f"{_n(dropped, 'sentence')} were left out because they failed a final check.")
     if hints.get("fact_failed_sub_questions"):
@@ -434,13 +435,22 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
               summary=len(summary_s), conclusion=len(conclusion_s))
     summary_fallback = any(s.origin == ORIGIN_FALLBACK for s in summary_s)
     conclusion_fallback = any(s.origin == ORIGIN_FALLBACK for s in conclusion_s)
+    top_fallback_n = sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_FALLBACK)      # summary / conclusion sentences copied from the body
+    if summary_fallback:
+        warnings.append("The executive summary could not be written by the model within the checks; it repeats the strongest findings word for word.")
+    if conclusion_fallback:
+        warnings.append("The conclusion could not be written by the model within the checks; it repeats the strongest findings word for word.")
 
     # ---- 5. references: numbered by first citation in render order, in one pass over the finished text
     _emit(progress, "references", "Numbering the references", state="running")
     book = references.ReferenceBook(inputs.get("sources") or {}, accessed=references.accessed_date(inputs.get("created_at")))
 
     def refs_of(s: Sentence) -> list:
-        return book.cite([claims_by_id[i] for i in s.claim_ids if i in claims_by_id])
+        found = [claims_by_id[i] for i in s.claim_ids if i in claims_by_id]
+        if s.tier == TIER_SINGLE:
+            # "One study reports ..." cites the one document its claim stands on (the strongest supporting quote), not a near match or a weaker second snippet
+            return book.cite([e for e in (tiers.primary_evidence(c) for c in found) if e is not None])
+        return book.cite(found)
 
     summary_d = [_sentence_dict(s, refs_of(s)) for s in summary_s]
     section_dicts = []
@@ -472,7 +482,7 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
                                                     "disagreements": sum(len(s["disagreements"]) for s in section_dicts), "references": len(reference_d)}},
         "introduction": _introduction(inputs, sections, totals, documents),
         "sections": section_dicts,
-        "limitations": _limitations(inputs, sections, totals, stats_written, fallback_n + int(summary_fallback) + int(conclusion_fallback), dropped),
+        "limitations": _limitations(inputs, sections, totals, stats_written, fallback_n + top_fallback_n, dropped),
         "conclusion": conclusion_d, "references": reference_d,
     }
     warnings += final_checks(report, claims_by_id, body, summary_s, conclusion_s)
@@ -488,7 +498,7 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
         "claims": {"total": totals["total"], "supported": totals[TIER_SUPPORTED], "partly": totals[TIER_PARTLY], "single": totals[TIER_SINGLE],
                    "disputed": totals[TIER_DISPUTED], "filtered": totals["filtered_total"]},
         "filtered": dict(totals["filtered"]), "written": written,
-        "sentences": {"llm": llm_n, "fallback": fallback_n, "dropped": dropped, "template": sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_TEMPLATE)},
+        "sentences": {"llm": llm_n, "fallback": fallback_n, "summary_conclusion_fallback": top_fallback_n, "dropped": dropped, "template": sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_TEMPLATE)},
         "summary_fallback": summary_fallback, "conclusion_fallback": conclusion_fallback,
         "calls": agg["calls"], "prompt_tokens": agg["prompt_tokens"], "completion_tokens": agg["completion_tokens"], "tokens": agg["total_tokens"],
         "retried": agg["retried"], "cache_hits": agg["cache_hits"], "llm_errors": agg["llm_errors"], "rate_waits": agg["rate_waits"],

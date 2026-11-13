@@ -45,6 +45,7 @@ Rules:
 1. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number.
 2. Each {kind} sentence is based on one to three numbered sentences: list their numbers in from_sentences.
 3. Never sound more certain than the numbered sentences it is based on. If one of them says "one study reports" or "according to", keep that attribution. Never turn a reported finding into a fact.
+   Concretely: a summary sentence that is based on ANY numbered sentence starting "One source reports" or "One study reports" must itself start with "One study reports" or "One source reports" (or "According to one source,"). Only a sentence based on sentences that ALL start with "Two sources report" may start that way. To avoid mixing, base each sentence on sentences of the same kind.
 4. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
 5. {extra}
 6. At most 60 words per sentence.

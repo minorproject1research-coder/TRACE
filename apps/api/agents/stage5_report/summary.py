@@ -146,11 +146,13 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
         except writer.MalformedReply as e:
             stats["malformed"] += 1
             log.append(f"the reply was not usable JSON ({str(e)[:80]}); return the JSON object exactly as specified")
+            logger.info("Stage 5: the %s reply was not usable JSON at attempt %d: %s", kind, attempt, str(e)[:200])
             continue
         except Exception as e:                  # LLMUnavailable, a network error, TooLarge: no point asking again
             if not isinstance(e, writer.LLMUnavailable):
                 stats["llm_errors"] += 1
             log.append(f"the model call failed ({type(e).__name__})")
+            logger.warning("Stage 5: the %s model call failed at attempt %d: %s: %s", kind, attempt, type(e).__name__, str(e)[:200])
             break
         items, reasons = _validate(data, body, low, high, check_summary)
         if not reasons:

@@ -622,3 +622,17 @@ def test_a_fallback_sentence_with_several_claims_is_split_into_one_sentence_per_
     assert [s.claim_ids for s in out] == [["c_1"], ["c_2"], ["c_3"], ["c_1", "c_2"]]      # the LLM sentence is untouched
     assert all(s.origin == ORIGIN_FALLBACK and s.reasons == ["x"] for s in out[:3]) and out[0].text.startswith("One study reports that")
     assert [s.job_id for s in out[:3]] == ["j1.1", "j1.2", "j1.3"]
+
+
+def test_single_source_sentences_cite_exactly_one_document():
+    result = build(llm=FakeLLM())
+    singles = [s for sec in result["report"]["sections"] for s in sec["sentences"] if s["tier"] == "single"]
+    assert singles and all(len(s["refs"]) == 1 for s in singles)         # "One study reports ..." never carries two or more references
+
+
+def test_summary_fallback_is_counted_by_sentence_and_warned():
+    result = build(llm=FakeLLM(fail=RuntimeError("boom")))
+    report = result["report"]
+    n = sum(1 for s in report["overview"]["summary"] + report["conclusion"] + [s for sec in report["sections"] for s in sec["sentences"]] if s["origin"] == "fallback")
+    assert n >= 1 and any(f"{n} sentence" in x and "fixed template wording" in x for x in report["limitations"])
+    assert any("executive summary could not be written" in w for w in report["warnings"])

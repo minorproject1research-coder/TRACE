@@ -250,9 +250,9 @@ def test_make_jobs_groups_same_tier_max_three_in_tier_then_confidence_order():
              row("d1", "contradicted", [ev("a", "A"), ev("z", "Z", relation="contradicts")])]
     claims = build(rows, per_section=20)
     jobs = tiers.make_jobs("sec1", claims)
-    assert [j.tier for j in jobs] == [TIER_SUPPORTED, TIER_PARTLY, TIER_SINGLE, TIER_SINGLE, TIER_SINGLE]
-    assert [len(j.claims) for j in jobs] == [1, 1, 3, 3, 1]
-    assert [c.text for c in jobs[2].claims] == ["u6", "u5", "u4"]                      # best confidence first
+    assert [j.tier for j in jobs] == [TIER_SUPPORTED, TIER_PARTLY] + [TIER_SINGLE] * 7
+    assert [len(j.claims) for j in jobs] == [1] * 9                                    # every single claim is from its own document: one job each
+    assert [j.claims[0].text for j in jobs[2:]] == ["u6", "u5", "u4", "u3", "u2", "u1", "u0"]      # best confidence first
     assert all(len(j.claims) <= 3 and len({c.tier for c in j.claims}) == 1 and j.section_id == "sec1" for j in jobs)
     assert not any(c.text == "d1" for j in jobs for c in j.claims)                     # disputed claims are never written about
 
@@ -261,8 +261,9 @@ def test_make_jobs_skips_filtered_claims_and_clamps_group_size():
     rows = [row(f"u{i}", "unverified", [ev(f"id{i}", f"U{i}")]) for i in range(4)] + [row("weak", "unverified", [ev("w", "W", level="abstract")])]
     claims = build(rows)
     assert sum(len(j.claims) for j in tiers.make_jobs("s", claims)) == 4
-    assert [len(j.claims) for j in tiers.make_jobs("s", claims, max_per_job=2)] == [2, 2]
-    assert [len(j.claims) for j in tiers.make_jobs("s", claims, max_per_job=10)] == [3, 1]       # never more than 3
+    assert [len(j.claims) for j in tiers.make_jobs("s", claims, max_per_job=2)] == [1, 1, 1, 1]       # one document each
+    same_doc = build([row(f"x{i}", "unverified", [ev("one", "One doc")]) for i in range(4)])
+    assert [len(j.claims) for j in tiers.make_jobs("s", same_doc, max_per_job=10)] == [2, 1]      # at most 2 single claims per job (the rest of the document is capped upstream)
     assert tiers.make_jobs("s", []) == []
 
 
@@ -271,7 +272,7 @@ def test_partly_claims_get_one_job_each_other_tiers_up_to_three():
     rows += [row(f"u{i}", "unverified", [ev(f"id{i}", f"U{i}")]) for i in range(4)]
     jobs = tiers.make_jobs("sec", build(rows, per_section=20))
     assert [len(j.claims) for j in jobs if j.tier == TIER_PARTLY] == [1, 1, 1, 1]      # claim + related wording of 3 claims never fit in 60 words
-    assert [len(j.claims) for j in jobs if j.tier == TIER_SINGLE] == [3, 1]
+    assert [len(j.claims) for j in jobs if j.tier == TIER_SINGLE] == [1, 1, 1, 1]
 
 
 def test_job_ids_are_deterministic_and_change_with_content():
@@ -682,3 +683,13 @@ def test_two_partly_claims_that_are_each_others_near_match_are_reported_once():
     got = by_text(build(rows))
     assert got["CNNs are black boxes"].tier == TIER_PARTLY and got["Another partly claim"].tier == TIER_PARTLY
     assert got["Backprop models are black-box"].tier is None and got["Backprop models are black-box"].filtered_reason == tiers.FILTER_MIRROR
+
+
+def test_a_single_source_job_never_mixes_documents():
+    rows = [row("a1", "unverified", [ev("docA", "Doc A")], 0.5), row("b1", "unverified", [ev("docB", "Doc B")], 0.6),
+            row("a2", "unverified", [ev("docA", "Doc A")], 0.4), row("c1", "unverified", [ev("docC", "Doc C")], 0.3)]
+    jobs = tiers.make_jobs("sec", build(rows, per_section=20))
+    for j in jobs:
+        assert len({tiers.primary_evidence(c).ref_key for c in j.claims}) == 1       # "One study reports ..." cites one document
+    assert sorted(len(j.claims) for j in jobs) == [1, 1, 2]
+    assert [j.claims[0].text for j in jobs][0] == "b1"                              # best claim first
