@@ -24,7 +24,7 @@ export default function OverviewPage() {
         <div>
           <div className="eyebrow">Research overview</div>
           <h1>Find the signal.<br /><em>Verify the evidence.</em></h1>
-          <p>Research across sources, connect findings, and understand what the evidence actually supports.</p>
+          <p>Investigate complex questions, connect evidence across trusted sources, and turn research into conclusions you can verify</p>
         </div>
         <div className="orbit" aria-hidden="true">
           <div className="orbit-ring a" /><div className="orbit-ring b" />

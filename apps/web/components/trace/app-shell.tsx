@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { ChevronRight, FileText, FlaskConical, FolderKanban, History, LayoutDashboard, Library, Menu, Plus, Radio, Search, Settings2, WifiOff } from 'lucide-react'
 import { useMode } from '@/lib/mode'
 import { CommandPalette } from './command-palette'
-import { TraceMark } from './trace-mark'
 
 const NEW_RESEARCH_HREF = '/#new-research'
 
@@ -77,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {mobileOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
           <div className="brand">
-            <button className="brand-toggle" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}><TraceMark size={32} /></button>
+            <button className="brand-toggle" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}><img className="brand-logo" src="/trace-logo.png" alt="" width={36} height={36} /></button>
             <div className="brand-copy rail-sr"><strong>TRACE</strong><span>RESEARCH INTELLIGENCE</span></div>
           </div>
 

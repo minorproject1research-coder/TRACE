@@ -134,7 +134,7 @@ label:has(input:focus-visible) { outline: 2px solid var(--cyan); outline-offset:
 .sidebar::after { content: ''; position: absolute; top: 0; right: -1px; width: 1px; height: 180px; background: linear-gradient(var(--cyan), transparent); opacity: .5; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 22px; }
 .brand-toggle { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 12px; padding: 0; background: transparent; transition: background .2s; }
-.brand-toggle:hover { background: var(--ink-800); }
+.brand-toggle:hover { background: var(--ink-800); } .brand-logo { display: block; width: 36px; height: 36px; border-radius: 9px; }
 .brand-copy { display: flex; flex-direction: column; gap: 3px; }
 .brand-copy strong { font: 800 18px/1 var(--font-head); letter-spacing: .2em; }
 .brand-copy span { font: 500 9.5px/1 var(--font-code); letter-spacing: .12em; color: var(--text-3); white-space: nowrap; }
@@ -964,6 +964,6 @@ mark.active { background: #3fe0f240; box-shadow: inset 0 -2px 0 var(--cyan), 0 0
 .wr-side blockquote { margin: 0 0 6px; padding-left: 10px; border-left: 2px solid var(--line-3); font-size: 13px; overflow-wrap: anywhere; }
 .wr-gaps { margin: 10px 0; padding: 10px 14px; border: 1px dashed var(--line-3); border-radius: 10px; color: var(--text-2); } .wr-gaps ul, .wr-limitations ul, .wr-warnings ul { margin: 0; padding-left: 18px; } .wr-gaps li, .wr-limitations li, .wr-warnings li { margin: 4px 0; overflow-wrap: anywhere; }
 .wr-warnings { padding: 10px 14px; border: 1px solid #6b5320; border-radius: 10px; background: #ffd07a0a; } .wr-limitations { border-bottom: 0; }
-.wr-refs { margin: 0; padding-left: 28px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; } .wr-refs li { overflow-wrap: anywhere; scroll-margin-top: 80px; } .wr-refs li:target { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; } .wr-refs .tag, .wr-refs a { margin-left: 8px; } .wr-refs a { color: var(--cyan); text-decoration: underline; text-underline-offset: 2px; }
+.wr-refs { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; } .wr-ref-num { display: inline-block; min-width: 30px; color: var(--text-3); font: 600 12px var(--font-code); } .wr-doi { margin-left: 8px; } .wr-refs li { overflow-wrap: anywhere; scroll-margin-top: 80px; } .wr-refs li:target { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 6px; } .wr-refs .tag, .wr-refs a { margin-left: 8px; } .wr-refs a { color: var(--cyan); text-decoration: underline; text-underline-offset: 2px; }
 .wr-none-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-top: 10px; }
 @media (max-width: 720px) { .written-report h1 { font-size: 22px; } .wr-sentence { padding-left: 10px; } }

@@ -145,11 +145,11 @@ export function ReportView({ runId, res }: { runId: string; res: WrittenReportRe
           <ol className="wr-refs">
             {m.references.map(r => (
               <li key={r.number} id={r.anchor} value={r.number}>
-                <span className="wr-ref-text">{r.text}</span>
+                <span className="wr-ref-num">[{r.number}]</span> <span className="wr-ref-text">{r.text}</span>
                 {r.kind && <span className="tag">{r.kind === 'web' ? 'web' : r.kind === 'paper' ? 'paper' : r.kind}</span>}
                 {r.hint && <span className="tag warn" title="Only part of this source was read">{r.hint}</span>}
                 {r.url && <a href={r.url} target="_blank" rel="noopener noreferrer">Open source<span className="sr-only"> (opens in a new tab)</span></a>}
-                {r.doi && <span className="meta">doi: {r.doi}</span>}
+                {r.doi && !r.text.includes(r.doi) && <span className="meta wr-doi">doi: {r.doi}</span>}
               </li>
             ))}
           </ol>
