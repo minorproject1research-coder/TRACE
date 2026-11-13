@@ -8,3 +8,10 @@ logs/
 evaluation/relevance_judge/raw
 evaluation/relevance_judge/candidates.jsonl
 .cache/
+
+# never committed (set 2026-11-13)
+reports/aspect_cache.json
+reports/judge_cache.json
+reports/stage5/
+log_slice.txt
+docs/reports/TRACE Stage 4 Fact Checking, Handoff Report.md
