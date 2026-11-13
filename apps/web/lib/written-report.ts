@@ -6,6 +6,7 @@ import type { StageState, WrittenDisagreement, WrittenReference, WrittenReport, 
 // Rules that must hold wherever a sentence is shown:
 //  - the text of a sentence never contains a marker; the renderer adds "[1, 3]" from `refs`, before the final full stop
 //  - each marker links to the reference with that number
+//  - tier `note` (a template sentence, no refs, s5-v2) is shown as a plain muted note: NO tier label and NO "plain wording" hint
 //  - tier `partly` always carries the label "partly supported"; tier `single` always carries "one source, not confirmed" and never looks like a confirmed finding;
 //    a tier this page does not know is treated like `single` (labelled with its own word, never styled as confirmed)
 //  - sources that disagree are shown with both sides, each with its quote and reference; never "X is false"
@@ -18,6 +19,9 @@ export const LEGEND = 'How to read the findings: a sentence that starts with “
 export const PARTLY_LABEL = 'partly supported'
 export const SINGLE_LABEL = 'one source, not confirmed'
 export const NOT_A_VERIFIED_ANSWER = 'This report is not a verified answer. Every check is automatic (language models and rules); none was reviewed by a person.'
+
+/** The title of the first block: it answers the question that was asked (it was "Research Overview and Executive Summary" before template s5-v2). */
+export const ANSWER_TITLE = 'Answer'
 
 export const POLL_MS = 3000
 
@@ -40,13 +44,14 @@ export function sentenceParts(s: Pick<WrittenSentence, 'text' | 'refs'>): { body
   return m && m[1].trim() !== '' ? { body: m[1], stop: m[2], refs } : { body: text, stop: '', refs }
 }
 
-export type TierKind = 'supported' | 'partly' | 'single' | 'other'
-export type TierView = { kind: TierKind; /** The label that must accompany the sentence; null only for a supported sentence. */ label: string | null; tone: PillTone; hint: string }
+export type TierKind = 'supported' | 'partly' | 'single' | 'note' | 'other'
+export type TierView = { kind: TierKind; /** The label that must accompany the sentence; null only for a supported sentence and for a plain note. */ label: string | null; tone: PillTone; hint: string }
 
 export function tierView(tier: string | null | undefined): TierView {
   switch ((tier ?? '').trim().toLowerCase()) {
     case 'supported': return { kind: 'supported', label: null, tone: 'mint', hint: 'Stated by two or more documents.' }
     case 'partly': return { kind: 'partly', label: PARTLY_LABEL, tone: 'blue', hint: 'One document states this and another document makes a related point. A lead, not a confirmed fact.' }
+    case 'note': return { kind: 'note', label: null, tone: 'neutral', hint: '' }
     case 'single': return { kind: 'single', label: SINGLE_LABEL, tone: 'neutral', hint: 'One document states this. It is attributed to that document and is not confirmed by a second source.' }
     default: {
       const w = (tier ?? '').trim()
@@ -100,10 +105,11 @@ export type SentenceView = {
 
 export function sentenceView(s: WrittenSentence, refs: WrittenReference[] | undefined): SentenceView {
   const p = sentenceParts(s)
+  const tier = tierView(s?.tier)
   return {
     body: p.body, stop: p.stop, markers: markers(p.refs),
     links: p.refs.map(n => { const r = refFor(refs, n); return { n, href: refHref(n), title: r?.title ?? null, found: !!r } }),
-    tier: tierView(s?.tier), plainWording: s?.origin === 'fallback' || s?.origin === 'template',
+    tier, plainWording: tier.kind !== 'note' && (s?.origin === 'fallback' || s?.origin === 'template'),
   }
 }
 

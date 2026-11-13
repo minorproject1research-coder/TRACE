@@ -14,7 +14,7 @@ const REFS: WrittenReference[] = [
   { number: 6, title: '[Sample] A Practitioner Notebook', authors: [], year: 2024, venue: 'sample-notebook.example.org', doi: null, url: 'https://example.org/sample-notebook', kind: 'web', evidenceLevel: 'web_snippet', sourceIds: ['demo-src-15'], text: '[Sample] A Practitioner Notebook. sample-notebook.example.org (2024). Accessed 2026-11-10.', markdown: '' },
 ]
 
-const S = (text: string, refs: number[], tier: 'supported' | 'partly' | 'single', origin: 'llm' | 'fallback' | 'template' = 'llm'): WrittenSentence => ({ text, claimIds: [`claim-${refs.join('')}-${text.length}`], refs, tier, origin })
+const S = (text: string, refs: number[], tier: 'supported' | 'partly' | 'single' | 'note', origin: 'llm' | 'fallback' | 'template' = 'llm'): WrittenSentence => ({ text, claimIds: [`claim-${refs.join('')}-${text.length}`], refs, tier, origin })
 
 const TOPICS = [
   'What is the sample method and how does it work?',
@@ -72,9 +72,14 @@ function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', quest
   }
   const warn = kind === 'warnings'
   const secs = sections(warn)
-  const summary = [S('Two sources report that the method aims to trace weak signals back to their sources.', [1, 2], 'supported'), S('One study reports that production cost fell to about a tenth of the baseline, based on its abstract.', [3], 'single')]
-  const conclusion = [S('The sources agree on the goal of the method, while most other findings rest on a single document and are not confirmed.', [], 'single', 'template')]
-  const all: WrittenSentence[] = [...summary, ...secs.flatMap(sec => sec.sentences ?? [])]
+  const summary = [
+    S('Two sources report that the method aims to trace weak signals back to their sources.', [1, 2], 'supported'),
+    S('One study reports that production cost fell to about a tenth of the baseline, based on its abstract.', [3], 'single'),
+    { text: 'The evidence collected does not settle: how the method behaves on streaming inputs, and the open problems of the method.', claimIds: [], refs: [], tier: 'note', origin: 'template' },
+  ]
+  // The bottom line can be empty (the model could not write it within the checks): the warnings kind has none, so the Conclusion heading is hidden.
+  const conclusion = warn ? [] : [S('The sources agree on the goal of the method, while most other findings rest on a single document and are not confirmed.', [1, 2, 3], 'partly')]
+  const all: WrittenSentence[] = [...summary.filter(s => s.tier !== 'note'), ...secs.flatMap(sec => sec.sentences ?? [])]
   const n = (t: string) => all.filter(s => s.tier === t).length
   return {
     status: warn ? 'completed_with_warnings' : 'completed', question, generatedAt: '2026-11-10T10:20:00Z',
@@ -88,7 +93,7 @@ function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', quest
       ...(warn ? ['2 sentences use the standard template wording instead of the model’s.'] : []),
     ],
     conclusion, references: REFS, stats: { sentences: { llm: warn ? 6 : 8, fallback: warn ? 1 : 0, template: warn ? 2 : 1 } },
-    warnings: warn ? ['1 sentence uses the template wording because the model’s sentence failed its checks twice.', '1 sentence was dropped by the final check.'] : [],
+    warnings: warn ? ['1 sentence uses the template wording because the model’s sentence failed its checks twice.', '1 sentence was dropped by the final check.', 'The conclusion could not be written within the checks and is left out.'] : [],
   }
 }
 
@@ -100,7 +105,7 @@ export function demoMarkdown(r: WrittenReport): string {
     return `${text}${s.tier === 'partly' ? ` *(${PARTLY_LABEL})*` : s.tier === 'single' ? ` *(${SINGLE_LABEL})*` : ''}`
   }
   const out: string[] = [`# ${r.question ?? 'Written report'}`, '', `> ${LEGEND}`, '']
-  if (r.overview?.summary?.length) out.push('## Research Overview and Executive Summary', '', ...r.overview.summary.map(line), '')
+  if (r.overview?.summary?.length) out.push('## Answer and Overview', '', ...r.overview.summary.map(line), '')
   if (r.introduction?.length) out.push('## Introduction', '', ...r.introduction, '')
   for (const s of r.sections ?? []) {
     out.push(`## ${s.title}`, '')
@@ -118,7 +123,7 @@ export function demoWrittenResponse(kind: 'completed' | 'warnings' | 'insufficie
   const report = build(kind, question)
   const markdown = demoMarkdown(report)
   report.references = (report.references ?? []).map(x => ({ ...x, markdown: `${x.number}. ${x.text}` }))
-  return { status: report.status ?? kind, report, markdown, stats: report.stats, model: 'demo-writer', templateVersion: 's5-v1', generatedAt: report.generatedAt }
+  return { status: report.status ?? kind, report, markdown, stats: report.stats, model: 'demo-writer', templateVersion: 's5-v2', generatedAt: report.generatedAt }
 }
 
 /** The status the written report of a kind has (and so the data of the report stage's stage_completed event). */

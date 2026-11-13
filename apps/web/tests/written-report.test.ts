@@ -59,7 +59,7 @@ test('every partly and single sentence of every demo report carries its label, i
     for (const v of views) {
       if (v.tier.kind === 'partly') assert.equal(v.tier.label, 'partly supported')
       if (v.tier.kind === 'single') assert.equal(v.tier.label, 'one source, not confirmed')
-      if (v.tier.kind !== 'supported') assert.ok(v.tier.label, 'a sentence that is not supported always has a label')
+      if (v.tier.kind !== 'supported' && v.tier.kind !== 'note') assert.ok(v.tier.label, 'a sentence that is not supported always has a label (a plain note has none)')
     }
     const all = sentencesOf(res)
     const count = (t: string) => all.filter(s => s.tier === t).length
@@ -85,7 +85,7 @@ test('the legend is always there, the limitations are never dropped, and the war
     assert.ok(m.limitations.length > 0, kind + ': limitations are listed'); assert.match(m.notVerified, /not a verified answer/)
   }
   const warn = reportModel(demoWrittenResponse('warnings'))
-  assert.equal(warn.status.label, 'Completed with warnings'); assert.equal(warn.warnings.length, 2); assert.ok(warn.limitations.some(l => /template wording/.test(l)))
+  assert.equal(warn.status.label, 'Completed with warnings'); assert.equal(warn.warnings.length, 3); assert.ok(warn.limitations.some(l => /template wording/.test(l)))
   assert.ok(warn.limitations.some(l => /not reviewed by a person/.test(l)), 'the standing caveat about the conflict check')
   assert.equal(reportModel(demoWrittenResponse('completed')).warnings.length, 0)
   const ins = reportModel(demoWrittenResponse('insufficient')); assert.equal(ins.empty, true); assert.equal(ins.status.label, 'Insufficient evidence'); assert.ok(ins.sections.every(s => s.gaps.length > 0))
@@ -194,4 +194,22 @@ test('the report lane of the timeline: its steps, its notes, and no lane for a s
   const failed = demoEvents({ fact: 'on', written: 'failed' })
   assert.equal(reportLane(failed)!.status, 'failed'); assert.ok(failed.some(e => e.event === 'run_completed') && !failed.some(e => e.event === 'run_failed'))
   assert.equal(reportLane(demoEvents({ fact: 'on', written: 'insufficient' }))!.status, 'completed')
+})
+
+// ------------------------------------------------------------------------------------------------------------------------ the answer (template s5-v2)
+test('a note sentence (tier "note", template, no refs) has no tier label and no "plain wording" hint; a template sentence of another tier keeps its hint', () => {
+  const t = tierView('note'); assert.equal(t.kind, 'note'); assert.equal(t.label, null)
+  const m = reportModel({ status: 'completed', report: { overview: { summary: [
+    { text: 'The evidence collected does not settle: X.', tier: 'note', origin: 'template', refs: [] },
+    { text: 'One study reports Y.', tier: 'single', origin: 'template', refs: [1] },
+  ] }, references: [{ number: 1, title: 'R' }] } })
+  assert.equal(m.summary[0].tier.label, null); assert.equal(m.summary[0].plainWording, false); assert.deepEqual(m.summary[0].links, []); assert.equal(m.summary[0].markers, '')
+  assert.equal(m.summary[1].tier.label, SINGLE_LABEL); assert.equal(m.summary[1].plainWording, true)
+})
+
+test('the demo report has an Answer with a note, and the Markdown says "Answer and Overview"; a report may have an empty conclusion', () => {
+  const ok = demoWrittenResponse('completed'), warn = demoWrittenResponse('warnings')
+  assert.ok((ok.report.overview?.summary ?? []).some(s => s.tier === 'note')); assert.match(ok.markdown, /## Answer and Overview/); assert.doesNotMatch(ok.markdown, /Executive Summary/)
+  assert.equal(reportModel(ok).conclusion.length, 1); assert.deepEqual(warn.report.conclusion, []); assert.equal(reportModel(warn).conclusion.length, 0)
+  assert.doesNotMatch(warn.markdown, /## Conclusion/)
 })

@@ -5,7 +5,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Download, FileSearch, Info, ShieldAlert } from 'lucide-react'
 import { StatusPill } from '@/components/trace/status-pill'
 import { formatDateTime } from '@/lib/format'
-import { downloadName, reportModel, type DisagreementView, type SectionView, type SentenceView, type SideView } from '@/lib/written-report'
+import { ANSWER_TITLE, downloadName, reportModel, type DisagreementView, type SectionView, type SentenceView, type SideView } from '@/lib/written-report'
 import type { WrittenReportResponse } from '@/lib/trace-types'
 
 // The written report of Stage 5. The rules (lib/written-report.ts): every sentence shows its markers from `refs` before the final full stop and each
@@ -28,10 +28,11 @@ function Markers({ v }: { v: SentenceView }) {
   )
 }
 
-/** One sentence: the text, the markers, the final stop, and the label of its tier (always written out for a partly supported and a one-source sentence). */
+/** One sentence: the text, the markers, the final stop, and the label of its tier (always written out for a partly supported and a one-source sentence).
+ *  A note (tier "note", a template sentence such as the open questions of the answer) is a plain muted line: no chip, no "plain wording" hint. */
 function Sentence({ v }: { v: SentenceView }) {
   return (
-    <p className={`wr-sentence ${v.tier.kind}`}>
+    <p className={`wr-sentence ${v.tier.kind === 'note' ? 'wr-plain-note' : v.tier.kind}`}>
       {v.body}<Markers v={v} />{v.stop}
       {v.tier.label && <> <span className={`wr-tier ${v.tier.kind}`} title={v.tier.hint}>({v.tier.label})</span></>}
       {v.plainWording && <small className="wr-plain" title="Written from the claim’s own wording by a standard template, not by the model.">plain wording</small>}
@@ -121,10 +122,10 @@ export function ReportView({ runId, res }: { runId: string; res: WrittenReportRe
       {m.status.isError && m.empty ? null : (
         <>
           <section aria-labelledby="wr-overview-h">
-            <h2 id="wr-overview-h">Research Overview and Executive Summary</h2>
-            {m.counts.length > 0 && <dl className="wr-counts">{m.counts.map(c => <div key={c.key}><dd>{c.value}</dd><dt>{c.label}</dt></div>)}</dl>}
+            <h2 id="wr-overview-h">{ANSWER_TITLE}</h2>
             {m.summary.map((v, i) => <Sentence key={i} v={v} />)}
-            {m.summary.length === 0 && <p className="meta">{m.rawStatus === 'insufficient_evidence' ? 'The evidence is insufficient for a written summary.' : 'There is no executive summary.'}</p>}
+            {m.summary.length === 0 && <p className="meta">{m.rawStatus === 'insufficient_evidence' ? 'The evidence is insufficient for a written answer.' : 'There is no written answer.'}</p>}
+            {m.counts.length > 0 && <dl className="wr-counts" aria-label="Overview of the evidence">{m.counts.map(c => <div key={c.key}><dd>{c.value}</dd><dt>{c.label}</dt></div>)}</dl>}
           </section>
           {m.introduction.length > 0 && <section aria-labelledby="wr-intro-h"><h2 id="wr-intro-h">Introduction</h2>{m.introduction.map((p, i) => <p key={`${i}:${p.slice(0, 20)}`}>{p}</p>)}</section>}
           {m.sections.map(s => <Section key={s.id} s={s} />)}
