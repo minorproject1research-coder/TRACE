@@ -77,3 +77,19 @@ def test_a_rejected_answer_keeps_the_sentences_that_passed():
     assert [i["from_sentences"] for i in kept] == [[1], [3]]
     assert summary._salvage("conclusion", items, ["write between 4 and 6 sentences; you wrote 3"], body, check) == []        # not about one sentence
     assert summary._salvage("conclusion", items[:2], ["sentence 2: stronger"], body, check) == []                            # too few left
+
+
+def test_near_duplicate_sentences_of_a_section_are_left_out_and_the_stronger_one_stays():
+    a = sent("One source reports that increasing inter-institutional data heterogeneity reduces federated learning performance, while another makes a related point that heterogeneity degrades convergence.", "partly", "a")
+    b = sent("One source reports that inter-institutional data heterogeneity degrades federated learning performance and convergence.", "single", "b")
+    c = sent("One source reports that differential privacy lowers the accuracy of the final model.", "single", "c")
+    kept, dropped = answer.dedupe_section([b, a, c])
+    assert [s.job_id for s in kept] == ["a", "c"] and [s.job_id for s in dropped] == ["b"]
+    assert answer.dedupe_section([c]) == ([c], [])
+
+
+def test_the_answer_must_now_draw_on_three_of_the_top_sections():
+    body = [{"n": i, "section": i} for i in range(1, 5)]
+    titles = {1: "a", 2: "b", 3: "c", 4: "d"}
+    assert answer.coverage_problems([{"from_sentences": [1]}, {"from_sentences": [2]}], body, [1, 2, 3, 4], titles)
+    assert not answer.coverage_problems([{"from_sentences": [1]}, {"from_sentences": [2]}, {"from_sentences": [3]}], body, [1, 2, 3, 4], titles)

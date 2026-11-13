@@ -19,9 +19,9 @@ from apps.api.agents.stage5_report.schema import ORIGIN_TEMPLATE, Sentence
 STOPWORDS = frozenset("""a an and are as at be by can could do does for from has have how in into is it its of on or than that the their there these this to was were what when
 which who whom why will with would about across between compared compare versus vs other over under using use used based""".split())
 TIER_RANK = {"supported": 3, "partly": 2, "single": 1}
-TOP_SECTIONS = 3                    # sections whose sentences feed the answer
-REQUIRED_SECTIONS = 2               # the answer must use at least this many of the top sections (fewer when the report has fewer)
-PER_TOP_SECTION = 5                 # sentences taken from each of the top sections for the answer
+TOP_SECTIONS = 4                    # sections whose sentences feed the answer
+REQUIRED_SECTIONS = 3               # the answer must use at least this many of the top sections (fewer when the report has fewer)
+PER_TOP_SECTION = 4                 # sentences taken from each of the top sections for the answer
 TIER_NOTE = "note"                  # a template note without a source: no tier label is shown for it
 GAP_PREFIX = "The collected evidence does not sufficiently answer: "
 
@@ -68,6 +68,34 @@ def top_sections(question: str, sections: list, sentences_by_section: list, k: i
     return order[:k]
 
 
+BOILERPLATE = frozenset("one source sources study studies report reports reported another makes make related point two several according say says".split())
+DUPLICATE_JACCARD = 0.6
+
+
+def content_tokens(text: str) -> set:
+    """The words of a sentence that carry its finding (the attribution wording of the tiers removed)."""
+    return tokens(text) - {_stem(w) for w in BOILERPLATE} - BOILERPLATE
+
+
+def dedupe_section(sentences: list) -> tuple:
+    """(kept, dropped): sentences of ONE section that say nearly the same as a stronger or earlier one are left out (7 sentences "heterogeneity degrades
+    performance" in run 37). The stronger tier wins, then the model's wording over a fallback, then the earlier sentence; the kept ones keep their order."""
+    order = sorted(range(len(sentences)), key=lambda i: (-TIER_RANK.get(sentences[i].tier, 0), sentences[i].origin != "llm", i))
+    kept_idx, seen = [], []
+    for i in order:
+        tk = content_tokens(sentences[i].text)
+        if any(_near_duplicate_at(tk, o, DUPLICATE_JACCARD) for o in seen):
+            continue
+        seen.append(tk)
+        kept_idx.append(i)
+    keep = set(kept_idx)
+    return [s for i, s in enumerate(sentences) if i in keep], [s for i, s in enumerate(sentences) if i not in keep]
+
+
+def _near_duplicate_at(a: set, b: set, level: float) -> bool:
+    return bool(a and b) and len(a & b) / len(a | b) >= level
+
+
 def _sentence_rank(s: Sentence, q_tokens: set) -> tuple:
     """Better first: stronger tier, has a figure, shares more words with the question."""
     has_figure = bool(re.search(r"\d", s.text))
@@ -78,7 +106,7 @@ def _near_duplicate(a: set, b: set) -> bool:
     return bool(a and b) and len(a & b) / len(a | b) >= 0.55
 
 
-def candidates(question: str, sections: list, sentences_by_section: list, limit: int = 14, per_section: int = PER_TOP_SECTION) -> tuple:
+def candidates(question: str, sections: list, sentences_by_section: list, limit: int = 16, per_section: int = PER_TOP_SECTION) -> tuple:
     """(answer_candidates, conclusion_candidates, top_indexes). The answer candidates are the best `per_section` sentences of each of the top sections,
     then the best of the other sections up to `limit`; the conclusion candidates are the next-ranked sentences of the top sections (not in the answer)."""
     q = tokens(question)

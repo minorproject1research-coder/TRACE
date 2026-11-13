@@ -60,7 +60,7 @@ The question: {question}
 Rules:
 1. Answer the question itself. The first sentence must give the verdict on the main part of the question in plain words (for example how the two things compare). Then give the numbers, conditions or limits that qualify it, then answer every other part of the question (for example the trade-offs). If the numbered sentences do not answer a part, say nothing about it: the system adds a note about what the evidence does not settle.
 2. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number. Prefer sentences that contain a figure, and keep the figure with what it is compared with.
-3. Each answer sentence is based on one to four numbered sentences: list their numbers in from_sentences. Draw on sentences from different parts of the report, not only the first ones.
+3. Each answer sentence is based on one to four numbered sentences: list their numbers in from_sentences. The sentences are grouped under "== Part: ... ==" headers. Write at least one answer sentence for each of three or more different parts, so that the answer covers the verdict, the conditions or limits, and the risks or costs when the parts have them.
 4. Never sound more certain than the numbered sentences. A sentence based on ANY numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that ALL start "Two sources report" may start that way. Base each sentence on sentences of the same kind. Never turn a reported finding into a fact.
 5. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
 6. {extra}
@@ -70,7 +70,7 @@ Return only JSON: {{"sentences": [{{"text": "...", "from_sentences": [1, 2]}}]}}
 
 SUMMARY_EXTRA = {
     "summary": "Do not use connecting words such as therefore, thus, hence, consequently. Put the best supported points first.",
-    "conclusion": "Give the bottom line: what a reader should take away, in plain words, and the main caveat, in three or four sentences. Do not repeat the summary. Do not introduce a topic that is not in the numbered sentences. Do not recommend anything. Do not claim more than they say.",
+    "conclusion": "Give the bottom line: what a reader should take away, in plain words, and the main caveat, in three or four sentences. Do not repeat the summary. Leave out dataset and benchmark names and other detail that does not answer the question. Do not introduce a topic that is not in the numbered sentences. Do not recommend anything. Do not claim more than they say.",
 }
 
 
@@ -168,9 +168,17 @@ def section_schema(jobs) -> dict:
 
 
 # ------------------------------------------------------------------------------------------------------------ summary / conclusion
-def _numbered(sentences) -> str:
-    """sentences: list of {"n": int, "text": str, "tier": str}."""
-    return "\n".join(f'{s["n"]}. [{s.get("tier", "")}] {_cut(s["text"], 400)}' for s in sentences)
+def _numbered(sentences, parts=None) -> str:
+    """sentences: list of {"n": int, "text": str, "tier": str}. With `parts` (the section titles by index) and a "section" on the sentences, a header line
+    "== Part: <title> ==" starts each group, so the answer can be built part by part."""
+    lines, last = [], object()
+    for s in sentences:
+        sec = s.get("section")
+        if parts and isinstance(sec, int) and sec != last and 0 <= sec < len(parts):
+            lines.append(f"== Part: {_cut(parts[sec], 160)} ==")
+        last = sec
+        lines.append(f'{s["n"]}. [{s.get("tier", "")}] {_cut(s["text"], 400)}')
+    return "\n".join(lines)
 
 
 def summary_messages(kind: str, sentences: list, low: int, high: int, context=None) -> list:
@@ -185,7 +193,8 @@ def summary_messages(kind: str, sentences: list, low: int, high: int, context=No
         system = ANSWER_SYSTEM.format(kind=kind, low=low, high=high, question=question, parts=parts_text, extra=extra)
     else:
         system = SUMMARY_SYSTEM.format(kind=kind, low=low, high=high, extra=extra)
-    return [{"role": "system", "content": system}, {"role": "user", "content": f"Numbered sentences:\n{_numbered(sentences)}"}]
+    parts_titles = (context or {}).get("parts") if question else None
+    return [{"role": "system", "content": system}, {"role": "user", "content": f"Numbered sentences:\n{_numbered(sentences, parts_titles)}"}]
 
 
 def summary_retry_messages(kind: str, sentences: list, low: int, high: int, previous: list, reasons: list, context=None) -> list:

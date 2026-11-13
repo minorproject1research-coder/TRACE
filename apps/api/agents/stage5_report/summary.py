@@ -155,7 +155,7 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
     if context and kind == "summary":
         retries = max(retries, 2)                  # the answer is the part the reader reads first: one more try
     cache = writer.resolve_cache(cache)
-    shown = [{"n": b["n"], "text": b["text"], "tier": b["tier"]} for b in body]
+    shown = [{"n": b["n"], "text": b["text"], "tier": b["tier"], "section": b.get("section")} for b in body]
     numbers = [b["n"] for b in body]
     first = prompts.summary_messages(kind, shown, low, high, context)
     key = writer.cache_key(first)

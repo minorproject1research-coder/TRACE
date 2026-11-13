@@ -37,7 +37,7 @@ logger = logging.getLogger("apps.api.agents.stage5_report")
 
 PER_SECTION_CANDIDATES = 3      # sentences of one section offered to the summary (supported first, then partly, then single)
 MIN_CANDIDATES = 6              # a small report still offers the summary this many sentences when it has them
-MAX_CANDIDATES = 14             # sentences offered to the summary / conclusion in all
+MAX_CANDIDATES = 16             # sentences offered to the summary / conclusion in all
 MAX_LIST_ITEMS = 6              # texts of one kind (uncovered details ...) named in a gap sentence before "and N more"
 MAX_REASON_CHARS = 300
 
@@ -213,6 +213,8 @@ def _limitations(inputs: dict, sections: list, totals: dict, body_stats: dict, w
     if warnings_fallback:
         verb = "uses" if warnings_fallback == 1 else "use"
         out.append(f"{_n(warnings_fallback, 'sentence')} {verb} a fixed template wording (the claim's own wording, or a body sentence repeated) because the written sentence did not pass the automatic checks.")
+    if body_stats.get("repeated"):
+        out.append(f"{_n(body_stats['repeated'], 'sentence')} repeated another sentence of the same section and {'was' if body_stats['repeated'] == 1 else 'were'} left out.")
     if dropped:
         out.append(f"{_n(dropped, 'sentence')} were left out because they failed a final check.")
     if hints.get("fact_failed_sub_questions"):
@@ -399,6 +401,10 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
             else:
                 kept.append(s)
         sentences_by_section[k] = kept
+    repeated = 0
+    for k, ss in enumerate(sentences_by_section):
+        sentences_by_section[k], left_out = answer.dedupe_section(ss)        # a sentence that repeats another of its section adds a citation, not a finding
+        repeated += len(left_out)
     llm_n = sum(1 for ss in sentences_by_section for s in ss if s.origin == ORIGIN_LLM)
     fallback_n = sum(1 for ss in sentences_by_section for s in ss if s.origin == ORIGIN_FALLBACK)
     written = {t: sum(1 for ss in sentences_by_section for s in ss if s.tier == t) for t in (TIER_SUPPORTED, TIER_PARTLY, TIER_SINGLE)}
@@ -437,8 +443,9 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
             common = dict(llm=llm, cache=cache, progress=progress, limit=MAX_CANDIDATES)
             summary_s, sum_stats = summary.write_summary(candidates, check_summary=_answer_check, context=context, **common)
             used = {cid for s in summary_s if s.origin == ORIGIN_LLM for cid in s.claim_ids}
+            q_tokens = answer.tokens(question_text)
             pool = sorted([s for s in {id(x): x for x in candidates + candidates_c}.values() if not set(s.claim_ids) & used],
-                          key=lambda s: (-answer.TIER_RANK.get(s.tier, 0), s.section if hasattr(s, "section") else 0))
+                          key=lambda s: (-len(answer.tokens(s.text) & q_tokens), -answer.TIER_RANK.get(s.tier, 0)))     # what is closest to the question first
             conclusion_s, concl_stats = summary.write_conclusion(pool[:MAX_CANDIDATES] if len(pool) >= 3 else candidates, check_summary=_conclusion_check, **common)
         summary_s, conclusion_s = list(summary_s), list(conclusion_s)
         if summary_s and (gap_s := answer.gap_sentence([_section_gaps(sqs[k], sections[k].counts, len(sentences_by_section[k]), bool(inputs.get("fact_ran")))
@@ -484,7 +491,7 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
     reference_d = [_reference_dict(r, book) for r in book.references()]
 
     # ---- 6. status, limitations, introduction, final checks
-    stats_written = {"written": written}
+    stats_written = {"written": written, "repeated": repeated}
     body_sentence_count = sum(written.values())
     if not writable or not body_sentence_count:
         status = STATUS_INSUFFICIENT
@@ -518,7 +525,7 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
         "claims": {"total": totals["total"], "supported": totals[TIER_SUPPORTED], "partly": totals[TIER_PARTLY], "single": totals[TIER_SINGLE],
                    "disputed": totals[TIER_DISPUTED], "filtered": totals["filtered_total"]},
         "filtered": dict(totals["filtered"]), "written": written,
-        "sentences": {"llm": llm_n, "fallback": fallback_n, "summary_conclusion_fallback": top_fallback_n, "dropped": dropped, "template": sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_TEMPLATE)},
+        "sentences": {"llm": llm_n, "fallback": fallback_n, "summary_conclusion_fallback": top_fallback_n, "repeated": repeated, "dropped": dropped, "template": sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_TEMPLATE)},
         "summary_fallback": summary_fallback, "conclusion_fallback": conclusion_fallback,
         "calls": agg["calls"], "prompt_tokens": agg["prompt_tokens"], "completion_tokens": agg["completion_tokens"], "tokens": agg["total_tokens"],
         "retried": agg["retried"], "cache_hits": agg["cache_hits"], "llm_errors": agg["llm_errors"], "rate_waits": agg["rate_waits"],
