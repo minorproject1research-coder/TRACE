@@ -421,15 +421,24 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
             s.section = k                                   # read by summary.select_body and by the coverage check of the answer
     question_text = _scrub(inputs.get("question"))
     candidates, candidates_c, top = answer.candidates(question_text, sections, sentences_by_section, limit=MAX_CANDIDATES)
+    parts = answer.select_parts(question_text, sections, sentences_by_section)
+    by_part = len(parts) >= answer.PART_MIN                 # built part by part: one sentence for each of the most relevant sections
+    if by_part:
+        candidates, top = [s for _, ss in parts for s in ss], [i for i, _ in parts]
     if len(candidates_c) < 3:
         candidates_c = candidates                           # a small report: the conclusion draws on the same sentences
     titles = {k: sections[k].title for k in top}
 
     def _answer_check(items, body_, min_sentences=None):
+        if by_part:
+            return (validators.check_summary(items, body_, min_sentences=len(top) if min_sentences is None else min_sentences, max_sentences=len(top))
+                    + answer.part_problems(items, body_, top, titles, require_all=min_sentences is None))
         return (validators.check_summary(items, body_, min_sentences=summary.ANSWER_RANGE[0] if min_sentences is None else min_sentences,
                                          max_sentences=summary.ANSWER_RANGE[1])
                 + answer.coverage_problems(items, body_, top, titles))
     context = {"question": question_text, "parts": [s.title for s in sections]}
+    if by_part:
+        context.update(mode="parts", range=(len(top), len(top)), order=list(top))
     body = summary.select_body(list({id(s): s for s in candidates + candidates_c}.values()), 2 * MAX_CANDIDATES)
     summary_s: list = []
     conclusion_s: list = []
@@ -595,8 +604,8 @@ def final_checks(report: dict, claims_by_id: dict, body: list, summary_s: list, 
                 ref = d[side]["ref"]
                 if ref is not None and ref not in numbers:
                     warnings.append(f"A disagreement of section \"{sec['title']}\" cites reference {ref} that does not exist.")
-    warnings += _summary_problems("summary", summary_s, body, lambda s, b: validators.check_summary(s, b, min_sentences=summary.SUMMARY_RANGE[0], max_sentences=summary.ANSWER_RANGE[1]))
-    warnings += _summary_problems("conclusion", conclusion_s, body, _conclusion_check)
+    warnings += _summary_problems("summary", summary_s, body, lambda s, b: validators.check_summary(s, b, min_sentences=summary.SALVAGE_MIN["summary"], max_sentences=max(summary.ANSWER_RANGE[1], answer.MAX_PARTS)))
+    warnings += _summary_problems("conclusion", conclusion_s, body, lambda s, b: _conclusion_check(s, b, min_sentences=summary.SALVAGE_MIN["conclusion"]))      # a salvaged conclusion may be shorter
     return warnings
 
 

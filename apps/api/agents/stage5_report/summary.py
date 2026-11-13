@@ -17,7 +17,7 @@ Shapes passed to `check_summary`:
 import logging
 import re
 
-from apps.api.agents.stage5_report import prompts, settings, writer
+from apps.api.agents.stage5_report import answer as answer_module, prompts, settings, writer
 from apps.api.agents.stage5_report.schema import (ORIGIN_FALLBACK, ORIGIN_LLM, ORIGIN_TEMPLATE, TIER_PARTLY, TIER_SINGLE, TIER_SUPPORTED, Sentence)
 
 logger = logging.getLogger("apps.api.agents.stage5_report")
@@ -113,7 +113,9 @@ def _salvage(kind, items, reasons, body, check_summary) -> list:
     return keep if not again else []
 
 
-def _build_sentences(kind, items, body, attempts, reasons) -> list:
+def _build_sentences(kind, items, body, attempts, reasons, order=None) -> list:
+    if order:
+        items = answer_module.order_items(items, body, order)
     by_n = {b["n"]: b for b in body}
     out = []
     for k, it in enumerate(items, start=1):
@@ -147,6 +149,8 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
         stats["skipped"] += 1
         return [], stats
     low, high = (ANSWER_RANGE if context else SUMMARY_RANGE) if kind == "summary" else CONCLUSION_RANGE
+    if context and context.get("range"):
+        low, high = context["range"]                  # part by part: exactly one sentence per part
     if len(body) <= (SUMMARY_RANGE[0] if kind == "summary" else low):                          # nothing to compress: copy them (no LLM call, no new text)
         stats["extractive"] += 1
         return extractive(kind, body, origin=ORIGIN_TEMPLATE), stats
@@ -168,7 +172,7 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
             items, reasons = _validate(stored, body, low, high, check_summary)         # a hit is validated again
             if not reasons:
                 stats["cache_hits"] += 1
-                return _build_sentences(kind, items, body, 1, []), stats
+                return _build_sentences(kind, items, body, 1, [], (context or {}).get("order")), stats
     purpose = writer.PURPOSE_SUMMARY
     log, previous, made = [], [], 0
     for attempt in range(1, retries + 2):
@@ -197,7 +201,7 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
                 except Exception:
                     logger.warning("Stage 5 cache put failed", exc_info=True)
             writer.safe_progress(progress, kind, f"Wrote the {kind} ({len(items)} sentences)", sentences=len(items))
-            return _build_sentences(kind, items, body, attempt, log), stats
+            return _build_sentences(kind, items, body, attempt, log, (context or {}).get("order")), stats
         log.extend(reasons)
         logger.info("Stage 5: the %s was rejected at attempt %d: %s", kind, attempt, " | ".join(str(r)[:220] for r in reasons[:6]))
         previous = [i["text"] for i in items]
@@ -206,7 +210,7 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
     if salvaged:                                   # the sentences that passed every check are kept; the ones that failed are dropped
         stats["salvaged"] = stats.get("salvaged", 0) + 1
         writer.safe_progress(progress, kind, f"Wrote the {kind} ({len(salvaged)} sentences, some dropped)", sentences=len(salvaged))
-        return _build_sentences(kind, salvaged, body, made, log), stats
+        return _build_sentences(kind, salvaged, body, made, log, (context or {}).get("order")), stats
     stats["fallback"] += 1
     writer.safe_progress(progress, kind, f"The {kind} used the extractive template", sentences=len(body))
     return extractive(kind, body, attempts=made, reasons=log), stats

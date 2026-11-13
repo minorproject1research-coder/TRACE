@@ -139,6 +139,76 @@ def candidates(question: str, sections: list, sentences_by_section: list, limit:
     return chosen, spare[:limit], top
 
 
+PART_MIN = 3                        # the answer is built part by part when at least this many sections qualify
+MAX_PARTS = 5                       # the planner now writes up to 5 sub-questions that are all about the answer; background ones fall below MIN_PART_RELEVANCE
+MIN_PART_RELEVANCE = 0.3            # a section is a part when its relevance to the question is at least this share of the best section's
+PER_PART = 1                        # sentences offered to the model for each part
+
+
+def select_parts(question: str, sections: list, sentences_by_section: list, max_parts: int = MAX_PARTS, per_part: int = PER_PART) -> list:
+    """[(section index, [Sentence, ...])], the most relevant sections first, with the sentences of each part that the answer may use: the ones whose finding
+    words are closest to the question and the section's own title (words that few sentences share count most, so "privacy-utility trade-off" beats
+    "federated learning"), then the stronger tier, then those with a figure; no two near duplicates. The model only words ONE sentence per part from them."""
+    q = tokens(question)
+    top = top_sections(question, sections, sentences_by_section, k=max_parts)
+    scores = section_scores(question, sections)
+    best = max((scores[i] for i in top), default=0.0)
+    top = [i for i in top if scores[i] >= MIN_PART_RELEVANCE * best]
+    everything = [s for ss in sentences_by_section for s in ss]
+    df: dict = {}
+    for s in everything:
+        for w in tokens(s.text):
+            df[w] = df.get(w, 0) + 1
+    total = max(1, len(everything))
+
+    def weight(w: str) -> float:
+        return 1.0 - df.get(w, 0) / total
+
+    parts = []
+    for i in top:
+        focus = q | tokens(sections[i].title)
+        ranked = sorted(sentences_by_section[i], key=lambda s: (-sum(weight(w) for w in tokens(s.text) & focus), -TIER_RANK.get(s.tier, 0), -int(bool(re.search(r"\d", s.text)))))
+        chosen, seen = [], []
+        for s in ranked:
+            tk = content_tokens(s.text)
+            if any(_near_duplicate_at(tk, o, 0.5) for o in seen):
+                continue
+            seen.append(tk)
+            chosen.append(s)
+            if len(chosen) >= per_part:
+                break
+        if chosen:
+            parts.append((i, chosen))
+    return parts
+
+
+def part_problems(items: list, body: list, parts: list, titles: dict, require_all: bool = True) -> list:
+    """Reasons when the answer is not one sentence per part: a sentence mixing sentences of different parts, two sentences for one part, a part left out
+    (not asked when `require_all` is False: salvaging an answer keeps what passed). "sentence k: ..." reasons can be salvaged by dropping that sentence."""
+    section_of = {b["n"]: b.get("section") for b in body}
+    out, seen = [], set()
+    for k, it in enumerate(items, start=1):
+        in_parts = {section_of.get(n) for n in it.get("from_sentences", [])}
+        if len(in_parts) != 1 or next(iter(in_parts)) not in parts:
+            out.append(f"sentence {k}: it must be based only on the numbered sentences under ONE Part header (do not mix parts)")
+        elif next(iter(in_parts)) in seen:
+            out.append(f"sentence {k}: this part already has its sentence; write exactly one sentence per part")
+        else:
+            seen.add(next(iter(in_parts)))
+    if require_all:
+        for i in parts:
+            if i not in seen:
+                out.append(f"the answer has no sentence for the part \"{titles.get(i, i)}\"; write one sentence for every part")
+    return out
+
+
+def order_items(items: list, body: list, order: list) -> list:
+    """The answer sentences in the order of the parts (the most relevant part first), whatever order the model wrote them in."""
+    section_of = {b["n"]: b.get("section") for b in body}
+    rank = {i: r for r, i in enumerate(order or [])}
+    return sorted(items, key=lambda it: min((rank.get(section_of.get(n), 99) for n in it.get("from_sentences", [])), default=99))
+
+
 def coverage_problems(items: list, body: list, required_sections: list, titles: dict) -> list:
     """Reasons when the answer does not draw on enough of the required sections. `items`: [{"from_sentences": [n]}]; `body`: dicts with "n" and "section"
     (an index, set by the assembler); `required_sections`: indexes the answer must touch at least REQUIRED_SECTIONS of; `titles`: index -> title."""

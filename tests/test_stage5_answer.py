@@ -93,3 +93,34 @@ def test_the_answer_must_now_draw_on_three_of_the_top_sections():
     titles = {1: "a", 2: "b", 3: "c", 4: "d"}
     assert answer.coverage_problems([{"from_sentences": [1]}, {"from_sentences": [2]}], body, [1, 2, 3, 4], titles)
     assert not answer.coverage_problems([{"from_sentences": [1]}, {"from_sentences": [2]}, {"from_sentences": [3]}], body, [1, 2, 3, 4], titles)
+
+
+def test_select_parts_picks_the_sentences_closest_to_the_question_for_each_top_section():
+    sections = [sec(t) for t in TITLES]
+    by = [[sent(f"One source reports background fact {i} {j}.", job=f"b{i}{j}") for j in range(3)] for i in range(5)]
+    by[4] = [sent("One source reports that federated learning keeps data local.", "supported", "p0"),
+             sent("One source reports a privacy-utility trade-off: stronger privacy lowers the accuracy of the model.", "partly", "p1"),
+             sent("One source reports that federated learning keeps data on the owner site.", "supported", "p2")]
+    parts = answer.select_parts(Q, sections, by)
+    assert len(parts) == 5 and parts[0][0] in (3, 4) and all(len(ss) <= 2 for _, ss in parts)
+    privacy = dict(parts)[4]
+    assert any("trade-off" in s.text for s in privacy)                                  # the trade-off sentence beats the stronger-tier "data stays local" ones
+    assert not (len(privacy) == 2 and all("keeps data" in s.text for s in privacy))     # and the two near duplicates do not both go in
+
+
+def test_part_problems_want_exactly_one_sentence_per_part_and_no_mixing():
+    body = [{"n": 1, "section": 3}, {"n": 2, "section": 3}, {"n": 3, "section": 4}, {"n": 4, "section": 2}]
+    titles = {2: "x", 3: "compare", 4: "privacy"}
+    ok = [{"from_sentences": [1]}, {"from_sentences": [3]}, {"from_sentences": [4]}]
+    assert answer.part_problems(ok, body, [3, 4, 2], titles) == []
+    mixed = answer.part_problems([{"from_sentences": [1, 3]}, {"from_sentences": [4]}], body, [3, 4, 2], titles)
+    assert any(r.startswith("sentence 1:") and "ONE Part" in r for r in mixed) and any("no sentence for the part" in r for r in mixed)
+    twice = answer.part_problems([{"from_sentences": [1]}, {"from_sentences": [2]}, {"from_sentences": [3]}], body, [3, 4, 2], titles)
+    assert any(r.startswith("sentence 2:") and "already has" in r for r in twice)
+    assert not any("no sentence for the part" in r for r in answer.part_problems(ok[:2], body, [3, 4, 2], titles, require_all=False))
+
+
+def test_the_answer_is_put_in_the_order_of_the_parts():
+    body = [{"n": 1, "section": 2}, {"n": 2, "section": 3}, {"n": 3, "section": 4}]
+    items = [{"text": "a", "from_sentences": [1]}, {"text": "b", "from_sentences": [3]}, {"text": "c", "from_sentences": [2]}]
+    assert [i["text"] for i in answer.order_items(items, body, [3, 4, 2])] == ["c", "b", "a"]

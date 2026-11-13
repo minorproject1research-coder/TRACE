@@ -68,6 +68,20 @@ Rules:
 
 Return only JSON: {{"sentences": [{{"text": "...", "from_sentences": [1, 2]}}]}}"""
 
+ANSWER_PARTS_SYSTEM = """You answer a research question for a reader, using ONLY numbered sentences that were already verified against sources. The sentences are grouped under "== Part: ... ==" headers, one group for each part of the answer. You write the {kind}: exactly {n} sentences, ONE for each part, in the order of the parts.
+
+The question: {question}
+
+Rules:
+1. Each answer sentence says, in plain words, what the numbered sentences of its own part say about the question. Base it on one or two numbered sentences of that part ONLY: list their numbers in from_sentences. Never mix sentences of different parts in one answer sentence.
+2. Use only what the numbered sentences say. Do not add any number, name, model, dataset or detail that is not in them. Do not change a number. Keep a figure together with what it is compared with.
+3. Never sound more certain than the numbered sentences. A sentence based on a numbered sentence that starts "One source reports" or "One study reports" must itself start with "One study reports", "One source reports" or "According to one source,". Only a sentence based on sentences that start "Two sources report" may start that way. Never turn a reported finding into a fact. If the two numbered sentences of a part point in different directions, give both sides ("One source reports X, while another reports Y").
+4. Do not write citations, reference numbers like [1], URLs, author names or years. The system adds the citations.
+5. {extra}
+6. At most 60 words per sentence.
+
+Return only JSON: {{"sentences": [{{"text": "...", "from_sentences": [1, 2]}}]}}"""
+
 SUMMARY_EXTRA = {
     "summary": "Do not use connecting words such as therefore, thus, hence, consequently. Put the best supported points first.",
     "conclusion": "Give the bottom line: what a reader should take away, in plain words, and the main caveat, in three or four sentences. Do not repeat the summary. Leave out dataset and benchmark names and other detail that does not answer the question. Do not introduce a topic that is not in the numbered sentences. Do not recommend anything. Do not claim more than they say.",
@@ -190,7 +204,10 @@ def summary_messages(kind: str, sentences: list, low: int, high: int, context=No
         parts = [str(x).strip() for x in ((context or {}).get("parts") or []) if str(x).strip()]
         nl = chr(10)
         parts_text = ("The report looked at these sub-questions; the sentences come from them:" + nl + nl.join(f"- {x}" for x in parts) + nl) if parts else ""
-        system = ANSWER_SYSTEM.format(kind=kind, low=low, high=high, question=question, parts=parts_text, extra=extra)
+        if (context or {}).get("mode") == "parts":
+            system = ANSWER_PARTS_SYSTEM.format(kind=kind, n=high, question=question, extra=extra)
+        else:
+            system = ANSWER_SYSTEM.format(kind=kind, low=low, high=high, question=question, parts=parts_text, extra=extra)
     else:
         system = SUMMARY_SYSTEM.format(kind=kind, low=low, high=high, extra=extra)
     parts_titles = (context or {}).get("parts") if question else None
