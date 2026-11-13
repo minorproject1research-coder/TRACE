@@ -37,7 +37,7 @@ Stop rules (A3): at most LOOP2_MAX_ROUNDS steps per aspect, at most LOOP2_MAX_AS
 whole loop, and an aspect that is judged "unjudged" (a verdict failed) is never searched. What is still uncovered at the end is a KNOWN
 GAP; the state of every aspect is stored in coverage judge_stats["loop2"] (no migration).
 
-  LOOP2=false                 switch (default off)
+  LOOP2=false                 switch (default on since 2026-11-13; false switches Loop 2 off)
   LOOP2_STEPS=reselect,pool,queries
   LOOP2_MAX_ROUNDS=3          steps per aspect
   LOOP2_TRIAGE=r1|all         r1

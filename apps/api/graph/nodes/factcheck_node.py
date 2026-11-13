@@ -5,7 +5,7 @@ really support their claim -> a close variant in another document? -> conflicts 
 independent documents), partially_supported (one document, plus a close variant of the claim in another), contradicted, or
 unverified (rests on one document, which says nothing about whether it is true). Results go to `fact_claims` and `contradictions`.
 
-  FACTCHECK=false             switch (default off: it adds several hundred LLM calls per run, see docs/KNOWN_LIMITS.md)
+  FACTCHECK=false             switch (default on since 2026-11-13: it adds several hundred LLM calls per run, see docs/KNOWN_LIMITS.md; false switches Stage 4 off)
   STAGE4_WORKERS=4            judge calls in parallel
   STAGE4_NEAR=true            the partially_supported label (one extra judge call per candidate pair; STAGE4_MAX_NEAR_JUDGE caps them)
   STAGE4_MAX_MERGE_JUDGE / STAGE4_MAX_SUPPORT_JUDGE / STAGE4_MAX_JUDGE / STAGE4_MAX_PAIRS   caps per sub-question (a warning is logged when one bites)

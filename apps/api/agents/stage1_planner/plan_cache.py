@@ -7,10 +7,10 @@ see docs/reports/13_planner_determinism.md). Runs of the same question therefore
 run-to-run comparisons of Stage 2 and Stage 3 meaningless.
 
 PLAN_CACHE=true stores the plan that /decompose returned (after parsing, before any merge or query anchoring) under the question and
-reuses it on the next run. Default off: a normal run plans freshly. A plan that came from the Groq fallback is never cached, because it
+reuses it on the next run. Default on since 2026-11-13 (PLAN_CACHE=false plans freshly every run). A plan that came from the Groq fallback is never cached, because it
 is a degraded plan that would otherwise outlive the outage.
 
-  PLAN_CACHE=true|false      switch (default false)
+  PLAN_CACHE=true|false      switch (default true)
   PLAN_CACHE_DIR=...         directory (default .cache/plans)
   PLAN_CACHE_TAG=...         change it to start over after the planner or its prompt changed (part of the key)
 Delete the file of a question (or the directory) to plan it again.

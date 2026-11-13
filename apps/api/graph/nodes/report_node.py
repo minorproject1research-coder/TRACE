@@ -1,7 +1,7 @@
 """Stage 5 as a graph node: writes the report from the verified claims of Stage 4 (what it may say, which citations and which gaps are decided by
 Python; the model only phrases sentences; see docs/STAGE5.md and apps/api/agents/stage5_report/assembler.py).
 
-  STAGE5=false     switch (default off: the node returns {} and the stage stays "not run")
+  STAGE5=false     switch (default on since 2026-11-13; when false the node returns {} and the stage stays "not run")
 
 The node runs only when Stage 4 ran (it has claims, an error, or a per-sub-question summary in the state): with FACTCHECK off there are no labels
 to write from, so it returns {} and leaves a note. A Stage 5 failure never fails the run: the evidence of Stages 3 and 4 is already stored.
