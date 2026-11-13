@@ -17,7 +17,7 @@ apps/api/config.py), so a test or a restart-free change takes effect at once. A 
 """
 import os
 
-TEMPLATE_VERSION = "s5-v1"      # part of every cache key: raise it when a prompt changes
+TEMPLATE_VERSION = "s5-v2"      # part of every cache key: raise it when a prompt changes
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 _TRUE = ("1", "true", "yes", "on")
 _FALSE = ("0", "false", "no", "off")

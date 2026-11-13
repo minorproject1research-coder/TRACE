@@ -1,6 +1,6 @@
 # Stage 5: the written report
 
-Stage 5 reads what Stage 4 labelled and writes a cited report: an overview and executive summary, an introduction, one section per sub-question (with a "Sources disagree" part and the evidence gaps), the limitations, a conclusion and a reference list. It does not decide what is true and it does not add anything that Stage 4 did not hand it. **Python decides what may be said, with which wording and with which citations; the language model only phrases one sentence per small group of claims and compresses the finished sentences into a summary.**
+Stage 5 reads what Stage 4 labelled and writes a cited report: an answer to the question (written first, from the question; `answer.py`, template `s5-v2`) with the overview counts, an introduction, one section per sub-question (with a "Sources disagree" part and the evidence gaps), the limitations, a conclusion and a reference list. It does not decide what is true and it does not add anything that Stage 4 did not hand it. **Python decides what may be said, with which wording and with which citations; the language model only phrases one sentence per small group of claims and compresses the finished sentences into a summary.**
 
 Related files: the contract of the stored report is `docs/STAGE5_OUTPUT.md`; the endpoints are in `docs/API_HANDOFF.md`; the labels it reads are in `docs/STAGE4_OUTPUT.md` and `docs/STAGE4.md`; open problems are listed in section 9 below. The user's plan is `docs/TRACE_Stage_5_Implementation_Plan_Short.docx`.
 

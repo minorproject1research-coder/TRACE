@@ -21,7 +21,7 @@ The stage state of the run follows it: `completed` for the first three, `failed`
 ```ts
 type WrittenReport = {
   status: string; question: string; generatedAt: string
-  overview: { summary: Sentence[]; counts: { sections; documents; claims; supported; partly; single; disputed; filtered; sentences; disagreements; references: number } }
+  overview: { summary: Sentence[] /* THE ANSWER to the question (template s5-v2), see below */; counts: { sections; documents; claims; supported; partly; single; disputed; filtered; sentences; disagreements; references: number } }
   introduction: string[]                 // paragraphs (Python templates)
   sections: Section[]                    // one per sub-question, in the planner's order
   limitations: string[]                  // Python templates
@@ -82,3 +82,11 @@ What the report is not: a verified answer. Every check is automatic (language mo
 - New fields may be added to the report, sentences, sections or `stats`; read unknown fields as ignorable and treat `tier`, `origin`, `kind` and `evidenceLevel` as open strings.
 - `template_version` (for example `s5-v1`) changes when a prompt or template changes; a stored report keeps the version it was written with. Write it again with `POST /api/research/{id}/written-report` (only with `STAGE5=true`).
 - `stats` is for audit and telemetry (claims by tier, sentences by origin, calls, tokens, NLI and judge counts, seconds); do not build the UI on its keys.
+
+## The answer (`overview.summary`, template `s5-v2`, 2026-11-13)
+From template `s5-v2` the first block of the report answers the question that was asked; the field keeps its name `overview.summary` so no client breaks, but a client should title it **"Answer"**, not "Executive summary". The Markdown heading is `## Answer and Overview`.
+- Written from the question: Python ranks the sections by how many words of the question their title shares (background sections come last), offers the best sentences of the top three sections (stronger tier first, sentences with a figure first, near duplicates removed), and checks that the answer draws on at least two of them. The model only words it from numbered, already verified sentences (verdict on the main part of the question first, then the conditions or figures, then the other parts), and each answer sentence is cited from the sentences it is based on and hedged like the weakest of them.
+- If a sentence of the answer fails the checks after the retries, the sentences that passed are kept (at least 3); only when too few remain is the extractive template used (`origin: "fallback"`, spread over the sections).
+- The last sentence can be a template (`origin: "template"`, no `refs`): "The evidence collected does not settle: ..." from the Stage 3 gap data of the top sections. Show it like the others; it has no citation marker.
+- `conclusion` is now a short bottom line written from sentences the answer did not use. It may be `[]`: a conclusion that the model could not write within the checks is left out (with a warning), not copied from the body.
+

@@ -113,7 +113,7 @@ def test_settings_defaults():
     assert settings.workers() == 3
     assert settings.cache_enabled() is True
     assert settings.rate_wait_max() == 300
-    assert settings.template_version() == "s5-v1"
+    assert settings.template_version() == "s5-v2"
 
 
 def test_settings_env_overrides_and_bad_values(monkeypatch):

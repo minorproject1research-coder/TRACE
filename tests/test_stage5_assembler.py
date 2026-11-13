@@ -147,7 +147,7 @@ def job_sentence(job_id, job):
 class FakeLLM:
     """Writes a sentence for every job, and a summary / conclusion made of copies of numbered sentences. Records every call."""
 
-    def __init__(self, summary_pick=(1, 2, 3), bad_summary=None, fail=None):
+    def __init__(self, summary_pick=(1, 2, 3, 4), bad_summary=None, fail=None):
         self.calls, self.summary_pick, self.bad_summary, self.fail = [], list(summary_pick), bad_summary, fail
 
     def __call__(self, messages, response_format, purpose):
@@ -159,7 +159,7 @@ class FakeLLM:
         numbered = {int(m.group(1)): m.group(2) for m in re.finditer(r"^(\d+)\. \[\w+\] (.*)$", messages[1]["content"], re.M)}
         is_conclusion = "You write the conclusion" in messages[0]["content"]
         if self.bad_summary and not is_conclusion:
-            return {"sentences": [{"text": self.bad_summary, "from_sentences": [1]}] * 3}
+            return {"sentences": [{"text": self.bad_summary, "from_sentences": [1]}] * 4}
         picks = self.summary_pick if not is_conclusion else sorted(numbered)[-3:]
         return {"sentences": [{"text": numbered[n], "from_sentences": [n]} for n in picks if n in numbered]}, {"total_tokens": 50}
 
@@ -222,7 +222,7 @@ def test_full_build_has_every_tier_and_a_gap_section():
     assert st["calls"] == len(llm.calls) and st["tokens"] > 0 and st["sentences"]["fallback"] == 0 and st["sentences"]["llm"] == 4
     assert st["claims"] == {"total": 7, "supported": 1, "partly": 1, "single": 2, "disputed": 1, "filtered": 2}
     assert st["filtered"] == {"weak_evidence": 2}
-    assert result["model"] == "openai/gpt-oss-120b" and result["template_version"] == "s5-v1"
+    assert result["model"] == "openai/gpt-oss-120b" and result["template_version"] == "s5-v2"
     assert report["generatedAt"] and report["stats"] == st and report["warnings"] == []
 
 
@@ -230,10 +230,9 @@ def test_summary_and_conclusion_come_from_the_body_and_keep_labels():
     result = build()
     report = result["report"]
     body = [s["text"] for sec in report["sections"] for s in sec["sentences"]]
-    assert len(report["overview"]["summary"]) == 3 and len(report["conclusion"]) == 3
+    assert len([s for s in report["overview"]["summary"] if s["origin"] != "template"]) == 4 and len(report["conclusion"]) == 0      # a tiny report: the answer uses every sentence, so no second copy as a conclusion
     for s in report["overview"]["summary"] + report["conclusion"]:
         assert s["text"] in body and s["claimIds"] and s["refs"]
-    assert sorted(s["tier"] for s in report["overview"]["summary"]) == ["partly", "single", "supported"]   # the tier of the sentence it copies
     claim_tier = {c["claimIds"][0]: c["tier"] for sec in report["sections"] for c in sec["sentences"]}
     for s in report["overview"]["summary"]:
         assert claim_tier[s["claimIds"][0]] == s["tier"]
@@ -276,7 +275,7 @@ def test_markdown_structure_order_legend_and_tier_labels():
     md = build()["markdown"]
     heads = [h for h in re.findall(r"^#{1,2} (.+)$", md, re.M)]
     assert heads[0].startswith("How do vision transformers compare")
-    order = ["Research Overview and Executive Summary", "Introduction", "Topic-wise Research Findings", "Limitations and Evidence Gaps", "Conclusion", "References"]
+    order = ["Answer and Overview", "Introduction", "Topic-wise Research Findings", "Limitations and Evidence Gaps", "Conclusion", "References"]
     assert [h for h in heads if h in order] == order
     assert "single-source findings are attributed to one document and are not confirmed" in md
     assert "*(one source, not confirmed)*" in md and "*(partly supported)*" in md
@@ -342,7 +341,7 @@ def test_failing_llm_gives_fallback_sentences_and_warnings():
     assert all(s["refs"] for s in sentences)
     assert result["stats"]["sentences"]["fallback"] == 4 and result["stats"]["sentences"]["llm"] == 0
     assert any("fixed template wording" in x for x in report["limitations"])
-    assert report["overview"]["summary"] and all(s["origin"] == "fallback" for s in report["overview"]["summary"])      # extractive after the failed call
+    assert report["overview"]["summary"] and all(s["origin"] in ("fallback", "template") for s in report["overview"]["summary"])      # extractive after the failed call
     assert result["stats"]["summary_fallback"] is True
 
 
@@ -367,11 +366,11 @@ def test_summary_with_a_new_number_is_rejected_and_the_extractive_template_is_us
     result = build(llm=llm)
     report = result["report"]
     summary = report["overview"]["summary"]
-    assert summary and all(s["origin"] == "fallback" for s in summary)
+    assert summary and all(s["origin"] in ("fallback", "template") for s in summary)
     assert all("47" not in s["text"] for s in summary)
     body = [s["text"] for sec in report["sections"] for s in sec["sentences"]]
     assert all(s["text"] in body for s in summary)                              # word-for-word copies, nothing new
-    assert llm.purposes("stage5_summary").count("stage5_summary") == 3          # summary: first try + retry; conclusion: one call
+    assert llm.purposes("stage5_summary").count("stage5_summary") == 4          # answer: first try + two retries; conclusion: one call
     assert result["status"] == "completed_with_warnings" and result["stats"]["summary_fallback"] is True
     assert result["stats"]["conclusion_fallback"] is False
 
@@ -387,7 +386,7 @@ def test_the_single_source_share_sentence_is_added_only_when_most_findings_are_s
     assert summary[-1]["origin"] == "template" and summary[-1]["text"] == assembler.SINGLE_SHARE_SENTENCE and summary[-1]["claimIds"] == [] and summary[-1]["refs"] == []
     assert result["status"] == "completed" and result["warnings"] == []
     mixed = build()["report"]["overview"]["summary"]
-    assert all(s["origin"] != "template" for s in mixed)
+    assert not any("rest on one source each" in s["text"] for s in mixed)
 
 
 # ------------------------------------------------------------------------------------------------------------ deterministic mode
@@ -534,7 +533,7 @@ def test_report_node_builds_persists_and_returns_the_state_fields(monkeypatch, s
     assert out["written_report"]["status"] == "completed" and len(out["written_report"]["sections"]) == 3
     (qid, status, report, markdown, stats, model, version), = fake_pipeline
     assert qid == "q1" and status == "completed" and report == out["written_report"] and markdown.startswith("# ") and stats["calls"] > 0
-    assert model == "openai/gpt-oss-120b" and version == "s5-v1"
+    assert model == "openai/gpt-oss-120b" and version == "s5-v2"
     report_events = [e for e in sink.events if e["lane"] == "report"]
     steps = [(e["step"], e["state"]) for e in report_events]
     assert steps[0] == ("branch", "running") and ("sections", "completed") in steps and ("references", "completed") in steps and steps[-1] == ("store", "completed")
@@ -636,4 +635,5 @@ def test_summary_fallback_is_counted_by_sentence_and_warned():
     report = result["report"]
     n = sum(1 for s in report["overview"]["summary"] + report["conclusion"] + [s for sec in report["sections"] for s in sec["sentences"]] if s["origin"] == "fallback")
     assert n >= 1 and any(f"{n} sentence" in x and "fixed template wording" in x for x in report["limitations"])
-    assert any("executive summary could not be written" in w for w in report["warnings"])
+    if any(s["origin"] == "fallback" for s in report["overview"]["summary"]):
+        assert any("answer could not be written" in w for w in report["warnings"])

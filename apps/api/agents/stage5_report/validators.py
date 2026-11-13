@@ -254,6 +254,7 @@ def entities_in(text: str) -> list[tuple[str, str, str]]:
 
 
 # ------------------------------------------------------------------------------------------------------------------ small lexicons
+SOFT_NEGATIONS = frozenset({"without"})      # a summary may leave out "without X" (it loses a detail, it cannot reverse the finding); "not", "no", "never" may not be dropped
 _NEG_RE = re.compile(
     r"\b(?:not|no|never|none|neither|nor|cannot|without|unable|fail|fails|failed|failing|lack|lacks|lacked|lacking|absent|absence|nobody|nothing)\b"
     r"|\b\w+n't\b", re.I)
@@ -313,7 +314,7 @@ class _Evidence:
         self.neg_all = negations_in(self.all_text)
 
 
-def _grounding_problems(text: str, ev: _Evidence, *, where: str = "the cited claims") -> list[str]:
+def _grounding_problems(text: str, ev: _Evidence, *, where: str = "the cited claims", soft_drops: bool = False) -> list[str]:
     """Numbers, names, negations, directions, bounds, scope words and derived quantities of `text` that `ev` does not contain."""
     reasons: list[str] = []
     seen: set[str] = set()
@@ -341,8 +342,9 @@ def _grounding_problems(text: str, ev: _Evidence, *, where: str = "the cited cla
     neg_s = negations_in(text)
     if neg_s and not ev.neg_primary:
         add(f"negation '{neg_s[0]}' is not in the wording of {where}")
-    if ev.neg_primary and not neg_s:
-        add(f"{where} contain a negation ('{ev.neg_primary[0]}') that the sentence drops")
+    hard_neg = [n for n in ev.neg_primary if not (soft_drops and n in SOFT_NEGATIONS)]
+    if hard_neg and not neg_s:
+        add(f"{where} contain a negation ('{hard_neg[0]}') that the sentence drops")
     words = set(_words(text))
     for pole, other, label in ((_UP, _DOWN, "an increase/advantage"), (_DOWN, _UP, "a decrease/disadvantage")):
         if words & pole and not (ev.raw_words & pole) and (ev.raw_words & other):
@@ -584,7 +586,7 @@ def check_summary(summary_sentences, body_sentences, *, min_sentences: int = 3, 
             local += connective_problems(text, " ".join(_body_text(b) for b in mapped))
         if mapped:
             ev = _Evidence([_body_text(b) for b in mapped], [])
-            local += _grounding_problems(text, ev, where="the body sentences it summarises")
+            local += _grounding_problems(text, ev, where="the body sentences it summarises", soft_drops=True)
             weakest = min(_body_strength(b) for b in mapped)
             if hedging.strength(None, text) > weakest:
                 name = {1: "single-source", 2: "partly supported", 3: "supported"}[weakest]

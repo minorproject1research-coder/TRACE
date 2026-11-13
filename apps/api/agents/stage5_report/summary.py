@@ -15,13 +15,15 @@ Shapes passed to `check_summary`:
   body_sentences     [{"n": int, "text": str, "tier": str, "claim_ids": [...], "job_id": str}]
 """
 import logging
+import re
 
 from apps.api.agents.stage5_report import prompts, settings, writer
 from apps.api.agents.stage5_report.schema import (ORIGIN_FALLBACK, ORIGIN_LLM, ORIGIN_TEMPLATE, TIER_PARTLY, TIER_SINGLE, TIER_SUPPORTED, Sentence)
 
 logger = logging.getLogger("apps.api.agents.stage5_report")
 
-SUMMARY_RANGE = (3, 5)
+SUMMARY_RANGE = (3, 5)             # the compress-only summary (no question given)
+ANSWER_RANGE = (4, 6)              # the answer to the question (s5-v2: the summary is written with the question)
 CONCLUSION_RANGE = (3, 4)
 MAX_BODY = 14                       # at most this many body sentences are shown to the model
 EXTRACTIVE_COUNT = {"summary": 4, "conclusion": 3}
@@ -36,14 +38,19 @@ def select_body(validated_sentences, limit=None) -> list:
     indexed = [(i, s) for i, s in enumerate(validated_sentences or []) if str(getattr(s, "text", "")).strip()]
     chosen = sorted(indexed, key=lambda p: (TIER_PRIORITY.get(p[1].tier, 9), p[0]))[:limit]
     chosen.sort(key=lambda p: p[0])
-    return [{"n": n, "text": s.text, "tier": s.tier, "claim_ids": list(s.claim_ids), "job_id": s.job_id} for n, (_, s) in enumerate(chosen, start=1)]
+    return [{"n": n, "text": s.text, "tier": s.tier, "claim_ids": list(s.claim_ids), "job_id": s.job_id, "section": getattr(s, "section", None)}
+            for n, (_, s) in enumerate(chosen, start=1)]
 
 
-def default_check_summary(summary_sentences, body_sentences) -> list:
+SALVAGE_MIN = {"summary": 3, "conclusion": 2}      # after the last attempt, the sentences that passed are kept when at least this many remain
+
+
+def default_check_summary(summary_sentences, body_sentences, min_sentences=None) -> list:
     """validators.check_summary; a missing module fails closed (the extractive template is then used)."""
     try:
         from apps.api.agents.stage5_report import validators
-        return list(validators.check_summary(summary_sentences, body_sentences) or [])
+        kw = {} if min_sentences is None else {"min_sentences": min_sentences}
+        return list(validators.check_summary(summary_sentences, body_sentences, **kw) or [])
     except Exception as e:
         logger.warning("Stage 5 summary check failed to run: %s", e)
         return [f"the summary check could not run ({type(e).__name__}); the summary cannot be accepted"]
@@ -86,6 +93,26 @@ def _validate(data, body, low, high, check_summary):
     return items, reasons
 
 
+def _salvage(kind, items, reasons, body, check_summary) -> list:
+    """The items of the last rejected answer without the sentences the checks named ("sentence 4: ..."), when enough of them remain and the rest
+    passes the same checks (a lower minimum count). [] when nothing can be kept."""
+    about_one = [re.match(r"sentence (\d+)", str(r)) for r in reasons]
+    if not items or not reasons or not all(about_one):
+        return []                                  # a reason that is not about one sentence (count, coverage, shape) cannot be fixed by dropping
+    flagged = {int(m.group(1)) for m in about_one}
+    keep = [it for k, it in enumerate(items, start=1) if k not in flagged]
+    low = SALVAGE_MIN.get(kind, 2)
+    if len(keep) < low:
+        return []
+    try:
+        again = [str(r) for r in (check_summary(keep, body, min_sentences=low) or [])]
+    except TypeError:
+        return []
+    except Exception:
+        return []
+    return keep if not again else []
+
+
 def _build_sentences(kind, items, body, attempts, reasons) -> list:
     by_n = {b["n"]: b for b in body}
     out = []
@@ -100,29 +127,37 @@ def _build_sentences(kind, items, body, attempts, reasons) -> list:
 def extractive(kind: str, body, origin=ORIGIN_FALLBACK, attempts=0, reasons=None) -> list:
     """The template: the highest-tier body sentences, word for word (nothing new), in report order."""
     count = EXTRACTIVE_COUNT.get(kind, 3)
-    pick = sorted(body, key=lambda b: (TIER_PRIORITY.get(b["tier"], 9), b["n"]))[:count]
+    ranked = sorted(body, key=lambda b: (TIER_PRIORITY.get(b["tier"], 9), b["n"]))
+    pick, seen_sections = [], set()
+    for b in ranked:                                   # one sentence per section first (a template that repeats one topic does not answer the question)
+        if b.get("section") not in seen_sections:
+            pick.append(b)
+            seen_sections.add(b.get("section"))
+    pick = (pick + [b for b in ranked if b not in pick])[:count]
     pick.sort(key=lambda b: b["n"])
     return [Sentence(text=b["text"], claim_ids=list(b["claim_ids"]), job_id=f"{kind}_{k}", tier=b["tier"], origin=origin, attempts=attempts,
                      reasons=list(reasons or [])) for k, b in enumerate(pick, start=1)]
 
 
-def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress, rate, retries, limit):
+def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress, rate, retries, limit, context=None):
     stats = writer.new_stats()
     body = select_body(validated_sentences, limit)
     stats["jobs"] = 1 if body else 0
     if not body:
         stats["skipped"] += 1
         return [], stats
-    low, high = SUMMARY_RANGE if kind == "summary" else CONCLUSION_RANGE
-    if len(body) <= low:                          # nothing to compress: copy them (no LLM call, no new text)
+    low, high = (ANSWER_RANGE if context else SUMMARY_RANGE) if kind == "summary" else CONCLUSION_RANGE
+    if len(body) <= (SUMMARY_RANGE[0] if kind == "summary" else low):                          # nothing to compress: copy them (no LLM call, no new text)
         stats["extractive"] += 1
         return extractive(kind, body, origin=ORIGIN_TEMPLATE), stats
     check_summary = check_summary or default_check_summary
     retries = settings.retries() if retries is None else max(0, int(retries))
+    if context and kind == "summary":
+        retries = max(retries, 2)                  # the answer is the part the reader reads first: one more try
     cache = writer.resolve_cache(cache)
     shown = [{"n": b["n"], "text": b["text"], "tier": b["tier"]} for b in body]
     numbers = [b["n"] for b in body]
-    first = prompts.summary_messages(kind, shown, low, high)
+    first = prompts.summary_messages(kind, shown, low, high, context)
     key = writer.cache_key(first)
     if cache is not None:
         try:
@@ -137,7 +172,7 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
     purpose = writer.PURPOSE_SUMMARY
     log, previous, made = [], [], 0
     for attempt in range(1, retries + 2):
-        messages = first if attempt == 1 else prompts.summary_retry_messages(kind, shown, low, high, previous, log[-8:])
+        messages = first if attempt == 1 else prompts.summary_retry_messages(kind, shown, low, high, previous, log[-8:], context)
         if attempt > 1:
             stats["retried"] += 1
         made += 1
@@ -166,15 +201,21 @@ def _compress(kind, validated_sentences, *, llm, check_summary, cache, progress,
         log.extend(reasons)
         logger.info("Stage 5: the %s was rejected at attempt %d: %s", kind, attempt, " | ".join(str(r)[:220] for r in reasons[:6]))
         previous = [i["text"] for i in items]
+        last_items, last_reasons = items, reasons
+    salvaged = _salvage(kind, locals().get("last_items") or [], locals().get("last_reasons") or [], body, check_summary)
+    if salvaged:                                   # the sentences that passed every check are kept; the ones that failed are dropped
+        stats["salvaged"] = stats.get("salvaged", 0) + 1
+        writer.safe_progress(progress, kind, f"Wrote the {kind} ({len(salvaged)} sentences, some dropped)", sentences=len(salvaged))
+        return _build_sentences(kind, salvaged, body, made, log), stats
     stats["fallback"] += 1
     writer.safe_progress(progress, kind, f"The {kind} used the extractive template", sentences=len(body))
     return extractive(kind, body, attempts=made, reasons=log), stats
 
 
-def write_summary(validated_sentences, *, llm=None, check_summary=None, cache=None, progress=None, rate=None, retries=None, limit=None):
+def write_summary(validated_sentences, *, llm=None, check_summary=None, cache=None, progress=None, rate=None, retries=None, limit=None, context=None):
     """The executive summary (3-5 sentences) from the validated body sentences (list[Sentence]). Returns (list[Sentence], stats); never raises.
     The result sentences carry claim_ids (union of what they are based on) and the weakest tier of their sources; job_id is summary_1 ..."""
-    return _safe("summary", validated_sentences, llm, check_summary, cache, progress, rate, retries, limit)
+    return _safe("summary", validated_sentences, llm, check_summary, cache, progress, rate, retries, limit, context)
 
 
 def write_conclusion(validated_sentences, *, llm=None, check_summary=None, cache=None, progress=None, rate=None, retries=None, limit=None):
@@ -182,9 +223,10 @@ def write_conclusion(validated_sentences, *, llm=None, check_summary=None, cache
     return _safe("conclusion", validated_sentences, llm, check_summary, cache, progress, rate, retries, limit)
 
 
-def _safe(kind, validated, llm, check_summary, cache, progress, rate, retries, limit):
+def _safe(kind, validated, llm, check_summary, cache, progress, rate, retries, limit, context=None):
     try:
-        return _compress(kind, validated, llm=llm, check_summary=check_summary, cache=cache, progress=progress, rate=rate, retries=retries, limit=limit)
+        return _compress(kind, validated, llm=llm, check_summary=check_summary, cache=cache, progress=progress, rate=rate, retries=retries, limit=limit,
+                         context=context)
     except Exception:
         logger.exception("Stage 5: the %s failed unexpectedly; using the extractive template", kind)
         stats = writer.new_stats()

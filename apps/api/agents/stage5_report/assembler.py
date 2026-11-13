@@ -29,7 +29,7 @@ import time
 from datetime import datetime, timezone
 from typing import Optional
 
-from apps.api.agents.stage5_report import grounding, hedging, references, settings, summary, tiers, validators, writer
+from apps.api.agents.stage5_report import answer, grounding, hedging, references, settings, summary, tiers, validators, writer
 from apps.api.agents.stage5_report.schema import (ORIGIN_FALLBACK, ORIGIN_LLM, ORIGIN_TEMPLATE, STATUS_COMPLETED, STATUS_FAILED, STATUS_INSUFFICIENT,
                                                   STATUS_WARNINGS, TIER_DISPUTED, TIER_PARTLY, TIER_SINGLE, TIER_SUPPORTED, Job, Section, Sentence)
 
@@ -37,7 +37,7 @@ logger = logging.getLogger("apps.api.agents.stage5_report")
 
 PER_SECTION_CANDIDATES = 3      # sentences of one section offered to the summary (supported first, then partly, then single)
 MIN_CANDIDATES = 6              # a small report still offers the summary this many sentences when it has them
-MAX_CANDIDATES = 12             # sentences offered to the summary / conclusion in all
+MAX_CANDIDATES = 14             # sentences offered to the summary / conclusion in all
 MAX_LIST_ITEMS = 6              # texts of one kind (uncovered details ...) named in a gap sentence before "and N more"
 MAX_REASON_CHARS = 300
 
@@ -295,16 +295,17 @@ def _candidates(section_sentences: list, role: str = "summary") -> list:
     return out if len(out) >= 3 else first
 
 
-def _conclusion_check(summary_sentences, body_sentences) -> list:
+def _conclusion_check(summary_sentences, body_sentences, min_sentences=None) -> list:
     """The conclusion may use summarising connectives ("overall"); everything else (numbers, names, hedge strength, length) is as strict as the summary."""
-    return validators.check_summary(summary_sentences, body_sentences, min_sentences=3, max_sentences=4, allow_connectives=True)
+    return validators.check_summary(summary_sentences, body_sentences, min_sentences=summary.CONCLUSION_RANGE[0] if min_sentences is None else min_sentences, max_sentences=summary.CONCLUSION_RANGE[1],
+                                    allow_connectives=True)
 
 
 def _limitation_sentence(text: str, body: list, kind: str, current: list) -> Optional[Sentence]:
     """One template sentence about the single-source share, added to the summary or conclusion only when the validators accept it (mapped to a
     single-tier body sentence, so it may not be stronger than that) and the length limit leaves room."""
     singles = [b["n"] for b in body if b["tier"] == TIER_SINGLE]
-    high = 5 if kind == "summary" else 4
+    high = summary.ANSWER_RANGE[1] if kind == "summary" else summary.CONCLUSION_RANGE[1]
     if not singles or len(current) >= high or len(singles) * 2 <= len(body):
         return None
     try:
@@ -409,8 +410,20 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
 
     # ---- 4. the executive summary and the conclusion, written last from the validated sentences
     all_sentences = [s for ss in sentences_by_section for s in ss]
-    candidates = _candidates(sentences_by_section, "summary")
-    candidates_c = _candidates(sentences_by_section, "conclusion")
+    for k, ss in enumerate(sentences_by_section):
+        for s in ss:
+            s.section = k                                   # read by summary.select_body and by the coverage check of the answer
+    question_text = _scrub(inputs.get("question"))
+    candidates, candidates_c, top = answer.candidates(question_text, sections, sentences_by_section, limit=MAX_CANDIDATES)
+    if len(candidates_c) < 3:
+        candidates_c = candidates                           # a small report: the conclusion draws on the same sentences
+    titles = {k: sections[k].title for k in top}
+
+    def _answer_check(items, body_, min_sentences=None):
+        return (validators.check_summary(items, body_, min_sentences=summary.ANSWER_RANGE[0] if min_sentences is None else min_sentences,
+                                         max_sentences=summary.ANSWER_RANGE[1])
+                + answer.coverage_problems(items, body_, top, titles))
+    context = {"question": question_text, "parts": [s.title for s in sections]}
     body = summary.select_body(list({id(s): s for s in candidates + candidates_c}.values()), 2 * MAX_CANDIDATES)
     summary_s: list = []
     conclusion_s: list = []
@@ -422,9 +435,15 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
             conclusion_s = []
         else:
             common = dict(llm=llm, cache=cache, progress=progress, limit=MAX_CANDIDATES)
-            summary_s, sum_stats = summary.write_summary(candidates, check_summary=None, **common)
-            conclusion_s, concl_stats = summary.write_conclusion(candidates_c, check_summary=_conclusion_check, **common)
+            summary_s, sum_stats = summary.write_summary(candidates, check_summary=_answer_check, context=context, **common)
+            used = {cid for s in summary_s if s.origin == ORIGIN_LLM for cid in s.claim_ids}
+            pool = sorted([s for s in {id(x): x for x in candidates + candidates_c}.values() if not set(s.claim_ids) & used],
+                          key=lambda s: (-answer.TIER_RANK.get(s.tier, 0), s.section if hasattr(s, "section") else 0))
+            conclusion_s, concl_stats = summary.write_conclusion(pool[:MAX_CANDIDATES] if len(pool) >= 3 else candidates, check_summary=_conclusion_check, **common)
         summary_s, conclusion_s = list(summary_s), list(conclusion_s)
+        if summary_s and (gap_s := answer.gap_sentence([_section_gaps(sqs[k], sections[k].counts, len(sentences_by_section[k]), bool(inputs.get("fact_ran")))
+                                                        for k in top])):
+            summary_s.append(gap_s)                         # what the evidence does not settle (a template, no citation)
         if summary_s and (limit_s := _limitation_sentence(SINGLE_SHARE_SENTENCE, body, "summary", summary_s)):
             summary_s.append(limit_s)
         if conclusion_s and (limit_c := _limitation_sentence(SINGLE_SHARE_CONCLUSION, body, "conclusion", conclusion_s)):
@@ -435,11 +454,12 @@ def _build(inputs: dict, llm, check, nli, judge, cache, progress, workers, deter
               summary=len(summary_s), conclusion=len(conclusion_s))
     summary_fallback = any(s.origin == ORIGIN_FALLBACK for s in summary_s)
     conclusion_fallback = any(s.origin == ORIGIN_FALLBACK for s in conclusion_s)
-    top_fallback_n = sum(1 for s in summary_s + conclusion_s if s.origin == ORIGIN_FALLBACK)      # summary / conclusion sentences copied from the body
-    if summary_fallback:
-        warnings.append("The executive summary could not be written by the model within the checks; it repeats the strongest findings word for word.")
     if conclusion_fallback:
-        warnings.append("The conclusion could not be written by the model within the checks; it repeats the strongest findings word for word.")
+        conclusion_s = []                                   # a conclusion copied from the body adds nothing (and can be off topic): the report has none
+        warnings.append("The conclusion could not be written by the model within the checks, so the report has no conclusion.")
+    top_fallback_n = sum(1 for s in summary_s if s.origin == ORIGIN_FALLBACK)      # summary sentences copied from the body
+    if summary_fallback:
+        warnings.append("The answer could not be written by the model within the checks; it repeats the strongest findings word for word.")
 
     # ---- 5. references: numbered by first citation in render order, in one pass over the finished text
     _emit(progress, "references", "Numbering the references", state="running")
@@ -568,7 +588,7 @@ def final_checks(report: dict, claims_by_id: dict, body: list, summary_s: list, 
                 ref = d[side]["ref"]
                 if ref is not None and ref not in numbers:
                     warnings.append(f"A disagreement of section \"{sec['title']}\" cites reference {ref} that does not exist.")
-    warnings += _summary_problems("summary", summary_s, body, lambda s, b: validators.check_summary(s, b, min_sentences=3, max_sentences=5))
+    warnings += _summary_problems("summary", summary_s, body, lambda s, b: validators.check_summary(s, b, min_sentences=summary.SUMMARY_RANGE[0], max_sentences=summary.ANSWER_RANGE[1]))
     warnings += _summary_problems("conclusion", conclusion_s, body, _conclusion_check)
     return warnings
 
@@ -625,7 +645,7 @@ def render_markdown(report: dict) -> str:
     r = report or {}
     lines = [f"# {r.get('question') or 'Research report'}", ""]
     overview = r.get("overview") or {}
-    lines += ["## Research Overview and Executive Summary", "", f"> {LEGEND}", ""]
+    lines += ["## Answer and Overview", "", f"> {LEGEND}", ""]
     counts = overview.get("counts") or {}
     if counts:
         lines += [f"Status: {r.get('status', '')}. {counts.get('sections', 0)} sections, {counts.get('documents', 0)} documents, {counts.get('claims', 0)} checked claims "
