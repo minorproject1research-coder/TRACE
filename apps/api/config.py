@@ -11,7 +11,10 @@ def _int(name: str, default: int, minimum: int = 1) -> int:
 
 def cors_origins() -> list[str]:
     """Origins the browser frontend is served from (comma separated). Default: the Next.js dev server."""
-    raw = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    raw = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
+)
     return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
 
 
