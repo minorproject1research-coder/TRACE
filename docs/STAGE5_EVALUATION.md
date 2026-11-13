@@ -1,7 +1,7 @@
 # Stage 5 evaluation checks (2026-11-13)
 
 Script: `scripts/stage5_evaluate.py` (stored reports only, no Groq tokens, loads the Stage 4 NLI model; the judge is switched off, so it is stricter than the pipeline).
-Runs: 35 (`ae23b7cd`, written with the code before 2026-11-13) and 36 (`c7a5feb3`, written after the fixes). Outputs go to `reports/stage5/eval` (not committed).
+Runs: 35 (`ae23b7cd`, written with the code before 2026-11-13) and 36 (`c7a5feb3`, written after the single-source fixes of commit `4999a30`). These results were NOT repeated for the part-by-part answer of 2026-11-13 (commits `dc2036e` to `940b9db`); rerun `scripts/stage5_evaluate.py --run <id> ...` on a current report (about 10 minutes of NLI on the CPU, no Groq tokens) before quoting them for template `s5-v2`. Outputs go to `reports/stage5/eval` (not committed).
 
 ## A. Citation check (every body sentence)
 | run | sentences | citation precision | citation recall | sentences with a source-count problem |

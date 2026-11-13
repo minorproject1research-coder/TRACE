@@ -3,7 +3,7 @@
 Stage 4 (fact checking across sources) reads the evidence of Stage 3 and writes two tables and one summary. This file is the contract for whoever reads them (the API report today, Stage 5 later). Design and history of Stage 4: `docs/reports/TRACE Stage 4 Fact Checking, Handoff Report.md`; measurements: `docs/reports/20_stage4.md`.
 
 ## When it runs
-`FACTCHECK=true` on the server. Off by default: it needs the NLI model (1.7 GB) and a few hundred small LLM calls per sub-question. A run without it has no rows in the two tables, and the API reports `stages.factcheck = "not_run"`.
+`FACTCHECK` on the server (on by default since 2026-11-13; `FACTCHECK=false` switches it off). It needs the NLI model (1.7 GB) and a few hundred small LLM calls per sub-question. A run without it has no rows in the two tables, and the API reports `stages.factcheck = "not_run"`.
 
 ## What a label means
 Stage 4 groups the verified findings of Stage 3 that state the same thing (a "claim"), checks that each quote supports its claim, looks for sources that assert the opposite, and labels each claim:

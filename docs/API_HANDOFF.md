@@ -17,7 +17,7 @@ uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
 A run executes the whole graph in a background thread: **planner -> (paper retrieval + web search in parallel) -> summarizer -> fact check (Stage 4, optional) -> written report (Stage 5, optional)**. It takes **15-25 minutes**. The UI must be built around progress events, not around waiting for a response.
 - The run id is a UUID and is also the id of the research query in the database, so a finished run can be read after a server restart.
 - Runs are queued: `MAX_CONCURRENT_RUNS` (default 1) at a time, `MAX_PENDING_RUNS` (default 5) waiting. A further `POST` gets **429** `{"detail": "..."}`.
-- `factcheck` (Stage 4) runs after the summarizer **only when the server has `FACTCHECK=true`**; otherwise its state is `"not_run"`. `report` (Stage 5, the written report) runs after Stage 4 **only when the server has `STAGE5=true`**; otherwise its state is `"not_run"` (it used to be `"not_built"`; no stage is `not_built` any more, the value stays in the type for old clients). Without Stage 5 there is no written answer, only collected and judged evidence (see "Report"); with it, see "Stage 5: the written report" below. A Stage 5 failure marks the `report` stage `failed` and never fails the run.
+- `factcheck` (Stage 4) runs after the summarizer unless the server has `FACTCHECK=false` (on by default since 2026-11-13); then its state is `"not_run"`. `report` (Stage 5, the written report) runs after Stage 4 unless the server has `STAGE5=false` (on by default since 2026-11-13); then its state is `"not_run"` (it used to be `"not_built"`; no stage is `not_built` any more, the value stays in the type for old clients). Without Stage 5 there is no written answer, only collected and judged evidence (see "Report"); with it, see "Stage 5: the written report" below. A Stage 5 failure marks the `report` stage `failed` and never fails the run.
 - There is no quick or web-only mode: every run uses the full pipeline. (`depth` and `scope` were removed from the request and from the session; a client that still sends them is ignored.)
 - A run cannot be cancelled (no endpoint).
 
@@ -82,7 +82,7 @@ Typical order for one run (the 11 stage-level events; `branch_started` and `step
 | `step` | retrieval or summarizer | `{lane, step, state, ...counts}`: see "Steps" below |
 | `branch_completed` | retrieval | `{branch: 'papers', papers}` or `{branch: 'web', webSources}` |
 | `stage_completed` | summarizer | `{digests, subQuestions, sufficientSubQuestions}` |
-| `stage_started` / `stage_completed` | report | only when the server has `STAGE5=true`; see "Stage 5: the written report". `stage_started` carries `data.groq` only |
+| `stage_started` / `stage_completed` | report | unless the server has `STAGE5=false`; see "Stage 5: the written report". `stage_started` carries `data.groq` only |
 | `run_completed` | null | `{reportUrl, stagesNotRun: ['report']}` (also `'factcheck'` when it was off); `report` is missing from `stagesNotRun` when Stage 5 ran |
 | `run_failed` | the stage that was running, or null | `message` is `"ErrorType: text"` (also `session.error`) |
 
@@ -104,7 +104,7 @@ The nodes report what they are doing between a stage's start and its end. `data 
 | `summarizer` | `prepare` | choose the passages to read | completed `{jobs, papers, web}` |
 | `summarizer` | `digest` | LLM digest per source, in parallel | `{done, total, failures}`, reported in counting order |
 | `summarizer` | `judge` | independent evidence judge and coverage, per sub-question | `{done, total, sufficient, judgeUsed, sufficientSoFar}`; completed `{sufficientSubQuestions}` |
-| `summarizer` | `loop2` | **only when `LOOP2=true`.** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{loop2Step, aspects}` (loop2Step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
+| `summarizer` | `loop2` | **unless `LOOP2=false` (on by default since 2026-11-13).** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{loop2Step, aspects}` (loop2Step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
 | `summarizer` | `store` | digests and coverage saved | completed `{stored}` |
 
 - Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
@@ -149,8 +149,8 @@ Live: when a rung is finished, a summarizer step event with `data.step = "loop2_
 - A run that exists only in the database (server restarted since) gets a single closing event (`run_completed` or `run_failed`).
 - If the server restarts while a run is in progress, that run is lost: it later shows as `failed`.
 
-## Stage 5: the written report (added 2026-11-11, `STAGE5=true`; contract of the stored document: `docs/STAGE5_OUTPUT.md`)
-Stage 5 writes a cited report from the Stage 4 labels. It is on by default (since 2026-11-13); with `STAGE5=false` nothing below appears and `stages.report` is `"not_run"`.
+## Stage 5: the written report (added 2026-11-11, on by default since 2026-11-13; contract of the stored document: `docs/STAGE5_OUTPUT.md`)
+Stage 5 writes a cited report from the Stage 4 labels; since template `s5-v2` (2026-11-13) it opens with an answer to the question, built part by part (`docs/STAGE5_OUTPUT.md`, last section); `report.conclusion` may be an empty list. It is on by default (since 2026-11-13); with `STAGE5=false` nothing below appears and `stages.report` is `"not_run"`.
 
 **The `report` stage in a run.** It starts (`stage_started`, stage `report`) when the fact-check node has finished (also when Stage 4 is off or failed) and ends with one `stage_completed`:
 - `status "completed"`: `data = {status, sections, sentences, references, warnings}` where `status` is the written report's own status (`completed | completed_with_warnings | insufficient_evidence`); the stage state is `completed` for all three (`insufficient_evidence` is a normal result: there was nothing eligible to write).
@@ -184,7 +184,7 @@ type WrittenReportResponse = {
 ```ts
 type WrittenReport = {            // details and the meaning of every field: docs/STAGE5_OUTPUT.md
   status: string; question: string; generatedAt: string
-  overview: { summary: Sentence[]; counts: { sections: number; documents: number; claims: number; supported: number; partly: number; single: number; disputed: number
+  overview: { summary: Sentence[] /* THE ANSWER to the question (since template s5-v2): show it first, titled "Answer" */; counts: { sections: number; documents: number; claims: number; supported: number; partly: number; single: number; disputed: number
                                               filtered: number; sentences: number; disagreements: number; references: number } }
   introduction: string[]         // paragraphs written by Python templates
   sections: { id: string; title: string; subQuestionId: string; detailQuestions: string[]; sentences: Sentence[]
@@ -197,7 +197,7 @@ type WrittenReport = {            // details and the meaning of every field: doc
                 kind: 'paper' | 'web'; evidenceLevel: string | null; sourceIds: string[]; text: string; markdown: string }[]   // text / markdown: the formatted entry
   stats: Record<string, unknown>; warnings: string[]
 }
-type Sentence = { text: string; claimIds: string[]; refs: number[]; tier: 'supported' | 'partly' | 'single' | string; origin: 'llm' | 'fallback' | 'template' | string }
+type Sentence = { text: string; claimIds: string[]; refs: number[]; tier: 'supported' | 'partly' | 'single' | 'note' | string; origin: 'llm' | 'fallback' | 'template' | string }   // tier "note" = a template note without a source ("The evidence collected does not settle: ..."): no tier label, no refs
 ```
 `text` never contains the `[n]` markers: the client adds them from `refs`. A single-source sentence ("One study reports ...") must always be shown with its legend; see `docs/STAGE5_OUTPUT.md`.
 

@@ -6,7 +6,7 @@ Related files: the contract for readers of the results is `docs/STAGE4_OUTPUT.md
 
 ## 1. Where it sits
 planner -> retrieval -> Stage 3 (digests, judge, Loop 2) -> **Stage 4** -> Stage 5 (not built).
-It runs once per sub-question, only when `FACTCHECK=true`, and with `STAGE4_OVERLAP` (default) a sub-question is checked while Stage 3 is still busy with the next ones (section 11). It never fails a run: a sub-question that raises an error is reported as `{"error": ...}` in the summary and skipped; the Stage 3 evidence is already stored.
+It runs once per sub-question, unless `FACTCHECK=false` (on by default since 2026-11-13), and with `STAGE4_OVERLAP` (default) a sub-question is checked while Stage 3 is still busy with the next ones (section 11). It never fails a run: a sub-question that raises an error is reported as `{"error": ...}` in the summary and skipped; the Stage 3 evidence is already stored.
 
 ## 2. Steps for one sub-question (`apps/api/graph/nodes/factcheck_node.py`)
 | # | Step | Code | What happens | Model |
