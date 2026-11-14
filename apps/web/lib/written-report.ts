@@ -6,6 +6,7 @@ import type { StageState, WrittenDisagreement, WrittenReference, WrittenReport, 
 // Rules that must hold wherever a sentence is shown:
 //  - the text of a sentence never contains a marker; the renderer adds "[1, 3]" from `refs`, before the final full stop
 //  - each marker links to the reference with that number
+//  - the strength of the evidence is shown ONLY by the tier label and the markers (s5-v3: a sentence is a plain claim), so every `partly` and `single` sentence carries its label wherever it is shown (Answer, sections, Conclusion)
 //  - tier `note` (a template sentence, no refs, s5-v2) is shown as a plain muted note: NO tier label and NO "plain wording" hint
 //  - tier `partly` always carries the label "partly supported"; tier `single` always carries "one source, not confirmed" and never looks like a confirmed finding;
 //    a tier this page does not know is treated like `single` (labelled with its own word, never styled as confirmed)
@@ -13,8 +14,8 @@ import type { StageState, WrittenDisagreement, WrittenReference, WrittenReport, 
 //  - the legend is always shown; the limitations are never collapsed; warnings and the non-completed statuses are visible states
 //  - a missing field shows as nothing, never as an error
 
-/** The single-source legend of the Markdown (STAGE5_OUTPUT.md, "What must always be shown"). */
-export const LEGEND = 'How to read the findings: a sentence that starts with “Two sources report” is stated by two or more documents; a finding marked (partly supported) rests on one document with a related point in another; single-source findings are attributed to one document and are not confirmed. Citation numbers point to the references at the end.'
+/** The legend (template s5-v3, `LEGEND_NATURAL` of the Markdown). It does not depend on how a sentence starts, so it is also right for a report stored with the older wording (s5-v2: "Two sources report ..."). */
+export const LEGEND = 'How to read the findings: a sentence without a label is stated by two or more documents; a finding marked (partly supported) rests on one document with a close variant in another; a finding marked (one source, not confirmed) is stated by a single document and says what that source is. Citation numbers point to the references at the end.'
 
 export const PARTLY_LABEL = 'partly supported'
 export const SINGLE_LABEL = 'one source, not confirmed'
@@ -36,7 +37,7 @@ export function markers(refs: unknown): string {
   return n.length ? `[${n.join(', ')}]` : ''
 }
 
-/** A sentence split around its final full stop, so the markers go before it: `Two sources report that X [1, 3].` Without a final stop the markers follow the text. */
+/** A sentence split around its final full stop, so the markers go before it: `Compute grows linearly [1, 3].` Without a final stop the markers follow the text. */
 export function sentenceParts(s: Pick<WrittenSentence, 'text' | 'refs'>): { body: string; stop: string; refs: number[] } {
   const text = typeof s?.text === 'string' ? s.text.trimEnd() : ''
   const m = /^([\s\S]*?)([.!?]["”')\]]*)$/.exec(text)

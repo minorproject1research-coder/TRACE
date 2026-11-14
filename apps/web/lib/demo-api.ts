@@ -618,7 +618,7 @@ export const demoApi: TraceApi = {
     const g = generated.get(id)
     if (g != null) { if (g > 0) { generated.set(id, g - 1); return { state: 'running' as const } } return { state: 'ready' as const, data: demoWrittenResponse('warnings', s.question) } }
     if (kind === 'off' || kind === 'none' || v.stages.report === 'not_run' || v.stages.report === 'pending') return none
-    return { state: 'ready' as const, data: demoWrittenResponse((kind === 'running' ? 'completed' : kind) as 'completed' | 'warnings' | 'insufficient' | 'failed', s.question) }
+    return { state: 'ready' as const, data: demoWrittenResponse((kind === 'running' ? 'completed' : kind) as 'completed' | 'warnings' | 'insufficient' | 'failed', s.question, id === 'demo-factcheck' ? 's5-v2' : 's5-v3') }
   },
   async writeWrittenReport(id) {
     await wait(250)

@@ -81,7 +81,7 @@ test('the status chip: completed, completed_with_warnings, insufficient_evidence
 test('the legend is always there, the limitations are never dropped, and the warnings of a report with warnings are listed', () => {
   for (const kind of [...kinds, 'failed'] as const) {
     const m = reportModel(demoWrittenResponse(kind))
-    assert.equal(m.legend, LEGEND); assert.match(m.legend, /Two sources report/); assert.match(m.legend, /partly supported/); assert.match(m.legend, /not confirmed/)
+    assert.equal(m.legend, LEGEND); assert.doesNotMatch(m.legend, /Two sources report/); assert.match(m.legend, /without a label is stated by two or more documents/); assert.match(m.legend, /close variant in another/); assert.match(m.legend, /partly supported/); assert.match(m.legend, /not confirmed/)
     assert.ok(m.limitations.length > 0, kind + ': limitations are listed'); assert.match(m.notVerified, /not a verified answer/)
   }
   const warn = reportModel(demoWrittenResponse('warnings'))
@@ -212,4 +212,27 @@ test('the demo report has an Answer with a note, and the Markdown says "Answer a
   assert.ok((ok.report.overview?.summary ?? []).some(s => s.tier === 'note')); assert.match(ok.markdown, /## Answer and Overview/); assert.doesNotMatch(ok.markdown, /Executive Summary/)
   assert.equal(reportModel(ok).conclusion.length, 1); assert.deepEqual(warn.report.conclusion, []); assert.equal(reportModel(warn).conclusion.length, 0)
   assert.doesNotMatch(warn.markdown, /## Conclusion/)
+})
+
+// ------------------------------------------------------------------------------------------------------------------------ wording style s5-v3
+test('s5-v3: the strength is shown only by the label and the markers; the legend is right for plain claims and for the older wording', () => {
+  assert.equal(LEGEND, 'How to read the findings: a sentence without a label is stated by two or more documents; a finding marked (partly supported) rests on one document with a close variant in another; a finding marked (one source, not confirmed) is stated by a single document and says what that source is. Citation numbers point to the references at the end.')
+  for (const [version, starts] of [['s5-v3', false], ['s5-v2', true]] as const) {
+    const res = demoWrittenResponse('completed', undefined, version)
+    assert.equal(res.templateVersion, version)
+    const all = sentencesOf(res).filter(s => s.tier !== 'note')
+    assert.equal(all.some(s => /^(Two sources|One source|One study) report/.test(s.text)), starts, `${version}: old opener`)
+    const m = reportModel(res)
+    assert.equal(m.legend, LEGEND, 'the same legend for both')
+    // every partly / single sentence carries its label, in the Answer, the sections and the Conclusion alike
+    for (const [where, views] of [['answer', m.summary], ['sections', m.sections.flatMap(x => x.sentences)], ['conclusion', m.conclusion]] as const) {
+      for (const v of views) {
+        if (v.tier.kind === 'partly') assert.equal(v.tier.label, 'partly supported', `${version} ${where}`)
+        if (v.tier.kind === 'single') assert.equal(v.tier.label, 'one source, not confirmed', `${version} ${where}`)
+      }
+    }
+    assert.ok(m.summary.some(v => v.tier.kind === 'single'), 'the answer has a single sentence with its label')
+    assert.ok(m.conclusion.some(v => v.tier.kind === 'partly'), 'the conclusion has a partly sentence with its label')
+    assert.equal((res.markdown.match(/\*\(one source, not confirmed\)\*/g) ?? []).length, all.filter(s => s.tier === 'single').length)
+  }
 })

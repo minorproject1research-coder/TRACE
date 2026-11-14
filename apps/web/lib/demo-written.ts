@@ -30,27 +30,30 @@ const DISAGREEMENT: WrittenDisagreement = {
   sideB: { quote: 'Accuracy dropped sharply as soon as noise grew in our experiments.', ref: 5, title: REFS[4].title ?? '' },
 }
 
-function sections(fallback: boolean): WrittenSection[] {
+/** The wording of the demo sentences: `plain` = template s5-v3 (a plain claim; the strength is shown by the label and the markers), else s5-v2 ("Two sources report ..."). */
+const w = (plain: boolean, v3: string, v2: string): string => (plain ? v3 : v2)
+
+function sections(fallback: boolean, plain: boolean): WrittenSection[] {
   const o = fallback ? 'fallback' : 'llm'
   return [
     { id: 'sec-1', title: TOPICS[0], subQuestionId: 'demo-sq-1', detailQuestions: ['What is the main goal of the method?', 'Which datasets were used?'],
       sentences: [
-        S('Two sources report that the method aims to trace weak signals back to their sources.', [1, 2], 'supported'),
-        S('The first paper reports that two public datasets were used, and another paper makes a related point about how they were split.', [1, 5], 'partly'),
-        S('According to one paper, training used an 80/10/10 split.', [2], 'single', o),
+        S(w(plain, 'The method aims to trace weak signals back to their sources.', 'Two sources report that the method aims to trace weak signals back to their sources.'), [1, 2], 'supported'),
+        S(w(plain, 'Two public datasets were used to evaluate the method.', 'The first paper reports that two public datasets were used, and another paper makes a related point about how they were split.'), [1, 5], 'partly'),
+        S(w(plain, 'A paper reports that training used an 80/10/10 split.', 'According to one paper, training used an 80/10/10 split.'), [2], 'single', o),
       ],
       disagreements: [DISAGREEMENT], gaps: [], counts: { total: 5, supported: 1, partly: 1, single: 1, disputed: 1, filtered: 1 } },
     { id: 'sec-2', title: TOPICS[1], subQuestionId: 'demo-sq-2', detailQuestions: ['What limits the input length?', 'How does cost grow with length?'],
       sentences: [
-        S('Two sources report that compute grows linearly with the number of tokens processed.', [2, 5], 'supported'),
-        S('One study reports that production cost fell to about a tenth of the baseline, based on its abstract.', [3], 'single'),
+        S(w(plain, 'Compute grows linearly with the number of tokens processed.', 'Two sources report that compute grows linearly with the number of tokens processed.'), [2, 5], 'supported'),
+        S(w(plain, 'An abstract reports that production cost fell to about a tenth of the baseline.', 'One study reports that production cost fell to about a tenth of the baseline, based on its abstract.'), [3], 'single'),
       ],
       disagreements: [], gaps: ['No evidence was found for how the method behaves on streaming inputs.'], counts: { total: 3, supported: 1, partly: 0, single: 1, disputed: 0, filtered: 1 } },
     { id: 'sec-3', title: TOPICS[2], subQuestionId: 'demo-sq-3', detailQuestions: [], sentences: [], disagreements: [],
       gaps: ['The evidence for this sub-question was not sufficient, so nothing is written about it.'], counts: { total: 0, supported: 0, partly: 0, single: 0, disputed: 0, filtered: 0 } },
     { id: 'sec-4', title: TOPICS[3], subQuestionId: 'demo-sq-5', detailQuestions: ['Which learning rate schedules are used?'],
       sentences: [
-        S('One practitioner notebook reports little extra benefit from very large batches, and a paper makes a related point.', [6, 2], 'partly'),
+        S(w(plain, 'Very large batches gave little extra benefit.', 'One practitioner notebook reports little extra benefit from very large batches, and a paper makes a related point.'), [6, 2], 'partly'),
         S('According to one notebook, a short warm-up followed by a slow decay was used.', [6], 'single', fallback ? 'template' : 'llm'),
       ],
       disagreements: [], gaps: [], counts: { total: 2, supported: 0, partly: 1, single: 1, disputed: 0, filtered: 0 } },
@@ -59,22 +62,22 @@ function sections(fallback: boolean): WrittenSection[] {
 
 const INTRO = ['This report answers the question from the evidence TRACE collected and checked: the papers and web pages it found, the findings taken from them, and the cross-check of those findings across sources.', 'Each sentence below says how many documents stand behind it. Read it as a summary of what the sources say, not as a verified answer.']
 
-function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question: string): WrittenReport {
+function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question: string, plain: boolean): WrittenReport {
   if (kind === 'failed') {
     return { status: 'failed', question, generatedAt: '2026-11-10T10:20:00Z', overview: { summary: [], counts: {} }, introduction: [], sections: [], limitations: ['Stage 5 failed: RuntimeError: the writer model stayed unreachable (simulated).'], conclusion: [], references: [], stats: {}, warnings: ['RuntimeError: the writer model stayed unreachable (simulated).'] }
   }
   if (kind === 'insufficient') {
-    const secs = sections(false).map(s => ({ ...s, sentences: [], disagreements: [], gaps: ['Nothing was eligible to write about: the evidence is insufficient.'], counts: { total: 0, supported: 0, partly: 0, single: 0, disputed: 0, filtered: 0 } }))
+    const secs = sections(false, plain).map(s => ({ ...s, sentences: [], disagreements: [], gaps: ['Nothing was eligible to write about: the evidence is insufficient.'], counts: { total: 0, supported: 0, partly: 0, single: 0, disputed: 0, filtered: 0 } }))
     return {
       status: 'insufficient_evidence', question, generatedAt: '2026-11-10T10:20:00Z', overview: { summary: [], counts: { sections: 4, documents: 0, claims: 0, supported: 0, partly: 0, single: 0, disputed: 0, filtered: 0, sentences: 0, disagreements: 0, references: 0 } },
       introduction: INTRO, sections: secs, limitations: ['No claim was eligible for the written report, so it has no findings.', 'Every check is automatic and none was reviewed by a person.'], conclusion: [], references: [], stats: {}, warnings: [],
     }
   }
   const warn = kind === 'warnings'
-  const secs = sections(warn)
+  const secs = sections(warn, plain)
   const summary = [
-    S('Two sources report that the method aims to trace weak signals back to their sources.', [1, 2], 'supported'),
-    S('One study reports that production cost fell to about a tenth of the baseline, based on its abstract.', [3], 'single'),
+    S(w(plain, 'The method aims to trace weak signals back to their sources.', 'Two sources report that the method aims to trace weak signals back to their sources.'), [1, 2], 'supported'),
+    S(w(plain, 'An abstract reports that production cost fell to about a tenth of the baseline.', 'One study reports that production cost fell to about a tenth of the baseline, based on its abstract.'), [3], 'single'),
     { text: 'The evidence collected does not settle: how the method behaves on streaming inputs, and the open problems of the method.', claimIds: [], refs: [], tier: 'note', origin: 'template' },
   ]
   // The bottom line can be empty (the model could not write it within the checks): the warnings kind has none, so the Conclusion heading is hidden.
@@ -119,11 +122,12 @@ export function demoMarkdown(r: WrittenReport): string {
   return out.join('\n')
 }
 
-export function demoWrittenResponse(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question = 'How does the sample method compare with the baseline?'): WrittenReportResponse {
-  const report = build(kind, question)
+/** `templateVersion` s5-v3 (the default) has plain claims; s5-v2 keeps the older wording ("Two sources report ..."), like a report stored before the change. */
+export function demoWrittenResponse(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question = 'How does the sample method compare with the baseline?', templateVersion = 's5-v3'): WrittenReportResponse {
+  const report = build(kind, question, templateVersion !== 's5-v2')
   const markdown = demoMarkdown(report)
   report.references = (report.references ?? []).map(x => ({ ...x, markdown: `${x.number}. ${x.text}` }))
-  return { status: report.status ?? kind, report, markdown, stats: report.stats, model: 'demo-writer', templateVersion: 's5-v2', generatedAt: report.generatedAt }
+  return { status: report.status ?? kind, report, markdown, stats: report.stats, model: 'demo-writer', templateVersion, generatedAt: report.generatedAt }
 }
 
 /** The status the written report of a kind has (and so the data of the report stage's stage_completed event). */
