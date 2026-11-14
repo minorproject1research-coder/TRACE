@@ -1,0 +1,61 @@
+# One vLLM server for both models:
+#   judge   = Qwen/Qwen3.5-9B (base model)
+#   planner = your LoRA adapter on top of the same base weights
+# Add this line to .env (use forward slashes):
+#   ADAPTER_DIR=C:/path/to/models/checkpoint-32538
+services:
+  vllm:
+    image: vllm/vllm-openai:latest   # after the first successful run, pin to the exact version it pulled
+    ipc: host
+    command:
+      - Qwen/Qwen3.5-9B
+      - --served-model-name
+      - judge
+      - --enable-lora
+      - --lora-modules
+      - planner=/adapter
+      - --max-lora-rank
+      - "64"                         # set to the smallest of 8/16/32/64/128/256 that is >= "r" in adapter_config.json
+      - --max-loras
+      - "1"
+      - --max-model-len
+      - "4096"
+      - --quantization
+      - fp8_per_tensor
+      - --gpu-memory-utilization
+      - "0.88"
+      - --max-num-seqs
+      - "32"
+      - --limit-mm-per-prompt        # text only
+      - '{"image":0,"video":0}'
+    volumes:
+      - hf-cache:/root/.cache/huggingface   # base model downloads here once (about 19 GB)
+      - vllm-cache:/root/.cache/vllm
+      - ${ADAPTER_DIR:?add ADAPTER_DIR=C:/path/to/checkpoint-32538 to .env}:/adapter:ro
+    ports:
+      - "127.0.0.1:8001:8000"        # for direct testing only
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  query-generator:
+    build: .
+    env_file: .env                    # API_KEY=...
+    environment:
+      - VLLM_URL=http://vllm:8000
+      - PLANNER_MODEL=planner
+      - JUDGE_MODEL=judge
+      - PLANNER_DIR=/planner-merged
+      - MAX_ABSTRACT_CHARS=2500       # set to the value from your notebook
+    volumes:
+      - ./work/planner-merged:/planner-merged:ro   # tokenizer only
+    ports:
+      - "8000:8000"                   # the endpoint you expose over Tailscale
+
+volumes:
+  hf-cache:
+  vllm-cache:
