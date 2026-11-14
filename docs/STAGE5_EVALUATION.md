@@ -42,3 +42,11 @@ Same script, same seed, on the CURRENT stored reports of run 37 (`f508d667`, pla
 
 What this does NOT cover: the script samples and checks the BODY sentences. The answer (`overview.summary`), the conclusion and the template note are checked by the pipeline (numbers, names, hedge, parts) but are not in the audit sample; add them before claiming the whole report was audited.
 
+## Natural wording style (template s5-v3, `STAGE5_STYLE=natural`), run 37, 2026-11-14
+Written from the stored run 37 (74 body sentences, 74 written by the model, 0 fallbacks, status completed, 37.7k Groq tokens, 178 s) and evaluated from the report file (`scripts/stage5_evaluate.py --report-json ...`, run with `STAGE5_STYLE=natural`; run without it the attributed rules flag every natural sentence, which is not a result).
+- **Citations:** precision 1.0, recall 1.0, 0 source-count problems (74 sentences).
+- **Audit sample (all 74 sentences):** 0 flagged by the deterministic checks, 74 of 74 accepted by NLI. No human verdict.
+- **Corrupted copies:** invented name 74/74, citation marker 74/74, hedge upgraded 55/55, foreign claim ids 74/74, number changed 2/2, unrelated sentence 39/40, negation flipped 38/40, antonym swapped 21/22, **hedge removed 36/55 (65%)**.
+- **Why hedge removed is lower, by design:** in the attributed style every partly supported sentence must open with "One source reports ..." and say "related", so deleting that is caught. In the natural style a partly supported sentence has no required wording (the tier label and the citations carry the strength), so removing its attribution is not detectable; only single-source sentences must say what their source is (caught). The 19 misses are partly supported sentences. The risk is a partly supported finding read as an established fact: the label "(partly supported)" is then the only guard, so the frontend must show it on every such sentence.
+- Misses of the other kinds: a double negative made by the corruption ("no confidential data is not exposed"), "violating" for "without violating", and an unrelated sentence from the same part of the report.
+

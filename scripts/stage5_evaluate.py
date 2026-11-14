@@ -31,10 +31,14 @@ NO_JUDGE = lambda claim, quote: {"supports": False, "confidence": 0.0, "reason":
 
 
 # ------------------------------------------------------------------------------------------------------------------------------ loading
-def load_run(run: str, row=None, inputs=None):
-    """(report dict, claims_by_id) of a stored run."""
+def load_run(run: str, row=None, inputs=None, report_json=None):
+    """(report dict, claims_by_id) of a stored run; `report_json` = a file written by stage5_on_stored_run.py (its "report") instead of the stored row."""
     from apps.api.agents.stage5_report import loader, tiers
     from apps.api.services import db_service
+    if report_json:
+        import json
+        data = json.load(open(report_json, encoding="utf-8"))
+        row = {"report": data.get("report", data)}
     row = row or db_service.get_written_report(run)
     if not row:
         raise SystemExit(f"run {run}: no stored written report")
@@ -261,13 +265,14 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default="reports/stage5/eval")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--skip-nli", action="store_true", help="only the citation check (A)")
+    ap.add_argument("--report-json", help="evaluate this report file (from stage5_on_stored_run.py --out) instead of the stored one; needs exactly one --run")
     args = ap.parse_args(argv)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
     summary, pool, claims_all = {}, [], {}
     for run in args.run:
-        report, claims = load_run(run)
+        report, claims = load_run(run, report_json=args.report_json if len(args.run) == 1 else None)
         sents = [{**s, "run": run} for s in body_sentences(report)]
         pool += sents
         claims_all.update(claims)

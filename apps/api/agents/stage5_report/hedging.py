@@ -114,14 +114,33 @@ TIER_RULES_NATURAL = {
     TIER_SINGLE: {
         "label": "single source (one document states it; not confirmed elsewhere)",
         "instruction": ("Only ONE document states this and nothing else confirms it, so never present it as fact. Start the sentence by saying what the source is, "
-                        "in natural words taken from the claim or the quote: \"A PET/CT segmentation study reports that ...\", \"In a benchmark on chest X-rays, "
-                        "...\", \"A systematic review finds that ...\", \"According to one study, ...\". Never write \"One source reports\" if a better description "
-                        "of the source is in the claim or quote. Do not write \"shows\", \"proves\", \"demonstrates\", \"confirms\", \"establishes\" or \"clearly\", "
+                        "in natural words, using ONLY words that appear in the claim or the quote to describe it (its kind: a review, a benchmark, an experiment, a "
+                        "simulation, a survey ...; or its setting or method): \"A <kind of study> reports that ...\", \"In a <setting> evaluation, ...\", "
+                        "\"According to one study, ...\". If the claim and the quote do not describe the source, write \"According to one study, ...\" or "
+                        "\"One study reports that ...\"; never invent what the source is. Do not write \"shows\", \"proves\", \"demonstrates\", \"confirms\", \"establishes\" or \"clearly\", "
                         "and do not mention other sources or say that several studies agree."),
-        "examples": ["A PET/CT segmentation study reports that ...", "In a benchmark on chest X-rays, ...", "According to one study, ..."],
+        "examples": ["A <kind of study> reports that ...", "In a <setting> evaluation, ...", "According to one study, ..."],
         "opener_patterns": NATURAL_SINGLE_ATTRIBUTION, "opener_required": True, "required_any": [], "forbidden_verbs": _ATTRIBUTION_FORBIDDEN,
     },
 }
+
+
+_SPECIFIC_KIND = re.compile(r"\b(review|survey|trial|experiments?|benchmark|simulation|meta-analysis|case study|evaluation|investigation|framework|preprint|ablation)\b", re.I)
+
+
+def _invented_source_kind(text: str, evidence_text: str) -> list:
+    """Natural style: a single-source sentence may call its source a review, a benchmark, an experiment ... only when the claim or the quote says so (the model
+    cannot see the paper; "A systematic review notes ..." about a case study would be a made-up fact about the source)."""
+    head = _head(text, 10).lower()
+    ev = (evidence_text or "").lower()
+    out = []
+    for m in _SPECIFIC_KIND.finditer(head):
+        kind = m.group(1).lower()
+        stem = kind[:-1] if kind.endswith("s") else kind
+        if stem not in ev:
+            out.append(f"the sentence calls its source a '{kind}', but nothing in the claim or the quote says so; write 'According to one study, ...' instead")
+            break
+    return out
 
 
 def rules() -> dict:
@@ -219,6 +238,8 @@ def check_hedge(tier: str, text: str, claim_text: str = "") -> list[str]:
     reasons: list[str] = []
     if rules_["opener_required"] and not has_opener(tier, t):
         reasons.append("must open with an attribution such as: " + " / ".join(f'"{e}"' for e in rules_["examples"]))
+    if tier == TIER_SINGLE and settings.natural() and not reasons:
+        reasons += _invented_source_kind(t, claim_text)
     if tier == TIER_PARTLY and not settings.natural() and not has_partly_marker(t):
         reasons.append("must say that another source makes a related point (use the word 'related')")
     head = _head(t).lower()

@@ -515,7 +515,7 @@ def check_sentence(text, claim_ids, job, *, allowed_ids=None) -> list[str]:
     primary = primary_texts(cited)
     reasons += connective_problems(text, " ".join(primary))
     tier = getattr(job, "tier", TIER_SINGLE)
-    reasons += hedging.check_hedge(tier, text, " ".join(primary))
+    reasons += hedging.check_hedge(tier, text, " ".join(primary + (quote_texts(cited) if settings.natural() else [])))
     reasons += source_count_problems(tier, text, cited)
     if cited:
         reasons += _grounding_problems(text, _Evidence(primary, quote_texts(cited)))

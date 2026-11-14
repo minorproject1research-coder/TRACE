@@ -669,8 +669,10 @@ def _natural(monkeypatch):
 def test_natural_style_needs_a_description_of_the_source_only_for_single_claims(monkeypatch):
     from apps.api.agents.stage5_report import hedging
     _natural(monkeypatch)
-    assert hedging.check_hedge("single", "A PET/CT segmentation study reports that federated learning matches centralized training.") == []
-    assert hedging.check_hedge("single", "In a benchmark on chest X-rays, federated models lose three points.") == []
+    assert hedging.check_hedge("single", "A segmentation study reports that federated learning matches centralized training.") == []
+    assert hedging.check_hedge("single", "In a benchmark on chest X-rays, federated models lose three points.", "a benchmark on chest X-rays: federated models lose three points") == []
+    assert hedging.check_hedge("single", "A systematic review finds that federated models lose three points.", "federated models lose three points")        # the claim does not say it is a review
+    assert hedging.check_hedge("single", "A systematic review finds that federated models lose three points.", "a systematic review: federated models lose three points") == []
     assert hedging.check_hedge("single", "According to one study, differential privacy lowers accuracy.") == []
     assert hedging.check_hedge("single", "One study reports that it works.") == []
     assert hedging.check_hedge("single", "Federated learning matches centralized training.")                   # a bare claim is not enough for one source
@@ -695,7 +697,7 @@ def test_natural_style_prompts_and_version_differ_from_the_attributed_style(monk
 def test_natural_style_summary_check_wants_a_described_source_for_single_findings(monkeypatch):
     from apps.api.agents.stage5_report import validators
     _natural(monkeypatch)
-    body = [{"n": 1, "text": "A PET/CT study reports that federated learning matches centralized training.", "tier": "single"}]
-    ok = validators.check_summary([{"text": "A PET/CT study reports that federated learning matches centralized training.", "from_sentences": [1]}], body, min_sentences=1, max_sentences=5)
+    body = [{"n": 1, "text": "A segmentation study reports that federated learning matches centralized training.", "tier": "single"}]
+    ok = validators.check_summary([{"text": "A segmentation study reports that federated learning matches centralized training.", "from_sentences": [1]}], body, min_sentences=1, max_sentences=5)
     bad = validators.check_summary([{"text": "Federated learning matches centralized training.", "from_sentences": [1]}], body, min_sentences=1, max_sentences=5)
     assert ok == [] and any("what the source is" in r for r in bad)
