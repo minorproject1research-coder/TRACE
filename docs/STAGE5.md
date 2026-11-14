@@ -50,7 +50,7 @@ Citations: the model never writes a `[n]`, a URL, an author or a year; the valid
 | Setting | Default | Meaning |
 |---|---|---|
 | `STAGE5` | true (since 2026-11-13) | switch for the whole stage (1/true/yes/on) |
-| `STAGE5_STYLE` | attributed | wording: `attributed` (s5-v2: "One source reports that ...") or `natural` (s5-v3: plain claims, tier label and citations carry the strength; a single-source claim says what its source is). `natural` is implemented and unit-tested but has NOT had a clean live run (Groq daily limit on 2026-11-13): try it with `STAGE5_STYLE=natural venv/Scripts/python.exe scripts/stage5_on_stored_run.py --run <id>` before switching |
+| `STAGE5_STYLE` | natural (since 2026-11-14) | wording: `natural` (s5-v3: plain claims; the tier label and the citations carry the strength; a single-source claim says what its source is, using only words of the claim or quote) or `attributed` (s5-v2: "One source reports that ..." in every sentence). Checked on run 37: `docs/STAGE5_EVALUATION.md` (the one weaker point: a partly supported sentence has no required wording, the label is the guard) |
 | `STAGE5_EMBED_SELECT` | true | the sentence of each part of the answer is chosen by embedding similarity (bge model of Stage 2, loaded once); false or an error: by word overlap |
 | `STAGE5_MODEL` | `openai/gpt-oss-120b` | the writer model (through `groq_pool`) |
 | `STAGE5_REASONING_EFFORT` | low | low / medium / high |
