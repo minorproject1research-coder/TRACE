@@ -1,0 +1,88 @@
+{'N1a_scifact_rationales': 773, 'N1b_scifact_abstracts': 450, 'N2_scitail': 2126, 'N3_mnli': 1000, 'N4a_trace_support': 16, 'N4b_trace_conflict': 41, 'N5_trace_real_pairs': 221}
+== DeBERTa-v3-xsmall
+W1116 00:42:18.012000 25396 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights: 100%|██████████| 202/202 [00:00<00:00, 6424.40it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-xsmall
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  N1a_scifact_rationales: 773 pairs in 17 s  {"support_recall_at_050": 0.293, "false_support_at_050": 0.038, "conflict_recall_at_070": 0.577, "false_conflict_at_070": 0.065, "auc_support_vs_contradict": 0.881, "accuracy_two_way": 0.745}
+  N1b_scifact_abstracts: 450 pairs in 33 s  {"accuracy": 0.489, "macro_f1": 0.453, "support_recall_at_050": 0.16, "false_support_at_050": 0.013, "conflict_recall_at_070": 0.4, "auc_support": 0.785}
+  N2_scitail: 2126 pairs in 19 s  {"accuracy_argmax": 0.785, "accuracy_at_050": 0.788, "precision_at_050": 0.761, "recall_at_050": 0.678, "f1_at_050": 0.717, "auc": 0.854}
+  N3_mnli: 1000 pairs in 10 s  {"accuracy": 0.861, "macro_f1": 0.861}
+  N4a_trace_support: 16 pairs in 0 s  {"precision_at_050": 1.0, "recall_at_050": 0.875, "auc": 0.969}
+  N4b_trace_conflict: 41 pairs in 0 s  {"recall_at_070": 0.444, "auc": 0.851}
+  N5_trace_real_pairs: 221 pairs in 3 s  {}
+done
+{'N1a_scifact_rationales': 773, 'N1b_scifact_abstracts': 450, 'N2_scitail': 2126, 'N3_mnli': 1000, 'N4a_trace_support': 16, 'N4b_trace_conflict': 41, 'N5_trace_real_pairs': 221}
+== MiniLM2-L6-H768
+W1116 00:43:54.492000 30936 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/105 [00:00<?, ?it/s]Loading weights: 100%|██████████| 105/105 [00:00<00:00, 6706.80it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-MiniLM2-L6-H768
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+roberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  N1a_scifact_rationales: 773 pairs in 21 s  {"support_recall_at_050": 0.272, "false_support_at_050": 0.042, "conflict_recall_at_070": 0.377, "false_conflict_at_070": 0.03, "auc_support_vs_contradict": 0.852, "accuracy_two_way": 0.688}
+  N1b_scifact_abstracts: 450 pairs in 34 s  {"accuracy": 0.436, "macro_f1": 0.368, "support_recall_at_050": 0.113, "false_support_at_050": 0.02, "conflict_recall_at_070": 0.073, "auc_support": 0.627}
+  N2_scitail: 2126 pairs in 21 s  {"accuracy_argmax": 0.78, "accuracy_at_050": 0.783, "precision_at_050": 0.764, "recall_at_050": 0.653, "f1_at_050": 0.704, "auc": 0.855}
+  N3_mnli: 1000 pairs in 10 s  {"accuracy": 0.856, "macro_f1": 0.856}
+  N4a_trace_support: 16 pairs in 0 s  {"precision_at_050": 1.0, "recall_at_050": 0.75, "auc": 0.938}
+  N4b_trace_conflict: 41 pairs in 0 s  {"recall_at_070": 0.444, "auc": 0.861}
+  N5_trace_real_pairs: 221 pairs in 3 s  {}
+done
+{'N1a_scifact_rationales': 773, 'N1b_scifact_abstracts': 450, 'N2_scitail': 2126, 'N3_mnli': 1000, 'N4a_trace_support': 16, 'N4b_trace_conflict': 41, 'N5_trace_real_pairs': 221}
+== DeBERTa-v3-base
+W1116 00:45:39.349000 19104 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights: 100%|██████████| 202/202 [00:00<00:00, 3524.27it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  N1a_scifact_rationales: 773 pairs in 53 s  {"support_recall_at_050": 0.433, "false_support_at_050": 0.045, "conflict_recall_at_070": 0.63, "false_conflict_at_070": 0.043, "auc_support_vs_contradict": 0.91, "accuracy_two_way": 0.85}
+  N1b_scifact_abstracts: 450 pairs in 89 s  {"accuracy": 0.693, "macro_f1": 0.693, "support_recall_at_050": 0.693, "false_support_at_050": 0.13, "conflict_recall_at_070": 0.547, "auc_support": 0.874}
+  N2_scitail: 2126 pairs in 54 s  {"accuracy_argmax": 0.806, "accuracy_at_050": 0.808, "precision_at_050": 0.801, "recall_at_050": 0.684, "f1_at_050": 0.738, "auc": 0.876}
+  N3_mnli: 1000 pairs in 27 s  {"accuracy": 0.902, "macro_f1": 0.902}
+  N4a_trace_support: 16 pairs in 1 s  {"precision_at_050": 1.0, "recall_at_050": 0.625, "auc": 0.969}
+  N4b_trace_conflict: 41 pairs in 1 s  {"recall_at_070": 0.778, "auc": 0.927}
+  N5_trace_real_pairs: 221 pairs in 8 s  {}
+done
+{'N1a_scifact_rationales': 773, 'N1b_scifact_abstracts': 450, 'N2_scitail': 2126, 'N3_mnli': 1000, 'N4a_trace_support': 16, 'N4b_trace_conflict': 41, 'N5_trace_real_pairs': 221}
+== DeBERTa-v3-large (TRACE)
+W1116 00:49:48.721000 22840 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/394 [00:00<?, ?it/s]Loading weights:   1%|▏         | 5/394 [00:00<00:16, 23.90it/s]Loading weights:  90%|█████████ | 355/394 [00:00<00:00, 1403.57it/s]Loading weights: 100%|██████████| 394/394 [00:00<00:00, 1167.01it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  N1a_scifact_rationales: 773 pairs in 178 s  {"support_recall_at_050": 0.522, "false_support_at_050": 0.03, "conflict_recall_at_070": 0.721, "false_conflict_at_070": 0.033, "auc_support_vs_contradict": 0.947, "accuracy_two_way": 0.868}
+  N1b_scifact_abstracts: 450 pairs in 285 s  {"accuracy": 0.756, "macro_f1": 0.757, "support_recall_at_050": 0.707, "false_support_at_050": 0.1, "conflict_recall_at_070": 0.693, "auc_support": 0.898}
+  N2_scitail: 2126 pairs in 190 s  {"accuracy_argmax": 0.871, "accuracy_at_050": 0.871, "precision_at_050": 0.854, "recall_at_050": 0.814, "f1_at_050": 0.833, "auc": 0.936}
+  N3_mnli: 1000 pairs in 93 s  {"accuracy": 0.913, "macro_f1": 0.914}
+  N4a_trace_support: 16 pairs in 2 s  {"precision_at_050": 0.833, "recall_at_050": 0.625, "auc": 0.875}
+  N4b_trace_conflict: 41 pairs in 4 s  {"recall_at_070": 1.0, "auc": 1.0}
+  N5_trace_real_pairs: 221 pairs in 25 s  {}
+done
+{'N1a_scifact_rationales': 773, 'N1b_scifact_abstracts': 450, 'N2_scitail': 2126, 'N3_mnli': 1000, 'N4a_trace_support': 16, 'N4b_trace_conflict': 41, 'N5_trace_real_pairs': 221}
+== BART-large-mnli
+W1116 01:03:03.474000 25868 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/515 [00:00<?, ?it/s]Loading weights: 100%|██████████| 515/515 [00:00<00:00, 5433.02it/s]
+  N1a_scifact_rationales: 773 pairs in 174 s  {"support_recall_at_050": 0.423, "false_support_at_050": 0.057, "conflict_recall_at_070": 0.577, "false_conflict_at_070": 0.049, "auc_support_vs_contradict": 0.896, "accuracy_two_way": 0.809}
+  N1b_scifact_abstracts: 450 pairs in 330 s  {"accuracy": 0.698, "macro_f1": 0.699, "support_recall_at_050": 0.653, "false_support_at_050": 0.067, "conflict_recall_at_070": 0.553, "auc_support": 0.89}
+  N2_scitail: 2126 pairs in 183 s  {"accuracy_argmax": 0.81, "accuracy_at_050": 0.814, "precision_at_050": 0.757, "recall_at_050": 0.78, "f1_at_050": 0.768, "auc": 0.894}
+  N3_mnli: 1000 pairs in 85 s  {"accuracy": 0.901, "macro_f1": 0.9}
+  N4a_trace_support: 16 pairs in 2 s  {"precision_at_050": 0.833, "recall_at_050": 0.625, "auc": 0.828}
+  N4b_trace_conflict: 41 pairs in 4 s  {"recall_at_070": 0.444, "auc": 0.885}
+  N5_trace_real_pairs: 221 pairs in 24 s  {}
+done

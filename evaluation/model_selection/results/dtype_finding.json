@@ -1,0 +1,7 @@
+{
+  "what": "Speed of the same model loaded in the stored precision (float16, what transformers 5.5 does by default) and in float32, on this laptop's CPU (Intel Core Ultra 7 155H, 16 threads, no GPU). Measured once, on a machine that also ran other programs, so read the ratio, not the absolute numbers.",
+  "versions": {"torch": "2.11.0", "transformers": "5.5.0"},
+  "gte-base": {"stored_dtype": "float16", "default_load_abstracts_per_second": 0.7, "float32_abstracts_per_second": 2.9, "max_abs_difference_of_vectors": 0.000194, "abstracts": 32},
+  "DeBERTa-v3-large-mnli-fever-anli-ling-wanli (the NLI model of TRACE)": {"stored_dtype": "float16", "default_load_pairs_per_second": 0.74, "float32_pairs_per_second": 14.28, "pairs": 16, "note": "16 identical short pairs; a speed test only, not an accuracy test"},
+  "dtype_of_other_models": {"bge-base-en-v1.5": "float32", "bge-small-en-v1.5": "float32", "bge-large-en-v1.5": "float32", "e5-base-v2": "float32", "e5-large-v2": "float32", "DeBERTa-v3-base-mnli-fever-anli": "float16", "cross-encoder/nli-deberta-v3-xsmall": "float32"}
+}

@@ -1,0 +1,9 @@
+{
+ "pairs": 100,
+ "seconds": 108.3,
+ "pairs_per_second": 0.92,
+ "same_label": 1.0,
+ "same_support_decision": 1.0,
+ "max_abs_prob_diff": 0.00826559264160781,
+ "mean_abs_prob_diff": 0.00021790550593228455
+}

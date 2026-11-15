@@ -1,0 +1,96 @@
+W1116 01:16:44.980000 17464 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+T1 360 rows; T2 5183 docs, 300 queries; T3 165 claims, 173 quotes, 30 merge pairs
+== gte-base
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:  91%|█████████ | 181/199 [00:00<00:00, 1793.75it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 1870.38it/s]
+[1mBertModel LOAD REPORT[0m from: thenlper/gte-base
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+  speed 8.43 abstracts/s
+  T1 auc 0.877  per-sq auc 0.862  (40.7 s)
+  T3 hit@1 0.564  merge auc 0.571
+  T2 ndcg@10 0.762  (751.3 s)
+done
+W1116 01:30:33.283000 25596 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 4000.49it/s]
+[1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+all-MiniLM-L6-v2 48.51 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4314.26it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-small-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+bge-small-en-v1.5 18.94 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4944.15it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+bge-base-en-v1.5 8.54 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 11033.56it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+bge-base-en-v1.5 + query instruction 8.66 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4663.12it/s]
+[1mBertModel LOAD REPORT[0m from: intfloat/e5-base-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+e5-base-v2 8.56 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4727.62it/s]
+[1mMPNetModel LOAD REPORT[0m from: sentence-transformers/all-mpnet-base-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+all-mpnet-base-v2 8.35 abstracts/s
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 4241.02it/s]
+[1mBertModel LOAD REPORT[0m from: thenlper/gte-base
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+C:\Users\LAKSHYA VARSHNEY\Onedrive\documents\My-code\TRACE\evaluation\model_selection\eval_embeddings.py:270: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  "parameters_million": round(params / 1e6, 1), "dimensions": int(model.get_sentence_embedding_dimension()), "max_seq_length": int(model.max_seq_length),
+gte-base 8.56 abstracts/s
