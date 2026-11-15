@@ -11,8 +11,19 @@ import numpy as np
 from sentence_transformers import CrossEncoder
 
 NLI_MODEL = os.getenv("NLI_MODEL", "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli")
+# The NLI model is stored in float16 and sentence-transformers 5 loads weights in the stored precision; this CPU runs float16 about 10 times slower than float32
+# (measured on 100 real pairs: 0.92 against 8.8 pairs per second, the same label and the same support decision on every pair, docs/MODEL_SELECTION_EVALUATION.md).
+# "auto" restores the stored precision.
+NLI_DTYPE = os.getenv("NLI_DTYPE", "float32").strip().lower()
 _nli = None
 _nli_lock = threading.Lock()
+
+
+def _load_kwargs() -> dict:
+    if NLI_DTYPE in ("", "auto", "stored"):
+        return {}
+    import torch
+    return {"model_kwargs": {"torch_dtype": getattr(torch, NLI_DTYPE)}}
 
 
 def clean_text(t: str) -> str:
@@ -27,7 +38,7 @@ def _model():
     if _nli is None:
         with _nli_lock:                         # two threads (the preload and Stage 4) must not both load 1.7 GB
             if _nli is None:
-                _nli = CrossEncoder(NLI_MODEL)
+                _nli = CrossEncoder(NLI_MODEL, **_load_kwargs())
     return _nli
 
 

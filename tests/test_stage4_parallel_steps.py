@@ -99,7 +99,7 @@ def test_the_near_evidence_holds_only_plain_fields_even_when_the_conflict_step_a
 def test_preload_loads_the_model_once_in_the_background(monkeypatch):
     loaded = []
     monkeypatch.setattr(common, "_nli", None)
-    monkeypatch.setattr(common, "CrossEncoder", lambda name: loaded.append(name) or object())
+    monkeypatch.setattr(common, "CrossEncoder", lambda name, **kw: loaded.append(name) or object())
     common.preload_nli()
     for t in threading.enumerate():
         if t.name == "nli-preload":
@@ -111,9 +111,24 @@ def test_preload_loads_the_model_once_in_the_background(monkeypatch):
     monkeypatch.setattr(common, "_nli", None)
 
 
+def test_nli_model_is_loaded_in_float32_unless_told_otherwise(monkeypatch):
+    import torch
+    seen = []
+    monkeypatch.setattr(common, "CrossEncoder", lambda name, **kw: seen.append(kw) or object())
+    monkeypatch.setattr(common, "_nli", None)
+    monkeypatch.setattr(common, "NLI_DTYPE", "float32")
+    common._model()
+    assert seen == [{"model_kwargs": {"torch_dtype": torch.float32}}]
+    monkeypatch.setattr(common, "_nli", None)
+    monkeypatch.setattr(common, "NLI_DTYPE", "auto")           # the stored precision: no extra argument
+    common._model()
+    assert seen[-1] == {}
+    monkeypatch.setattr(common, "_nli", None)
+
+
 def test_preload_swallows_a_load_error(monkeypatch):
     monkeypatch.setattr(common, "_nli", None)
-    monkeypatch.setattr(common, "CrossEncoder", lambda name: (_ for _ in ()).throw(OSError("no disk")))
+    monkeypatch.setattr(common, "CrossEncoder", lambda name, **kw: (_ for _ in ()).throw(OSError("no disk")))
     common.preload_nli()
     for t in threading.enumerate():
         if t.name == "nli-preload":

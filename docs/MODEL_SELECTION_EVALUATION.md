@@ -17,7 +17,7 @@ Scripts: `evaluation/model_selection/` (`eval_embeddings.py`, `eval_nli.py`, `su
 - On the real quote-to-claim pairs of the demonstration run, the smaller models lose 23% to 39% of the supports the large model finds.
 - The large model found all 9 true conflicts of Stage 4's labelled set. The smaller models found 4 to 7.
 
-**A finding about the pipeline.** The NLI model is stored in half precision (float16), and the library loads it that way, which the CPU runs very slowly. In float32 it gives the same decisions about 10 times faster on real pairs. This is not fixed in the pipeline yet (section 4.4).
+**A finding about the pipeline.** The NLI model is stored in half precision (float16), and the library loads it that way, which the CPU runs very slowly. In float32 it gives the same decisions about 10 times faster on real pairs. Stage 4 now loads it in float32 (section 4.4).
 
 ## 1. How to read this document
 
@@ -255,7 +255,7 @@ On the 100 real pairs, float16 and float32 gave **the same 3-way label and the s
 
 ### 4.4 Status
 
-Not changed in the pipeline. The fix is one argument where Stage 4 loads the model (`CrossEncoder(NLI_MODEL, model_kwargs={"torch_dtype": torch.float32})` in `apps/api/agents/stage4_factcheck/common.py`). Stage 4 belongs to the teammate, and the check above covers only 100 pairs of one run, so it should be confirmed on a stored run before it is made the default. The embedding model (bge-base) is stored in float32, so it is not affected.
+**Fixed on 2026-11-16.** Stage 4 now loads the model in float32 (`NLI_DTYPE`, default `float32`, in `apps/api/agents/stage4_factcheck/common.py`; `NLI_DTYPE=auto` restores the old behaviour). Through the real function (`nli_probs`, cache off) 100 real pairs ran at 8.9 pairs per second with the same labels as the float32 test. The 92 Stage 4 tests pass. It has not been timed in a full pipeline run yet, and the equality check covers 100 pairs of one run. Cached NLI answers (`.cache/nli`) stay valid, because the decisions are the same. The embedding model (bge-base) is stored in float32, so it is not affected.
 
 ### 4.5 Why the tests use float32
 
