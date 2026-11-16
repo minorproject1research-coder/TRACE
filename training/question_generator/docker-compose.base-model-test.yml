@@ -1,0 +1,47 @@
+# vLLM server for the base model test (base_model_eval.ipynb, BACKEND = "vllm").
+#
+# It serves Qwen/Qwen3.5-9B-Base, the model that was fine-tuned (model.ipynb, cell 10), with NO LoRA adapter, under the name "base".
+# The settings are those of the production server (infra/host_machine_containers/query_generator_and_squeezer/docker-compose.yml):
+# fp8 weights, 4096 tokens, up to 32 requests at once. The port is the same too (8001), so stop the production stack first: both need the GPU.
+#
+#   docker compose -f ../../infra/host_machine_containers/query_generator_and_squeezer/docker-compose.yml down
+#   docker compose -f docker-compose.base-model-test.yml up -d
+#   docker compose -f docker-compose.base-model-test.yml logs -f        # wait for "Application startup complete"
+#   ... run the notebook ...
+#   docker compose -f docker-compose.base-model-test.yml down
+#   docker compose -f ../../infra/host_machine_containers/query_generator_and_squeezer/docker-compose.yml up -d
+#
+# The first start downloads the base weights (about 19 GB). To reuse the copy that the fine-tuning already downloaded, set HF_CACHE_DIR in a .env file
+# next to this file to your Hugging Face cache folder (forward slashes), for example HF_CACHE_DIR=C:/Users/<you>/.cache/huggingface
+services:
+  vllm-base:
+    image: vllm/vllm-openai:latest   # pin to the exact version the production server pulled
+    ipc: host
+    command:
+      - Qwen/Qwen3.5-9B-Base
+      - --served-model-name
+      - base
+      - --max-model-len
+      - "4096"
+      - --quantization
+      - fp8_per_tensor
+      - --gpu-memory-utilization
+      - "0.88"
+      - --max-num-seqs
+      - "32"
+      - --limit-mm-per-prompt        # text only
+      - '{"image":0,"video":0}'
+    volumes:
+      - ${HF_CACHE_DIR:-hf-cache-base}:/root/.cache/huggingface
+    ports:
+      - "127.0.0.1:8001:8000"        # the notebook reads http://127.0.0.1:8001/v1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  hf-cache-base:
