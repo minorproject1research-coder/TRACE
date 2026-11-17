@@ -16,3 +16,6 @@ reports/stage5/
 log_slice.txt
 docs/reports/TRACE Stage 4 Fact Checking, Handoff Report.md
 reports/ppt_example*/
+docs/report
+docs/report_short
+.claude/

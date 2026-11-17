@@ -1,0 +1,4385 @@
+[
+ {
+  "sub_question": "How is federated learning applied to medical image analysis?",
+  "summary": {
+   "supported": 0,
+   "partially_supported": 4,
+   "unverified": 20,
+   "contradicted": 0,
+   "total": 24,
+   "digests": 8,
+   "claims_loaded": 32,
+   "contested": 0,
+   "disagreements": 0,
+   "judge_calls": 0,
+   "judge_cache_hits": 48,
+   "judge_waits": 0,
+   "judge_failures": 0,
+   "support_from_stage3": 10,
+   "missing_evidence": [],
+   "needs_replan": false
+  },
+  "claims": [
+   {
+    "claim": "Federated learning has been applied to breast density classification using the BI‑RADS dataset.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "993c2e0c-0380-4fd3-a78d-91dd3b3d410a",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "Early work has applied the foundational FedAvg paradigm to medical imaging datasets, analyzing its effectiveness through experiments, e.g., breast density classification on the BI-RADS dataset [50].",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.862,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Recommended federated learning algorithms for medical imaging include MOON, Elastic Aggregation, and FedProx depending on client resources.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "993c2e0c-0380-4fd3-a78d-91dd3b3d410a",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "Based on our benchmark analysis, we propose the following choice strategies for federated learning algorithms. (1) ... MOON is advised. (2) ... Elastic Aggregation or FedProx. (3) ... FedProx is more suitable.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.93,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "The study establishes a benchmark by incorporating multiple federated learning algorithms for comprehensive performance analysis.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "993c2e0c-0380-4fd3-a78d-91dd3b3d410a",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "incorporating a range of algorithms, including traditional federated learning optimization, personalized federated learning, and one-shot federated learning, to establish a benchmark for comprehensive analysis of their strengths and weaknesses.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Testing accuracy after convergence is used as a performance metric to evaluate federated learning models.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "993c2e0c-0380-4fd3-a78d-91dd3b3d410a",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "The x-axis represents the global epochs required for convergence, while the y-axis indicates the testing accuracy after convergence.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning has been applied to brain tumor segmentation across multiple institutions.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ce00da00-4584-414e-82bf-32a73a5dc603",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "Bakas et al. demonstrated the feasibility of FL in brain tumor segmentation, enabling multi-institutional collaboration without compromising patient confidentiality [20,21].",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.901,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning has been used for histopathology image analysis to classify tumor‑infiltrating lymphocytes.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ce00da00-4584-414e-82bf-32a73a5dc603",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "FL has been employed in histopathology image analysis for the classification of tumor-infiltrating lymphocytes, further showcasing its versatility in addressing diverse medical imaging problems [23].",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning can improve model performance by roughly 35%, matching centralized training results.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ce00da00-4584-414e-82bf-32a73a5dc603",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "Experimental results demonstrate that the interventions introduced improved model performance by approximately 35%, aligning federated learning and centralized model performance.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.965,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning is applied to a range of imaging modalities including MRI, CT, ultrasound, and histopathology.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d92a7c31-ac08-4abc-84da-1ac1db2fbea7",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "FL has been applied across multiple imaging methodologies from MRI and CT to ultrasound and histopathology, each with its own set of challenges and opportunities.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "EUCAIM is a European initiative that provides federated learning infrastructure for medical imaging data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d92a7c31-ac08-4abc-84da-1ac1db2fbea7",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "some of the prominent EU‑based research initiatives such as EUCAIM are focused on providing a FL infrastructure for imaging data.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.97,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning models achieve high accuracy comparable to centralized training for brain‑tumor MRI classification.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d92a7c31-ac08-4abc-84da-1ac1db2fbea7",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "High accuracy comparable to centralised training; improved robustness across scanners and centres; no raw data sharing",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning lets hospitals collaboratively train medical imaging models without sharing raw patient data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ee8b30c9-c51e-4844-9b21-f3f2e9b1d64a",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "Hospital 1 receives from the server the model to be trained using its data. Once it has done so, it sends back to the server the weights obtained after the training. Hospital 2 does the same tasks.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.93,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Variation‑aware federated learning (VAFL) reduces client heterogeneity by mapping all client images into a common image space.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6ab66281-f927-4962-8493-abba3eb16ea3",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "Variation-aware federated learning (VAFL) is a methodology proposed in this research for minimising client variations by transforming all clients' images into a shared image space",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.994,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Federated learning improves site performance in multicenter deep‑learning tasks without sharing raw data.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6ab66281-f927-4962-8493-abba3eb16ea3",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "Federated learning improves site performance in multicenter deep learning without data sharing",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "d92a7c31-ac08-4abc-84da-1ac1db2fbea7",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "High accuracy comparable to centralised training; improved robustness across scanners and centres; no raw data sharing",
+      "relation": "near_match",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning models achieve high accuracy comparable to centralized training for brain‑tumor MRI classification."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "OpenFL is an open‑source federated learning framework designed for medical imaging.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ab7ffe23-af17-4673-a147-c1e8534fbefb",
+      "source_title": "Federated learning for medical image analysis: A survey",
+      "quote": "The Open Federated Learning (OpenFL)3 is an open-source FL framework initially developed for use in medical imaging.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "OpenFL has been applied to tumor segmentation and respiratory distress syndrome prediction.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ab7ffe23-af17-4673-a147-c1e8534fbefb",
+      "source_title": "Federated learning for medical image analysis: A survey",
+      "quote": "Foley et al. provide several use cases of OpenFL in medicine, such as tumor segmentation and respiratory distress syndrome prediction.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.985,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Fed‑BioMed is an open‑source federated learning software for real‑world medical applications.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ab7ffe23-af17-4673-a147-c1e8534fbefb",
+      "source_title": "Federated learning for medical image analysis: A survey",
+      "quote": "Fed-BioMed5 is an open-source federated learning software for real-world medical applications.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.945,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Fed‑BioMed has been used for multi‑center analysis of structural brain MRI data across different datasets.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ab7ffe23-af17-4673-a147-c1e8534fbefb",
+      "source_title": "Federated learning for medical image analysis: A survey",
+      "quote": "Silva et al. use Fed-BioMed to conduct multi-center analysis for structural brain imaging data (MRI) across different datasets and verify its effectiveness.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.996,
+      "via": null
+     },
+     {
+      "source_id": "ce00da00-4584-414e-82bf-32a73a5dc603",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "Bakas et al. demonstrated the feasibility of FL in brain tumor segmentation, enabling multi-institutional collaboration without compromising patient confidentiality [20,21].",
+      "relation": "near_match",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning has been applied to brain tumor segmentation across multiple institutions."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "The study uses medical imaging as a use case for federated learning.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d74ac9d2-0d14-4c89-8235-067ccb4f2018",
+      "source_title": "Performance Benchmarking of Federated Learning Frameworks for Medical Image Classification",
+      "quote": "Medical imaging supplies the use case and motivates software selection, while the empirical claims remain limited to lightweight two-dimensional classification.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "d92a7c31-ac08-4abc-84da-1ac1db2fbea7",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "FL has been applied across multiple imaging methodologies from MRI and CT to ultrasound and histopathology, each with its own set of challenges and opportunities.",
+      "relation": "near_match",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning is applied to a range of imaging modalities including MRI, CT, ultrasound, and histopathology."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "The work relates federated learning experiments to established benchmarks.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d74ac9d2-0d14-4c89-8235-067ccb4f2018",
+      "source_title": "Performance Benchmarking of Federated Learning Frameworks for Medical Image Classification",
+      "quote": "Table I summarizes this relationship to selected benchmarks.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.9,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Accuracy per round is used as a performance metric.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d74ac9d2-0d14-4c89-8235-067ccb4f2018",
+      "source_title": "Performance Benchmarking of Federated Learning Frameworks for Medical Image Classification",
+      "quote": "pk​tp_{kt} is its accuracy at round tt.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.85,
+      "via": null
+     },
+     {
+      "source_id": "993c2e0c-0380-4fd3-a78d-91dd3b3d410a",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "The x-axis represents the global epochs required for convergence, while the y-axis indicates the testing accuracy after convergence.",
+      "relation": "near_match",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Testing accuracy after convergence is used as a performance metric to evaluate federated learning models."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "A specific federated learning framework set is employed for medical imaging experiments.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "d74ac9d2-0d14-4c89-8235-067ccb4f2018",
+      "source_title": "Performance Benchmarking of Federated Learning Frameworks for Medical Image Classification",
+      "quote": "The contribution is the combination of a specific framework set, continuous resource measurements, parameter variation, and a blocked comparison of the observed executions.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "FedUA achieves higher accuracy and lower communication cost for image classification in federated learning.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "4d0ee07a-0a19-4161-915c-fcbdf1e2fdb6",
+      "source_title": "Privacy Preserving Federated Learning in Medical Imaging with Uncertainty Estimation",
+      "quote": "The authors empirically show that FedUA improves accuracy compared to other FL models while limiting communication costs on image classification tasks.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "FedOpt outperforms FedAvg and PPDL in accuracy, communication efficiency, and computation overhead.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "4d0ee07a-0a19-4161-915c-fcbdf1e2fdb6",
+      "source_title": "Privacy Preserving Federated Learning in Medical Imaging with Uncertainty Estimation",
+      "quote": "Evaluations show that FedOpt outperforms state-of-the-art approaches like FedAvg and PPDL in model accuracy, communication efficiency, and computation overhead.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.991,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   },
+   {
+    "claim": "Feature‑space density provides a more robust uncertainty measure than softmax entropy.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "4d0ee07a-0a19-4161-915c-fcbdf1e2fdb6",
+      "source_title": "Privacy Preserving Federated Learning in Medical Imaging with Uncertainty Estimation",
+      "quote": "The authors also reported that the uncertainty measurement using feature space density was more robust to native data uncertainty than softmax entropy.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.979,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "9f169ab8"
+   }
+  ],
+  "disagreements": []
+ },
+ {
+  "sub_question": "How does federated learning compare with centralized training for medical image analysis?",
+  "summary": {
+   "supported": 3,
+   "partially_supported": 6,
+   "unverified": 35,
+   "contradicted": 0,
+   "total": 44,
+   "digests": 19,
+   "claims_loaded": 68,
+   "contested": 0,
+   "disagreements": 0,
+   "judge_calls": 0,
+   "judge_cache_hits": 141,
+   "judge_waits": 0,
+   "judge_failures": 0,
+   "support_from_stage3": 29,
+   "missing_evidence": [
+    "How does centralized training affect the accuracy, efficiency, and scalability of medical image analysis?"
+   ],
+   "needs_replan": false
+  },
+  "claims": [
+   {
+    "claim": "Centralized training is inefficient in latency and scalability because it requires moving large datasets.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "conventional centralized (Big-Data) learning solutions inef ficient in terms of latency and scalability due to the need of moving, often periodically, large datasets.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning achieves accuracy comparable to centralized training for medical image analysis.",
+    "label": "supported",
+    "confidence": 0.906,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "the FL model quality is comparable to that of a model trained using CL on a data fusion center.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "f76baff7-b247-4c00-b4b1-97b7bb6c551e",
+      "source_title": "Federated Learning for Large Models in Medical Imaging: A Comprehensive Review",
+      "quote": "they achieve structural similarity index metrics comparable to centralized training despite limited communication rounds.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Some FL architectures converge more slowly than server‑based FL but still attain comparable segmentation accuracy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "C/C-A architecture replaces the PS in exchange for slower convergence time compared with server-based FL policies (i.e., PS-A/C-A). However, it reaches comparable dice whole metric above 0 : 85.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "FL provides better bandwidth efficiency and scalability than centralized training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "demonstrating first of all the advantage of the FL system on the centralized training, and furthermore, the main bene ts of the MQTT protocol when it comes to reliability, bandwidth ef ficiency and scalability.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.946,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "FL mitigates the straggler effect by accounting for each client’s training time, improving overall training efficiency.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "taking into account the training time of the individual clients to avoid performance penalties caused by slower MNs, namely the straggler effect",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "The proposed FL architectures are evaluated for latency versus model quality, highlighting efficiency considerations.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "All the proposed architectures are compared to quantify the latency/model quality trade-offs for synchronous and asynchronous FL processes.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning yields higher segmentation accuracy than single‑node training, and accuracy improves as more nodes join, demonstrating scalability.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "57ed514b-7c8e-4c0f-867c-17fe8cf959b9",
+      "source_title": "Decentralized Federated Learning for Healthcare Networks: A Case Study on Tumor Segmentation",
+      "quote": "With respect to single node training, the DSC increases on average by 1% considering a federation of 4 MN, and scales up to 1.6% when all the training sets are considered (5 MNs).",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.622,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can struggle to generalize when few nodes participate, limiting its scalability in cross‑silo scenarios.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f7442387-121b-4941-a98b-b268a8952e30",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "model may struggle to generalize in the case where not many nodes are participating in model training. This is usually the case in cross-silo scenarios, where the number of participants in FL is limited.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.78,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can achieve accuracy comparable to centralized training, improving performance by about 35% relative to the classic approach.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f7442387-121b-4941-a98b-b268a8952e30",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "interventions introduced improved model performance by approximately 35%, aligning federated learning and centralized model performance.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.938,
+      "via": null
+     },
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Centralized training provides accuracy comparable to federated learning."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning faces communication overhead and system heterogeneity, impacting efficiency.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f7442387-121b-4941-a98b-b268a8952e30",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "FL systems face challenges related to communication overhead and system heterogeneity, where variations in computational resources and infrastructure across participating institutions complicate implementation.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "There are challenging aspects of FL, when compared with a traditional ML algorithm, that exist due to the distributed nature of the technique and can be grouped as follows: expensive communication, systems heterogeneity, statistical heterogeneity, and privacy concerns.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning faces challenges such as expensive communication and system heterogeneity that can limit its scalability."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning frameworks using Kubernetes enable scalability and adaptability in real‑world medical imaging deployments.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f7442387-121b-4941-a98b-b268a8952e30",
+      "source_title": "Towards generalizable Federated Learning in medical imaging: A real-world case study on mammography data",
+      "quote": "The application of Kubernetes-based architectures in FL frameworks has also been notable, enabling scalability and adaptability in real-world implementations.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning scales to larger neural network models, achieving comparable accuracy to centralized training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "35fdf185-500d-4edc-a4d2-240da7108ddc",
+      "source_title": "A comprehensive experimental comparison between federated and centralized learning",
+      "quote": "both the central and federated approach converge to a similar accuracy, indicating that federated learning also works well on larger (neural) networks",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning improves scalability by increasing data availability for data‑hungry methods across institutions.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "35fdf185-500d-4edc-a4d2-240da7108ddc",
+      "source_title": "A comprehensive experimental comparison between federated and centralized learning",
+      "quote": "federated learning might open new possibilities to increase data availability for data hungry machine learning methods",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Adaptive aggregation improves the scalability of federated learning for medical image analysis.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b6fa6fbe-99e1-456d-aa62-3e5070ca0898",
+      "source_title": "A privacy-enhanced framework for collaborative Big Data analysis in healthcare using adaptive federated learning aggregation",
+      "quote": "The adaptive aggregation method improves both the efficiency and scalability of the federated learning framework, ensuring robust generalization across diverse and expansive medical datasets.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Adaptive aggregation provides a flexible and scalable approach for distributed medical image classification on large‑scale datasets.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b6fa6fbe-99e1-456d-aa62-3e5070ca0898",
+      "source_title": "A privacy-enhanced framework for collaborative Big Data analysis in healthcare using adaptive federated learning aggregation",
+      "quote": "By introducing adaptive aggregation, this study advances the federated learning paradigm, providing a flexible and scalable approach for optimizing convergence in distributed medical image classification on large-scale healthcare datasets.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Heterogeneity and varying client resources create scalability challenges for federated learning in medical imaging.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b6fa6fbe-99e1-456d-aa62-3e5070ca0898",
+      "source_title": "A privacy-enhanced framework for collaborative Big Data analysis in healthcare using adaptive federated learning aggregation",
+      "quote": "computational constraints in federated environments pose challenges, as participating clients may have varying processing power, bandwidth, and storage capabilities, affecting training efficiency and scalability.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Increasing dataset size and client‑side computational limits can restrict the scalability of federated learning.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b6fa6fbe-99e1-456d-aa62-3e5070ca0898",
+      "source_title": "A privacy-enhanced framework for collaborative Big Data analysis in healthcare using adaptive federated learning aggregation",
+      "quote": "as the dataset size increases, computational constraints at the client level may limit the scalability of the approach.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning achieved higher test accuracy than centralized training even though it used less data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "the results for the test accuracy obtained are better in the case where we apply federated learning (i.e. the data is used in",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning reduces total training time by about threefold compared with centralized training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "the average time per epoch ... is 138.6s. ... the average time ... will be 401s, while ... centralized case 10 epochs, the execution time will be approximately 1386s.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "A comparison based on the number of clients is performed to analyze scalability of federated learning.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "a comparison based on the number of clients, in order to analyze scalability is carried out",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can achieve higher accuracy than centralized training.",
+    "label": "supported",
+    "confidence": 0.91,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6dc2c242-93cd-4835-8ed0-43667b1dd298",
+      "source_title": "A novel decentralized federated learning approach to train on globally distributed, poor quality, and protected private medical data",
+      "quote": "Surprisingly, the final performance of the model, depending on the configuration chosen, can even exceed the baseline accuracy associated with training on a centralized dataset in the traditional manner.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "federated learning also shows improvements in terms of reduction of computing time and even in accuracy increasing with respect to the classic approach.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.939,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning reduces training cost by avoiding network traffic and server costs of batch‑by‑batch gradient aggregation.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6dc2c242-93cd-4835-8ed0-43667b1dd298",
+      "source_title": "A novel decentralized federated learning approach to train on globally distributed, poor quality, and protected private medical data",
+      "quote": "The DAITA implementation incorporates knowledge distillation, enabling scalable model training to be executed at a much lower cost compared with distributed training, because it is achievable without the network traffic and server costs associated with a batch-by-batch gradient gathering procedure.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "On noisy medical image data, decentralized training improves accuracy by 2.7% over the centralized baseline.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6dc2c242-93cd-4835-8ed0-43667b1dd298",
+      "source_title": "A novel decentralized federated learning approach to train on globally distributed, poor quality, and protected private medical data",
+      "quote": "When using a noisy dataset, Table 1 shows that the decentralized training algorithm ( M 1 ) performs better (+ 2.7% accuracy) than the centralized baseline.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can reach accuracy comparable to centralized training while providing strong privacy guarantees.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "distributed training can achieve similar performance with strong privacy guarantees.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.972,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "The paper defines the FL accuracy as the mean and standard deviation of the central model trained after federated learning.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "The accuracy with FL is the mean and standard deviation of the central model trained at the end of FL evaluated on each client dataset.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.98,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Private federated learning attains accuracy results that are comparable to those of conventional centralized training.",
+    "label": "supported",
+    "confidence": 0.812,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "Private federated learning achieves a comparable result compared to conventional centralized training",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Using federated learning improves histopathology image analysis performance compared with training without any collaboration.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "using federated learning with additional privacy preservation techniques can improve the performance of histopathology image analysis compared to training without collaboration",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning reduces computing time compared to a centralized approach.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "federated learning also shows improvements in terms of reduction of computing time and even in accuracy increasing with respect to the classic approach.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning faces challenges such as expensive communication and system heterogeneity that can limit its scalability.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "95f7036f-ddd2-44c7-992a-9f5fa9d48a22",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "There are challenging aspects of FL, when compared with a traditional ML algorithm, that exist due to the distributed nature of the technique and can be grouped as follows: expensive communication, systems heterogeneity, statistical heterogeneity, and privacy concerns.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Decentralized training achieves almost the same accuracy as centralized training on the medical dataset.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6dc2c242-93cd-4835-8ed0-43667b1dd298",
+      "source_title": "A novel decentralized federated learning approach to train on globally distributed, poor quality, and protected private medical data",
+      "quote": "Results shown in Table 1 confirm the decentralized training algorithm performs well compared with the centralized baseline results. When using a cleansed dataset, there was minimal difference reported in the accuracy between decentralized",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.93,
+      "via": null
+     },
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Centralized training provides accuracy comparable to federated learning."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "The decentralized approach can meet a target accuracy while preserving scalability.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6dc2c242-93cd-4835-8ed0-43667b1dd298",
+      "source_title": "A novel decentralized federated learning approach to train on globally distributed, poor quality, and protected private medical data",
+      "quote": "thus allowing for specifying a desired threshold of accuracy for a given problem, whilst retaining scalability.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated training incurs many model‑weight transfers, indicating higher communication overhead than traditional distributed training.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f76baff7-b247-4c00-b4b1-97b7bb6c551e",
+      "source_title": "Federated Learning for Large Models in Medical Imaging: A Comprehensive Review",
+      "quote": "FL relies on frequent bidirectional communication between clients and a central server to exchange model updates ... leads to considerable communication overhead.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.991,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "FedAvg is widely adopted due to its ability to scale to large datasets while maintaining performance comparable to other federated learning methods.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "FedAvg is most commonly used because of its scalability to large datasets and comparable performance to other FL algorithms.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.984,
+      "via": null
+     },
+     {
+      "source_id": "35fdf185-500d-4edc-a4d2-240da7108ddc",
+      "source_title": "A comprehensive experimental comparison between federated and centralized learning",
+      "quote": "both the central and federated approach converge to a similar accuracy, indicating that federated learning also works well on larger (neural) networks",
+      "relation": "near_match",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning scales to larger neural network models, achieving comparable accuracy to centralized training."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning matches centralized training performance on reasonably sized datasets.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "FL performs comparably to centralized training for reasonably sized datasets ( n = 4, 8).",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Centralized training provides accuracy comparable to federated learning."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "FedAvg can achieve performance comparable to centralized training while preserving privacy, indicating no major efficiency loss.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5fb8679a-d7b8-4438-a1cb-0dee4be2afb9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "FedAvg achieves comparable performance to centralized training without explicitly sharing private data with strong privacy guarantees.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Frequent model updates in federated learning increase bandwidth consumption and latency, limiting scalability on resource‑constrained platforms.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "e90cb606-74eb-488b-9594-e7077ff090e9",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Also, having to relay data from the nodes to the server too often during training adds significant problems with bandwidth consumption and latency for resource‑constrained platforms.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "The proposed FL model is stable and scalable in dynamic healthcare settings.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6b512249-c05e-4d4f-84e4-ff1a704800e6",
+      "source_title": "Stochastic Poisson-embedded privacy framework for federated learning with secure homomorphic encryption in medical AI",
+      "quote": "The model is equally stable and scalable in the dynamic case of a healthcare setting, with guarantees on effective diagnostics and data privacy.",
+      "relation": "supports",
+      "reliability": 0.6,
+      "evidence_level": "full_text",
+      "prob": 0.97,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "FL’s computational expense and need for robust network infrastructure hinder real‑world scalability.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6b512249-c05e-4d4f-84e4-ff1a704800e6",
+      "source_title": "Stochastic Poisson-embedded privacy framework for federated learning with secure homomorphic encryption in medical AI",
+      "quote": "drawbacks encompass computational expense caused by iterative updating, difficulty in processing extremely imbalanced data, and reliance on robust network infrastructure for proper communication among decentralized institutions, affecting real‑world scalability.",
+      "relation": "supports",
+      "reliability": 0.6,
+      "evidence_level": "full_text",
+      "prob": 0.98,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Adaptive optimization algorithms such as Scaffold and FedAdam are used in federated learning to mitigate client drift in non‑IID settings.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f76baff7-b247-4c00-b4b1-97b7bb6c551e",
+      "source_title": "Federated Learning for Large Models in Medical Imaging: A Comprehensive Review",
+      "quote": "Levac et al. ... employing adaptive optimization algorithms, such as Scaffold and FedAdam, to mitigate client drift in non-IID settings through momentum-based updates and dynamic learning rate tuning.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.98,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning enables continuous model updating by allowing local fine‑tuning on new data without centralizing images, aiding scalability.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "f76baff7-b247-4c00-b4b1-97b7bb6c551e",
+      "source_title": "Federated Learning for Large Models in Medical Imaging: A Comprehensive Review",
+      "quote": "FL supports continuous model updating by allowing local fine-tuning on new data without centralizing sensitive images.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can reach accuracy equal to or better than leading methods, especially with label‑efficient ViT.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "ViT, in a label-efficient fashion leveraging self-supervised pre-training, achieved accuracy on par with or superior to leading methods",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Centralized training provides accuracy comparable to federated learning.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2826db6a-9774-4eba-97ed-576ef8030dec",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning can improve the accuracy of medical image analysis by producing higher‑quality models through the use of larger, multi‑site training datasets.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0d428fce-567b-4f7f-9dbb-a65c52b39f7d",
+      "source_title": "Federated machine learning in healthcare: A systematic review on clinical applications and technical architecture",
+      "quote": "The main advantage of FL is the generation of a higher-quality model by leveraging larger training datasets obtained from multiple",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   },
+   {
+    "claim": "Federated learning’s data heterogeneity, communication overhead, and lack of standardization hinder its scalability for medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "034283af-dab0-4f38-9586-f024e75b1642",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "Data heterogeneity, communication overhead, and lack of standardization are key challenges",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "b6fa6fbe-99e1-456d-aa62-3e5070ca0898",
+      "source_title": "A privacy-enhanced framework for collaborative Big Data analysis in healthcare using adaptive federated learning aggregation",
+      "quote": "computational constraints in federated environments pose challenges, as participating clients may have varying processing power, bandwidth, and storage capabilities, affecting training efficiency and scalability.",
+      "relation": "near_match",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Heterogeneity and varying client resources create scalability challenges for federated learning in medical imaging."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "63f9ea77"
+   }
+  ],
+  "disagreements": []
+ },
+ {
+  "sub_question": "What are the privacy trade-offs of federated learning for medical image analysis?",
+  "summary": {
+   "supported": 2,
+   "partially_supported": 16,
+   "unverified": 17,
+   "contradicted": 1,
+   "total": 36,
+   "digests": 13,
+   "claims_loaded": 51,
+   "contested": 0,
+   "disagreements": 1,
+   "judge_calls": 0,
+   "judge_cache_hits": 70,
+   "judge_waits": 0,
+   "judge_failures": 0,
+   "support_from_stage3": 28,
+   "missing_evidence": [],
+   "needs_replan": false
+  },
+  "claims": [
+   {
+    "claim": "Federated learning keeps the raw medical data on the local owner, preserving privacy by not moving the data.",
+    "label": "supported",
+    "confidence": 0.999,
+    "support_doc_count": 5,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "Its main benefit is the ability of the data to remain with its owner (retention of sovereignty), while still enabling the training of algorithms on the data.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "Since FL was introduced in order to keep the data where they are generated (IoMT devices) and to preserve the data privacy [7]",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "Federated learning allows training models without explicitly sharing patient data and thus mitigates some confidentiality and privacy issues associated with clinical data.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "without violating patient privacy... all the data stayed in the local institutions.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.93,
+      "via": null
+     },
+     {
+      "source_id": "73411ab9-797e-43eb-89da-8f2071a8096c",
+      "source_title": "Federated Learning in Healthcare Ethics: A Systematic Review of Privacy-Preserving and Equitable Medical AI",
+      "quote": "By enabling collaborative model training across different institutions while keeping sensitive data localized, FL has emerged as a promising technique that partially addresses several of these concerns, though it does not eliminate all ethical challenges [17,18].",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning alone does not guarantee security or privacy without additional encryption or safeguards.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "While federated learning is flexible and resolves data governance and ownership issues, it does not itself guarantee security and privacy unless combined with other methods described below.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "there are still model security and data leakage risks that would compromise the security of the FL system and the data privacy of clients.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Despite local data storage, federated learning still faces model security and data‑leakage risks that can compromise client privacy."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Model updates in federated learning can be exploited to reconstruct training images, creating privacy and security leaks.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "It is therefore possible to reconstruct parts of the training data from the algorithm weights themselves on a decentralized node... Such model inversion or reconstruction attacks can cause catastrophic data leakage.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Decentralized storage and federated learning are seen as the most promising way to enable privacy‑preserving cross‑institutional medical imaging research.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "Decentralized data storage and federated learning systems, replacing the current paradigm of data sharing and centralized storage, have the greatest potential to enable privacy‑preserving cross‑institutional research in a breadth of biomedical disciplines.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Despite local data storage, federated learning still faces model security and data‑leakage risks that can compromise client privacy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "there are still model security and data leakage risks that would compromise the security of the FL system and the data privacy of clients.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Because of threats such as model poisoning and membership inference attacks, the safety of the global model and confidentiality of patient information can be threatened in FL systems.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning remains vulnerable to privacy attacks like model poisoning and membership inference, which can compromise patient confidentiality."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Secure aggregation provides a strong privacy guarantee but incurs a significant extra communication cost.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "The applied secure aggregation is a lossless method that can retain the original accuracy with a very high privacy guarantee. The main drawback of the resulting method, however, is the significant extra communication cost.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.998,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Applying differential privacy in federated learning requires many hyper‑parameters that affect communication overhead and model accuracy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "This type of approach comes with a considerable number of hyperparameters that need to be carefully selected and that affect communication and accuracy.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.93,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Centralized de‑identification can lead to data theft and makes it difficult to honor the GDPR right to be forgotten.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "The latter can be problematic in the setting of insecure storage, risking data theft 36 . ... it uncouples data governance from data ownership (impeding the right to be forgotten, GDPR article 17 ).",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Secure multi‑party computation lets models be trained on encrypted data, avoiding the exposure inherent in centralized training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "The computation result can be announced without any party ever having seen the data itself... As long as the data and the algorithms are encrypted, they remain unusable unless permission is granted by both parties, yielding a shared governance model.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Centralized data sharing is limited by business value and privacy concerns, whereas FL avoids exposing training data by keeping it local.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "medical and patient data may have significant business value, making it less likely that they will be freely shared ... FL enables collaborative learning without centralizing data, providing a highly trained ML model without the risk of exposing training data.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Even if a centralized system could achieve slightly better results in terms of accuracy, federated learning is a good way to replace the centralized algorithm while preserving data privacy.",
+      "relation": "near_match",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Compared with centralized training, FL may achieve slightly lower accuracy but preserves data privacy, illustrating a privacy‑accuracy trade‑off."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Differentially private federated learning provides strong, quantifiable privacy guarantees.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "FL training achieves strong privacy bounds ( ε = 2 . 90 at δ = 0 . 0001) with better performance than non-collaborative training, comparable to centralized training.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.943,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning can match centralized training accuracy while preserving privacy, indicating a modest privacy‑performance trade‑off.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "FL training achieves strong privacy bounds ... comparable to centralized training.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Centralized training raises privacy concerns because sharing medical data conflicts with confidentiality requirements.",
+    "label": "supported",
+    "confidence": 0.895,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "The lack of publicly available multi-centric and diverse datasets mainly stems from confidentiality and privacy concerns around sharing medical data.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "The medical data of patients is not easily shared across various hospitals and diagnostic centers because of tight data security and ethical rules.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Even with FL, sending model updates to a central server can leak private information, showing a security risk similar to centralized training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "While FL attempts to provide privacy by keeping private data on client devices, it does not provide a meaningful privacy guarantee. Updated model parameters are still sent from the clients to a centralized server, and these can contain private information",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL lets each client train locally and send only model updates to a server, avoiding direct sharing of raw patient data.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "In FL, every client locally trains a copy of the centralized model, represented by the model weights ω , and reports its updates back to the server for aggregation across clients, without disclosing local private data.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.975,
+      "via": null
+     },
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "clients ... send the improved model weights to a main server and not the raw data.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "In FL, clients send only model weights, not raw patient data, reducing exposure of private information."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning keeps raw medical data on local devices and only shares aggregated model weights, thereby protecting patient privacy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Federated learning ... does not require centralized access to training data; instead, it trains the local model using local training data. The clients then transmit these locally trained models back to the central server, where they are aggregated.",
+      "relation": "supports",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "a588a8cf-9eaf-404d-98c1-be98c707a2f8",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "Its main benefit is the ability of the data to remain with its owner (retention of sovereignty), while still enabling the training of algorithms on the data.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning keeps the raw medical data on the local owner, preserving privacy by not moving the data."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Clients in FL do not forward their raw information to a central server, making the approach privacy‑oriented.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Privacy: through the use of FL, we try to provide a distributed learning solution that is privacy oriented, as clients do not forward their information to a central server.",
+      "relation": "supports",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.987,
+      "via": null
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "medical and patient data may have significant business value, making it less likely that they will be freely shared ... FL enables collaborative learning without centralizing data, providing a highly trained ML model without the risk of exposing training data.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Centralized data sharing is limited by business value and privacy concerns, whereas FL avoids exposing training data by keeping it local."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL enables multiple clients to train a global model without revealing private data.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "It allows multiple clients to train global models without revealing private data.",
+      "relation": "supports",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.98,
+      "via": null
+     },
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "In FL, every client locally trains a copy of the centralized model, represented by the model weights ω , and reports its updates back to the server for aggregation across clients, without disclosing local private data.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "FL lets each client train locally and send only model updates to a server, avoiding direct sharing of raw patient data."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Compared with centralized training, FL may achieve slightly lower accuracy but preserves data privacy, illustrating a privacy‑accuracy trade‑off.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Even if a centralized system could achieve slightly better results in terms of accuracy, federated learning is a good way to replace the centralized algorithm while preserving data privacy.",
+      "relation": "supports",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.994,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL limits data exposure by sharing only model weights, avoiding the direct leakage of confidential information that centralized training entails.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Only information about the neural network weights can be passed back and forth between parties while model training is being performed. Due to the nature of the transaction, neither confidential nor private information is revealed on either side [8].",
+      "relation": "supports",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "3591133f-f056-43a8-935d-5f3904890993",
+      "source_title": "Privacy-Preserving in Medical Image Analysis: A Review of Methods and Applications",
+      "quote": "Each institution trains the model locally and exchanges only model parameters (e.g., gradients), ensuring privacy and security, making FL ideal for privacy-sensitive medical image analysis.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "FL protects privacy by keeping data on local institutions and sharing only model parameters."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Privacy‑preserving techniques such as differential‑privacy noise and secure aggregation prevent exposure of sensitive medical information during FL training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Using privacy‑preserving steps ... introduces a measured infusion of noise into model updates ... secure aggregation protocols ... only cryptic group updates.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning remains vulnerable to privacy attacks like model poisoning and membership inference, which can compromise patient confidentiality.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Because of threats such as model poisoning and membership inference attacks, the safety of the global model and confidentiality of patient information can be threatened in FL systems.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "there are still model security and data leakage risks that would compromise the security of the FL system and the data privacy of clients.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Despite local data storage, federated learning still faces model security and data‑leakage risks that can compromise client privacy."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Applying differential privacy with a modest privacy budget (ε = 1.5) yields strong privacy protection while incurring only a minor drop in diagnostic accuracy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "We were able to ensure strong privacy protection using DP with a privacy budget of ε = 1.5, while achieving good accuracy in diagnosis.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "The applied secure aggregation is a lossless method that can retain the original accuracy with a very high privacy guarantee. The main drawback of the resulting method, however, is the significant extra communication cost.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Secure aggregation provides a strong privacy guarantee but incurs a significant extra communication cost."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning implementations can satisfy HIPAA and GDPR requirements, offering a legal and ethical advantage over centralized data pooling.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "AI software managed between hospitals complies with data safety regulations like HIPAA and GDPR.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Laws such as HIPAA and GDPR prohibit exchange of personal health information, creating legal and ethical barriers to centralized training.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "It is made worse by laws like HIPAA in the United States and GDPR in the European Union which prevent the exchange of personal health information between different organizations.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "The lack of publicly available multi-centric and diverse datasets mainly stems from confidentiality and privacy concerns around sharing medical data.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Centralized training raises privacy concerns because sharing medical data conflicts with confidentiality requirements."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL protects privacy by aggregating model updates securely so the central server never sees individual updates.",
+    "label": "contradicted",
+    "confidence": 0.7,
+    "support_doc_count": 1,
+    "contra_doc_count": 1,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Privacy and security are maintained by aggregating users' model updates in a secure way, so that the central server does not see each one. It ensures that any medical information hidden in the learning process is not revealed.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "While FL attempts to provide privacy by keeping private data on client devices, it does not provide a meaningful privacy guarantee. Updated model parameters are still sent from the clients to a centralized server, and these can contain private information",
+      "relation": "contradicts",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.99,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "In FL, clients send only model weights, not raw patient data, reducing exposure of private information.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "clients ... send the improved model weights to a main server and not the raw data.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     },
+     {
+      "source_id": "5bd3a37b-21f8-479f-a0b6-0b780e86f162",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "In FL, every client locally trains a copy of the centralized model, represented by the model weights ω , and reports its updates back to the server for aggregation across clients, without disclosing local private data.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "FL lets each client train locally and send only model updates to a server, avoiding direct sharing of raw patient data."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Centralized federated learning relies on a trusted aggregation server, creating privacy risk if the server colludes or infers private information.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "73411ab9-797e-43eb-89da-8f2071a8096c",
+      "source_title": "Federated Learning in Healthcare Ethics: A Systematic Review of Privacy-Preserving and Equitable Medical AI",
+      "quote": "This approach assumes the central server will not collude with adversaries or attempt to infer private information from received updates an assumption that may require institutional safeguards in healthcare settings.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Security of federated learning can be enhanced through secure aggregation protocols and encrypted communication.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "73411ab9-797e-43eb-89da-8f2071a8096c",
+      "source_title": "Federated Learning in Healthcare Ethics: A Systematic Review of Privacy-Preserving and Equitable Medical AI",
+      "quote": "To mitigate these issues, several studies implemented secure aggregation protocols and encrypted communication, showing that centralized",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Federated learning does not fully resolve ethical challenges, indicating lingering legal and ethical concerns.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "73411ab9-797e-43eb-89da-8f2071a8096c",
+      "source_title": "Federated Learning in Healthcare Ethics: A Systematic Review of Privacy-Preserving and Equitable Medical AI",
+      "quote": "By enabling collaborative model training across different institutions while keeping sensitive data localized, FL has emerged as a promising technique that partially addresses several of these concerns, though it does not eliminate all ethical challenges [17,18].",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "66a98975-f024-45c9-9923-42efaf19dd3b",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "there are still model security and data leakage risks that would compromise the security of the FL system and the data privacy of clients.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Despite local data storage, federated learning still faces model security and data‑leakage risks that can compromise client privacy."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Real‑world deployment of federated imaging models is limited by regulatory, legal, and organizational barriers.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "73411ab9-797e-43eb-89da-8f2071a8096c",
+      "source_title": "Federated Learning in Healthcare Ethics: A Systematic Review of Privacy-Preserving and Equitable Medical AI",
+      "quote": "Only 13% of studies reported real world clinical deployment, highlighting a major translational gap: proof-of-concept and simulated federations miss organizational, regulatory, legal, and human-factor barriers that arise in practice [60,61].",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL protects privacy by keeping data on local institutions and sharing only model parameters.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3591133f-f056-43a8-935d-5f3904890993",
+      "source_title": "Privacy-Preserving in Medical Image Analysis: A Review of Methods and Applications",
+      "quote": "Each institution trains the model locally and exchanges only model parameters (e.g., gradients), ensuring privacy and security, making FL ideal for privacy-sensitive medical image analysis.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.994,
+      "via": null
+     },
+     {
+      "source_id": "9b754e63-144d-4fa4-b76b-ac904f7ce064",
+      "source_title": "Federated Learning to Safeguard Patients Data: A Medical Image Retrieval Case",
+      "quote": "Only information about the neural network weights can be passed back and forth between parties while model training is being performed. Due to the nature of the transaction, neither confidential nor private information is revealed on either side [8].",
+      "relation": "near_match",
+      "reliability": 0.67,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "FL limits data exposure by sharing only model weights, avoiding the direct leakage of confidential information that centralized training entails."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL reduces privacy risks by avoiding centralized storage and transmission of medical data.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3591133f-f056-43a8-935d-5f3904890993",
+      "source_title": "Privacy-Preserving in Medical Image Analysis: A Review of Methods and Applications",
+      "quote": "By keeping data local and sharing only model updates, it reduces risks associated with centralized data storage and transmission, making it well-suited for sensitive medical data.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "1fd88ec8-0f95-40dc-9e1a-6753db1a08c7",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Using privacy‑preserving steps ... introduces a measured infusion of noise into model updates ... secure aggregation protocols ... only cryptic group updates.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Privacy‑preserving techniques such as differential‑privacy noise and secure aggregation prevent exposure of sensitive medical information during FL training."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Adding GANs to FL can further improve data privacy and security.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3591133f-f056-43a8-935d-5f3904890993",
+      "source_title": "Privacy-Preserving in Medical Image Analysis: A Review of Methods and Applications",
+      "quote": "GANs Shen et al. introduced a conditional GAN within a FL paradigm to enhance data privacy and security.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "FL protects privacy by keeping patient data on local sites and never sharing raw data with other hospitals.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "8269bc28-d450-496b-bf10-389a4d03bd55",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "Federated Learning (FL) is a cutting‑edge method in the medical imaging field that allows hospitals to collaboratively build models without revealing patient data.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": null
+     },
+     {
+      "source_id": "3591133f-f056-43a8-935d-5f3904890993",
+      "source_title": "Privacy-Preserving in Medical Image Analysis: A Review of Methods and Applications",
+      "quote": "Each institution trains the model locally and exchanges only model parameters (e.g., gradients), ensuring privacy and security, making FL ideal for privacy-sensitive medical image analysis.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "FL protects privacy by keeping data on local institutions and sharing only model parameters."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   },
+   {
+    "claim": "Cryptographic techniques, secure aggregation, perturbation methods, and security protocols are used in FL to ensure patient privacy and model integrity.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "8269bc28-d450-496b-bf10-389a4d03bd55",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "We review existing countermeasures based on cryptographic techniques, secure aggregation, perturbation methods, and security protocols with an emphasis on their efficiency in ensuring patient privacy and model integrity.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   }
+  ],
+  "disagreements": [
+   {
+    "claim_a": "FL protects privacy by aggregating model updates securely so the central server never sees individual updates.",
+    "claim_b": "Even with FL, sending model updates to a central server can leak private information, showing a security risk similar to centralized training.",
+    "source_a_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+    "source_b_title": "Federated learning and differential privacy for medical image analysis",
+    "quote_a": "Privacy and security are maintained by aggregating users' model updates in a secure way, so that the central server does not see each one. It ensures that any medical information hidden in the learning process is not revealed.",
+    "quote_b": "While FL attempts to provide privacy by keeping private data on client devices, it does not provide a meaningful privacy guarantee. Updated model parameters are still sent from the clients to a centralized server, and these can contain private information",
+    "prob": 0.99,
+    "reason": "One says the server never sees individual updates, the other says updates are sent to the server and can leak private info, directly opposing each other.",
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "5f8d8786"
+   }
+  ]
+ },
+ {
+  "sub_question": "Conditions and limits of federated learning for medical image analysis",
+  "summary": {
+   "supported": 3,
+   "partially_supported": 11,
+   "unverified": 18,
+   "contradicted": 0,
+   "total": 32,
+   "digests": 19,
+   "claims_loaded": 41,
+   "contested": 0,
+   "disagreements": 0,
+   "judge_calls": 0,
+   "judge_cache_hits": 66,
+   "judge_waits": 0,
+   "judge_failures": 0,
+   "support_from_stage3": 20,
+   "missing_evidence": [
+    "Under what communication bandwidth or latency constraints does federated learning lose its advantage in medical imaging tasks?",
+    "What magnitude of performance gap (e.g., Dice score, AUC, accuracy) has been reported between federated and centralized models under these adverse conditions?"
+   ],
+   "needs_replan": false
+  },
+  "claims": [
+   {
+    "claim": "Heterogeneous data across institutions makes local models hard to converge and degrades federated learning performance.",
+    "label": "supported",
+    "confidence": 0.918,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "The locally trained models from each client, based on heterogeneous data distributions, struggle to achieve convergence during training and maintain good performance after aggregation.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "a5ae3d8d-1dda-47e5-90fa-21b4db0b0314",
+      "source_title": "An Experimental Study of Data Heterogeneity in Federated Learning Methods for Medical Imaging",
+      "quote": "We show that the performance of the federated learning methods in our study degrades with the increasing degrees of data heterogeneity, and the rate of decrease in performance is determined by the degree of deviation from homogenous distributions.",
+      "relation": "supports",
+      "reliability": 0.37,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "When network bandwidth is insufficient, federated learning loses its advantage and methods like FedProx are recommended.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "If the network bandwidth of the federated learning system is insufficient, and there is a desire to reduce the data transfer volume between clients and the server or to pursue a more streamlined engineering implementation, FedProx is more suitable.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning models show lower accuracy than a centrally trained model.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "all federated learning algorithms experience varying degrees of accuracy reduction compared to centralized model training.",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "49c0568b-c29f-45dc-bd0f-e5433e2491d0",
+      "source_title": "Federated Learning in Healthcare: From Research to Real-World Deployment",
+      "quote": "In FL, the training data are not required to be IID on the local devices. However, when the data are not IID, models trained in FL usually have worse performance than those trained in the standard CL mode.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Non‑IID inter‑institutional data cause federated models to perform worse than centrally trained models."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Non‑IID client data harms the convergence of the global federated model.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "we observed that the nonIID training data indeed adversely affected the convergence of the global model in FedAvg",
+      "relation": "supports",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.637,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Label distribution skew is the most impactful type of heterogeneity for federated learning on medical data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bbf88d1f-8413-48d1-aad4-ec02beffd9a2",
+      "source_title": "On the Impact of Data Heterogeneity in Federated Learning Environments with Application to Healthcare Networks",
+      "quote": "Of the setups covered in the paper, the most impacting type of heterogeneity is label distribution skew.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Under strong heterogeneity (α ≤ 0.3), all federated algorithms achieve higher accuracy than the average non‑federated (local) scenario.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bbf88d1f-8413-48d1-aad4-ec02beffd9a2",
+      "source_title": "On the Impact of Data Heterogeneity in Federated Learning Environments with Application to Healthcare Networks",
+      "quote": "In scenarios with significant heterogeneity ( α ≤ 0 . 3 ), all algorithms outperform the average performance of the non-federated scenario.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "SCAFFOLD requires roughly twice the parameter transmission of other methods, making it bandwidth‑intensive.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bbf88d1f-8413-48d1-aad4-ec02beffd9a2",
+      "source_title": "On the Impact of Data Heterogeneity in Federated Learning Environments with Application to Healthcare Networks",
+      "quote": "SCAFFOLD and FedDyn seemed promising, specifically for feature imbalance, with SCAFFOLD outperforming FedDyn, though demanding twice the parameters transmission, while FedDyn needed more computations.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.9,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "FedProx, FedNova, and FedAvg are suitable choices when devices face bandwidth or computational constraints.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bbf88d1f-8413-48d1-aad4-ec02beffd9a2",
+      "source_title": "On the Impact of Data Heterogeneity in Federated Learning Environments with Application to Healthcare Networks",
+      "quote": "FedProx, FedNova, or FedAvg could be used when the devices have constraints on bandwidth or computational power.",
+      "relation": "supports",
+      "reliability": 0.82,
+      "evidence_level": "full_text",
+      "prob": 0.998,
+      "via": null
+     },
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "If the network bandwidth of the federated learning system is insufficient, and there is a desire to reduce the data transfer volume between clients and the server or to pursue a more streamlined engineering implementation, FedProx is more suitable.",
+      "relation": "near_match",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "When network bandwidth is insufficient, federated learning loses its advantage and methods like FedProx are recommended."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Data heterogeneity in medical imaging can negatively impact FL performance and convergence.",
+    "label": "supported",
+    "confidence": 0.925,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "Our hypothesis posits that while Federated Learning (FL) offers significant advantages in terms of privacy and decentralized learning, the inherent data heterogeneity in practical scenarios like medical imaging can adversely affect the performance and convergence of FL algorithms.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "This is the first research to show that data heterogeneity in training sample sizes and mark distributions across institutions can cause distributed learning models for medical imaging to perform poorly [7].",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Although FL reduces bandwidth usage, its current form still struggles with data heterogeneity and scalability in medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "While the federated learning method shows promise, particularly in enhancing privacy and reducing bandwidth usage, its current form requires significant advancements to effectively manage data heterogeneity and scalability challenges in the medical imaging domain.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "This is the first research to show that data heterogeneity in training sample sizes and mark distributions across institutions can cause distributed learning models for medical imaging to perform poorly [7].",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Data heterogeneity in medical imaging can negatively impact FL performance and convergence."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Increasing data heterogeneity leads to observable drops in FL model performance and accuracy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "One of the key findings of our study is the observable reduction in both the performance and accuracy of FL models as data heterogeneity increases.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.993,
+      "via": null
+     },
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "This is the first research to show that data heterogeneity in training sample sizes and mark distributions across institutions can cause distributed learning models for medical imaging to perform poorly [7].",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Data heterogeneity in medical imaging can negatively impact FL performance and convergence."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Data heterogeneity in FL can cause unstable, slow convergence and even harmful model performance.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "This heterogeneity could highly affect the performance of FL algorithms ... could precipitate unstable and sluggish model convergence and even lead to below-par or harmful model performance.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.925,
+      "via": null
+     },
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "This is the first research to show that data heterogeneity in training sample sizes and mark distributions across institutions can cause distributed learning models for medical imaging to perform poorly [7].",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Data heterogeneity in medical imaging can negatively impact FL performance and convergence."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "FL transmits only model updates, greatly lowering bandwidth usage compared to sending raw data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "since only model updates are shared rather than raw data, FL significantly reduces the amount of data transmitted over networks, reducing bandwidth requirements.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.999,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Personalized and task-adaptive federated models increase robustness when data are heterogeneous across institutions.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "939a77b5-5a7b-427f-a59c-b7b317b93952",
+      "source_title": "Communication-Efficient Federated Learning (CEFL) for CT Image Classification in Bandwidth-Constrained Wireless Healthcare Networks",
+      "quote": "personalized federated learning and task-adaptive federated models have shown improved robustness in heterogeneous medical environments",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.97,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning can improve generalization across institutions but non‑IID data distribution remains a significant challenge.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "939a77b5-5a7b-427f-a59c-b7b317b93952",
+      "source_title": "Communication-Efficient Federated Learning (CEFL) for CT Image Classification in Bandwidth-Constrained Wireless Healthcare Networks",
+      "quote": "FL improves generalization across institutions while preserving data privacy, though challenges such as communication overhead and nonIID data distribution remain significant.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.979,
+      "via": null
+     },
+     {
+      "source_id": "bb336b7a-6909-4b6f-beab-8d036bcdff04",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "There are challenging aspects of FL, when compared with a traditional ML algorithm, that exist due to the distributed nature of the technique and can be grouped as follows [5]: 1. expensive communication, 2. systems heterogeneity, 3. statistical heterogeneity, and 4. privacy concerns.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Statistical heterogeneity across institutions is identified as a key challenge of federated learning compared to traditional centralized training."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "High communication cost of model updates becomes a major bottleneck, limiting FL scalability under bandwidth‑constrained conditions.",
+    "label": "supported",
+    "confidence": 0.916,
+    "support_doc_count": 2,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "939a77b5-5a7b-427f-a59c-b7b317b93952",
+      "source_title": "Communication-Efficient Federated Learning (CEFL) for CT Image Classification in Bandwidth-Constrained Wireless Healthcare Networks",
+      "quote": "This communication cost becomes a major bottleneck, limiting scalability and efficiency in real‑world deployments.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "bb336b7a-6909-4b6f-beab-8d036bcdff04",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "network performance can be a bottleneck when the model updates are large, therefore a compression or reduction of the data transferred back to the server should be performed in order to save bandwidth.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "The framework mitigates bandwidth‑limited communication bottlenecks with gradient compression, adaptive client participation, and quantized model updates.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "939a77b5-5a7b-427f-a59c-b7b317b93952",
+      "source_title": "Communication-Efficient Federated Learning (CEFL) for CT Image Classification in Bandwidth-Constrained Wireless Healthcare Networks",
+      "quote": "To address communication bottlenecks caused by bandwidth limitations, the proposed framework introduces gradient compression, adaptive client participation, and quantized model updates.",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.998,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning can achieve performance comparable to centralized training even when data across institutions is heterogeneous (non‑IID).",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ed98a403-ad7e-421f-a8f2-725ddc55f1b9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "we empirically compare the performance of private, distributed training to conventional training and demonstrate that distributed training can achieve similar performance with strong privacy guarantees.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "3f0dc6ea-eef1-4c2d-9736-4e420db68fce",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "In comparative evaluations across up to ten institutions using real clinical data, FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning achieves performance nearly equivalent to centralized training across up to ten heterogeneous institutions, indicating data heterogeneity does not substantially degrade accuracy."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Reducing communication by performing multiple local SGD steps before aggregation harms the convergence of FedAvg.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ed98a403-ad7e-421f-a8f2-725ddc55f1b9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "To reduce communication costs, several local steps of SGD can be taken before communication and aggregation, however, this affects the convergence properties of FedAvg.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Statistical heterogeneity across institutions is identified as a key challenge of federated learning compared to traditional centralized training.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bb336b7a-6909-4b6f-beab-8d036bcdff04",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "There are challenging aspects of FL, when compared with a traditional ML algorithm, that exist due to the distributed nature of the technique and can be grouped as follows [5]: 1. expensive communication, 2. systems heterogeneity, 3. statistical heterogeneity, and 4. privacy concerns.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "df8070cb-d8d2-444d-9790-fcb71be5e22c",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "Such diversity presents substantial challenges in FL, leading to issues such as model performance degradation, convergence problems, and potential privacy violations.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Inter‑institutional data heterogeneity can degrade federated learning performance and cause convergence problems, limiting its advantage over centralized training."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Connectivity or latency problems that delay client updates are highlighted as a challenge for federated learning in medical imaging.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bb336b7a-6909-4b6f-beab-8d036bcdff04",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "due to connectivity issues or problems with computing infrastructures, some hospitals may not send their updates on time, which is another example of intermittent clients.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "When a client delays sending its updates beyond a predefined time, the latency can disrupt the federated learning process.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "bb336b7a-6909-4b6f-beab-8d036bcdff04",
+      "source_title": "Study of the performance and scalability of federated learning for medical imaging with intermittent clients",
+      "quote": "This is the case when a client does not send its updates to the server after a predefined time has elapsed but sends it after certain rounds.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning using multi‑site data can improve neuroimage analysis accuracy without sharing raw scans.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "using multi‑site data without exchanging data can improve neuroimage analysis accuracy and help discover accurate disease‑related biomarkers",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Heterogeneous data from multiple centers increases model accuracy compared with a single‑organization simulation.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ff98d81d-04b8-4135-9bc5-85aeb0c595e0",
+      "source_title": "Federated Learning for Healthcare Domain - Pipeline, Applications and Challenges",
+      "quote": "When compared to a simulation in a single organization, heterogeneous data from multiple centers increased model accuracy.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.999,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated models can experience large performance drops on images from hospitals not seen during training.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ed98a403-ad7e-421f-a8f2-725ddc55f1b9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "Models trained using FL can suffer from serious performance drops when applied to images from previously unseen hospitals.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Both federated and centralized models lose accuracy on external validation when data distribution shifts occur across sites.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "ed98a403-ad7e-421f-a8f2-725ddc55f1b9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "Due to distribution shifts, accuracy decreases on external validation for both Federated Learning and centralized training.",
+      "relation": "supports",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.98,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning achieves performance nearly equivalent to centralized training across up to ten heterogeneous institutions, indicating data heterogeneity does not substantially degrade accuracy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3f0dc6ea-eef1-4c2d-9736-4e420db68fce",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "In comparative evaluations across up to ten institutions using real clinical data, FL was shown to perform nearly on par with traditional centralized training, despite the decentralized nature of the system.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "ed98a403-ad7e-421f-a8f2-725ddc55f1b9",
+      "source_title": "Federated learning and differential privacy for medical image analysis",
+      "quote": "we empirically compare the performance of private, distributed training to conventional training and demonstrate that distributed training can achieve similar performance with strong privacy guarantees.",
+      "relation": "near_match",
+      "reliability": 0.7,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning can achieve performance comparable to centralized training even when data across institutions is heterogeneous (non‑IID)."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Federated learning with pure transformer models attains performance comparable to centralized training despite multi‑institutional PET/CT data heterogeneity.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "7ec6f0a1-f206-407b-a1d6-e88f3620a6ca",
+      "source_title": "Federated Learning for Large Models in Medical Imaging: A Comprehensive Review",
+      "quote": "Demonstrate that pure transformer architectures combined with FL achieve comparable performance to centralized training for multi-institutional PET/CT segmentation.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.876,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Non‑IID inter‑institutional data cause federated models to perform worse than centrally trained models.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "49c0568b-c29f-45dc-bd0f-e5433e2491d0",
+      "source_title": "Federated Learning in Healthcare: From Research to Real-World Deployment",
+      "quote": "In FL, the training data are not required to be IID on the local devices. However, when the data are not IID, models trained in FL usually have worse performance than those trained in the standard CL mode.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "154bb5d7-cb1e-4400-a3d2-c6f4ec612f1d",
+      "source_title": "Federated Learning for Medical Image Classification: A Comprehensive Benchmark",
+      "quote": "The locally trained models from each client, based on heterogeneous data distributions, struggle to achieve convergence during training and maintain good performance after aggregation.",
+      "relation": "near_match",
+      "reliability": 0.87,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Heterogeneous data across institutions makes local models hard to converge and degrades federated learning performance."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Advanced FL algorithms like SCAFFOLD and FedDyn keep accuracy above 77% across different data quantity heterogeneity, showing robustness to inter‑institutional sample size differences.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "31dcc86a-66b0-4faa-ba13-92987aef0ccc",
+      "source_title": "On the Impact of Data Heterogeneity in Federated Learning Environments with Application to Healthcare Networks",
+      "quote": "For all heterogeneity levels, SCAFFOLD and FedDyn outperform, achieving over 77% accuracy.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Inter‑institutional data heterogeneity can degrade federated learning performance and cause convergence problems, limiting its advantage over centralized training.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "df8070cb-d8d2-444d-9790-fcb71be5e22c",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "Such diversity presents substantial challenges in FL, leading to issues such as model performance degradation, convergence problems, and potential privacy violations.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   },
+   {
+    "claim": "Data heterogeneity and related domain shifts can hinder the effective use of federated learning for medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "72fc2065-ec83-49f0-aa03-66edbdab7a76",
+      "source_title": "Deep Federated Learning in Healthcare | Albarqouni Lab",
+      "quote": "heterogeneity, domain shift, scarify of labeled data and handling multi-modal data, might hinder the utilization of Federated Learning.",
+      "relation": "supports",
+      "reliability": 0.45,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "7989b9b3-dada-4617-9066-283220230226",
+      "source_title": "Investigating the impact of data heterogeneity on the performance of federated learning algorithm using medical imaging",
+      "quote": "Our hypothesis posits that while Federated Learning (FL) offers significant advantages in terms of privacy and decentralized learning, the inherent data heterogeneity in practical scenarios like medical imaging can adversely affect the performance and convergence of FL algorithms.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Data heterogeneity in medical imaging can negatively impact FL performance and convergence."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "bfceb300"
+   }
+  ],
+  "disagreements": []
+ },
+ {
+  "sub_question": "Privacy risks, defenses, and associated costs in federated medical imaging",
+  "summary": {
+   "supported": 0,
+   "partially_supported": 8,
+   "unverified": 21,
+   "contradicted": 0,
+   "total": 29,
+   "digests": 18,
+   "claims_loaded": 39,
+   "contested": 0,
+   "disagreements": 0,
+   "judge_calls": 0,
+   "judge_cache_hits": 70,
+   "judge_waits": 0,
+   "judge_failures": 0,
+   "support_from_stage3": 23,
+   "missing_evidence": [],
+   "needs_replan": false
+  },
+  "claims": [
+   {
+    "claim": "Anonymization and pseudonymization are the most widely used privacy‑preserving techniques for medical imaging data.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "db15bd66-ce51-4032-b380-1fa0fb4015bb",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "Anonymization ... and pseudonymization ... are currently the most widely used privacy preservation techniques for medical datasets.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Privacy‑utility trade‑offs, including impacts on model accuracy, are recognized as a research focus in federated medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "db15bd66-ce51-4032-b380-1fa0fb4015bb",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "The trade‑offs between accuracy, interpretability, fairness, bias and privacy (privacy‑utility trade‑offs), need to be researched.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "We provide a formal analysis of the trade-off between privacy and utility in the approach we propose.",
+      "relation": "near_match",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "The study provides a formal analysis of the privacy‑utility trade‑off in federated medical imaging."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Secure aggregation preserves model accuracy while incurring high communication overhead.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a691ae16-edf2-40f4-901e-6618c355fd7e",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "The applied secure aggregation is a lossless method that can retain the original accuracy with a very high privacy guarantee. The main drawback of the resulting method, however, is the significant extra communication cost.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Differential privacy in FL requires careful hyperparameter selection, affecting both communication overhead and model accuracy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a691ae16-edf2-40f4-901e-6618c355fd7e",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "Other approaches are able to offer global privacy by applying differential privacy to federated learning, as in [63]. This type of approach comes with a considerable number of hyperparameters that need to be carefully selected and that affect communication and accuracy.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "FL reduces communication and computation but leads to lower model accuracy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "a691ae16-edf2-40f4-901e-6618c355fd7e",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "they study the trade‑off between the communication cost and the model accuracy, which indicates that FL requires less communication and computational resources while using less complex models but at the cost of lower accuracy.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Defacing or skull‑stripping can degrade model performance and robustness in federated medical imaging.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "db15bd66-ce51-4032-b380-1fa0fb4015bb",
+      "source_title": "Secure, privacy-preserving and federated machine learning in medical imaging",
+      "quote": "This complicates data handling, increasing the probability of errors and constitutes a manipulation of the imaging data, which, at worst, represents an adversarial update to the algorithm, reducing its performance and robustness.",
+      "relation": "supports",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "The dual‑attention federated learning defense improves model performance on multi‑center imaging data, even for rare anatomy, while preserving privacy.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "e7b3b3e7-6794-4b68-907d-371aa17d1ba4",
+      "source_title": "Federated Learning in Multimodal Healthcare Diagnostics: Privacy-Preserving AI for Biomedical Imaging, Electronic Health Records, Wearables, and Clinical Decision Support",
+      "quote": "Liu et al. used vertebral segmentation in spinal imaging to demonstrate the application of the dual-attention federated learning method, which enhances the performance of multi-center datasets, especially in the presence of rare anatomy, without the need to share the raw data",
+      "relation": "supports",
+      "reliability": 0.72,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Model poisoning and membership inference attacks are recognized privacy threats in federated medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Because of threats such as model poisoning and membership inference attacks, the safety of the global model and confidentiality of patient information can be threatened in FL systems.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "b7c658e6-e635-45ba-a9d1-eecc61d7ff83",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "FL is still vulnerable to numerous security and privacy issues, including, but not limited to, data poisoning, Byzantine attacks, and inference attacks.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Federated learning for medical imaging is vulnerable to data poisoning, Byzantine, and inference attacks."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Differential privacy and secure aggregation have been evaluated as defenses for federated medical imaging.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "This research was enhanced through the involvement of methods like differential privacy and secure aggregation which avoid the exposure of sensitive details.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Applying differential privacy (ε = 1.5) caused only a minor drop in accuracy, preserving model utility.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "We were able to ensure strong privacy protection using DP with a privacy budget of ε = 1.5, while achieving good accuracy in diagnosis. Because training the model resulted in only a minor drop, it is seen that the added noise was well‑tuned to secure privacy without affecting model performance.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.995,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Privacy‑preserving federated learning introduces additional computational expenses.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "FL involves certain drawbacks in terms of communication and computation expenses.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Federated medical imaging increases communication bandwidth due to frequent model‑update exchanges.",
+    "label": "unverified",
+    "confidence": 0.5,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "FL had to use more bandwidth because updates were communicated back and forth between servers and clients many times.",
+      "relation": "supports",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Adversarial training used as a defense raises computational burden for all clients and can cause convergence problems, hurting model utility.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "151a8794-cc1d-48ca-b8e9-723ae34cf7a4",
+      "source_title": "Fed-Safe: Securing Federated Learning in Healthcare Against Adversarial Attacks",
+      "quote": "Adversarial training has been applied as an optimization technique for individual clients in order to secure federated networks; however, this also increases computational burden for all participants, potentially leading to lack of convergence due to heterogeneity among models [17].",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Adding differential‑privacy noise to model updates degrades performance, creating a privacy‑utility trade‑off.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "However, this noise addition can degrade the model's performance, leading to a trade-off between privacy and utility.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.98,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Noise injection for privacy causes parameter deviation and increases empirical risk, reducing model utility.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "Consequently, noise addition induces a deviation in the model parameters and therefore raises the empirical risk.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.85,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Model inversion, data reconstruction, and GAN‑based attacks have been empirically demonstrated against federated learning for medical images, especially when adversarial training is used.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "151a8794-cc1d-48ca-b8e9-723ae34cf7a4",
+      "source_title": "Fed-Safe: Securing Federated Learning in Healthcare Against Adversarial Attacks",
+      "quote": "one study reported that adversarial training made it significantly easier to perform multiple types of attacks, such as model inversion, data reconstruction, and GAN-based attacks.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Secure aggregation via secure multi‑party computation has been evaluated in federated medical imaging and achieved high classification accuracy (98.45%).",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "151a8794-cc1d-48ca-b8e9-723ae34cf7a4",
+      "source_title": "Fed-Safe: Securing Federated Learning in Healthcare Against Adversarial Attacks",
+      "quote": "Malik et al. proposed a secure federated learning framework for medical image classification, using a secure multi-party computation protocol for secure aggregation and achieving an accuracy of 98.45% on the Chest X-Ray dataset",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Differential privacy is recognized as a viable defense in federated medical imaging, but it introduces a trade‑off with clean model accuracy.",
+    "label": "unverified",
+    "confidence": 0.35,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "0567e162-b879-4372-878e-85d64a4ec9fe",
+      "source_title": "Trustworthy Federated Learning for Medical Imaging: A Structured Survey of Heterogeneity, Privacy Leakage, Inference Attacks, and Secure Collaboration",
+      "quote": "differential privacy can reduce utility",
+      "relation": "supports",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "The paper evaluates differential privacy as a defense mechanism for federated medical image classification.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "We develop a novel federated learning framework with integrated differential privacy for medical image classification.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "0567e162-b879-4372-878e-85d64a4ec9fe",
+      "source_title": "Trustworthy Federated Learning for Medical Imaging: A Structured Survey of Heterogeneity, Privacy Leakage, Inference Attacks, and Secure Collaboration",
+      "quote": "differential privacy can reduce utility",
+      "relation": "near_match",
+      "reliability": 0.35,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Differential privacy is recognized as a viable defense in federated medical imaging, but it introduces a trade‑off with clean model accuracy."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "The study provides a formal analysis of the privacy‑utility trade‑off in federated medical imaging.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "We provide a formal analysis of the trade-off between privacy and utility in the approach we propose.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Choosing the privacy budget ε is crucial for balancing privacy protection and model performance.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "6a223471-d1d5-420e-a94e-3ee140692832",
+      "source_title": "Vision Through the Veil: Differential Privacy in Federated Learning for Medical Image Classification",
+      "quote": "The choice of ϵ (privacy budget) in differential privacy is critical to achieving a balance between privacy and model performance.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.998,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "The combined FedAvg, local DP, and SecAgg framework attains high, competitive accuracy comparable to non‑private models.",
+    "label": "unverified",
+    "confidence": 0.42,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "2057d234-c556-4e5b-8135-d2fd5ec3ecfd",
+      "source_title": "Towards Privacy-Preserving Medical Imaging: Federated Learning with Differential Privacy and Secure Aggregation Using a Modified ResNet Architecture",
+      "quote": "demonstrating that it achieves competitive accuracy levels while maintaining strong privacy guarantees, close to those of non‑private models.",
+      "relation": "supports",
+      "reliability": 0.42,
+      "evidence_level": "full_text",
+      "prob": 0.9,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Gradient inversion attacks have been empirically demonstrated to reconstruct original medical images from shared gradient updates in federated learning.",
+    "label": "unverified",
+    "confidence": 0.375,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "e8d0bc91-f766-4e3f-b11d-8feb1c73efef",
+      "source_title": "Sensitivity-Aware Differential Privacy for Federated Medical Imaging",
+      "quote": "techniques such as gradient inversion attacks exploit shared gradient information to reconstruct original medical data.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "LDS-FL reduces membership inference attack accuracy while preserving model accuracy.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3544782f-c454-4518-a230-d605e8c9c4a2",
+      "source_title": "Privacy Preserving Federated Learning in Medical Imaging with Uncertainty Estimation",
+      "quote": "The authors formally prove the privacy guarantees of the LDS approach against membership inference attacks. Experiments show that LDS-FL reduces attack accuracy while maintaining model accuracy.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "a691ae16-edf2-40f4-901e-6618c355fd7e",
+      "source_title": "Handling Privacy-Sensitive Medical Data With Federated Learning: Challenges and Future Directions",
+      "quote": "The applied secure aggregation is a lossless method that can retain the original accuracy with a very high privacy guarantee. The main drawback of the resulting method, however, is the significant extra communication cost.",
+      "relation": "near_match",
+      "reliability": 0.85,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Secure aggregation preserves model accuracy while incurring high communication overhead."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Gradient updates can be exploited to reconstruct patient data via gradient dis‑aggregation and model inversion attacks.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "3544782f-c454-4518-a230-d605e8c9c4a2",
+      "source_title": "Privacy Preserving Federated Learning in Medical Imaging with Uncertainty Estimation",
+      "quote": "Communications such as gradient updates can be used to reconstruct patient data through attacks such as gradient dis-aggregation , model inversion attack , and other methods .",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "e8d0bc91-f766-4e3f-b11d-8feb1c73efef",
+      "source_title": "Sensitivity-Aware Differential Privacy for Federated Medical Imaging",
+      "quote": "techniques such as gradient inversion attacks exploit shared gradient information to reconstruct original medical data.",
+      "relation": "near_match",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Gradient inversion attacks have been empirically demonstrated to reconstruct original medical images from shared gradient updates in federated learning."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Federated learning for medical imaging is vulnerable to data poisoning, Byzantine, and inference attacks.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b7c658e6-e635-45ba-a9d1-eecc61d7ff83",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "FL is still vulnerable to numerous security and privacy issues, including, but not limited to, data poisoning, Byzantine attacks, and inference attacks.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "Because of threats such as model poisoning and membership inference attacks, the safety of the global model and confidentiality of patient information can be threatened in FL systems.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Model poisoning and membership inference attacks are recognized privacy threats in federated medical imaging."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Countermeasures such as cryptographic techniques, secure aggregation, perturbation methods, and security protocols have been reviewed for federated medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "b7c658e6-e635-45ba-a9d1-eecc61d7ff83",
+      "source_title": "Securing Federated Learning in Medical Image Analysis: A Systematic Review of Privacy Threats and Defense Mechanisms",
+      "quote": "We review existing countermeasures based on cryptographic techniques, secure aggregation, perturbation methods, and security protocols with an emphasis on their efficiency in ensuring patient privacy and model integrity.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "This research was enhanced through the involvement of methods like differential privacy and secure aggregation which avoid the exposure of sensitive details.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Differential privacy and secure aggregation have been evaluated as defenses for federated medical imaging."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "Hybrid encryption–DP defenses protect confidentiality while preserving diagnostic utility in federated medical imaging.",
+    "label": "partially_supported",
+    "confidence": 0.6,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "1ea64c51-7cec-415d-a1fd-0ddd7ecf603a",
+      "source_title": "Advancements and challenges of federated learning in medical imaging: a systematic literature review | Artificial Intelligence Review | Springer Nature Link",
+      "quote": "Their findings support the use of hybrid encryption-DP techniques to fortify model confidentiality without compromising diagnostic utility.",
+      "relation": "supports",
+      "reliability": 0.75,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": "stage3_judge"
+     },
+     {
+      "source_id": "32b0d981-cb8d-4cc2-b9ef-6ca47315cf7a",
+      "source_title": "Federated Learning Models for Privacy-Preserving Medical Image Analysis",
+      "quote": "This research was enhanced through the involvement of methods like differential privacy and secure aggregation which avoid the exposure of sensitive details.",
+      "relation": "near_match",
+      "reliability": 0.65,
+      "evidence_level": "full_text",
+      "prob": 0.0,
+      "via": "near_judge",
+      "near_claim": "Differential privacy and secure aggregation have been evaluated as defenses for federated medical imaging."
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   },
+   {
+    "claim": "The evaluated defense mechanisms cause a modest accuracy drop and increase training round latency, reducing overall model utility.",
+    "label": "unverified",
+    "confidence": 0.225,
+    "support_doc_count": 1,
+    "contra_doc_count": 0,
+    "contested": false,
+    "evidence": [
+     {
+      "source_id": "94bece81-e1d1-4682-a61f-8333d35c69e5",
+      "source_title": "Enhancing Federated Learning Security with a Defense Framework ...",
+      "quote": "it maintained an accuracy of 85.97%, despite a 4.1% drop ... efficiency favored the original system with round times of thirteen seconds as opposed to the defense-enhanced system's 54 to 56 seconds.",
+      "relation": "supports",
+      "reliability": 0.45,
+      "evidence_level": "web_snippet",
+      "prob": 0.95,
+      "via": null
+     }
+    ],
+    "query_id": "9b56d11b-b91f-4986-9f96-a81f98351820",
+    "sub_question_id": "05a93504"
+   }
+  ],
+  "disagreements": []
+ }
+]
