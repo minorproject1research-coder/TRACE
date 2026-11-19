@@ -3,7 +3,8 @@
   POST /api/research               start a run (202); body {question}
   GET  /api/research               the latest runs (from the database)
   GET  /api/research/{id}          status of one run
-  GET  /api/research/{id}/events   server-sent events: the progress of the run (replayed from the start, resumable with Last-Event-ID)
+  GET  /api/research/{id}/events   server-sent events: the progress of the run (replayed from the start, resumable with Last-Event-ID; a run that is no
+                                   longer in memory is replayed from the table run_events)
 """
 import asyncio
 import json
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from apps.api import config
 from apps.api.dependencies import get_run_manager
-from apps.api.services import report_service
+from apps.api.services import report_service, run_event_store
 from apps.api.services.db_errors import read_with_retry, valid_uuid
 from apps.api.services.run_manager import QueueFull, RunManager, TERMINAL
 
@@ -76,21 +77,32 @@ async def research_events(research_id: str, request: Request, after: Optional[in
                           manager: RunManager = Depends(get_run_manager)):
     """Server-sent events (default 'message' type, so EventSource.onmessage receives them). Every event has a numeric id (seq). A client that
     reconnects sends Last-Event-ID (or ?after=<seq>) and continues from the next event. The stream ends after run_completed / run_failed:
-    the client must close its EventSource when it sees one of them, or it will reconnect."""
+    the client must close its EventSource when it sees one of them, or it will reconnect.
+
+    A run that is not in memory (finished before a restart of the server, or forgotten after MAX_RUNS_IN_MEMORY) is replayed from the table run_events
+    (migration 017): the same events, with the same seq and timestamps, so the timeline looks as it did. A run cut off by a restart has no closing event
+    stored; one is added. A run without stored events (it ran before migration 017) gets the single closing event it always got."""
     rec = manager.get(research_id)
-    if rec is None:
-        session = await asyncio.to_thread(read_with_retry, report_service.session_from_db, research_id) if valid_uuid(research_id) else None
-        if session is None:
-            raise HTTPException(status_code=404, detail="Research session not found")
-        event = {"seq": 0, "event": "run_completed" if session["status"] == "completed" else "run_failed", "stage": None, "status": session["status"],
-                 "message": session["error"] or "Run finished", "data": {"reportUrl": f"/api/research/{research_id}/report"}, "timestamp": None}
-
-        async def one():
-            yield _sse(event)
-        return StreamingResponse(one(), media_type="text/event-stream", headers=_SSE_HEADERS)
-
     header = request.headers.get("last-event-id", "")
     next_index = (after + 1) if after is not None else (int(header) + 1 if header.isdigit() else 0)
+    if rec is None:
+        if not valid_uuid(research_id):
+            raise HTTPException(status_code=404, detail="Research session not found")
+        stored = await asyncio.to_thread(read_with_retry, run_event_store.get_events, research_id)
+        session = await asyncio.to_thread(read_with_retry, report_service.session_from_db, research_id)
+        report_url = f"/api/research/{research_id}/report"
+        if stored:
+            events = run_event_store.replay(stored, next_index, session["status"] if session else None, session["error"] if session else None, report_url)
+        elif session is None:
+            raise HTTPException(status_code=404, detail="Research session not found")
+        else:
+            events = [{"seq": 0, "event": "run_completed" if session["status"] == "completed" else "run_failed", "stage": None, "status": session["status"],
+                       "message": session["error"] or "Run finished", "data": {"reportUrl": report_url}, "timestamp": None}]
+
+        async def replayed():
+            for event in events:
+                yield _sse(event)
+        return StreamingResponse(replayed(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
     async def stream():
         index, idle = next_index, 0.0

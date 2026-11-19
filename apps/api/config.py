@@ -28,5 +28,11 @@ def factcheck_enabled() -> bool:
     return os.getenv("FACTCHECK", "true").strip().lower() in ("1", "true", "yes", "on")
 
 
+def run_events_store_enabled() -> bool:
+    """RUN_EVENTS_STORE=true (default) writes the timeline of every run to the table run_events (migration 017), so it can be replayed after a restart.
+    false = keep it in memory only, as before. A missing table is not an error either way: a warning is logged and the run goes on."""
+    return os.getenv("RUN_EVENTS_STORE", "true").strip().lower() in ("1", "true", "yes", "on")
+
+
 QUESTION_MIN_CHARS = 10
 QUESTION_MAX_CHARS = 1000

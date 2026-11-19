@@ -14,7 +14,7 @@ from typing import Any, Iterable, Optional
 
 import httpx
 
-from apps.api.services import db_service
+from apps.api.services import db_service, run_event_store
 from apps.api.services.db_service import supabase
 
 logger = logging.getLogger("apps.api.report_service")
@@ -109,9 +109,10 @@ def session_from_db(query_id: str) -> Optional[dict]:
         stages["factcheck"] = "completed"
     if done:
         stages["report"] = written_report_stage(query_id)
+    times = run_event_store.get_run_times(query_id)       # from the stored timeline (migration 017); {} for a run without one
+    error = None if done else (times.get("error") or "The run did not finish (the server restarted or the run was stopped).")
     return {"id": query_id, "question": rq[0]["raw_query"], "status": "completed" if done else "failed", "createdAt": rq[0].get("created_at"),
-            "startedAt": None, "finishedAt": None, "error": None if done else "The run did not finish (the server restarted or the run was stopped).",
-            "stages": stages}
+            "startedAt": times.get("startedAt"), "finishedAt": times.get("finishedAt"), "error": error, "stages": stages}
 
 
 def list_sessions(limit: int = 20) -> list[dict]:

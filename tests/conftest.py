@@ -32,4 +32,7 @@ def _isolated_caches(tmp_path, monkeypatch):
     monkeypatch.setenv("GROQ_USAGE_LOG", "off")               # tests never write the real usage log
     monkeypatch.setenv("STAGE5_CACHE_DIR", str(tmp_path / "stage5_cache"))     # Stage 5 writes its validated replies here, never into the real .cache/stage5
     monkeypatch.setenv("STAGE5", "false")                     # explicit "false" like FACTCHECK: the real .env may switch the written report on
+    from apps.api.services import run_event_store
+    monkeypatch.setattr(run_event_store, "get_events", lambda query_id: [])        # no test reads the real run_events table (tests of the store import the real functions at load)
+    monkeypatch.setattr(run_event_store, "get_run_times", lambda query_id: {})
     yield

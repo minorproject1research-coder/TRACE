@@ -11,7 +11,8 @@ steps (search, relevance judge, scoring, store, parsing; digest and evidence jud
 
 Stages the UI should show: planner, retrieval (papers + web), summarizer, factcheck (only when FACTCHECK=true, otherwise "not_run"),
 report (Stage 5, the written report: only when STAGE5=true, otherwise "not_run"; a failure marks the stage "failed", never the run).
-State lives in memory (events, status); everything a report needs is in the database.
+State lives in memory (events, status); everything a report needs is in the database. The events (the timeline of the run) are also written to the table
+run_events as they happen (services/run_event_store.py, migration 017), so the timeline of a finished run can be replayed after a restart of the server.
 """
 import logging
 import os
@@ -55,8 +56,9 @@ def _switched_off(stage: str) -> bool:
 
 
 class RunRecord:
-    def __init__(self, run_id: str, question: str):
+    def __init__(self, run_id: str, question: str, on_event: Optional[Callable[[str, dict], None]] = None):
         self.id, self.question = run_id, question
+        self._on_event = on_event                        # called with (run id, event) for every event, e.g. RunEventStore.append; never allowed to break the run
         self.status = "pending"
         self.created_at, self.started_at, self.finished_at = _now(), None, None
         self.error: Optional[str] = None
@@ -89,6 +91,11 @@ class RunRecord:
             ev = {"seq": len(self.events), "event": event, "stage": stage, "status": status, "message": message,
                   "data": data or {}, "timestamp": _now()}
             self.events.append(ev)
+            if self._on_event is not None:               # inside the lock, so the events reach the store in seq order
+                try:
+                    self._on_event(self.id, ev)
+                except Exception:
+                    logger.debug("event %s of run %s not handed to the event store", ev["seq"], self.id, exc_info=True)
             return ev
 
     def events_from(self, index: int) -> list[dict]:
@@ -156,7 +163,10 @@ def summarize_update(node: str, update: dict) -> tuple[str, dict]:
 
 
 class RunManager:
-    def __init__(self, graph_factory: Optional[Callable] = None, max_workers: Optional[int] = None, max_pending: Optional[int] = None):
+    def __init__(self, graph_factory: Optional[Callable] = None, max_workers: Optional[int] = None, max_pending: Optional[int] = None, event_store=None):
+        """event_store: an object with append(run_id, event) and close() (RunEventStore) that keeps the timeline of every run; None keeps it in memory only.
+        Only dependencies.get_run_manager passes the real one, so tests and scripts never write to the database by accident."""
+        self._event_store = event_store
         self._graph_factory = graph_factory or self._default_graph
         self._graph = None
         self._graph_lock = threading.Lock()
@@ -196,7 +206,7 @@ class RunManager:
             waiting = sum(1 for r in self._runs.values() if not r.finished)
             if waiting >= self._workers + self._max_pending:
                 raise QueueFull(f"{waiting} runs are already running or queued; try again later")
-            rec = RunRecord(str(uuid.uuid4()), question)
+            rec = RunRecord(str(uuid.uuid4()), question, on_event=self._event_store.append if self._event_store is not None else None)
             self._runs[rec.id] = rec
             self._evict()
         rec.emit("run_queued", status="pending", message="Queued")
@@ -210,6 +220,11 @@ class RunManager:
 
     def shutdown(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
+        if self._event_store is not None:
+            try:
+                self._event_store.close()                # write the events still queued, so a stopped run keeps its timeline up to the stop
+            except Exception:
+                logger.warning("the event store did not close cleanly", exc_info=True)
 
     # ----------------------------------------------------------------------------------------------------------- the run
     def _stage(self, rec: RunRecord, stage: str, state: str, message: str = "", data: Optional[dict] = None) -> None:

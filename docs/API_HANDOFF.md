@@ -69,7 +69,7 @@ type WorkflowEvent = {
   timestamp: string | null
 }
 ```
-A session read from the database after a restart has `status` `completed` (all sub-questions have Stage 3 results) or `failed` ("The run did not finish (the server restarted or the run was stopped)"), and `startedAt/finishedAt: null`.
+A session read from the database after a restart has `status` `completed` (all sub-questions have Stage 3 results) or `failed` ("The run did not finish (the server restarted or the run was stopped)"). `startedAt` and `finishedAt` come from the stored timeline (table `run_events`, see "The stored timeline" below); they are `null` for a run that has none (it ran before migration 017). When the stored timeline ends with `run_failed`, `error` is that event's message.
 
 ### Events (what the stream looks like)
 Typical order for one run (the 11 stage-level events; `branch_started` and `step` events, below, appear between them):
@@ -107,7 +107,7 @@ The nodes report what they are doing between a stage's start and its end. `data 
 | `summarizer` | `loop2` | **unless `LOOP2=false` (on by default since 2026-11-13).** Second search for the aspects that stayed uncovered. Runs between `judge` steps (once per sub-question that has uncovered aspects), then one `completed` | running `{loop2Step, aspects}` (loop2Step = `reselect` \| `pool` \| `queries`) and `{subQuestion, searched, covered}`; completed `{searched, covered}` totals. It adds minutes (budget `LOOP2_MAX_SECONDS`, default 20 min) |
 | `summarizer` | `store` | digests and coverage saved | completed `{stored}` |
 
-- Only the events of a run that is still in this server's memory carry steps. A run read after a restart gets one closing event, and one that finished before this change has none: for those, `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
+- Every event of a run, steps included, is stored (see "The stored timeline" below), so a run read after a restart replays the same events. Only a run that finished before migration 017 has none stored: it gets one closing event, and for those `GET /papers` returns `timing` (below) so a client can reconstruct an approximate timeline.
 - Reports are best effort: a node that cannot report (no sink, an error) is never affected, and a lane may skip a step (`skipped`).
 
 ### Work that now runs at the same time (2026-11-08) and what it means for the stream
@@ -146,8 +146,14 @@ Live: when a rung is finished, a summarizer step event with `data.step = "loop2_
 - **Close the EventSource when you receive `run_completed` or `run_failed`.** The server ends the stream after those, and a browser would otherwise reconnect forever.
 - The server replays all events from the start, so opening the stream late (page reload) is fine. To resume without replay, send `Last-Event-ID` (EventSource does this by itself on reconnect) or pass `?after=<seq>`.
 - Keep-alive comments (`: keep-alive`) are sent every 15 s of silence.
-- A run that exists only in the database (server restarted since) gets a single closing event (`run_completed` or `run_failed`).
-- If the server restarts while a run is in progress, that run is lost: it later shows as `failed`.
+- A run that is no longer in the server's memory (the server restarted since, or it was forgotten after `MAX_RUNS_IN_MEMORY`) is replayed from the table `run_events`: the same events with the same `seq`, `timestamp` and `data`, ending with `run_completed` or `run_failed`. Nothing about the client changes: open the same `EventSource`, the events arrive at once, and `Last-Event-ID` / `?after=` work as for a live run. A run without stored events (it ran before migration 017) gets a single closing event.
+- If the server restarts while a run is in progress, that run is lost and it later shows as `failed`, but its timeline up to the stop is kept: the replay ends with a `run_failed` event that names the stage that was running (`stage`) and says "The run did not finish (the server restarted or the run was stopped)."
+
+#### The stored timeline
+
+- Table `run_events` (migration `db/migrations/017_add_run_events.sql`, **the user must apply it**; until then nothing is stored, a warning is logged once a minute and the runs are not affected): one row per event. Columns: `query_id` (the run id; no foreign key, so a run that failed in the planner keeps its timeline), `seq`, `event`, `stage`, `status`, `message`, `data` (jsonb, as sent), `event_at` (the event's `timestamp`), `created_at`. Primary key `(query_id, seq)`.
+- The events are queued in memory and written by a background thread about once a second, at once when the run ends and when the server shuts down, so a write problem can never slow down or fail a run. A hard kill of the server can lose the last second of events.
+- `RUN_EVENTS_STORE=false` keeps the timeline in memory only, as before.
 
 ## Stage 5: the written report (added 2026-11-11, on by default since 2026-11-13; contract of the stored document: `docs/STAGE5_OUTPUT.md`)
 Stage 5 writes a cited report from the Stage 4 labels; since template `s5-v2` (2026-11-13) it opens with an answer to the question, built part by part (`docs/STAGE5_OUTPUT.md`, last section); `report.conclusion` may be an empty list. It is on by default (since 2026-11-13); with `STAGE5=false` nothing below appears and `stages.report` is `"not_run"`.
@@ -355,7 +361,7 @@ type PaperDetail = {
 - The web app only shows what is returned: it never fetches papers itself.
 
 ## Not built, for the product plan
-Authentication and per-user data access; cancelling a run; progress inside a stage; a database-backed run queue (runs are in memory, so a restart loses running ones); rate limiting per user; a saved-report or export endpoint.
+Authentication and per-user data access; cancelling a run; progress inside a stage; a database-backed run queue (runs are in memory, so a restart loses running ones; their timeline up to the stop is kept in `run_events`); rate limiting per user; a saved-report or export endpoint.
 
 ## Files
 `apps/api/main.py` (app, CORS, logging), `routers/query_router.py` (sessions and events), `routers/report_router.py` (evidence report and written report), `services/run_manager.py` (queue, thread, events), `services/report_service.py` (database to report; the written-report background run), `services/db_service.py` (`write_written_report`, `get_written_report`), `graph/nodes/report_node.py` (Stage 5), `config.py`, `dependencies.py`, `graph/state.py` and `graph/nodes/planner_node.py` (the run id is chosen by the API), tests in `tests/test_api.py` and `tests/test_stage5_wiring.py`. Environment variables are in `.env.example` under "API server".
