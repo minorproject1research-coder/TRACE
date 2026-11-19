@@ -3,6 +3,7 @@
   build_papers_overview(query_id)           the funnel (kept, parsed, used as evidence) and one summary row per paper and per web source
   build_paper_detail(query_id, paper_id)    one paper: metadata and links, scores, abstract, the parsed content (markdown from the parser), its
                                             outline, figures and references, and the findings taken from it with the place of each quote in the text
+                                            (each finding has an `id`, finding_id(quote), that the written report's citations use to point at it)
 
 Where a finding's quote sits in the parsed text is found with the same normalization Stage 3 uses to verify quotes (quote_verifier._norm:
 hyphenation, citation markers, typographic hyphens, whitespace), so a highlight is shown exactly when the verifier could have found the quote.
@@ -10,6 +11,7 @@ When it cannot be placed, no span is returned: a missing highlight is better tha
 
 Offsets are in UTF-16 code units, i.e. JavaScript string indexes, because the text is rendered by a browser.
 """
+import hashlib
 import logging
 import re
 import uuid
@@ -95,6 +97,13 @@ class QuoteLocator:
 
 
 # ------------------------------------------------------------------------------------------------------------ small helpers
+def finding_id(quote: str) -> str:
+    """A stable id for a quote (hash of the whitespace-collapsed, lower-cased text). The written report names the quote behind a citation with it
+    (citations[].quotes[].findingId) and GET .../papers/{id} gives it to every finding, so a citation can open the paper at that quote."""
+    norm = re.sub(r"\s+", " ", (quote or "").strip().lower())
+    return "f_" + hashlib.sha1(norm.encode("utf-8")).hexdigest()[:10]
+
+
 def _paper_url(p: dict) -> Optional[str]:
     if p.get("doi"):
         return f"https://doi.org/{p['doi']}"
@@ -237,6 +246,7 @@ def build_paper_detail(query_id: str, paper_id: str) -> Optional[dict]:
         for f in rs._as_list(d.get("findings")):
             judge = rs._as_dict(f.get("judge"))
             findings.append({
+                "id": finding_id(f.get("quote") or ""),
                 "claim": f.get("claim"), "quote": f.get("quote"), "stance": f.get("stance"), "quoteFound": bool(f.get("verified")),
                 "subQuestion": topics.get(d.get("sub_question_id")),
                 "judgements": [{"aspect": j.get("aspect"), "verdict": j.get("final"), "quoteSupportsClaim": j.get("quote_supports_claim"),

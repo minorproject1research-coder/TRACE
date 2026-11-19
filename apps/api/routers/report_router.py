@@ -2,7 +2,9 @@
 
   GET  /api/research/{id}/report           the EVIDENCE report (see services/report_service.py for what it contains and what it does not)
   GET  /api/research/{id}/written-report   the WRITTEN report of Stage 5 (docs/STAGE5_OUTPUT.md): 200 {status, report, markdown, stats, model,
-                                           templateVersion, generatedAt}; 202 {"state": "running"} while it is being written; 404 when there is none
+                                           templateVersion, generatedAt}; 202 {"state": "running"} while it is being written; 404 when there is none.
+                                           The report also carries what links it to the papers (services/written_report_links.py: sentence.citations,
+                                           reference.paper, overview.answer), computed when it is read
   POST /api/research/{id}/written-report   write it again from the STORED run (only with STAGE5=true): 202 {"state": "started"}, 409 when one is
                                            already running for this id (or the run is not finished), 400 when STAGE5 is off
 """
@@ -10,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
 from apps.api.dependencies import get_run_manager
-from apps.api.services import db_service, report_service
+from apps.api.services import db_service, report_service, written_report_links
 from apps.api.services.db_errors import read_with_retry, valid_uuid
 from apps.api.services.run_manager import RunManager
 
@@ -43,7 +45,8 @@ def get_written_report(research_id: str, manager: RunManager = Depends(get_run_m
         why = report_service.written_report_error(research_id)
         raise HTTPException(status_code=404, detail="No written report for this run (Stage 5 did not run, or it has not been stored)"
                             + (f"; the last attempt failed: {why}" if why else ""))
-    return report_service.written_report_view(row)
+    # the stored report plus what the web app needs to link it to the papers (citations, reference.paper, overview.answer); never fails the request
+    return written_report_links.enrich_view(report_service.written_report_view(row), research_id)
 
 
 @router.post("/{research_id}/written-report", status_code=202)

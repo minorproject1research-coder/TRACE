@@ -35,4 +35,6 @@ def _isolated_caches(tmp_path, monkeypatch):
     from apps.api.services import run_event_store
     monkeypatch.setattr(run_event_store, "get_events", lambda query_id: [])        # no test reads the real run_events table (tests of the store import the real functions at load)
     monkeypatch.setattr(run_event_store, "get_run_times", lambda query_id: {})
+    from apps.api.services import written_report_links
+    monkeypatch.setattr(written_report_links, "load_context", lambda report: written_report_links.Context())     # no test reads fact_claims or the paper tables of the real database for the links
     yield

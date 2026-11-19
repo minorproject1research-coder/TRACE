@@ -83,6 +83,29 @@ What the report is not: a verified answer. Every check is automatic (language mo
 - `template_version` (for example `s5-v1`) changes when a prompt or template changes; a stored report keeps the version it was written with. Write it again with `POST /api/research/{id}/written-report` (only with `STAGE5=true`).
 - `stats` is for audit and telemetry (claims by tier, sentences by origin, calls, tokens, NLI and judge counts, seconds); do not build the UI on its keys.
 
+## Added when the report is read (2026-11-19)
+`GET /api/research/{id}/written-report` returns the stored report plus fields that the server computes at read time (`services/written_report_links.py`): nothing is stored, no model is called, so it works for every stored report. If computing them fails, the stored report is returned without them, so a client must treat all of them as optional. The stored `markdown` is unchanged.
+
+```ts
+type Citation = { ref: number; paperId: string | null; parsed: boolean; quotes: CitedQuote[] }
+type CitedQuote = { text: string; findingId: string; paperId: string | null; parsed: boolean; relation: 'supports' | 'near_match'; evidenceLevel: string | null }
+// on every Sentence (overview.summary, sections[].sentences, conclusion):  citations: Citation[]     ([] for a note and for a sentence whose claims were not found)
+// on every Reference:  paper: { id: string; parsed: boolean } | null ;  citedIn: number
+// on overview:         answer?: Answer       (absent when the report has no answer sentence)
+type Answer = {
+  headline: { sentenceIndex: number } | null           // the first statement of overview.summary: the verdict, to be shown largest
+  parts: { sentenceIndex: number; sectionId: string | null; title: string | null; sentence: Sentence; supporting: Sentence[] }[]
+  strength: { statements: number; byTier: { supported: number; partly: number; single: number }; documents: number; fullTextDocuments: number
+              documentsInReport: number | null; partsCovered: number; sections: number; disagreements: number; openQuestions: number; line: string }
+  figures: { value: string; sentenceIndex: number; refs: number[] }[]      // percentages found in the answer sentences, at most 6 (may be [])
+  openQuestions: string[]                              // read from the template line "The evidence collected does not settle: ...; ..."
+  disputes: { count: number; items: { sectionId: string; title: string; claimA: string; claimB: string; refs: number[] }[] }   // at most 3 items
+}
+```
+- **`citations`** are the verbatim quotes behind a sentence's claims (the supporting quote, and for a partly supported claim the near-match quote of the second document; never the conflicting side), grouped by reference, at most 3 per reference. Their reference numbers are exactly the sentence's `refs`. They are the "evidence" to show under a sentence.
+- **Opening the parsed paper.** `paperId` is a `retrieved_papers` id of this run: its page is `/research/{id}/papers/{paperId}` (`GET /api/research/{id}/papers/{paperId}` has the parsed text, the findings and where each quote sits in the text). `parsed: true` means TRACE has the parsed text; `parsed: false` means only the abstract and the findings exist. `paperId: null` is a web source: there is no parsed page, only `references[].url`. `findingId` equals `findings[].id` of that paper's response, so the page can scroll to the highlighted quote. The citation's `paperId` is the paper that holds its first quote (one document can be several rows, one per sub-question), so that `findingId` is on that page; each quote also has its own `paperId`. `reference.paper` is the paper to open from the reference list (the parsed copy that is cited most).
+- **`overview.answer`** is the same answer as `overview.summary`, organised: each part is one answer sentence with the sub-question section it comes from and up to 2 supporting sentences of that section (strongest tier first, never a claim already used in the answer). Every sentence in it keeps its tier label and citations: the rules of "What must always be shown" apply to them. `strength.line` is a ready sentence about how well the answer rests on the evidence; the numbers behind it are in the other `strength` fields. Everything in `answer` is computed from the stored report and the stored claims; it says nothing the report did not already say.
+
 ## The answer (`overview.summary`, template `s5-v2`, 2026-11-13)
 From template `s5-v2` the first block of the report answers the question that was asked; the field keeps its name `overview.summary` so no client breaks, but a client should title it **"Answer"**, not "Executive summary". The Markdown heading is `## Answer and Overview`.
 - Written from the question: Python ranks the sections by how many words of the question their title shares (background sections come last), offers the best sentences of the top four sections (stronger tier first, sentences with a figure first, near duplicates removed; shown to the model grouped under "== Part: <section title> ==" headers), and checks that the answer draws on at least three of them. The model only words it from numbered, already verified sentences (verdict on the main part of the question first, then the conditions or figures, then the other parts), and each answer sentence is cited from the sentences it is based on and hedged like the weakest of them.

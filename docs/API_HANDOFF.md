@@ -174,7 +174,7 @@ The `report` stage starts after the factcheck stage ends, so the two never overl
 ```ts
 type WrittenReportResponse = {
   status: 'completed' | 'completed_with_warnings' | 'insufficient_evidence' | 'failed'
-  report: WrittenReport          // the structured report: see docs/STAGE5_OUTPUT.md (sections, sentences with claim ids, references, limitations)
+  report: WrittenReport          // the structured report: see docs/STAGE5_OUTPUT.md (sections, sentences with claim ids, references, limitations). Since 2026-11-19 the server adds, when it reads the report: sentence.citations (the quotes behind a sentence and the paper page each citation opens), reference.paper / reference.citedIn and overview.answer (the answer as parts): see "Added when the report is read" in docs/STAGE5_OUTPUT.md. All are optional: a client must work without them.
   markdown: string               // the same report as Markdown, for download
   stats: Record<string, unknown> // counts of the run of Stage 5 (nested objects: claims by tier, sentences by origin, calls, tokens, NLI and judge counts, seconds); open keys
   model: string | null           // the writer model, e.g. "openai/gpt-oss-120b"
@@ -353,7 +353,7 @@ type PaperDetail = {
   paper: PaperSummary
   abstract: string
   parsed: null | { parserVersion; chars; text: string /* the parser's markdown */; outline: {heading; level}[]; figures: {page; label; caption}[]; references: string[] /* first 400 */; referenceCount }
-  findings: (Finding & { subQuestion: string|null; spans: {start: number; end: number}[] })[]
+  findings: (Finding & { id: string /* "f_" + 10 hex: the id the written report's citations use (citations[].quotes[].findingId) */; subQuestion: string|null; spans: {start: number; end: number}[] })[]
 }
 ```
 - **`timing`** is when each part of the run was *written* to the database, normalised to UTC (checked against the live events of a real run: within about 1 s). A client without step events reconstructs an approximate timeline from it (search and judge calls cannot be recovered; `papersJudged` counts the kept papers that carry a judge verdict).
