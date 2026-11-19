@@ -970,4 +970,70 @@ mark.active { background: #3fe0f240; box-shadow: inset 0 -2px 0 var(--cyan), 0 0
 
 /* A note of the answer (tier "note"): plain, muted, no chip. */
 .wr-sentence.wr-plain-note { border-left: 3px solid var(--line-1); color: var(--text-3); font-size: 13.5px; }
-.written-report .wr-counts { margin: 14px 0 0; }
+.written-report .wr-counts { margin: 0; }
+
+/* Collapse bars (components/Fold.tsx): styled like the .fold panels. The state is shown by the chevron and the word Show / Hide; a closed region is `hidden`. */
+.written-report h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font: 600 14px var(--font-head); }
+.written-report .wr-fold-h { display: block; margin: 0; font: inherit; }
+.wr-fold { border: 1px solid var(--line-2); border-radius: var(--r-md); background: #0a1226aa; }
+.written-report > .wr-fold, .written-report > section.wr-topics, .written-report > section.wr-answer { padding-bottom: 0; border-bottom: 1px solid var(--line-2); }
+.wr-bar { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; border-radius: var(--r-md); background: none; color: var(--text-1); text-align: left; font: inherit; cursor: pointer; }
+.wr-bar:hover { background: var(--ink-800); } .wr-bar:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.wr-bar-body { display: flex; flex-direction: column; flex: 1 1 auto; gap: 3px; min-width: 0; } .wr-bar-title { font: 600 16px/1.35 var(--font-head); overflow-wrap: anywhere; }
+.wr-bar-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--text-3); font: 12px/1.5 var(--font-code); }
+.wr-bar-state { flex: none; color: var(--text-3); font: 500 11px var(--font-code); } .wr-chev { flex: none; color: var(--text-3); }
+@media (prefers-reduced-motion: no-preference) { .wr-chev { transition: transform .18s var(--ease); } }
+.wr-bar[aria-expanded='true'] .wr-chev { transform: rotate(90deg); }
+.wr-fold-body { padding: 4px 16px 14px; } .wr-fold-body[hidden] { display: none; }
+.wr-fold > .wr-fold-body { border-top: 1px solid var(--line-1); }
+.wr-section.wr-fold { margin-top: 10px; } .wr-section.wr-fold > .wr-fold-body:empty { display: none; }
+.wr-section .wr-disagrees { padding: 0 16px; } .wr-section .wr-gaps { margin: 4px 0 0; } .wr-section > .wr-fold-body:last-child:not([hidden]) { border-top: 0; padding-top: 0; }
+.wr-topics-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 4px; } .wr-topics-head h2 { margin: 6px 0; }
+.wr-fold.small { border: 0; background: none; }
+.wr-fold.small > .wr-fold-body { border-top: 0; padding: 4px 0 6px 6px; }
+.wr-bar.small { display: inline-flex; width: auto; padding: 3px 8px 3px 4px; border-radius: 8px; font: 500 12px var(--font-code); color: var(--text-3); gap: 6px; }
+.wr-bar.small .wr-bar-title { font: 500 12px/1.4 var(--font-code); } .wr-bar.small .wr-bar-state { margin-left: 2px; }
+.wr-sent { min-width: 0; } .wr-sent > .wr-sentence { margin-bottom: 4px; } .wr-sent > .wr-evidence { margin: 0 0 12px 8px; } .wr-sent > .wr-plain-note { margin-bottom: 10px; }
+.wr-ev-for { margin: 2px 0 8px; font-size: 12px; } .wr-ev-ref { margin: 0 0 12px; } .wr-ev-head { margin: 0 0 6px; color: var(--text-2); font-size: 13px; }
+.wr-quote { margin: 0 0 8px; } .wr-quote blockquote { margin: 0; padding: 8px 12px; border-left: 2px solid var(--line-3); border-radius: 0 8px 8px 0; background: var(--ink-900); color: var(--text-2); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.wr-quote figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; font-size: 12px; } .wr-quote figcaption a, .wr-ref-actions a { color: var(--cyan); text-decoration: underline; text-underline-offset: 2px; }
+.wr-rel.supports { color: var(--mint); border-color: #2f9c78; } .wr-rel.near_match { color: #8fb0ff; border-color: #3a5bb0; border-style: dashed; }
+.wr-ref-actions { display: inline-flex; flex-wrap: wrap; gap: 4px 4px; } .wr-ref-actions a { margin-left: 8px; } .wr-cited { margin-left: 8px; font-size: 11.5px; } .wr-refs li:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.wr-intro, .wr-references { margin: 0; } .wr-intro .wr-fold-body p:first-child, .wr-references .wr-fold-body { padding-top: 12px; }
+.wr-disagree:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; } .wr-disagree h4 { margin: 0 0 8px; }
+
+/* The Answer: the hero of the page. A stronger border and a lit background; the type is larger. A partly supported or one-source sentence keeps its dashed border and its label here too. */
+.written-report > section.wr-answer { position: relative; padding: 24px 26px 22px; border: 1px solid #4f7dffaa; border-radius: var(--r-lg); background: linear-gradient(160deg, #13235022, #0b1430ee 60%); box-shadow: 0 0 0 1px #4f7dff22, 0 14px 40px #02061266; }
+.wr-answer > h2 { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: var(--lav); font: 700 20px/1.2 var(--font-head); letter-spacing: .01em; }
+.wr-answer h3 { margin: 0 0 8px; font: 600 14px var(--font-head); }
+.wr-headline .wr-sentence { padding-left: 16px; font: 600 22px/1.5 var(--font-head); color: var(--text-1); } .wr-headline .wr-sentence.supported { border-left-width: 4px; } .wr-headline .wr-sentence.partly, .wr-headline .wr-sentence.single, .wr-headline .wr-sentence.other { border-left-width: 4px; }
+.wr-headline .wr-tier { font-size: 12.5px; vertical-align: middle; } .wr-headline { margin-bottom: 6px; }
+.wr-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 14px 0 4px; }
+.wr-part { min-width: 0; padding: 14px 16px 6px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: #070c1acc; }
+.wr-part-title { margin: 0 0 8px !important; color: var(--text-2); font: 600 12.5px/1.4 var(--font-code) !important; } .wr-part .wr-sentence { font-size: 16px; line-height: 1.6; }
+.wr-more { margin: 2px 0 4px; } .wr-more .wr-bar-sub { display: inline; margin-left: 4px; }
+.wr-strength { margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: var(--r-md); background: #070c1acc; }
+.wr-strength-line { margin: 0 0 12px; color: var(--text-2); font-size: 14px; }
+.wr-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 18px; margin: 0 0 12px; } .wr-nums div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px; } .wr-nums dd { margin: 0; font: 700 22px/1 var(--font-head); } .wr-nums dd span { color: var(--text-3); font: 500 13px var(--font-code); } .wr-nums dt { color: var(--text-3); font: 11.5px/1.45 var(--font-code); }
+.wr-sw { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 1px solid var(--line-3); border-radius: 3px; vertical-align: -1px; }
+.wr-sw.supported, .wr-tierbar .supported { background: #2f9c78; border-color: #2f9c78; }
+.wr-sw.partly, .wr-tierbar .partly { background: repeating-linear-gradient(45deg, #4f7dff 0 3px, #14224f 3px 6px); border-color: #3a5bb0; }
+.wr-sw.single, .wr-tierbar .single { background: repeating-linear-gradient(90deg, #8d9cbc 0 2px, transparent 2px 5px); border-color: var(--line-3); }
+.wr-tierbar { display: flex; height: 10px; overflow: hidden; border: 1px solid var(--line-3); border-radius: 999px; background: var(--ink-900); } .wr-tierbar span { display: block; height: 100%; min-width: 3px; } .wr-tierbar span + span { border-left: 1px solid var(--ink-900); }
+.wr-keyfigs { margin-top: 16px; } .wr-keyfigs ul { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 0; padding: 0; list-style: none; } .wr-keyfigs li { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.wr-fig { display: inline-block; padding: 3px 12px; border: 1px solid #4f7dff88; border-radius: 999px; background: #4f7dff1a; color: var(--text-1); font: 700 15px var(--font-head); text-decoration: none; } a.wr-fig:hover { border-color: var(--cyan); }
+.wr-open { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 20px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line-2); }
+.wr-open ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 13.5px; } .wr-open li { margin: 4px 0; overflow-wrap: anywhere; } .wr-open a, .wr-open .meta a { color: var(--cyan); text-decoration: underline; text-underline-offset: 2px; }
+.wr-disputes li b { display: block; font-size: 13px; } .wr-dispute-claims { display: block; } .wr-vs { color: var(--text-3); }
+
+/* The paper page, opened from a citation of the written report: the quote that was asked for, and the way back. */
+.parsed-content { scroll-margin-top: 80px; }
+.asked-banner { margin: 10px 0 14px; } .asked-banner p { margin: 0; } .asked-banner .tool-button { margin-top: 10px; }
+.asked-quote { margin: 8px 0 0; padding: 8px 12px; border-left: 3px solid var(--lav); border-radius: 0 8px 8px 0; background: var(--ink-900); color: var(--text-2); font-size: 13.5px; line-height: 1.6; overflow-wrap: anywhere; }
+.finding-asked { padding: 8px; border: 1px solid var(--lav); border-radius: var(--r-md); background: #bcabff0d; } .finding-asked .finding { margin: 0; }
+.asked-tag { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; color: var(--lav); font: 600 12px var(--font-code); }
+.callout-line { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; border: 1px dashed var(--line-3); border-radius: var(--r-md); color: var(--text-2); font-size: 13px; }
+@media (max-width: 720px) {
+  .written-report > section.wr-answer { padding: 18px 14px 16px; } .wr-headline .wr-sentence { font-size: 19px; } .wr-parts { grid-template-columns: 1fr; } .wr-bar { padding: 12px 12px; } .wr-fold-body { padding: 4px 12px 12px; }
+  .wr-bar-title { font-size: 15px; } .wr-section .wr-disagrees { padding: 0 10px; }
+}

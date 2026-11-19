@@ -1,5 +1,6 @@
 import { LEGEND, markers, PARTLY_LABEL, SINGLE_LABEL } from './written-report'
-import type { WrittenDisagreement, WrittenReference, WrittenReport, WrittenReportResponse, WrittenSection, WrittenSentence } from './trace-types'
+import { DEMO_FINDING } from './demo-papers'
+import type { Citation, WrittenAnswer, WrittenDisagreement, WrittenReference, WrittenReport, WrittenReportResponse, WrittenSection, WrittenSentence } from './trace-types'
 
 // DEMO MODE ONLY. Fictional written reports (Stage 5) in the exact shape of GET /api/research/{id}/written-report (docs/STAGE5_OUTPUT.md), one per status.
 
@@ -14,7 +15,25 @@ const REFS: WrittenReference[] = [
   { number: 6, title: '[Sample] A Practitioner Notebook', authors: [], year: 2024, venue: 'sample-notebook.example.org', doi: null, url: 'https://example.org/sample-notebook', kind: 'web', evidenceLevel: 'web_snippet', sourceIds: ['demo-src-15'], text: '[Sample] A Practitioner Notebook. sample-notebook.example.org (2024). Accessed 2026-11-10.', markdown: '' },
 ]
 
-const S = (text: string, refs: number[], tier: 'supported' | 'partly' | 'single' | 'note', origin: 'llm' | 'fallback' | 'template' = 'llm'): WrittenSentence => ({ text, claimIds: [`claim-${refs.join('')}-${text.length}`], refs, tier, origin })
+// What a citation to each demo reference looks like (docs/STAGE5_OUTPUT.md, "Added when the report is read"): one parsed paper (1), one not parsed (2), a paper whose finding the page
+// does not have (3), two web sources (4, 6) and a paper without a page or a url (5), so that every state of the marker can be seen without the server.
+const CITED: Record<number, { paperId: string | null; parsed: boolean; findingId: string; text: string; level: string | null }> = {
+  1: { paperId: 'demo-paper-1', parsed: true, findingId: DEMO_FINDING.train.id, text: DEMO_FINDING.train.text, level: 'full_text' },
+  2: { paperId: 'demo-paper-2', parsed: false, findingId: DEMO_FINDING.memory.id, text: DEMO_FINDING.memory.text, level: 'abstract' },
+  3: { paperId: 'demo-paper-4', parsed: false, findingId: 'f_6f708192a3', text: 'Production cost fell to about a tenth of the baseline.', level: 'abstract' },
+  4: { paperId: null, parsed: false, findingId: 'f_708192a3b4', text: 'Noise only matters at very low signal levels.', level: 'web_snippet' },
+  5: { paperId: null, parsed: false, findingId: 'f_8192a3b4c5', text: 'Accuracy dropped sharply as soon as noise grew in our experiments.', level: 'full_text' },
+  6: { paperId: null, parsed: false, findingId: 'f_92a3b4c5d6', text: 'A short warm-up followed by a slow decay worked well for us.', level: 'web_snippet' },
+}
+/** The citation of a reference. `alt` swaps in another quote of the same paper (for example one whose place in the parsed text could not be found). */
+const cite = (ref: number, relation: 'supports' | 'near_match' = 'supports', alt?: { id: string; text: string }): Citation => {
+  const c = CITED[ref]
+  return { ref, paperId: c.paperId, parsed: c.parsed, quotes: [{ text: alt?.text ?? c.text, findingId: alt?.id ?? c.findingId, paperId: c.paperId, parsed: c.parsed, relation, evidenceLevel: c.level }] }
+}
+const autoCites = (refs: number[], tier: string): Citation[] => (tier === 'note' ? [] : refs.map((r, i) => cite(r, tier === 'partly' && i > 0 ? 'near_match' : 'supports')))
+
+const S = (text: string, refs: number[], tier: 'supported' | 'partly' | 'single' | 'note', origin: 'llm' | 'fallback' | 'template' = 'llm', citations?: Citation[]): WrittenSentence =>
+  ({ text, claimIds: [`claim-${refs.join('')}-${text.length}`], refs, tier, origin, citations: citations ?? autoCites(refs, tier) })
 
 const TOPICS = [
   'What is the sample method and how does it work?',
@@ -39,7 +58,7 @@ function sections(fallback: boolean, plain: boolean): WrittenSection[] {
     { id: 'sec-1', title: TOPICS[0], subQuestionId: 'demo-sq-1', detailQuestions: ['What is the main goal of the method?', 'Which datasets were used?'],
       sentences: [
         S(w(plain, 'The method aims to trace weak signals back to their sources.', 'Two sources report that the method aims to trace weak signals back to their sources.'), [1, 2], 'supported'),
-        S(w(plain, 'Two public datasets were used to evaluate the method.', 'The first paper reports that two public datasets were used, and another paper makes a related point about how they were split.'), [1, 5], 'partly'),
+        S(w(plain, 'Two public datasets were used to evaluate the method.', 'The first paper reports that two public datasets were used, and another paper makes a related point about how they were split.'), [1, 5], 'partly', 'llm', [cite(1, 'supports', DEMO_FINDING.small), cite(5, 'near_match')]),
         S(w(plain, 'A paper reports that training used an 80/10/10 split.', 'According to one paper, training used an 80/10/10 split.'), [2], 'single', o),
       ],
       disagreements: [DISAGREEMENT], gaps: [], counts: { total: 5, supported: 1, partly: 1, single: 1, disputed: 1, filtered: 1 } },
@@ -62,7 +81,7 @@ function sections(fallback: boolean, plain: boolean): WrittenSection[] {
 
 const INTRO = ['This report answers the question from the evidence TRACE collected and checked: the papers and web pages it found, the findings taken from them, and the cross-check of those findings across sources.', 'Each sentence below says how many documents stand behind it. Read it as a summary of what the sources say, not as a verified answer.']
 
-function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question: string, plain: boolean): WrittenReport {
+function buildBase(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question: string, plain: boolean): WrittenReport {
   if (kind === 'failed') {
     return { status: 'failed', question, generatedAt: '2026-11-10T10:20:00Z', overview: { summary: [], counts: {} }, introduction: [], sections: [], limitations: ['Stage 5 failed: RuntimeError: the writer model stayed unreachable (simulated).'], conclusion: [], references: [], stats: {}, warnings: ['RuntimeError: the writer model stayed unreachable (simulated).'] }
   }
@@ -77,11 +96,11 @@ function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', quest
   const secs = sections(warn, plain)
   const summary = [
     S(w(plain, 'The method aims to trace weak signals back to their sources.', 'Two sources report that the method aims to trace weak signals back to their sources.'), [1, 2], 'supported'),
-    S(w(plain, 'An abstract reports that production cost fell to about a tenth of the baseline.', 'One study reports that production cost fell to about a tenth of the baseline, based on its abstract.'), [3], 'single'),
+    S(w(plain, 'An abstract reports that production cost fell to about 10% of the baseline.', 'One study reports that production cost fell to about 10% of the baseline, based on its abstract.'), [3], 'single'),
     { text: 'The evidence collected does not settle: how the method behaves on streaming inputs, and the open problems of the method.', claimIds: [], refs: [], tier: 'note', origin: 'template' },
   ]
   // The bottom line can be empty (the model could not write it within the checks): the warnings kind has none, so the Conclusion heading is hidden.
-  const conclusion = warn ? [] : [S('The sources agree on the goal of the method, while most other findings rest on a single document and are not confirmed.', [1, 2, 3], 'partly')]
+  const conclusion = warn ? [] : [S('The sources agree on the goal of the method, while most other findings rest on a single document and are not confirmed.', [1, 2, 3], 'partly', 'llm', [cite(1, 'supports', DEMO_FINDING.missing), cite(2, 'near_match'), cite(3, 'near_match')])]
   const all: WrittenSentence[] = [...summary.filter(s => s.tier !== 'note'), ...secs.flatMap(sec => sec.sentences ?? [])]
   const n = (t: string) => all.filter(s => s.tier === t).length
   return {
@@ -98,6 +117,52 @@ function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', quest
     conclusion, references: REFS, stats: { sentences: { llm: warn ? 6 : 8, fallback: warn ? 1 : 0, template: warn ? 2 : 1 } },
     warnings: warn ? ['1 sentence uses the template wording because the model’s sentence failed its checks twice.', '1 sentence was dropped by the final check.', 'The conclusion could not be written within the checks and is left out.'] : [],
   }
+}
+
+const PAPERS: Record<number, { id: string; parsed: boolean } | null> = { 1: { id: 'demo-paper-1', parsed: true }, 2: { id: 'demo-paper-2', parsed: false }, 3: { id: 'demo-paper-4', parsed: false }, 4: null, 5: null, 6: null }
+
+/** What the server adds when it reads the report: `reference.paper` and `citedIn`, and the organised answer (`overview.answer`). */
+function addLinks(r: WrittenReport): WrittenReport {
+  const body = [...(r.overview?.summary ?? []).filter(s => s.tier !== 'note'), ...(r.sections ?? []).flatMap(s => s.sentences ?? []), ...(r.conclusion ?? [])]
+  const references = (r.references ?? []).map(x => ({ ...x, paper: PAPERS[x.number] ?? null, citedIn: body.filter(s => (s.refs ?? []).includes(x.number)).length }))
+  const summary = r.overview?.summary ?? []
+  if (summary.length === 0 || !r.sections?.length) return { ...r, references }
+  const sec = (i: number) => r.sections![i]
+  const parts: WrittenAnswer['parts'] = [
+    { sentenceIndex: 0, sectionId: sec(0).id ?? null, title: sec(0).title, sentence: summary[0], supporting: (sec(0).sentences ?? []).slice(1, 3) },
+    { sentenceIndex: 1, sectionId: sec(1).id ?? null, title: sec(1).title, sentence: summary[1], supporting: (sec(1).sentences ?? []).slice(0, 1) },
+  ]
+  const used = [summary[0], summary[1], ...parts.flatMap(p => p.supporting)]
+  const by = (t: string) => used.filter(s => s.tier === t).length
+  const cited = new Set(used.flatMap(s => s.refs ?? []))
+  const full = [...cited].filter(n => references.find(x => x.number === n)?.evidenceLevel === 'full_text').length
+  const d = sec(0).disagreements?.[0]
+  const answer: WrittenAnswer = {
+    headline: { sentenceIndex: 0 }, parts,
+    strength: {
+      statements: used.length, byTier: { supported: by('supported'), partly: by('partly'), single: by('single') }, documents: cited.size, fullTextDocuments: full, documentsInReport: references.length,
+      partsCovered: parts.length, sections: r.sections.length, disagreements: r.overview?.counts?.disagreements ?? 0, openQuestions: 2,
+      line: `The answer is built from ${used.length} statements: ${by('supported')} stated by two or more documents, ${by('partly')} partly supported and ${by('single')} from a single document. They cite ${cited.size} documents, ${full} of them read in full text.`,
+    },
+    figures: [{ value: '10%', sentenceIndex: 1, refs: [3] }],
+    openQuestions: ['how the method behaves on streaming inputs', 'the open problems of the method'],
+    disputes: { count: 1, items: d ? [{ sectionId: sec(0).id ?? '', title: sec(0).title, claimA: d.claimA ?? '', claimB: d.claimB ?? '', refs: [d.sideA?.ref ?? 0, d.sideB?.ref ?? 0].filter(n => n > 0) }] : [] },
+  }
+  return { ...r, references, overview: { ...r.overview, answer } }
+}
+
+/** A report as the server wrote it before it computed the extra fields at read time (or when computing them failed): no citations, no paper links, no organised answer. */
+function stripLinks(r: WrittenReport): WrittenReport {
+  const bare = (s: WrittenSentence): WrittenSentence => { const { citations: _c, ...rest } = s; return rest }
+  return {
+    ...r, overview: { ...r.overview, summary: (r.overview?.summary ?? []).map(bare) },
+    sections: (r.sections ?? []).map(s => ({ ...s, sentences: (s.sentences ?? []).map(bare) })), conclusion: (r.conclusion ?? []).map(bare),
+  }
+}
+
+function build(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question: string, plain: boolean, links: boolean): WrittenReport {
+  const r = buildBase(kind, question, plain)
+  return links ? addLinks(r) : stripLinks(r)
 }
 
 /** The Markdown of a report, as the server writes it: the legend as the first block quote, the markers before the final full stop, the tier labels in italics. */
@@ -124,7 +189,8 @@ export function demoMarkdown(r: WrittenReport): string {
 
 /** `templateVersion` s5-v3 (the default) has plain claims; s5-v2 keeps the older wording ("Two sources report ..."), like a report stored before the change. */
 export function demoWrittenResponse(kind: 'completed' | 'warnings' | 'insufficient' | 'failed', question = 'How does the sample method compare with the baseline?', templateVersion = 's5-v3'): WrittenReportResponse {
-  const report = build(kind, question, templateVersion !== 's5-v2')
+  // s5-v2 stands for a report from before the read-time fields: it has none of them (no citations, no paper links, no organised answer)
+  const report = build(kind, question, templateVersion !== 's5-v2', templateVersion !== 's5-v2')
   const markdown = demoMarkdown(report)
   report.references = (report.references ?? []).map(x => ({ ...x, markdown: `${x.number}. ${x.text}` }))
   return { status: report.status ?? kind, report, markdown, stats: report.stats, model: 'demo-writer', templateVersion, generatedAt: report.generatedAt }

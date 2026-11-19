@@ -308,7 +308,8 @@ export type PapersOverview = {
 /** A character range in PaperDetail.parsed.text (UTF-16 code units, i.e. JavaScript string indexes). */
 export type Span = { start: number; end: number }
 
-export type PaperFinding = Finding & { subQuestion: string | null; spans: Span[] }
+/** `id` (a string like f_1a2b3c4d5e) is what a citation of the written report points at (CitedQuote.findingId); optional, an older server does not send it. */
+export type PaperFinding = Finding & { id?: string; subQuestion: string | null; spans: Span[] }
 
 export type PaperDetail = {
   paper: PaperSummary
@@ -346,7 +347,15 @@ export class ApiError extends Error {
 }
 
 // ---- Stage 5: the written report (docs/STAGE5_OUTPUT.md). Every field is optional for the reader: unknown fields are ignored, tier / origin / kind / evidenceLevel are open strings.
-export type WrittenSentence = { text: string; claimIds?: string[]; refs?: number[]; /** supported | partly | single (open string) */ tier: string; /** llm | fallback | template (open string) */ origin?: string }
+/** The verbatim quote behind a sentence. `findingId` equals `findings[].id` of the paper `paperId` (GET /papers/{paperId}); `relation` is supports | near_match (open string). */
+export type CitedQuote = { text: string; findingId: string; paperId: string | null; parsed: boolean; relation: string; evidenceLevel: string | null }
+/** The quotes of one reference behind one sentence. `paperId` is the paper of its first quote (null: a web source, there is no paper page). */
+export type Citation = { ref: number; paperId: string | null; parsed: boolean; quotes: CitedQuote[] }
+export type WrittenSentence = {
+  text: string; claimIds?: string[]; refs?: number[]; /** supported | partly | single (open string) */ tier: string; /** llm | fallback | template (open string) */ origin?: string
+  /** Added by the server when it reads the report (docs/STAGE5_OUTPUT.md, 2026-11-19): the quotes behind the sentence, grouped by reference. Absent on an old response; [] for a note. */
+  citations?: Citation[]
+}
 export type WrittenSide = { quote?: string | null; ref?: number | null; title?: string | null }
 export type WrittenDisagreement = { claimA?: string; claimB?: string; claimId?: string | null; note?: string; sideA?: WrittenSide; sideB?: WrittenSide }
 export type WrittenSection = {
@@ -356,10 +365,26 @@ export type WrittenSection = {
 export type WrittenReference = {
   number: number; title?: string | null; authors?: string[]; year?: number | null; venue?: string | null; doi?: string | null; url?: string | null
   kind?: string; evidenceLevel?: string | null; sourceIds?: string[]; text?: string; markdown?: string
+  /** Added at read time: the paper to open from the reference list (null for a web page), and in how many sentences of the report the reference is cited. */
+  paper?: { id: string; parsed: boolean } | null; citedIn?: number
+}
+/** The Answer, organised (overview.answer, added at read time). Every sentence keeps its tier and citations. */
+export type WrittenAnswerPart = { sentenceIndex: number; sectionId: string | null; title: string | null; sentence: WrittenSentence; supporting: WrittenSentence[] }
+export type WrittenAnswerStrength = {
+  statements: number; byTier: { supported: number; partly: number; single: number }; documents: number; fullTextDocuments: number
+  documentsInReport: number | null; partsCovered: number; sections: number; disagreements: number; openQuestions: number; line: string
+}
+export type WrittenAnswer = {
+  headline: { sentenceIndex: number } | null
+  parts: WrittenAnswerPart[]
+  strength: WrittenAnswerStrength
+  figures: { value: string; sentenceIndex: number; refs: number[] }[]
+  openQuestions: string[]
+  disputes: { count: number; items: { sectionId: string; title: string; claimA: string; claimB: string; refs: number[] }[] }
 }
 export type WrittenReport = {
   status?: string; question?: string; generatedAt?: string
-  overview?: { summary?: WrittenSentence[]; counts?: Record<string, number> }
+  overview?: { summary?: WrittenSentence[]; counts?: Record<string, number>; answer?: WrittenAnswer }
   introduction?: string[]; sections?: WrittenSection[]; limitations?: string[]; conclusion?: WrittenSentence[]; references?: WrittenReference[]
   stats?: Record<string, unknown>; warnings?: string[]
 }

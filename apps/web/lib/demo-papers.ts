@@ -11,6 +11,18 @@ const Q_TRAIN = 'Training proceeds in two phases, a broad pretraining phase foll
 const Q_COST = 'Annotation cost fell by roughly half compared with a fully supervised baseline.'
 const Q_SMALL = 'On datasets below one thousand examples the advantage was not significant.'
 const Q_MISSING = 'The method needs no tuning at all for any downstream task or dataset size.'
+const Q_MEMORY = 'Memory use grows with the input length and is the main practical limit.'
+
+/** The ids of the demo findings (GET /papers/{id} gives every finding an `id` like f_1a2b3c4d5e). The demo written report cites them (lib/demo-written.ts), so they must stay in step. */
+export const DEMO_FINDING = {
+  train: { id: 'f_1a2b3c4d5e', paperId: 'demo-paper-1', text: Q_TRAIN },
+  cost: { id: 'f_2b3c4d5e6f', paperId: 'demo-paper-1', text: Q_COST },
+  small: { id: 'f_3c4d5e6f70', paperId: 'demo-paper-1', text: Q_SMALL },
+  /** A quote that cannot be located in the parsed text: its finding has no spans. */
+  missing: { id: 'f_4d5e6f7081', paperId: 'demo-paper-1', text: Q_MISSING },
+  /** The paper is not parsed: only the abstract and the finding exist. */
+  memory: { id: 'f_5e6f708192', paperId: 'demo-paper-2', text: Q_MEMORY },
+}
 
 const SURVEY_TEXT = `## [Sample] A Fictional Survey of Signal Tracing Methods
 
@@ -121,15 +133,15 @@ const FIXTURES: Fixture[] = [
   },
 ]
 
-const FINDINGS: Record<string, { claim: string; quote: string; stance: PaperFinding['stance']; sq: typeof SQ1; reason: string }[]> = {
+const FINDINGS: Record<string, { id: string; claim: string; quote: string; stance: PaperFinding['stance']; sq: typeof SQ1; reason: string }[]> = {
   'demo-paper-1': [
-    { claim: 'The sample method is trained in two phases: a broad pretraining phase and a short task-specific tuning phase.', quote: Q_TRAIN, stance: 'supports', sq: SQ1, reason: 'The quote states both phases and their order.' },
-    { claim: 'It reduces annotation cost compared with fully supervised approaches.', quote: Q_COST, stance: 'supports', sq: SQ1, reason: 'Direct statement of a measured advantage.' },
-    { claim: 'Gains disappear on very small datasets.', quote: Q_SMALL, stance: 'contradicts', sq: SQ1, reason: 'Qualifies the advantage rather than stating one.' },
-    { claim: 'No tuning is needed for any downstream task.', quote: Q_MISSING, stance: 'supports', sq: SQ1, reason: 'The quote could not be located in the source, so it cannot support the claim.' },
+    { id: DEMO_FINDING.train.id, claim: 'The sample method is trained in two phases: a broad pretraining phase and a short task-specific tuning phase.', quote: Q_TRAIN, stance: 'supports', sq: SQ1, reason: 'The quote states both phases and their order.' },
+    { id: DEMO_FINDING.cost.id, claim: 'It reduces annotation cost compared with fully supervised approaches.', quote: Q_COST, stance: 'supports', sq: SQ1, reason: 'Direct statement of a measured advantage.' },
+    { id: DEMO_FINDING.small.id, claim: 'Gains disappear on very small datasets.', quote: Q_SMALL, stance: 'contradicts', sq: SQ1, reason: 'Qualifies the advantage rather than stating one.' },
+    { id: DEMO_FINDING.missing.id, claim: 'No tuning is needed for any downstream task.', quote: Q_MISSING, stance: 'supports', sq: SQ1, reason: 'The quote could not be located in the source, so it cannot support the claim.' },
   ],
   'demo-paper-2': [
-    { claim: 'Input length is limited mainly by memory use.', quote: 'Memory use grows with the input length and is the main practical limit.', stance: 'supports', sq: SQ2, reason: 'The quote names memory as the main limit.' },
+    { id: DEMO_FINDING.memory.id, claim: 'Input length is limited mainly by memory use.', quote: Q_MEMORY, stance: 'supports', sq: SQ2, reason: 'The quote names memory as the main limit.' },
   ],
 }
 
@@ -190,7 +202,7 @@ export function demoDetail(paperId: string, stage: DemoStage): PaperDetail | nul
   const findings: PaperFinding[] = stage !== 'evidence' ? [] : (FINDINGS[paperId] ?? []).map(x => {
     const spans = text ? locate(text, x.quote) : []
     return {
-      claim: x.claim, quote: x.quote, stance: x.stance, quoteFound: paperId === 'demo-paper-2' ? true : spans.length > 0, subQuestion: x.sq.topic, spans,
+      id: x.id, claim: x.claim, quote: x.quote, stance: x.stance, quoteFound: paperId === 'demo-paper-2' ? true : spans.length > 0, subQuestion: x.sq.topic, spans,
       judgements: [{ aspect: x.sq.topic, verdict: spans.length > 0 || paperId === 'demo-paper-2' ? 'yes' : 'no', quoteSupportsClaim: spans.length > 0 ? 'yes' : 'no', answersAspect: 'yes', reason: x.reason }],
     }
   })
